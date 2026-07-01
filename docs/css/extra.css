@@ -1,0 +1,116 @@
+/* Centrar diagramas Mermaid */
+div.mermaid {
+    text-align: center;
+    margin: 1em 0;
+    /* Forzar fondo blanco para legibilidad en modo oscuro */
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+/* Ajuste para bloques de código */
+div.col-md-9 pre code {
+    font-size: 0.9em;
+}
+
+/* Mostrar tablas como tabla (Bootstrap ya las estiliza) */
+div.col-md-9 table {
+    display: table;
+    width: 100%;
+}
+
+/* =============================================
+   Paleta institucional - Networking Lab
+   ============================================= */
+
+/* Color principal (barra de navegación, fondo de elementos activos) */
+:root {
+    --primary-dark: #4a148c;
+    --primary-medium: #6a1b9a;
+    --primary-light: #7c4dff;
+    --accent: #b388ff;
+}
+
+/* Navbar (barra superior fija) */
+.navbar-default {
+    background-color: var(--primary-dark);
+    border-color: #3a0e6b;
+}
+.navbar-default .navbar-brand {
+    color: #ffffff;
+}
+.navbar-default .navbar-brand:hover,
+.navbar-default .navbar-brand:focus {
+    color: var(--accent);
+}
+.navbar-default .navbar-nav > li > a {
+    color: #e0e0e0;
+}
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus {
+    color: #ffffff;
+    background-color: var(--primary-medium);
+}
+.navbar-default .navbar-nav > .active > a,
+.navbar-default .navbar-nav > .active > a:hover,
+.navbar-default .navbar-nav > .active > a:focus {
+    color: #ffffff;
+    background-color: var(--primary-light);
+}
+.navbar-default .navbar-toggle {
+    border-color: var(--primary-light);
+}
+.navbar-default .navbar-toggle .icon-bar {
+    background-color: var(--primary-light);
+}
+.navbar-default .navbar-toggle:hover,
+.navbar-default .navbar-toggle:focus {
+    background-color: var(--primary-medium);
+}
+
+/* Enlaces generales */
+a {
+    color: var(--primary-light);
+}
+a:hover,
+a:focus {
+    color: var(--accent);
+}
+
+/* Botones (si se usan) */
+.btn-primary {
+    background-color: var(--primary-dark);
+    border-color: #3a0e6b;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--primary-medium);
+    border-color: var(--primary-light);
+}
+
+/* Resaltado de código (Pygments) - fondo suave */
+.highlight {
+    background-color: #f5f0fa;
+}
+.highlight pre {
+    background-color: #f5f0fa;
+}
+
+/* Tablas: personalizar el borde */
+.table > thead > tr > th {
+    border-bottom: 2px solid var(--primary-medium);
+}
+
+/* Ajuste de enlaces activos en la tabla de contenidos */
+.bs-sidebar .nav > .active > a,
+.bs-sidebar .nav > .active:hover > a,
+.bs-sidebar .nav > .active:focus > a {
+    color: var(--primary-dark);
+    border-right-color: var(--primary-dark);
+}
+
+/* Código inline */
+code {
+    color: var(--primary-medium);
+    background-color: #f3edf9;
+}

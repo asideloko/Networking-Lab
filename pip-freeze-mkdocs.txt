@@ -1,0 +1,7 @@
+click              8.4.2
+Jinja2             3.1.6
+Markdown           3.10.2
+mkdocs             1.6.1
+mkdocs-get-deps    0.2.2
+PyYAML             6.0.3
+pyyaml_env_tag     1.1

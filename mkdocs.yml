@@ -1,0 +1,52 @@
+site_name: "Networking Lab – Manual de Implementación Profesional"
+site_description: "Laboratorios de redes desde cero"
+site_author: "Guillermo Castillo"
+
+theme:
+  name: null
+  custom_dir: 'custom_theme'
+  prev_next_enabled: false
+  fa_logo: false
+
+extra_css:
+  - css/extra.css
+
+extra:
+  logo: 'img/logo.png'
+
+markdown_extensions:
+  - admonition
+  - tables
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.tabbed
+  - pymdownx.highlight:
+      use_pygments: true
+  - pymdownx.superfences
+
+plugins:
+  - search
+  - mermaid2:
+      version: 10.6.1
+      theme: default
+      securityLevel: loose
+
+nav:
+  - Inicio: index.md
+  - Laboratorios:
+      - "01 - Fundamentos de Redes y Encapsulación": labs/lab-01/index.md
+      - "02 - Transmisión de Datos y Capa Física": labs/lab-02/index.md
+      - "03 - Componentes de Red y Conmutación": labs/lab-03/index.md
+      - "04 - Direccionamiento IP y Subredes": labs/lab-04/index.md
+      - "05 - Conmutación y VLANs": labs/lab-05/index.md
+      - "06 - Enrutamiento y Conectividad entre Redes": labs/lab-06/index.md
+      - "07 - Protocolos y Servicios de Red": labs/lab-07/index.md
+      - "08 - Seguridad en Redes": labs/lab-08/index.md
+      - "09 - VPN y Tunelización": labs/lab-09/index.md
+      - "10 - Infraestructura WAN y Core": labs/lab-10/index.md
+      - "11 - Arquitectura de Red Empresarial": labs/lab-11/index.md
+      - "12 - Arquitecturas Modernas de Red": labs/lab-12/index.md
+      - "13 - Monitoreo y Diagnóstico de Redes": labs/lab-13/index.md
+      - "14 - Herramientas Linux Avanzadas": labs/lab-14/index.md
+      - "15 - Implementación Práctica Integral": labs/lab-15/index.md

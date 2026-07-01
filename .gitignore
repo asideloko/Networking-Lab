@@ -1,0 +1,19 @@
+# Archivos generados por MkDocs
+site/
+
+# Entornos virtuales Python
+venv/
+env/
+.venv/
+
+# Archivos de caché
+__pycache__/
+*.pyc
+*.pyo
+
+# Archivos de backup
+*.bak
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db

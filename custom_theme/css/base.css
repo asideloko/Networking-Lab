@@ -1,0 +1,314 @@
+/* ========== Variables y reset ========== */
+:root {
+    --sidebar-bg: #4a148c;
+    --sidebar-text: #e0e0e0;
+    --sidebar-hover-bg: #6a1b9a;
+    --sidebar-active-bg: #7c4dff;
+    --bg-color: #ffffff;
+    --text-color: #333333;
+    --link-color: #7c4dff;
+    --link-hover: #b388ff;
+    --code-bg: #f3edf9;
+    --code-color: #6a1b9a;
+    --table-border: #6a1b9a;
+    --highlight-bg: #f5f0fa;
+    --footer-color: #666;
+    --dropdown-bg: #6a1b9a;
+    --dropdown-hover: #7c4dff;
+}
+
+body.dark-mode {
+    --sidebar-bg: #2e0f57;
+    --sidebar-text: #d1c4e9;
+    --sidebar-hover-bg: #4a148c;
+    --sidebar-active-bg: #7c4dff;
+    --bg-color: #1a1a2e;
+    --text-color: #e0e0e0;
+    --link-color: #b388ff;
+    --link-hover: #d1c4e9;
+    --code-bg: #2d2d44;
+    --code-color: #d1c4e9;
+    --table-border: #7c4dff;
+    --highlight-bg: #2d2d44;
+    --footer-color: #aaa;
+    --dropdown-bg: #4a148c;
+    --dropdown-hover: #7c4dff;
+}
+
+body {
+    padding-top: 0;
+    margin: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+h1[id]:before, h2[id]:before, h3[id]:before, h4[id]:before, h5[id]:before, h6[id]:before {
+    content: "";
+    display: block;
+    margin-top: -20px;
+    height: 20px;
+}
+
+a {
+    color: var(--link-color);
+}
+a:hover, a:focus {
+    color: var(--link-hover);
+}
+
+code {
+    color: var(--code-color);
+    background-color: var(--code-bg);
+}
+
+.highlight {
+    background-color: var(--highlight-bg);
+}
+.highlight pre {
+    background-color: var(--highlight-bg);
+}
+
+.table > thead > tr > th {
+    border-bottom: 2px solid var(--table-border);
+}
+
+/* ========== Checkbox hack (oculto) ========== */
+.sidebar-checkbox {
+    display: none;
+}
+
+/* ========== Sidebar ========== */
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 260px;
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    overflow-y: auto;
+    z-index: 1000;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+}
+
+.sidebar-header {
+    padding: 20px;
+    text-align: center;
+}
+
+.sidebar-logo {
+    max-width: 150px;
+    margin-bottom: 10px;
+}
+
+.sidebar-title {
+    font-size: 1.2em;
+    margin: 0 0 10px;
+    color: #fff;
+}
+
+.theme-toggle {
+    margin-top: 10px;
+    background-color: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+}
+.theme-toggle:hover {
+    background-color: rgba(255,255,255,0.4);
+}
+
+/* Navegación lateral */
+.sidebar-nav {
+    list-style: none;
+    padding-left: 0;
+}
+.sidebar-nav > li > a {
+    display: block;
+    padding: 10px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+}
+.sidebar-nav > li > a:hover,
+.sidebar-nav > li > a:focus {
+    background-color: var(--sidebar-hover-bg);
+    color: #fff;
+}
+.sidebar-nav > .active > a {
+    background-color: var(--sidebar-active-bg);
+    color: #fff;
+}
+.sidebar-nav .dropdown-submenu {
+    position: relative;
+}
+.sidebar-nav .dropdown-menu {
+    background-color: var(--dropdown-bg);
+    border: none;
+    border-radius: 0;
+    margin: 0;
+    padding: 0;
+}
+.sidebar-nav .dropdown-menu > li > a {
+    padding: 8px 30px;
+    color: var(--sidebar-text);
+}
+.sidebar-nav .dropdown-menu > li > a:hover,
+.sidebar-nav .dropdown-menu > li > a:focus {
+    background-color: var(--dropdown-hover);
+    color: #fff;
+}
+
+/* ========== Botón hamburguesa ========== */
+.sidebar-toggle {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 1100;
+    background-color: var(--sidebar-bg);
+    border: 1px solid var(--sidebar-active-bg);
+    cursor: pointer;
+    padding: 9px 10px;
+    border-radius: 4px;
+    display: none; /* solo visible en móvil */
+}
+.sidebar-toggle .icon-bar {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background-color: #fff;
+    margin: 4px 0;
+}
+
+/* ========== Contenido principal ========== */
+.wrapper {
+    margin-left: 260px; /* espacio para el sidebar en escritorio */
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+}
+.main-content {
+    width: 100%;
+    padding: 20px;
+    background-color: var(--bg-color);
+}
+.footer {
+    margin-left: 260px;
+    padding: 10px 20px;
+    background-color: var(--bg-color);
+    color: var(--footer-color);
+    border-top: 1px solid #ccc;
+    transition: margin-left 0.3s ease;
+}
+
+/* ========== Responsive: móvil (checkbox hack) ========== */
+@media (max-width: 992px) {
+    .sidebar {
+        transform: translateX(-100%); /* oculta */
+    }
+    /* Cuando el checkbox está marcado => muestra sidebar */
+    #sidebar-checkbox:checked ~ .sidebar {
+        transform: translateX(0);
+    }
+    /* Mostrar botón hamburguesa en móvil */
+    .sidebar-toggle {
+        display: block;
+    }
+    /* Quitar margen izquierdo en móvil */
+    .wrapper {
+        margin-left: 0;
+    }
+    .footer {
+        margin-left: 0;
+    }
+    /* Opcional: overlay con un pseudo-elemento? No es posible sin JS. Pero el usuario puede tocar fuera y cerrar? No con checkbox. Agregamos un overlay simple usando un elemento extra, pero podemos sugerir que al hacer clic en un enlace se cierre el menú. Dado que los enlaces recargan la página, no hay problema. */
+}
+
+/* ========== TOC (tabla de contenidos) ========== */
+.bs-sidebar {
+    margin-top: 20px;
+}
+.bs-sidebar.affix {
+    position: static;
+}
+.bs-sidebar.well {
+    padding: 0;
+}
+.bs-sidenav {
+    margin-top: 30px;
+    margin-bottom: 30px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-radius: 5px;
+}
+.bs-sidebar .nav > li > a {
+    display: block;
+    padding: 5px 20px;
+    z-index: 1;
+}
+.bs-sidebar .nav > li > a:hover,
+.bs-sidebar .nav > li > a:focus {
+    text-decoration: none;
+    border-right: 1px solid;
+}
+.bs-sidebar .nav > .active > a,
+.bs-sidebar .nav > .active:hover > a,
+.bs-sidebar .nav > .active:focus > a {
+    font-weight: bold;
+    background-color: transparent;
+    border-right: 1px solid;
+    color: var(--link-color);
+}
+.bs-sidebar .nav .nav {
+    display: none;
+    margin-bottom: 8px;
+}
+.bs-sidebar .nav .nav > li > a {
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 30px;
+    font-size: 90%;
+}
+@media (min-width: 992px) {
+    .bs-sidebar .nav > .active > ul {
+        display: block;
+    }
+    .bs-sidebar.affix,
+    .bs-sidebar.affix-bottom {
+        width: 213px;
+    }
+    .bs-sidebar.affix {
+        position: fixed;
+        top: 80px;
+    }
+    .bs-sidebar.affix-bottom {
+        position: absolute;
+    }
+    .bs-sidebar.affix-bottom .bs-sidenav,
+    .bs-sidebar.affix .bs-sidenav {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+}
+@media (min-width: 1200px) {
+    .bs-sidebar.affix-bottom,
+    .bs-sidebar.affix {
+        width: 263px;
+    }
+}
+
+/* Ajustes generales */
+div.col-md-3 {
+    padding-left: 0;
+}
+div.col-md-9 {
+    padding-bottom: 100px;
+}
+div.col-md-9 img {
+    max-width: 100%;
+}
+
+/* Mermaid centrado */
+div.mermaid {
+    text-align: center;
+    margin: 1em 0;
+}

@@ -1,0 +1,14 @@
+# The theme configuration file
+# Defines custom settings specific to this theme.
+
+# enable previous/next page nav link
+prev_next_enabled : False
+
+# pages to put in navbar-right
+nav_right: []
+
+# pages to hide from all nav-bar Special Home value will hide Home link in nav bar, Home is the default menu entry for index.md when not provided in mkdocs.yml.
+hidden: []
+
+# Font Awesome icon as a navbar-brand logo, pick a existing icon from fontawesome.io
+fa_logo: False 
