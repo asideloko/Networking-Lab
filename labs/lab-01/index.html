@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="Laboratorios de redes desde cero" name="description"/>
+<meta content="Guillermo Castillo" name="author"/>
+<link href="../../img/favicon.ico" rel="shortcut icon"/>
+<title>01 - Fundamentos de Redes y Encapsulación - Networking Lab – Manual de Implementación Profesional</title>
+<link href="../../css/bootstrap.min.css" rel="stylesheet"/>
+<link href="../../css/font-awesome.min.css" rel="stylesheet"/>
+<link href="../../css/base.css" rel="stylesheet"/>
+<link href="../../css/extra.css" rel="stylesheet"/>
+<!-- HTML5 shim and Respond.js IE8 support -->
+<!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+</head>
+<body>
+<!-- Checkbox oculto para controlar el menú -->
+<input class="sidebar-checkbox" id="sidebar-checkbox" type="checkbox"/>
+<!-- Sidebar izquierda -->
+<div class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<img alt="Logo" class="sidebar-logo" src="../../img/logo.png"/>
+<h3 class="sidebar-title">Networking Lab – Manual de Implementación Profesional</h3>
+<button class="theme-toggle btn btn-sm btn-default" id="themeToggle" title="Cambiar tema claro/oscuro">
+<i class="fa fa-moon-o"></i> <span class="toggle-text">Oscuro</span>
+</button>
+</div>
+<ul class="nav sidebar-nav" id="sidebar-nav">
+<li>
+<a href="../..">Inicio</a>
+</li>
+<li class="dropdown-submenu active">
+<a class="dropdown-toggle" data-toggle="dropdown" href="#">Laboratorios <span class="caret"></span></a>
+<ul class="dropdown-menu">
+<li class="active">
+<a href="./">01 - Fundamentos de Redes y Encapsulación</a>
+</li>
+<li>
+<a href="../lab-02/">02 - Transmisión de Datos y Capa Física</a>
+</li>
+<li>
+<a href="../lab-03/">03 - Componentes de Red y Conmutación</a>
+</li>
+<li>
+<a href="../lab-04/">04 - Direccionamiento IP y Subredes</a>
+</li>
+<li>
+<a href="../lab-05/">05 - Conmutación y VLANs</a>
+</li>
+<li>
+<a href="../lab-06/">06 - Enrutamiento y Conectividad entre Redes</a>
+</li>
+<li>
+<a href="../lab-07/">07 - Protocolos y Servicios de Red</a>
+</li>
+<li>
+<a href="../lab-08/">08 - Seguridad en Redes</a>
+</li>
+<li>
+<a href="../lab-09/">09 - VPN y Tunelización</a>
+</li>
+<li>
+<a href="../lab-10/">10 - Infraestructura WAN y Core</a>
+</li>
+<li>
+<a href="../lab-11/">11 - Arquitectura de Red Empresarial</a>
+</li>
+<li>
+<a href="../lab-12/">12 - Arquitecturas Modernas de Red</a>
+</li>
+<li>
+<a href="../lab-13/">13 - Monitoreo y Diagnóstico de Redes</a>
+</li>
+<li>
+<a href="../lab-14/">14 - Herramientas Linux Avanzadas</a>
+</li>
+<li>
+<a href="../lab-15/">15 - Implementación Práctica Integral</a>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<!-- Botón hamburguesa (etiqueta para el checkbox) -->
+<label class="sidebar-toggle" for="sidebar-checkbox" id="sidebarToggle">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</label>
+<div class="wrapper">
+<div class="main-content" id="mainContent">
+<div class="row">
+<div class="col-md-9" role="main">
+<h1 id="laboratorio-01-fundamentos-de-redes-y-encapsulacion">Laboratorio 01 – Fundamentos de Redes y Encapsulación</h1>
+<h2 id="contexto-empresarial">Contexto empresarial</h2>
+<p>La empresa <strong>Networking SecOps</strong> acaba de abrir una nueva oficina. Cuenta con dos empleados que necesitan compartir archivos y acceder a Internet. No hay infraestructura de red aún. Se te ha encargado <strong>diseñar e implementar la red local</strong> que permita la comunicación entre los equipos y el acceso a la web. Además, debes <strong>demostrar cómo viajan los datos</strong> desde un equipo hasta el router y cómo se encapsulan en cada capa.</p>
+<h2 id="problema-inicial">Problema inicial</h2>
+<ul>
+<li>Dos PCs (Cliente1 y Cliente2) deben comunicarse entre sí.</li>
+<li>Ambas necesitan salir a Internet a través de un router.</li>
+<li>No se dispone de equipos físicos, pero se puede utilizar <strong>Linux</strong> con herramientas de virtualización de red (namespaces, veth, etc.) para simular la topología.</li>
+</ul>
+<h2 id="objetivos-del-laboratorio">Objetivos del laboratorio</h2>
+<ol>
+<li>Comprender el concepto de red y sus componentes.</li>
+<li>Implementar una red local sencilla usando <strong>namespaces de red</strong> en Linux.</li>
+<li>Asignar direcciones IP y comprobar conectividad.</li>
+<li>Observar el proceso de <strong>encapsulación</strong> mediante captura de paquetes con <code>tcpdump</code>.</li>
+<li>Analizar el flujo de datos desde la generación hasta la transmisión.</li>
+</ol>
+<h2 id="herramientas-necesarias">Herramientas necesarias</h2>
+<ul>
+<li>Linux (Debian/Ubuntu recomendado) con privilegios de superusuario.</li>
+<li>Comandos: <code>ip</code>, <code>ping</code>, <code>tcpdump</code>, <code>nslookup</code>, <code>curl</code>.</li>
+<li>Editor de texto para scripts (opcional).</li>
+</ul>
+<h2 id="topologia">Topología</h2>
+<div class="mermaid">graph TB
+    C1[Cliente 1 10.0.1.2/24]
+    C2[Cliente 2 10.0.1.3/24]
+    R[Router 10.0.1.1/24]
+    Internet((Internet))
+    C1 --- R
+    C2 --- R
+    R --- Internet</div>
+<p><strong>Direccionamiento:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Dispositivo</th>
+<th>Interfaz</th>
+<th>Dirección IP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cliente 1</td>
+<td>veth0</td>
+<td>10.0.1.2/24</td>
+</tr>
+<tr>
+<td>Cliente 2</td>
+<td>veth0</td>
+<td>10.0.1.3/24</td>
+</tr>
+<tr>
+<td>Router</td>
+<td>eth0</td>
+<td>10.0.1.1/24</td>
+</tr>
+<tr>
+<td>(Internet)</td>
+<td>eth1</td>
+<td>(DHCP o fija)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="construccion-de-la-red">Construcción de la red</h2>
+<p>Usaremos <strong>namespaces de red</strong> para aislar cada dispositivo en un entorno virtual dentro de la misma máquina Linux. Esto nos permite simular una red sin necesidad de hardware extra.</p>
+<h3 id="paso-1-verificar-el-entorno">Paso 1: Verificar el entorno</h3>
+<p>Asegúrate de tener permisos de root:</p>
+<pre class="highlight"><code class="language-bash">sudo -i</code></pre>
+<h3 id="paso-2-crear-los-namespaces">Paso 2: Crear los namespaces</h3>
+<p>Creamos un namespace para cada dispositivo:</p>
+<pre class="highlight"><code class="language-bash">ip netns add cliente1
+ip netns add cliente2
+ip netns add router</code></pre>
+<p>Verificamos que se hayan creado:</p>
+<pre class="highlight"><code class="language-bash">ip netns list</code></pre>
+<p><strong>Salida esperada:</strong>
+<pre class="highlight"><code>router
+cliente2
+cliente1</code></pre></p>
+<h3 id="paso-3-crear-los-pares-de-interfaces-virtuales-veth">Paso 3: Crear los pares de interfaces virtuales (veth)</h3>
+<p>Necesitamos conectar cada cliente al router. Para ello, creamos dos pares veth:</p>
+<pre class="highlight"><code class="language-bash"># Par para Cliente 1
+ip link add veth-c1 type veth peer name veth-r1
+
+# Par para Cliente 2
+ip link add veth-c2 type veth peer name veth-r2</code></pre>
+<h3 id="paso-4-asignar-cada-extremo-a-su-namespace">Paso 4: Asignar cada extremo a su namespace</h3>
+<pre class="highlight"><code class="language-bash"># Cliente 1
+ip link set veth-c1 netns cliente1
+
+# Cliente 2
+ip link set veth-c2 netns cliente2
+
+# Router (extremos r1 y r2)
+ip link set veth-r1 netns router
+ip link set veth-r2 netns router</code></pre>
+<h3 id="paso-5-configurar-direcciones-ip-y-activar-interfaces">Paso 5: Configurar direcciones IP y activar interfaces</h3>
+<p><strong>Cliente 1:</strong></p>
+<pre class="highlight"><code class="language-bash">ip netns exec cliente1 ip addr add 10.0.1.2/24 dev veth-c1
+ip netns exec cliente1 ip link set veth-c1 up
+ip netns exec cliente1 ip link set lo up</code></pre>
+<p><strong>Cliente 2:</strong></p>
+<pre class="highlight"><code class="language-bash">ip netns exec cliente2 ip addr add 10.0.1.3/24 dev veth-c2
+ip netns exec cliente2 ip link set veth-c2 up
+ip netns exec cliente2 ip link set lo up</code></pre>
+<p><strong>Router – Usaremos un bridge para conectar ambos clientes:</strong></p>
+<pre class="highlight"><code class="language-bash"># En el namespace router
+ip netns exec router ip link add br0 type bridge
+ip netns exec router ip link set veth-r1 master br0
+ip netns exec router ip link set veth-r2 master br0
+ip netns exec router ip addr add 10.0.1.1/24 dev br0
+ip netns exec router ip link set br0 up
+ip netns exec router ip link set veth-r1 up
+ip netns exec router ip link set veth-r2 up</code></pre>
+<h3 id="paso-6-configurar-la-salida-a-internet-opcional">Paso 6: Configurar la salida a Internet (opcional)</h3>
+<p>Si queremos que los clientes accedan a Internet, necesitamos conectar el router a una interfaz externa (por ejemplo, <code>eth0</code> del host) y habilitar NAT. Esto lo haremos en el laboratorio 02 para no complicar ahora. Por ahora nos centramos en la comunicación local.</p>
+<h3 id="paso-7-verificar-conectividad-entre-clientes">Paso 7: Verificar conectividad entre clientes</h3>
+<p>Desde Cliente 1, hacemos ping a Cliente 2:</p>
+<pre class="highlight"><code class="language-bash">ip netns exec cliente1 ping -c 4 10.0.1.3</code></pre>
+<p><strong>Salida esperada:</strong> 4 respuestas exitosas.</p>
+<p>Desde Cliente 2 a Cliente 1:</p>
+<pre class="highlight"><code class="language-bash">ip netns exec cliente2 ping -c 4 10.0.1.2</code></pre>
+<p><strong>Salida esperada:</strong> 4 respuestas exitosas.</p>
+<h3 id="paso-8-verificar-conectividad-con-el-router">Paso 8: Verificar conectividad con el router</h3>
+<p>Desde Cliente 1 al router:</p>
+<pre class="highlight"><code class="language-bash">ip netns exec cliente1 ping -c 4 10.0.1.1</code></pre>
+<p><strong>Salida esperada:</strong> 4 respuestas exitosas.</p>
+<h2 id="observacion-de-la-encapsulacion">Observación de la encapsulación</h2>
+<p>Vamos a capturar el tráfico en el router para ver cómo viaja un paquete ICMP (ping) desde Cliente 1 a Cliente 2.</p>
+<h3 id="paso-9-iniciar-captura-en-el-router">Paso 9: Iniciar captura en el router</h3>
+<p>Abrimos otra terminal (o usamos <code>tmux</code>) y ejecutamos:</p>
+<pre class="highlight"><code class="language-bash">ip netns exec router tcpdump -i br0 -n -v icmp</code></pre>
+<h3 id="paso-10-enviar-un-ping-desde-cliente-1">Paso 10: Enviar un ping desde Cliente 1</h3>
+<p>En la terminal original:</p>
+<pre class="highlight"><code class="language-bash">ip netns exec cliente1 ping -c 1 10.0.1.3</code></pre>
+<h3 id="paso-11-analizar-la-captura">Paso 11: Analizar la captura</h3>
+<p>Deberías ver una salida similar a:</p>
+<pre class="highlight"><code>tcpdump: listening on br0, link-type EN10MB (Ethernet), capture size 262144 bytes
+14:23:45.678901 IP (tos 0x0, ttl 64, id 12345, offset 0, flags [DF], proto ICMP (1), length 84)
+    10.0.1.2 &gt; 10.0.1.3: ICMP echo request, id 1, seq 1, length 64
+14:23:45.678987 IP (tos 0x0, ttl 64, id 54321, offset 0, flags [none], proto ICMP (1), length 84)
+    10.0.1.3 &gt; 10.0.1.2: ICMP echo reply, id 1, seq 1, length 64</code></pre>
+<p><strong>Interpretación:</strong></p>
+<ul>
+<li>Se ve la trama Ethernet (link-type EN10MB) que contiene el paquete IP.</li>
+<li>El paquete IP tiene origen 10.0.1.2 y destino 10.0.1.3.</li>
+<li>El protocolo es ICMP (1).</li>
+<li>Los datos ICMP (echo request/reply) están encapsulados dentro del paquete IP, que a su vez va dentro de la trama Ethernet.</li>
+</ul>
+<p>Podemos ver más detalles si usamos <code>-e</code> para mostrar la cabecera Ethernet:</p>
+<pre class="highlight"><code class="language-bash">ip netns exec router tcpdump -i br0 -n -e icmp</code></pre>
+<p>Aparecerán direcciones MAC de origen y destino, lo que confirma la encapsulación en la capa de enlace.</p>
+<h2 id="analisis-del-flujo-de-datos">Análisis del flujo de datos</h2>
+<ol>
+<li><strong>Cliente 1 genera el mensaje:</strong> La aplicación <code>ping</code> crea un mensaje ICMP Echo Request.</li>
+<li><strong>Capa de transporte:</strong> ICMP no usa puertos, pero se considera parte de la capa de red en el modelo TCP/IP. A efectos prácticos, el mensaje se entrega a la capa IP.</li>
+<li><strong>Capa de red (IP):</strong> Se añade el encabezado IP con origen 10.0.1.2 y destino 10.0.1.3.</li>
+<li><strong>Capa de enlace:</strong> Se añade la cabecera Ethernet con MAC origen (de veth-c1) y MAC destino (de veth-r1, que es la interfaz del router conectada a br0).</li>
+<li><strong>El router recibe la trama</strong>, la desencapsula (elimina cabecera Ethernet), consulta su tabla de reenvío y ve que el destino está en la misma red (br0). Entonces reenvía el paquete por la misma interfaz pero con nueva trama Ethernet (origen: MAC del router, destino: MAC de Cliente 2).</li>
+<li><strong>Cliente 2 recibe la trama</strong>, la desencapsula y entrega el mensaje ICMP a la aplicación, que genera la respuesta y repite el proceso inverso.</li>
+</ol>
+<h2 id="conclusiones-tecnicas">Conclusiones técnicas</h2>
+<ul>
+<li>Hemos implementado una red funcional utilizando <strong>namespaces de red</strong>, que simulan dispositivos independientes.</li>
+<li>Hemos verificado la conectividad capa a capa (IP y Ethernet).</li>
+<li>Mediante <code>tcpdump</code> hemos observado la <strong>encapsulación</strong> en tiempo real:<ul>
+<li>Datos → ICMP (mensaje) → IP (paquete) → Ethernet (trama).</li>
+</ul>
+</li>
+<li>El router ha actuado como conmutador (switch) dentro de la misma subred, ya que no ha necesitado enrutar.</li>
+<li>Este laboratorio sienta las bases para los siguientes, donde agregaremos más dispositivos, VLANs, enrutamiento y servicios.</li>
+</ul>
+<h2 id="errores-comunes-y-soluciones">Errores comunes y soluciones</h2>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>Causa</th>
+<th>Solución</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ping: connect: Network is unreachable</code></td>
+<td>No se ha asignado IP o la interfaz está down.</td>
+<td>Verificar <code>ip addr show</code> y <code>ip link set ... up</code>.</td>
+</tr>
+<tr>
+<td><code>tcpdump: no suitable device found</code></td>
+<td>El dispositivo no existe o no se ha activado.</td>
+<td>Asegurar que el bridge esté up.</td>
+</tr>
+<tr>
+<td>No se ven paquetes en tcpdump</td>
+<td>La captura está en interfaz incorrecta.</td>
+<td>Capturar en <code>br0</code> o en <code>any</code>.</td>
+</tr>
+<tr>
+<td>Los clientes no pueden hacer ping al router</td>
+<td>El router no tiene la IP en la interfaz correcta.</td>
+<td>Verificar que <code>br0</code> tenga la IP y esté up.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio</h2>
+<p>Hemos dejado la red con los dos clientes y el router (con bridge). En el <strong>Laboratorio 02</strong> agregaremos una conexión a Internet mediante NAT y configuraremos el enrutamiento para que los clientes puedan salir a la web.</p>
+<hr/>
+<p><strong>¡Laboratorio 01 completado!</strong> Has construido tu primera red virtual y has observado cómo se encapsulan los datos. Continúa con el <strong>Laboratorio 02</strong>.</p>
+</div>
+<div class="col-md-3">
+<div class="bs-sidebar hidden-print affix well" role="complementary">
+<ul class="nav bs-sidenav">
+<li class="main active"><a href="#laboratorio-01-fundamentos-de-redes-y-encapsulacion">Laboratorio 01 – Fundamentos de Redes y Encapsulación</a></li>
+<li><a href="#contexto-empresarial">Contexto empresarial</a></li>
+<li><a href="#problema-inicial">Problema inicial</a></li>
+<li><a href="#objetivos-del-laboratorio">Objetivos del laboratorio</a></li>
+<li><a href="#herramientas-necesarias">Herramientas necesarias</a></li>
+<li><a href="#topologia">Topología</a></li>
+<li><a href="#construccion-de-la-red">Construcción de la red</a></li>
+<li><a href="#observacion-de-la-encapsulacion">Observación de la encapsulación</a></li>
+<li><a href="#analisis-del-flujo-de-datos">Análisis del flujo de datos</a></li>
+<li><a href="#conclusiones-tecnicas">Conclusiones técnicas</a></li>
+<li><a href="#errores-comunes-y-soluciones">Errores comunes y soluciones</a></li>
+<li><a href="#preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="footer">
+<hr/>
+</footer>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/bootstrap.min.js"></script>
+<script src="../../js/base.js"></script>
+<script src="../../search/main.js"></script>
+<script>
+        (function() {
+            const body = document.body;
+            const toggleBtn = document.getElementById('themeToggle');
+            const toggleIcon = toggleBtn ? toggleBtn.querySelector('i') : null;
+            const toggleText = toggleBtn ? toggleBtn.querySelector('.toggle-text') : null;
+
+            const savedTheme = localStorage.getItem('mkdocs-cluster-theme');
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                if (toggleText) toggleText.textContent = 'Claro';
+            } else {
+                body.classList.remove('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                if (toggleText) toggleText.textContent = 'Oscuro';
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    if (body.classList.contains('dark-mode')) {
+                        body.classList.remove('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'light');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                        if (toggleText) toggleText.textContent = 'Oscuro';
+                    } else {
+                        body.classList.add('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'dark');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                        if (toggleText) toggleText.textContent = 'Claro';
+                    }
+                });
+            }
+        })();
+        </script>
+<script type="module">import mermaid from "https://unpkg.com/mermaid@10.6.1/dist/mermaid.esm.min.mjs";
+mermaid.initialize({
+    theme: "default",
+    securityLevel: "loose"
+});</script></body>
+</html>

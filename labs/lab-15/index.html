@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="Laboratorios de redes desde cero" name="description"/>
+<meta content="Guillermo Castillo" name="author"/>
+<link href="../../img/favicon.ico" rel="shortcut icon"/>
+<title>15 - Implementación Práctica Integral - Networking Lab – Manual de Implementación Profesional</title>
+<link href="../../css/bootstrap.min.css" rel="stylesheet"/>
+<link href="../../css/font-awesome.min.css" rel="stylesheet"/>
+<link href="../../css/base.css" rel="stylesheet"/>
+<link href="../../css/extra.css" rel="stylesheet"/>
+<!-- HTML5 shim and Respond.js IE8 support -->
+<!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+</head>
+<body>
+<!-- Checkbox oculto para controlar el menú -->
+<input class="sidebar-checkbox" id="sidebar-checkbox" type="checkbox"/>
+<!-- Sidebar izquierda -->
+<div class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<img alt="Logo" class="sidebar-logo" src="../../img/logo.png"/>
+<h3 class="sidebar-title">Networking Lab – Manual de Implementación Profesional</h3>
+<button class="theme-toggle btn btn-sm btn-default" id="themeToggle" title="Cambiar tema claro/oscuro">
+<i class="fa fa-moon-o"></i> <span class="toggle-text">Oscuro</span>
+</button>
+</div>
+<ul class="nav sidebar-nav" id="sidebar-nav">
+<li>
+<a href="../..">Inicio</a>
+</li>
+<li class="dropdown-submenu active">
+<a class="dropdown-toggle" data-toggle="dropdown" href="#">Laboratorios <span class="caret"></span></a>
+<ul class="dropdown-menu">
+<li>
+<a href="../lab-01/">01 - Fundamentos de Redes y Encapsulación</a>
+</li>
+<li>
+<a href="../lab-02/">02 - Transmisión de Datos y Capa Física</a>
+</li>
+<li>
+<a href="../lab-03/">03 - Componentes de Red y Conmutación</a>
+</li>
+<li>
+<a href="../lab-04/">04 - Direccionamiento IP y Subredes</a>
+</li>
+<li>
+<a href="../lab-05/">05 - Conmutación y VLANs</a>
+</li>
+<li>
+<a href="../lab-06/">06 - Enrutamiento y Conectividad entre Redes</a>
+</li>
+<li>
+<a href="../lab-07/">07 - Protocolos y Servicios de Red</a>
+</li>
+<li>
+<a href="../lab-08/">08 - Seguridad en Redes</a>
+</li>
+<li>
+<a href="../lab-09/">09 - VPN y Tunelización</a>
+</li>
+<li>
+<a href="../lab-10/">10 - Infraestructura WAN y Core</a>
+</li>
+<li>
+<a href="../lab-11/">11 - Arquitectura de Red Empresarial</a>
+</li>
+<li>
+<a href="../lab-12/">12 - Arquitecturas Modernas de Red</a>
+</li>
+<li>
+<a href="../lab-13/">13 - Monitoreo y Diagnóstico de Redes</a>
+</li>
+<li>
+<a href="../lab-14/">14 - Herramientas Linux Avanzadas</a>
+</li>
+<li class="active">
+<a href="./">15 - Implementación Práctica Integral</a>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<!-- Botón hamburguesa (etiqueta para el checkbox) -->
+<label class="sidebar-toggle" for="sidebar-checkbox" id="sidebarToggle">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</label>
+<div class="wrapper">
+<div class="main-content" id="mainContent">
+<div class="row">
+<div class="col-md-9" role="main">
+<h1 id="laboratorio-15-implementacion-practica-integral">Laboratorio 15 – Implementación Práctica Integral</h1>
+<h2 id="contexto-empresarial">Contexto empresarial</h2>
+<p>La empresa <strong>Networking SecOps</strong> ha completado todos los laboratorios anteriores. Ahora debe <strong>integrar todos los conceptos</strong> en una implementación práctica completa que sirva como infraestructura de producción funcional.</p>
+<h2 id="topologia">Topología</h2>
+<div class="mermaid">graph TB
+    PC1[PC1 192.168.1.10]
+    PC2[PC2 192.168.1.20]
+    SW[Switch]
+    R[Router Linux]
+    WAN[Internet]
+    PC1 --- SW
+    PC2 --- SW
+    SW --- R
+    R --- WAN</div>
+<h2 id="151-configuracion-de-red-basica">15.1 Configuración de Red Básica</h2>
+<h3 id="configurar-router-linux">Configurar Router Linux</h3>
+<pre class="highlight"><code class="language-bash">ip addr add 192.168.1.1/24 dev eth1
+ip link set eth1 up
+sysctl -w net.ipv4.ip_forward=1
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE</code></pre>
+<h3 id="configurar-pc1">Configurar PC1</h3>
+<pre class="highlight"><code class="language-bash">ip addr add 192.168.1.10/24 dev eth0
+ip link set eth0 up
+ip route add default via 192.168.1.1
+echo 'nameserver 8.8.8.8' &gt; /etc/resolv.conf</code></pre>
+<h3 id="configurar-pc2">Configurar PC2</h3>
+<pre class="highlight"><code class="language-bash">ip addr add 192.168.1.20/24 dev eth0
+ip link set eth0 up
+ip route add default via 192.168.1.1</code></pre>
+<h3 id="verificar">Verificar</h3>
+<pre class="highlight"><code class="language-bash">ping -c 3 192.168.1.20
+ping -c 3 192.168.1.1
+ping -c 3 8.8.8.8
+nslookup google.com</code></pre>
+<h2 id="152-subnetting-aplicado">15.2 Subnetting Aplicado</h2>
+<p><strong>Bloque disponible:</strong> 10.0.0.0/22</p>
+<table>
+<thead>
+<tr>
+<th>Departamento</th>
+<th>Hosts</th>
+<th>Subred</th>
+<th>Máscara</th>
+<th>Rango Útil</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Servidores</td>
+<td>200</td>
+<td>10.0.0.0/24</td>
+<td>/24</td>
+<td>10.0.0.1 - 10.0.0.254</td>
+</tr>
+<tr>
+<td>Finanzas</td>
+<td>100</td>
+<td>10.0.1.0/25</td>
+<td>/25</td>
+<td>10.0.1.1 - 10.0.1.126</td>
+</tr>
+<tr>
+<td>Ventas</td>
+<td>50</td>
+<td>10.0.1.128/26</td>
+<td>/26</td>
+<td>10.0.1.129 - 10.0.1.190</td>
+</tr>
+<tr>
+<td>Gestión</td>
+<td>10</td>
+<td>10.0.1.192/28</td>
+<td>/28</td>
+<td>10.0.1.193 - 10.0.1.206</td>
+</tr>
+<tr>
+<td>Enlace R1-R2</td>
+<td>2</td>
+<td>10.0.1.208/30</td>
+<td>/30</td>
+<td>10.0.1.209 - 10.0.1.210</td>
+</tr>
+</tbody>
+</table>
+<pre class="highlight"><code class="language-bash">ip addr add 10.0.0.1/24 dev eth1
+ip addr add 10.0.1.1/25 dev eth2
+ip addr add 10.0.1.129/26 dev eth3
+ip addr add 10.0.1.209/30 dev eth4</code></pre>
+<h2 id="153-vlan">15.3 VLAN</h2>
+<h3 id="configurar-open-vswitch">Configurar Open vSwitch</h3>
+<pre class="highlight"><code class="language-bash">apt install openvswitch-switch
+ovs-vsctl add-br ovs-bridge
+ovs-vsctl add-port ovs-bridge eth1 tag=10
+ovs-vsctl add-port ovs-bridge eth2 tag=20
+ovs-vsctl add-port ovs-bridge eth3 tag=30
+ovs-vsctl add-port ovs-bridge eth4 trunks=10,20,30</code></pre>
+<h3 id="router-on-a-stick">Router-on-a-Stick</h3>
+<pre class="highlight"><code class="language-bash">ip link add link eth0 name eth0.10 type vlan id 10
+ip addr add 10.0.0.1/24 dev eth0.10
+ip link set eth0.10 up
+ip link add link eth0 name eth0.20 type vlan id 20
+ip addr add 10.0.1.1/25 dev eth0.20
+ip link set eth0.20 up
+ip link add link eth0 name eth0.30 type vlan id 30
+ip addr add 10.0.1.129/26 dev eth0.30
+ip link set eth0.30 up</code></pre>
+<h2 id="154-routing-entre-redes">15.4 Routing entre Redes</h2>
+<h3 id="rutas-estaticas">Rutas estáticas</h3>
+<pre class="highlight"><code class="language-bash">ip route add 10.0.1.0/25 via 10.0.1.209 dev eth4
+ip route add default via 203.0.113.2 dev eth0
+ip route show</code></pre>
+<h3 id="ospf-con-frrouting">OSPF con FRRouting</h3>
+<pre class="highlight"><code class="language-bash">cat &gt; /etc/frr/frr.conf &lt;&lt; 'EOF'
+router ospf
+ router-id 1.1.1.1
+ network 10.0.0.0/24 area 0
+ network 10.0.1.0/25 area 0
+ network 10.0.1.128/26 area 0
+ network 10.0.1.208/30 area 0
+ passive-interface eth1
+ passive-interface eth2
+ passive-interface eth3
+EOF
+systemctl restart frr
+show ip ospf neighbor
+show ip route ospf</code></pre>
+<h2 id="155-firewall">15.5 Firewall</h2>
+<h3 id="nftables">nftables</h3>
+<pre class="highlight"><code class="language-bash">cat &gt; /etc/nftables.conf &lt;&lt; 'EOF'
+table inet firewall {
+    chain input {
+        type filter hook input priority 0; policy drop;
+        iif lo accept
+        ct state established,related accept
+        iifname eth1 tcp dport 22 accept
+        ip protocol icmp limit rate 10/second accept
+    }
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+        ct state established,related accept
+        iifname { eth1, eth2, eth3 } oifname eth0 accept
+        iifname eth0 oifname eth_dmz tcp dport { 80,443,25 } accept
+        iifname { eth1, eth2, eth3 } oifname eth_dmz accept
+    }
+}
+table ip nat {
+    chain postrouting {
+        type nat hook postrouting priority 100;
+        iifname { eth1, eth2, eth3 } oifname eth0 masquerade
+    }
+}
+EOF
+nft -f /etc/nftables.conf
+systemctl enable nftables</code></pre>
+<h3 id="verificar_1">Verificar</h3>
+<pre class="highlight"><code class="language-bash">curl ifconfig.me
+curl http://203.0.113.10
+nft list ruleset</code></pre>
+<h2 id="156-red-parcial-integrada">15.6 Red Parcial Integrada</h2>
+<h3 id="dhcp-con-dnsmasq">DHCP con dnsmasq</h3>
+<pre class="highlight"><code class="language-bash">cat &gt; /etc/dnsmasq.conf &lt;&lt; 'EOF'
+dhcp-range=eth0.10,10.0.0.100,10.0.0.200,255.255.255.0,24h
+dhcp-option=eth0.10,3,10.0.0.1
+dhcp-option=eth0.10,6,8.8.8.8
+dhcp-range=eth0.20,10.0.1.10,10.0.1.120,255.255.255.128,24h
+dhcp-option=eth0.20,3,10.0.1.1
+dhcp-option=eth0.20,6,8.8.8.8
+dhcp-range=eth0.30,10.0.1.130,10.0.1.190,255.255.255.192,24h
+dhcp-option=eth0.30,3,10.0.1.129
+dhcp-option=eth0.30,6,8.8.8.8
+EOF
+systemctl restart dnsmasq</code></pre>
+<h3 id="validar">Validar</h3>
+<pre class="highlight"><code class="language-bash">ip a
+ip route
+ping 10.0.0.1
+ping 8.8.8.8
+nslookup google.com</code></pre>
+<h2 id="157-red-empresarial-completa">15.7 Red Empresarial Completa</h2>
+<h3 id="vrrp-redundancia-de-gateway">VRRP (redundancia de gateway)</h3>
+<p><strong>Router 1 (MASTER):</strong>
+<pre class="highlight"><code>vrrp_instance LAN10 {
+    state MASTER
+    interface eth0.10
+    virtual_router_id 10
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass SecurePass2024
+    }
+    virtual_ipaddress {
+        10.0.0.1/24
+    }
+}</code></pre></p>
+<p><strong>Router 2 (BACKUP):</strong>
+<pre class="highlight"><code>vrrp_instance LAN10 {
+    state BACKUP
+    interface eth0.10
+    virtual_router_id 10
+    priority 90
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass SecurePass2024
+    }
+    virtual_ipaddress {
+        10.0.0.1/24
+    }
+}</code></pre></p>
+<h2 id="158-troubleshooting-real">15.8 Troubleshooting Real</h2>
+<h3 id="caso-degradacion-por-mtu-en-ipsec">Caso: Degradación por MTU en IPsec</h3>
+<pre class="highlight"><code class="language-bash">ping -M do -s 1472 -c 2 10.10.1.100
+ping -M do -s 1410 -c 2 10.10.1.100
+sudo tcpdump -i eth0 host 10.10.1.100 and port 445 -w captura.pcap
+sudo iptables -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1360</code></pre>
+<h3 id="caso-agotamiento-de-tabla-arp">Caso: Agotamiento de tabla ARP</h3>
+<pre class="highlight"><code class="language-bash">dmesg | grep neighbour
+ip neigh show | wc -l
+sysctl net.ipv4.neigh.default.gc_thresh3
+sysctl -w net.ipv4.neigh.default.gc_thresh3=8192
+sysctl -w net.ipv4.neigh.default.gc_thresh2=4096
+echo 'net.ipv4.neigh.default.gc_thresh3=8192' &gt;&gt; /etc/sysctl.conf
+echo 'net.ipv4.neigh.default.gc_thresh2=4096' &gt;&gt; /etc/sysctl.conf
+sysctl -p</code></pre>
+<h3 id="script-de-verificacion-arp">Script de verificación ARP</h3>
+<pre class="highlight"><code class="language-bash">cat &gt; /usr/local/bin/check_arp.sh &lt;&lt; 'EOF'
+#!/bin/bash
+THRESHOLD=7000
+CURRENT=$(ip neigh show | wc -l)
+if [ $CURRENT -gt $THRESHOLD ]; then
+    echo "WARNING: ARP table usage high: $CURRENT entries"
+fi
+EOF
+chmod +x /usr/local/bin/check_arp.sh</code></pre>
+<h2 id="conceptos-clave">Conceptos clave</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Aplicación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Configuración básica</td>
+<td>Conectividad IP y NAT</td>
+</tr>
+<tr>
+<td>Subnetting</td>
+<td>VLSM para segmentación</td>
+</tr>
+<tr>
+<td>VLAN</td>
+<td>Segmentación lógica</td>
+</tr>
+<tr>
+<td>Routing</td>
+<td>Rutas estáticas y OSPF</td>
+</tr>
+<tr>
+<td>Firewall</td>
+<td>nftables para seguridad</td>
+</tr>
+<tr>
+<td>DHCP</td>
+<td>Asignación automática de IP</td>
+</tr>
+<tr>
+<td>VRRP</td>
+<td>Redundancia de gateway</td>
+</tr>
+<tr>
+<td>Troubleshooting</td>
+<td>MTU y ARP</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusiones">Conclusiones</h2>
+<p>Este laboratorio integra todos los conceptos vistos: direccionamiento IP, VLAN, routing, firewall, servicios y troubleshooting. La implementación práctica de una red empresarial completa requiere planificación, documentación y verificación continua.</p>
+<hr/>
+<p><strong>¡Laboratorio 15 completado!</strong> Has construido una red empresarial funcional desde cero.</p>
+</div>
+<div class="col-md-3">
+<div class="bs-sidebar hidden-print affix well" role="complementary">
+<ul class="nav bs-sidenav">
+<li class="main active"><a href="#laboratorio-15-implementacion-practica-integral">Laboratorio 15 – Implementación Práctica Integral</a></li>
+<li><a href="#contexto-empresarial">Contexto empresarial</a></li>
+<li><a href="#topologia">Topología</a></li>
+<li><a href="#151-configuracion-de-red-basica">15.1 Configuración de Red Básica</a></li>
+<li><a href="#152-subnetting-aplicado">15.2 Subnetting Aplicado</a></li>
+<li><a href="#153-vlan">15.3 VLAN</a></li>
+<li><a href="#154-routing-entre-redes">15.4 Routing entre Redes</a></li>
+<li><a href="#155-firewall">15.5 Firewall</a></li>
+<li><a href="#156-red-parcial-integrada">15.6 Red Parcial Integrada</a></li>
+<li><a href="#157-red-empresarial-completa">15.7 Red Empresarial Completa</a></li>
+<li><a href="#158-troubleshooting-real">15.8 Troubleshooting Real</a></li>
+<li><a href="#conceptos-clave">Conceptos clave</a></li>
+<li><a href="#conclusiones">Conclusiones</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="footer">
+<hr/>
+</footer>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/bootstrap.min.js"></script>
+<script src="../../js/base.js"></script>
+<script src="../../search/main.js"></script>
+<script>
+        (function() {
+            const body = document.body;
+            const toggleBtn = document.getElementById('themeToggle');
+            const toggleIcon = toggleBtn ? toggleBtn.querySelector('i') : null;
+            const toggleText = toggleBtn ? toggleBtn.querySelector('.toggle-text') : null;
+
+            const savedTheme = localStorage.getItem('mkdocs-cluster-theme');
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                if (toggleText) toggleText.textContent = 'Claro';
+            } else {
+                body.classList.remove('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                if (toggleText) toggleText.textContent = 'Oscuro';
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    if (body.classList.contains('dark-mode')) {
+                        body.classList.remove('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'light');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                        if (toggleText) toggleText.textContent = 'Oscuro';
+                    } else {
+                        body.classList.add('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'dark');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                        if (toggleText) toggleText.textContent = 'Claro';
+                    }
+                });
+            }
+        })();
+        </script>
+<script type="module">import mermaid from "https://unpkg.com/mermaid@10.6.1/dist/mermaid.esm.min.mjs";
+mermaid.initialize({
+    theme: "default",
+    securityLevel: "loose"
+});</script></body>
+</html>

@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="Laboratorios de redes desde cero" name="description"/>
+<meta content="Guillermo Castillo" name="author"/>
+<link href="../../img/favicon.ico" rel="shortcut icon"/>
+<title>04 - Direccionamiento IP y Subredes - Networking Lab – Manual de Implementación Profesional</title>
+<link href="../../css/bootstrap.min.css" rel="stylesheet"/>
+<link href="../../css/font-awesome.min.css" rel="stylesheet"/>
+<link href="../../css/base.css" rel="stylesheet"/>
+<link href="../../css/extra.css" rel="stylesheet"/>
+<!-- HTML5 shim and Respond.js IE8 support -->
+<!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+</head>
+<body>
+<!-- Checkbox oculto para controlar el menú -->
+<input class="sidebar-checkbox" id="sidebar-checkbox" type="checkbox"/>
+<!-- Sidebar izquierda -->
+<div class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<img alt="Logo" class="sidebar-logo" src="../../img/logo.png"/>
+<h3 class="sidebar-title">Networking Lab – Manual de Implementación Profesional</h3>
+<button class="theme-toggle btn btn-sm btn-default" id="themeToggle" title="Cambiar tema claro/oscuro">
+<i class="fa fa-moon-o"></i> <span class="toggle-text">Oscuro</span>
+</button>
+</div>
+<ul class="nav sidebar-nav" id="sidebar-nav">
+<li>
+<a href="../..">Inicio</a>
+</li>
+<li class="dropdown-submenu active">
+<a class="dropdown-toggle" data-toggle="dropdown" href="#">Laboratorios <span class="caret"></span></a>
+<ul class="dropdown-menu">
+<li>
+<a href="../lab-01/">01 - Fundamentos de Redes y Encapsulación</a>
+</li>
+<li>
+<a href="../lab-02/">02 - Transmisión de Datos y Capa Física</a>
+</li>
+<li>
+<a href="../lab-03/">03 - Componentes de Red y Conmutación</a>
+</li>
+<li class="active">
+<a href="./">04 - Direccionamiento IP y Subredes</a>
+</li>
+<li>
+<a href="../lab-05/">05 - Conmutación y VLANs</a>
+</li>
+<li>
+<a href="../lab-06/">06 - Enrutamiento y Conectividad entre Redes</a>
+</li>
+<li>
+<a href="../lab-07/">07 - Protocolos y Servicios de Red</a>
+</li>
+<li>
+<a href="../lab-08/">08 - Seguridad en Redes</a>
+</li>
+<li>
+<a href="../lab-09/">09 - VPN y Tunelización</a>
+</li>
+<li>
+<a href="../lab-10/">10 - Infraestructura WAN y Core</a>
+</li>
+<li>
+<a href="../lab-11/">11 - Arquitectura de Red Empresarial</a>
+</li>
+<li>
+<a href="../lab-12/">12 - Arquitecturas Modernas de Red</a>
+</li>
+<li>
+<a href="../lab-13/">13 - Monitoreo y Diagnóstico de Redes</a>
+</li>
+<li>
+<a href="../lab-14/">14 - Herramientas Linux Avanzadas</a>
+</li>
+<li>
+<a href="../lab-15/">15 - Implementación Práctica Integral</a>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<!-- Botón hamburguesa (etiqueta para el checkbox) -->
+<label class="sidebar-toggle" for="sidebar-checkbox" id="sidebarToggle">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</label>
+<div class="wrapper">
+<div class="main-content" id="mainContent">
+<div class="row">
+<div class="col-md-9" role="main">
+<h1 id="laboratorio-04-direccionamiento-ip-y-subredes">Laboratorio 04 – Direccionamiento IP y Subredes</h1>
+<h2 id="contexto-empresarial">Contexto empresarial</h2>
+<p>La empresa <strong>Networking SecOps</strong> ha seguido creciendo. Ahora cuenta con <strong>dos departamentos</strong> con necesidades de red independientes:</p>
+<ul>
+<li><strong>Ventas</strong>: 10 empleados que necesitan acceso a Internet y a un servidor interno.</li>
+<li><strong>IT/Sistemas</strong>: 6 empleados que administran servidores y necesitan acceso restringido.</li>
+</ul>
+<p>La red actual (todos los clientes en una sola subred <code>10.0.1.0/24</code>) ya no es suficiente. Se necesita <strong>segmentar la red</strong> en subredes separadas para:</p>
+<ul>
+<li>Aislar el tráfico entre departamentos.</li>
+<li>Aplicar políticas de seguridad diferentes.</li>
+<li>Mejorar el rendimiento reduciendo dominios de broadcast.</li>
+<li>Optimizar el uso del espacio de direcciones.</li>
+</ul>
+<h2 id="problema-inicial">Problema inicial</h2>
+<ul>
+<li>Todos los clientes están en la misma subred <code>10.0.1.0/24</code>.</li>
+<li>Se necesitan <strong>dos subredes</strong>: una para Ventas y otra para IT.</li>
+<li>El router debe encaminar el tráfico entre subredes.</li>
+<li>Se debe implementar <strong>VLSM</strong> para optimizar el uso de direcciones.</li>
+</ul>
+<h2 id="objetivos-del-laboratorio">Objetivos del laboratorio</h2>
+<ol>
+<li>Comprender la estructura de las direcciones IPv4 (32 bits).</li>
+<li>Aplicar <strong>subnetting</strong> para dividir una red en subredes más pequeñas.</li>
+<li>Implementar <strong>VLSM</strong> (Variable Length Subnet Mask) para optimizar direcciones.</li>
+<li>Configurar <strong>subinterfaces</strong> en el router para soportar múltiples subredes.</li>
+<li>Verificar la comunicación entre subredes mediante enrutamiento.</li>
+<li>Analizar la relación Red-Subred-Host.</li>
+</ol>
+<h2 id="herramientas-necesarias">Herramientas necesarias</h2>
+<ul>
+<li>Linux con privilegios de superusuario.</li>
+<li>Comandos: <code>ip</code>, <code>ping</code>, <code>tcpdump</code>, <code>ipcalc</code> (opcional).</li>
+<li>Conocimientos de subnetting y notación CIDR.</li>
+</ul>
+<h2 id="diseno-de-subredes">Diseño de subredes</h2>
+<p><strong>Red base:</strong> <code>10.0.0.0/24</code> (para simplificar, aunque en producción sería una red privada /24).</p>
+<p><strong>Requisitos:</strong>
+-   Subred 1: Ventas → 10 hosts (mínimo /28 → 14 hosts útiles).
+-   Subred 2: IT → 6 hosts (mínimo /29 → 6 hosts útiles).
+-   Subred 3: Enlace router-switch → 2 hosts (mínimo /30 → 2 hosts útiles).</p>
+<p><strong>Cálculo VLSM:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Subred</th>
+<th>Hosts Necesarios</th>
+<th>Máscara</th>
+<th>Tamaño del Bloque</th>
+<th>Dirección de Red</th>
+<th>Rango de Hosts</th>
+<th>Broadcast</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ventas</td>
+<td>10</td>
+<td>/28</td>
+<td>16</td>
+<td>10.0.0.0/28</td>
+<td>10.0.0.1 - 10.0.0.14</td>
+<td>10.0.0.15</td>
+</tr>
+<tr>
+<td>IT</td>
+<td>6</td>
+<td>/29</td>
+<td>8</td>
+<td>10.0.0.16/29</td>
+<td>10.0.0.17 - 10.0.0.22</td>
+<td>10.0.0.23</td>
+</tr>
+<tr>
+<td>Enlace Router-Switch</td>
+<td>2</td>
+<td>/30</td>
+<td>4</td>
+<td>10.0.0.24/30</td>
+<td>10.0.0.25 - 10.0.0.26</td>
+<td>10.0.0.27</td>
+</tr>
+</tbody>
+</table>
+<h2 id="topologia">Topología</h2>
+<div class="mermaid">graph TB
+    V1[Ventas 1 10.0.0.1/28]
+    V2[Ventas 2 10.0.0.2/28]
+    V3[Ventas 3 10.0.0.3/28]
+    I1[IT 1 10.0.0.17/29]
+    I2[IT 2 10.0.0.18/29]
+    I3[IT 3 10.0.0.19/29]
+    R[Router 10.0.0.25/30]
+    SW[Switch 10.0.0.26/30]
+    Internet((Internet))
+    V1 --- SW
+    V2 --- SW
+    V3 --- SW
+    I1 --- SW
+    I2 --- SW
+    I3 --- SW
+    SW --- R
+    R --- Internet</div>
+<p><strong>Nota sobre la topología:</strong> En esta implementación, el switch es un bridge en Linux que opera en capa 2. Los clientes en diferentes subredes están conectados al mismo switch físico (bridge), pero <strong>no pueden comunicarse directamente</strong> porque están en diferentes subredes. La comunicación entre subredes debe pasar por el router.</p>
+<h2 id="construccion-de-la-red">Construcción de la red</h2>
+<h3 id="paso-1-verificar-el-estado-actual">Paso 1: Verificar el estado actual</h3>
+<p>Asegurémonos de que los laboratorios anteriores están funcionando:</p>
+<pre class="highlight"><code class="language-bash"># Verificar namespaces
+ip netns list
+
+# Verificar conectividad
+ip netns exec cliente1 ping -c 2 10.0.1.3</code></pre>
+<p>Si los namespaces existen, los eliminaremos para empezar desde cero con el nuevo diseño.</p>
+<h3 id="paso-2-limpiar-configuracion-anterior">Paso 2: Limpiar configuración anterior</h3>
+<pre class="highlight"><code class="language-bash"># Eliminar namespaces anteriores (si existen)
+ip netns del cliente1 2&gt;/dev/null || true
+ip netns del cliente2 2&gt;/dev/null || true
+ip netns del cliente3 2&gt;/dev/null || true
+ip netns del cliente4 2&gt;/dev/null || true
+ip netns del router 2&gt;/dev/null || true
+ip netns del switch 2&gt;/dev/null || true
+
+# Eliminar interfaces veth residuales (si existen)
+ip link del veth-c1 2&gt;/dev/null || true
+ip link del veth-c2 2&gt;/dev/null || true
+ip link del veth-c3 2&gt;/dev/null || true
+ip link del veth-c4 2&gt;/dev/null || true
+ip link del veth-sr 2&gt;/dev/null || true
+ip link del veth-host 2&gt;/dev/null || true</code></pre>
+<h3 id="paso-3-crear-namespaces">Paso 3: Crear namespaces</h3>
+<pre class="highlight"><code class="language-bash"># Router
+ip netns add router
+
+# Switch (bridge)
+ip netns add switch
+
+# Clientes del departamento Ventas (3 para demostración)
+ip netns add ventas1
+ip netns add ventas2
+ip netns add ventas3
+
+# Clientes del departamento IT (3 para demostración)
+ip netns add it1
+ip netns add it2
+ip netns add it3</code></pre>
+<h3 id="paso-4-crear-el-bridge-en-el-switch">Paso 4: Crear el bridge en el switch</h3>
+<pre class="highlight"><code class="language-bash"># Crear bridge
+ip netns exec switch ip link add br0 type bridge
+ip netns exec switch ip link set br0 up</code></pre>
+<h3 id="paso-5-conectar-clientes-de-ventas-al-switch">Paso 5: Conectar clientes de Ventas al switch</h3>
+<pre class="highlight"><code class="language-bash"># Ventas 1
+ip link add veth-v1 type veth peer name veth-sv1
+ip link set veth-v1 netns ventas1
+ip link set veth-sv1 netns switch
+ip netns exec ventas1 ip addr add 10.0.0.1/28 dev veth-v1
+ip netns exec ventas1 ip link set veth-v1 up
+ip netns exec ventas1 ip link set lo up
+ip netns exec ventas1 ip route add default via 10.0.0.14
+ip netns exec switch ip link set veth-sv1 master br0
+ip netns exec switch ip link set veth-sv1 up
+
+# Ventas 2
+ip link add veth-v2 type veth peer name veth-sv2
+ip link set veth-v2 netns ventas2
+ip link set veth-sv2 netns switch
+ip netns exec ventas2 ip addr add 10.0.0.2/28 dev veth-v2
+ip netns exec ventas2 ip link set veth-v2 up
+ip netns exec ventas2 ip link set lo up
+ip netns exec ventas2 ip route add default via 10.0.0.14
+ip netns exec switch ip link set veth-sv2 master br0
+ip netns exec switch ip link set veth-sv2 up
+
+# Ventas 3
+ip link add veth-v3 type veth peer name veth-sv3
+ip link set veth-v3 netns ventas3
+ip link set veth-sv3 netns switch
+ip netns exec ventas3 ip addr add 10.0.0.3/28 dev veth-v3
+ip netns exec ventas3 ip link set veth-v3 up
+ip netns exec ventas3 ip link set lo up
+ip netns exec ventas3 ip route add default via 10.0.0.14
+ip netns exec switch ip link set veth-sv3 master br0
+ip netns exec switch ip link set veth-sv3 up</code></pre>
+<h3 id="paso-6-conectar-clientes-de-it-al-switch">Paso 6: Conectar clientes de IT al switch</h3>
+<pre class="highlight"><code class="language-bash"># IT 1
+ip link add veth-i1 type veth peer name veth-si1
+ip link set veth-i1 netns it1
+ip link set veth-si1 netns switch
+ip netns exec it1 ip addr add 10.0.0.17/29 dev veth-i1
+ip netns exec it1 ip link set veth-i1 up
+ip netns exec it1 ip link set lo up
+ip netns exec it1 ip route add default via 10.0.0.22
+ip netns exec switch ip link set veth-si1 master br0
+ip netns exec switch ip link set veth-si1 up
+
+# IT 2
+ip link add veth-i2 type veth peer name veth-si2
+ip link set veth-i2 netns it2
+ip link set veth-si2 netns switch
+ip netns exec it2 ip addr add 10.0.0.18/29 dev veth-i2
+ip netns exec it2 ip link set veth-i2 up
+ip netns exec it2 ip link set lo up
+ip netns exec it2 ip route add default via 10.0.0.22
+ip netns exec switch ip link set veth-si2 master br0
+ip netns exec switch ip link set veth-si2 up
+
+# IT 3
+ip link add veth-i3 type veth peer name veth-si3
+ip link set veth-i3 netns it3
+ip link set veth-si3 netns switch
+ip netns exec it3 ip addr add 10.0.0.19/29 dev veth-i3
+ip netns exec it3 ip link set veth-i3 up
+ip netns exec it3 ip link set lo up
+ip netns exec it3 ip route add default via 10.0.0.22
+ip netns exec switch ip link set veth-si3 master br0
+ip netns exec switch ip link set veth-si3 up</code></pre>
+<h3 id="paso-7-conectar-el-switch-al-router-enlace-30">Paso 7: Conectar el switch al router (enlace /30)</h3>
+<pre class="highlight"><code class="language-bash"># Crear par veth switch-router
+ip link add veth-sr type veth peer name veth-rs
+ip link set veth-sr netns switch
+ip link set veth-rs netns router
+
+# Configurar en el switch
+ip netns exec switch ip addr add 10.0.0.26/30 dev veth-sr
+ip netns exec switch ip link set veth-sr up
+ip netns exec switch ip route add default via 10.0.0.25
+
+# Configurar en el router
+ip netns exec router ip addr add 10.0.0.25/30 dev veth-rs
+ip netns exec router ip link set veth-rs up</code></pre>
+<h3 id="paso-8-configurar-nat-y-enrutamiento-en-el-router">Paso 8: Configurar NAT y enrutamiento en el router</h3>
+<p>El router necesita saber cómo llegar a las subredes de Ventas e IT y tener NAT hacia Internet.</p>
+<pre class="highlight"><code class="language-bash"># Habilitar forwarding
+ip netns exec router sysctl -w net.ipv4.ip_forward=1
+
+# Agregar rutas estáticas hacia las subredes
+# El router usa la IP del switch (10.0.0.26) como gateway
+ip netns exec router ip route add 10.0.0.0/28 via 10.0.0.26
+ip netns exec router ip route add 10.0.0.16/29 via 10.0.0.26
+
+# Configurar NAT (asumiendo que el host tiene una interfaz con Internet)
+# En este laboratorio, simulamos Internet con el host
+ip link add veth-host type veth peer name veth-wan
+ip link set veth-wan netns router
+ip netns exec router ip addr add 192.168.1.2/24 dev veth-wan
+ip netns exec router ip link set veth-wan up
+ip addr add 192.168.1.1/24 dev veth-host
+ip link set veth-host up
+
+# NAT
+ip netns exec router iptables -t nat -A POSTROUTING -o veth-wan -j MASQUERADE
+ip netns exec router iptables -A FORWARD -i veth-rs -o veth-wan -j ACCEPT
+ip netns exec router iptables -A FORWARD -i veth-wan -o veth-rs -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+# Ruta en el host para el retorno
+ip route add 10.0.0.0/24 via 192.168.1.2</code></pre>
+<h3 id="paso-9-verificar-conectividad-dentro-de-la-misma-subred">Paso 9: Verificar conectividad dentro de la misma subred</h3>
+<pre class="highlight"><code class="language-bash"># Ventas 1 a Ventas 2 (misma subred)
+ip netns exec ventas1 ping -c 4 10.0.0.2
+
+# IT 1 a IT 2 (misma subred)
+ip netns exec it1 ping -c 4 10.0.0.18</code></pre>
+<p><strong>Salida esperada:</strong> 0% de pérdida (comunicación directa a través del switch).</p>
+<h3 id="paso-10-verificar-conectividad-entre-subredes">Paso 10: Verificar conectividad entre subredes</h3>
+<pre class="highlight"><code class="language-bash"># Ventas 1 a IT 1 (diferente subred)
+ip netns exec ventas1 ping -c 4 10.0.0.17</code></pre>
+<p><strong>Salida esperada:</strong> 0% de pérdida (el tráfico pasa por el router).</p>
+<h3 id="paso-11-verificar-conectividad-a-internet">Paso 11: Verificar conectividad a Internet</h3>
+<pre class="highlight"><code class="language-bash"># Ventas 1 a Internet
+ip netns exec ventas1 ping -c 4 8.8.8.8
+
+# IT 1 a Internet
+ip netns exec it1 curl -I http://google.com</code></pre>
+<p><strong>Salida esperada:</strong> Respuestas exitosas (NAT funciona).</p>
+<h2 id="observacion-y-analisis">Observación y análisis</h2>
+<h3 id="paso-12-ver-las-tablas-de-enrutamiento">Paso 12: Ver las tablas de enrutamiento</h3>
+<pre class="highlight"><code class="language-bash"># Ruta en Ventas 1
+ip netns exec ventas1 ip route show
+
+# Ruta en el router
+ip netns exec router ip route show</code></pre>
+<p><strong>Análisis:</strong>
+- Los clientes tienen una ruta por defecto hacia su gateway.
+- El router tiene rutas específicas para cada subred.</p>
+<h3 id="paso-13-capturar-trafico-entre-subredes">Paso 13: Capturar tráfico entre subredes</h3>
+<pre class="highlight"><code class="language-bash"># Capturar en el router (interfaz hacia el switch)
+ip netns exec router tcpdump -i veth-rs -n icmp</code></pre>
+<p>En otra terminal:</p>
+<pre class="highlight"><code class="language-bash">ip netns exec ventas1 ping -c 1 10.0.0.17</code></pre>
+<p><strong>Interpretación:</strong>
+1.  El paquete sale de Ventas 1 con origen 10.0.0.1 y destino 10.0.0.17.
+2.  El switch lo recibe y, al ver que el destino no está en la misma subred, lo envía al router (gateway).
+3.  El router recibe el paquete, consulta su tabla de enrutamiento y lo reenvía por la misma interfaz hacia el switch.
+4.  El switch entrega el paquete a IT 1.</p>
+<h2 id="ejercicios-practicos">Ejercicios prácticos</h2>
+<h3 id="ejercicio-1-calcular-subredes-adicionales">Ejercicio 1: Calcular subredes adicionales</h3>
+<p>Si necesitáramos una tercera subred para <strong>Administración</strong> con 4 hosts, ¿qué máscara usarías y qué rango de direcciones asignarías?</p>
+<p><strong>Solución:</strong>
+- 4 hosts → /29 (8 direcciones, 6 hosts útiles).
+- Rango disponible: 10.0.0.28/29.</p>
+<h3 id="ejercicio-2-verificar-la-tabla-arp">Ejercicio 2: Verificar la tabla ARP</h3>
+<pre class="highlight"><code class="language-bash"># Ver tabla ARP en Ventas 1
+ip netns exec ventas1 ip neigh show</code></pre>
+<h3 id="ejercicio-3-agregar-un-nuevo-cliente">Ejercicio 3: Agregar un nuevo cliente</h3>
+<p>Agrega un cuarto cliente al departamento Ventas (10.0.0.4/28) y verifica que puede comunicarse con los demás.</p>
+<pre class="highlight"><code class="language-bash">ip netns add ventas4
+ip link add veth-v4 type veth peer name veth-sv4
+ip link set veth-v4 netns ventas4
+ip link set veth-sv4 netns switch
+ip netns exec ventas4 ip addr add 10.0.0.4/28 dev veth-v4
+ip netns exec ventas4 ip link set veth-v4 up
+ip netns exec ventas4 ip link set lo up
+ip netns exec ventas4 ip route add default via 10.0.0.14
+ip netns exec switch ip link set veth-sv4 master br0
+ip netns exec switch ip link set veth-sv4 up
+ip netns exec ventas4 ping -c 4 10.0.0.1</code></pre>
+<h2 id="errores-comunes-y-soluciones">Errores comunes y soluciones</h2>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>Causa</th>
+<th>Solución</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Clientes en diferentes subredes no pueden hacer ping</td>
+<td>El router no tiene rutas.</td>
+<td>Agregar rutas estáticas en el router.</td>
+</tr>
+<tr>
+<td><code>ping: connect: Network is unreachable</code></td>
+<td>Máscara de subred incorrecta.</td>
+<td>Verificar <code>ip addr show</code> en el cliente.</td>
+</tr>
+<tr>
+<td>No sale a Internet</td>
+<td>NAT no configurado.</td>
+<td>Verificar reglas de iptables y <code>ip_forward=1</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusiones-tecnicas">Conclusiones técnicas</h2>
+<p>En este laboratorio hemos:</p>
+<ol>
+<li><strong>Aplicado subnetting</strong> para dividir una red en subredes más pequeñas.</li>
+<li><strong>Implementado VLSM</strong> para optimizar el uso de direcciones.</li>
+<li><strong>Configurado rutas estáticas</strong> en el router para comunicar subredes.</li>
+<li><strong>Verificado la comunicación entre subredes</strong> a través del router.</li>
+</ol>
+<h2 id="preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio</h2>
+<p>Hemos dejado la red con dos subredes (Ventas e IT) y un enlace /30 al router. En el <strong>Laboratorio 05</strong> implementaremos <strong>VLANs</strong> para segmentar físicamente el tráfico.</p>
+<hr/>
+<p><strong>¡Laboratorio 04 completado!</strong> Continúa con el <strong>Laboratorio 05</strong>.</p>
+</div>
+<div class="col-md-3">
+<div class="bs-sidebar hidden-print affix well" role="complementary">
+<ul class="nav bs-sidenav">
+<li class="main active"><a href="#laboratorio-04-direccionamiento-ip-y-subredes">Laboratorio 04 – Direccionamiento IP y Subredes</a></li>
+<li><a href="#contexto-empresarial">Contexto empresarial</a></li>
+<li><a href="#problema-inicial">Problema inicial</a></li>
+<li><a href="#objetivos-del-laboratorio">Objetivos del laboratorio</a></li>
+<li><a href="#herramientas-necesarias">Herramientas necesarias</a></li>
+<li><a href="#diseno-de-subredes">Diseño de subredes</a></li>
+<li><a href="#topologia">Topología</a></li>
+<li><a href="#construccion-de-la-red">Construcción de la red</a></li>
+<li><a href="#observacion-y-analisis">Observación y análisis</a></li>
+<li><a href="#ejercicios-practicos">Ejercicios prácticos</a></li>
+<li><a href="#errores-comunes-y-soluciones">Errores comunes y soluciones</a></li>
+<li><a href="#conclusiones-tecnicas">Conclusiones técnicas</a></li>
+<li><a href="#preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="footer">
+<hr/>
+</footer>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/bootstrap.min.js"></script>
+<script src="../../js/base.js"></script>
+<script src="../../search/main.js"></script>
+<script>
+        (function() {
+            const body = document.body;
+            const toggleBtn = document.getElementById('themeToggle');
+            const toggleIcon = toggleBtn ? toggleBtn.querySelector('i') : null;
+            const toggleText = toggleBtn ? toggleBtn.querySelector('.toggle-text') : null;
+
+            const savedTheme = localStorage.getItem('mkdocs-cluster-theme');
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                if (toggleText) toggleText.textContent = 'Claro';
+            } else {
+                body.classList.remove('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                if (toggleText) toggleText.textContent = 'Oscuro';
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    if (body.classList.contains('dark-mode')) {
+                        body.classList.remove('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'light');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                        if (toggleText) toggleText.textContent = 'Oscuro';
+                    } else {
+                        body.classList.add('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'dark');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                        if (toggleText) toggleText.textContent = 'Claro';
+                    }
+                });
+            }
+        })();
+        </script>
+<script type="module">import mermaid from "https://unpkg.com/mermaid@10.6.1/dist/mermaid.esm.min.mjs";
+mermaid.initialize({
+    theme: "default",
+    securityLevel: "loose"
+});</script></body>
+</html>

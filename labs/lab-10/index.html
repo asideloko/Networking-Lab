@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="Laboratorios de redes desde cero" name="description"/>
+<meta content="Guillermo Castillo" name="author"/>
+<link href="../../img/favicon.ico" rel="shortcut icon"/>
+<title>10 - Infraestructura WAN y Core - Networking Lab – Manual de Implementación Profesional</title>
+<link href="../../css/bootstrap.min.css" rel="stylesheet"/>
+<link href="../../css/font-awesome.min.css" rel="stylesheet"/>
+<link href="../../css/base.css" rel="stylesheet"/>
+<link href="../../css/extra.css" rel="stylesheet"/>
+<!-- HTML5 shim and Respond.js IE8 support -->
+<!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+</head>
+<body>
+<!-- Checkbox oculto para controlar el menú -->
+<input class="sidebar-checkbox" id="sidebar-checkbox" type="checkbox"/>
+<!-- Sidebar izquierda -->
+<div class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<img alt="Logo" class="sidebar-logo" src="../../img/logo.png"/>
+<h3 class="sidebar-title">Networking Lab – Manual de Implementación Profesional</h3>
+<button class="theme-toggle btn btn-sm btn-default" id="themeToggle" title="Cambiar tema claro/oscuro">
+<i class="fa fa-moon-o"></i> <span class="toggle-text">Oscuro</span>
+</button>
+</div>
+<ul class="nav sidebar-nav" id="sidebar-nav">
+<li>
+<a href="../..">Inicio</a>
+</li>
+<li class="dropdown-submenu active">
+<a class="dropdown-toggle" data-toggle="dropdown" href="#">Laboratorios <span class="caret"></span></a>
+<ul class="dropdown-menu">
+<li>
+<a href="../lab-01/">01 - Fundamentos de Redes y Encapsulación</a>
+</li>
+<li>
+<a href="../lab-02/">02 - Transmisión de Datos y Capa Física</a>
+</li>
+<li>
+<a href="../lab-03/">03 - Componentes de Red y Conmutación</a>
+</li>
+<li>
+<a href="../lab-04/">04 - Direccionamiento IP y Subredes</a>
+</li>
+<li>
+<a href="../lab-05/">05 - Conmutación y VLANs</a>
+</li>
+<li>
+<a href="../lab-06/">06 - Enrutamiento y Conectividad entre Redes</a>
+</li>
+<li>
+<a href="../lab-07/">07 - Protocolos y Servicios de Red</a>
+</li>
+<li>
+<a href="../lab-08/">08 - Seguridad en Redes</a>
+</li>
+<li>
+<a href="../lab-09/">09 - VPN y Tunelización</a>
+</li>
+<li class="active">
+<a href="./">10 - Infraestructura WAN y Core</a>
+</li>
+<li>
+<a href="../lab-11/">11 - Arquitectura de Red Empresarial</a>
+</li>
+<li>
+<a href="../lab-12/">12 - Arquitecturas Modernas de Red</a>
+</li>
+<li>
+<a href="../lab-13/">13 - Monitoreo y Diagnóstico de Redes</a>
+</li>
+<li>
+<a href="../lab-14/">14 - Herramientas Linux Avanzadas</a>
+</li>
+<li>
+<a href="../lab-15/">15 - Implementación Práctica Integral</a>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<!-- Botón hamburguesa (etiqueta para el checkbox) -->
+<label class="sidebar-toggle" for="sidebar-checkbox" id="sidebarToggle">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</label>
+<div class="wrapper">
+<div class="main-content" id="mainContent">
+<div class="row">
+<div class="col-md-9" role="main">
+<h1 id="laboratorio-10-infraestructura-wan-y-core">Laboratorio 10 – Infraestructura WAN y Core</h1>
+<h2 id="contexto-empresarial">Contexto empresarial</h2>
+<p>La empresa <strong>Networking SecOps</strong> ha implementado exitosamente su red con VPN y tunelización (Laboratorio 09). Ahora necesita expandir su infraestructura a nivel geográfico, conectando múltiples sucursales y centros de datos a través de una red WAN robusta y escalable.</p>
+<h2 id="topologia">Topología</h2>
+<div class="mermaid">graph TB
+    R1[Router Core 1]
+    R2[Router Core 2]
+    R3[Router Core 3]
+    P1[P Router 1]
+    P2[P Router 2]
+    P3[P Router 3]
+    LAN1[Red Local 10.0.0.0/24]
+    LAN2[Red Local 10.1.0.0/24]
+    LAN3[Red Local 10.2.0.0/24]
+    R1 --- P1
+    R2 --- P2
+    R3 --- P3
+    LAN1 --- R1
+    LAN2 --- R2
+    LAN3 --- R3
+    P1 --- P2
+    P2 --- P3
+    P1 --- P3
+    R1 --- Internet</div>
+<p><strong>Direccionamiento:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Dispositivo</th>
+<th>Interfaz</th>
+<th>Dirección IP</th>
+<th>Rol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1 (PE)</td>
+<td>eth0 (LAN)</td>
+<td>10.0.0.1/24</td>
+<td>Provider Edge</td>
+</tr>
+<tr>
+<td>R1 (PE)</td>
+<td>eth1 (P1)</td>
+<td>192.168.1.1/30</td>
+<td>MPLS Core</td>
+</tr>
+<tr>
+<td>R2 (PE)</td>
+<td>eth0 (LAN)</td>
+<td>10.1.0.1/24</td>
+<td>Provider Edge</td>
+</tr>
+<tr>
+<td>R2 (PE)</td>
+<td>eth1 (P2)</td>
+<td>192.168.1.5/30</td>
+<td>MPLS Core</td>
+</tr>
+<tr>
+<td>R3 (PE)</td>
+<td>eth0 (LAN)</td>
+<td>10.2.0.1/24</td>
+<td>Provider Edge</td>
+</tr>
+<tr>
+<td>R3 (PE)</td>
+<td>eth1 (P3)</td>
+<td>192.168.1.9/30</td>
+<td>MPLS Core</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>eth0 (R1)</td>
+<td>192.168.1.2/30</td>
+<td>P Router</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>eth1 (P2)</td>
+<td>192.168.1.13/30</td>
+<td>P Router</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>eth2 (P3)</td>
+<td>192.168.1.17/30</td>
+<td>P Router</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>eth0 (R2)</td>
+<td>192.168.1.6/30</td>
+<td>P Router</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>eth1 (P1)</td>
+<td>192.168.1.14/30</td>
+<td>P Router</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>eth2 (P3)</td>
+<td>192.168.1.21/30</td>
+<td>P Router</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>eth0 (R3)</td>
+<td>192.168.1.10/30</td>
+<td>P Router</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>eth1 (P1)</td>
+<td>192.168.1.18/30</td>
+<td>P Router</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>eth2 (P2)</td>
+<td>192.168.1.22/30</td>
+<td>P Router</td>
+</tr>
+</tbody>
+</table>
+<h2 id="construccion-de-la-red">Construcción de la red</h2>
+<h3 id="paso-1-crear-namespaces">Paso 1: Crear namespaces</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns add PE1
+sudo ip netns add PE2
+sudo ip netns add PE3
+sudo ip netns add P1
+sudo ip netns add P2
+sudo ip netns add P3</code></pre>
+<h3 id="paso-2-conectar-pe-a-p">Paso 2: Conectar PE a P</h3>
+<pre class="highlight"><code class="language-bash">sudo ip link add veth-pe1p1 type veth peer name veth-p1pe1
+sudo ip link set veth-pe1p1 netns PE1
+sudo ip link set veth-p1pe1 netns P1
+sudo ip netns exec PE1 ip addr add 192.168.1.1/30 dev veth-pe1p1
+sudo ip netns exec PE1 ip link set veth-pe1p1 up
+sudo ip netns exec P1 ip addr add 192.168.1.2/30 dev veth-p1pe1
+sudo ip netns exec P1 ip link set veth-p1pe1 up
+
+sudo ip link add veth-pe2p2 type veth peer name veth-p2pe2
+sudo ip link set veth-pe2p2 netns PE2
+sudo ip link set veth-p2pe2 netns P2
+sudo ip netns exec PE2 ip addr add 192.168.1.5/30 dev veth-pe2p2
+sudo ip netns exec PE2 ip link set veth-pe2p2 up
+sudo ip netns exec P2 ip addr add 192.168.1.6/30 dev veth-p2pe2
+sudo ip netns exec P2 ip link set veth-p2pe2 up
+
+sudo ip link add veth-pe3p3 type veth peer name veth-p3pe3
+sudo ip link set veth-pe3p3 netns PE3
+sudo ip link set veth-p3pe3 netns P3
+sudo ip netns exec PE3 ip addr add 192.168.1.9/30 dev veth-pe3p3
+sudo ip netns exec PE3 ip link set veth-pe3p3 up
+sudo ip netns exec P3 ip addr add 192.168.1.10/30 dev veth-p3pe3
+sudo ip netns exec P3 ip link set veth-p3pe3 up</code></pre>
+<h3 id="paso-3-conectar-p-routers">Paso 3: Conectar P routers</h3>
+<pre class="highlight"><code class="language-bash">sudo ip link add veth-p1p2 type veth peer name veth-p2p1
+sudo ip link set veth-p1p2 netns P1
+sudo ip link set veth-p2p1 netns P2
+sudo ip netns exec P1 ip addr add 192.168.1.13/30 dev veth-p1p2
+sudo ip netns exec P1 ip link set veth-p1p2 up
+sudo ip netns exec P2 ip addr add 192.168.1.14/30 dev veth-p2p1
+sudo ip netns exec P2 ip link set veth-p2p1 up
+
+sudo ip link add veth-p2p3 type veth peer name veth-p3p2
+sudo ip link set veth-p2p3 netns P2
+sudo ip link set veth-p3p2 netns P3
+sudo ip netns exec P2 ip addr add 192.168.1.21/30 dev veth-p2p3
+sudo ip netns exec P2 ip link set veth-p2p3 up
+sudo ip netns exec P3 ip addr add 192.168.1.22/30 dev veth-p3p2
+sudo ip netns exec P3 ip link set veth-p3p2 up
+
+sudo ip link add veth-p1p3 type veth peer name veth-p3p1
+sudo ip link set veth-p1p3 netns P1
+sudo ip link set veth-p3p1 netns P3
+sudo ip netns exec P1 ip addr add 192.168.1.17/30 dev veth-p1p3
+sudo ip netns exec P1 ip link set veth-p1p3 up
+sudo ip netns exec P3 ip addr add 192.168.1.18/30 dev veth-p3p1
+sudo ip netns exec P3 ip link set veth-p3p1 up</code></pre>
+<h3 id="paso-4-configurar-redes-locales">Paso 4: Configurar redes locales</h3>
+<pre class="highlight"><code class="language-bash">sudo ip link add veth-pe1lan type veth peer name veth-lanpe1
+sudo ip link set veth-pe1lan netns PE1
+sudo ip netns exec PE1 ip addr add 10.0.0.1/24 dev veth-pe1lan
+sudo ip netns exec PE1 ip link set veth-pe1lan up
+
+sudo ip link add veth-pe2lan type veth peer name veth-lanpe2
+sudo ip link set veth-pe2lan netns PE2
+sudo ip netns exec PE2 ip addr add 10.1.0.1/24 dev veth-pe2lan
+sudo ip netns exec PE2 ip link set veth-pe2lan up
+
+sudo ip link add veth-pe3lan type veth peer name veth-lanpe3
+sudo ip link set veth-pe3lan netns PE3
+sudo ip netns exec PE3 ip addr add 10.2.0.1/24 dev veth-pe3lan
+sudo ip netns exec PE3 ip link set veth-pe3lan up</code></pre>
+<h3 id="paso-5-configurar-enrutamiento">Paso 5: Configurar enrutamiento</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec P1 ip route add 192.168.1.4/30 via 192.168.1.14
+sudo ip netns exec P1 ip route add 192.168.1.8/30 via 192.168.1.18
+sudo ip netns exec P1 ip route add 10.0.0.0/24 via 192.168.1.1
+sudo ip netns exec P1 ip route add 10.1.0.0/24 via 192.168.1.14
+sudo ip netns exec P1 ip route add 10.2.0.0/24 via 192.168.1.18
+
+sudo ip netns exec P2 ip route add 192.168.1.0/30 via 192.168.1.13
+sudo ip netns exec P2 ip route add 192.168.1.8/30 via 192.168.1.22
+sudo ip netns exec P2 ip route add 10.0.0.0/24 via 192.168.1.13
+sudo ip netns exec P2 ip route add 10.1.0.0/24 via 192.168.1.5
+sudo ip netns exec P2 ip route add 10.2.0.0/24 via 192.168.1.22
+
+sudo ip netns exec P3 ip route add 192.168.1.0/30 via 192.168.1.17
+sudo ip netns exec P3 ip route add 192.168.1.4/30 via 192.168.1.22
+sudo ip netns exec P3 ip route add 10.0.0.0/24 via 192.168.1.17
+sudo ip netns exec P3 ip route add 10.1.0.0/24 via 192.168.1.22
+sudo ip netns exec P3 ip route add 10.2.0.0/24 via 192.168.1.9</code></pre>
+<h3 id="paso-6-verificar-conectividad">Paso 6: Verificar conectividad</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec PE1 ping -c 4 192.168.1.5
+sudo ip netns exec PE1 ping -c 4 10.1.0.1
+sudo ip netns exec PE1 ping -c 4 10.2.0.1</code></pre>
+<h2 id="analisis-mpls">Análisis MPLS</h2>
+<p>MPLS utiliza etiquetas para el reenvío. El flujo es:</p>
+<ol>
+<li><strong>Push</strong>: PE1 añade etiqueta al paquete.</li>
+<li><strong>Swap</strong>: P routers intercambian etiquetas.</li>
+<li><strong>Pop</strong>: PE3 elimina etiqueta y entrega.</li>
+</ol>
+<h2 id="comparacion-mpls-vs-sd-wan">Comparación MPLS vs SD-WAN</h2>
+<table>
+<thead>
+<tr>
+<th>Característica</th>
+<th>MPLS</th>
+<th>SD-WAN</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Control</td>
+<td>Distribuido</td>
+<td>Centralizado</td>
+</tr>
+<tr>
+<td>Transporte</td>
+<td>Circuitos privados</td>
+<td>Múltiples enlaces</td>
+</tr>
+<tr>
+<td>QoS</td>
+<td>Garantizada</td>
+<td>Best-effort</td>
+</tr>
+<tr>
+<td>Costo</td>
+<td>Alto</td>
+<td>Bajo</td>
+</tr>
+<tr>
+<td>Agilidad</td>
+<td>Baja</td>
+<td>Alta</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ejercicios">Ejercicios</h2>
+<h3 id="ejercicio-1-simular-fallo">Ejercicio 1: Simular fallo</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec P1 ip link set veth-p1p2 down
+sudo ip netns exec PE1 ping -c 4 10.2.0.1</code></pre>
+<h3 id="ejercicio-2-balanceo-ecmp">Ejercicio 2: Balanceo ECMP</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec P1 ip route del 10.2.0.0/24
+sudo ip netns exec P1 ip route add 10.2.0.0/24 via 192.168.1.18
+sudo ip netns exec P1 ip route add 10.2.0.0/24 via 192.168.1.14</code></pre>
+<h2 id="conceptos-clave">Conceptos clave</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Aplicación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MPLS</td>
+<td>Backbone con etiquetas</td>
+</tr>
+<tr>
+<td>SD-WAN</td>
+<td>Optimización multi-enlace</td>
+</tr>
+<tr>
+<td>Backbone</td>
+<td>Red troncal con P y PE</td>
+</tr>
+<tr>
+<td>Peering</td>
+<td>Intercambio directo entre AS</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusiones">Conclusiones</h2>
+<p>MPLS proporciona QoS garantizada. SD-WAN ofrece flexibilidad y reducción de costos. Las arquitecturas híbridas aprovechan lo mejor de ambos mundos.</p>
+<hr/>
+<p><strong>¡Laboratorio 10 completado!</strong> Continúa con el <strong>Laboratorio 11</strong>.</p>
+</div>
+<div class="col-md-3">
+<div class="bs-sidebar hidden-print affix well" role="complementary">
+<ul class="nav bs-sidenav">
+<li class="main active"><a href="#laboratorio-10-infraestructura-wan-y-core">Laboratorio 10 – Infraestructura WAN y Core</a></li>
+<li><a href="#contexto-empresarial">Contexto empresarial</a></li>
+<li><a href="#topologia">Topología</a></li>
+<li><a href="#construccion-de-la-red">Construcción de la red</a></li>
+<li><a href="#analisis-mpls">Análisis MPLS</a></li>
+<li><a href="#comparacion-mpls-vs-sd-wan">Comparación MPLS vs SD-WAN</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#conceptos-clave">Conceptos clave</a></li>
+<li><a href="#conclusiones">Conclusiones</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="footer">
+<hr/>
+</footer>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/bootstrap.min.js"></script>
+<script src="../../js/base.js"></script>
+<script src="../../search/main.js"></script>
+<script>
+        (function() {
+            const body = document.body;
+            const toggleBtn = document.getElementById('themeToggle');
+            const toggleIcon = toggleBtn ? toggleBtn.querySelector('i') : null;
+            const toggleText = toggleBtn ? toggleBtn.querySelector('.toggle-text') : null;
+
+            const savedTheme = localStorage.getItem('mkdocs-cluster-theme');
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                if (toggleText) toggleText.textContent = 'Claro';
+            } else {
+                body.classList.remove('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                if (toggleText) toggleText.textContent = 'Oscuro';
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    if (body.classList.contains('dark-mode')) {
+                        body.classList.remove('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'light');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                        if (toggleText) toggleText.textContent = 'Oscuro';
+                    } else {
+                        body.classList.add('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'dark');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                        if (toggleText) toggleText.textContent = 'Claro';
+                    }
+                });
+            }
+        })();
+        </script>
+<script type="module">import mermaid from "https://unpkg.com/mermaid@10.6.1/dist/mermaid.esm.min.mjs";
+mermaid.initialize({
+    theme: "default",
+    securityLevel: "loose"
+});</script></body>
+</html>

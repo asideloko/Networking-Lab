@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="Laboratorios de redes desde cero" name="description"/>
+<meta content="Guillermo Castillo" name="author"/>
+<link href="../../img/favicon.ico" rel="shortcut icon"/>
+<title>03 - Componentes de Red y Conmutación - Networking Lab – Manual de Implementación Profesional</title>
+<link href="../../css/bootstrap.min.css" rel="stylesheet"/>
+<link href="../../css/font-awesome.min.css" rel="stylesheet"/>
+<link href="../../css/base.css" rel="stylesheet"/>
+<link href="../../css/extra.css" rel="stylesheet"/>
+<!-- HTML5 shim and Respond.js IE8 support -->
+<!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+</head>
+<body>
+<!-- Checkbox oculto para controlar el menú -->
+<input class="sidebar-checkbox" id="sidebar-checkbox" type="checkbox"/>
+<!-- Sidebar izquierda -->
+<div class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<img alt="Logo" class="sidebar-logo" src="../../img/logo.png"/>
+<h3 class="sidebar-title">Networking Lab – Manual de Implementación Profesional</h3>
+<button class="theme-toggle btn btn-sm btn-default" id="themeToggle" title="Cambiar tema claro/oscuro">
+<i class="fa fa-moon-o"></i> <span class="toggle-text">Oscuro</span>
+</button>
+</div>
+<ul class="nav sidebar-nav" id="sidebar-nav">
+<li>
+<a href="../..">Inicio</a>
+</li>
+<li class="dropdown-submenu active">
+<a class="dropdown-toggle" data-toggle="dropdown" href="#">Laboratorios <span class="caret"></span></a>
+<ul class="dropdown-menu">
+<li>
+<a href="../lab-01/">01 - Fundamentos de Redes y Encapsulación</a>
+</li>
+<li>
+<a href="../lab-02/">02 - Transmisión de Datos y Capa Física</a>
+</li>
+<li class="active">
+<a href="./">03 - Componentes de Red y Conmutación</a>
+</li>
+<li>
+<a href="../lab-04/">04 - Direccionamiento IP y Subredes</a>
+</li>
+<li>
+<a href="../lab-05/">05 - Conmutación y VLANs</a>
+</li>
+<li>
+<a href="../lab-06/">06 - Enrutamiento y Conectividad entre Redes</a>
+</li>
+<li>
+<a href="../lab-07/">07 - Protocolos y Servicios de Red</a>
+</li>
+<li>
+<a href="../lab-08/">08 - Seguridad en Redes</a>
+</li>
+<li>
+<a href="../lab-09/">09 - VPN y Tunelización</a>
+</li>
+<li>
+<a href="../lab-10/">10 - Infraestructura WAN y Core</a>
+</li>
+<li>
+<a href="../lab-11/">11 - Arquitectura de Red Empresarial</a>
+</li>
+<li>
+<a href="../lab-12/">12 - Arquitecturas Modernas de Red</a>
+</li>
+<li>
+<a href="../lab-13/">13 - Monitoreo y Diagnóstico de Redes</a>
+</li>
+<li>
+<a href="../lab-14/">14 - Herramientas Linux Avanzadas</a>
+</li>
+<li>
+<a href="../lab-15/">15 - Implementación Práctica Integral</a>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<!-- Botón hamburguesa (etiqueta para el checkbox) -->
+<label class="sidebar-toggle" for="sidebar-checkbox" id="sidebarToggle">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</label>
+<div class="wrapper">
+<div class="main-content" id="mainContent">
+<div class="row">
+<div class="col-md-9" role="main">
+<h1 id="laboratorio-03-componentes-de-red-y-conmutacion">Laboratorio 03 – Componentes de Red y Conmutación</h1>
+<h2 id="contexto-empresarial">Contexto empresarial</h2>
+<p>La empresa <strong>Networking SecOps</strong> ha crecido. Ahora hay <strong>4 empleados</strong> en la oficina, cada uno con su propio equipo. La red actual (Cliente 1 y Cliente 2 conectados directamente al router) ya no es suficiente. Se necesita una <strong>infraestructura más organizada</strong> que permita conectar múltiples dispositivos de forma escalable y eficiente.</p>
+<p>El equipo de TI ha decidido implementar un <strong>switch</strong> para centralizar las conexiones de los clientes, y así: </p>
+<ul>
+<li>Reducir el tráfico innecesario en el router.</li>
+<li>Permitir la comunicación directa entre clientes sin pasar por el router.</li>
+<li>Facilitar la expansión futura (más clientes, VLANs, etc.).</li>
+</ul>
+<p>Además, se debe <strong>documentar el funcionamiento del switch</strong>: cómo aprende direcciones MAC, cómo reenvía tramas y cómo segmenta el tráfico.</p>
+<h2 id="problema-inicial">Problema inicial</h2>
+<ul>
+<li>La red actual tiene solo 2 clientes conectados directamente al router vía bridge.</li>
+<li>Se necesita conectar <strong>4 clientes</strong> (Cliente 1, 2, 3 y 4).</li>
+<li>El router debe mantener su función de enrutamiento y NAT hacia Internet.</li>
+<li>Se debe implementar un <strong>switch</strong> (bridge en Linux) que interconecte a todos los clientes.</li>
+</ul>
+<h2 id="objetivos-del-laboratorio">Objetivos del laboratorio</h2>
+<ol>
+<li>Comprender la función de los <strong>dispositivos finales</strong> (hosts) y <strong>dispositivos intermedios</strong> (switch, router).</li>
+<li>Implementar un <strong>switch</strong> en Linux usando un bridge.</li>
+<li>Conectar <strong>4 clientes</strong> al switch y verificar su comunicación.</li>
+<li>Observar el <strong>aprendizaje de direcciones MAC</strong> en el switch.</li>
+<li>Analizar el <strong>flujo de datos</strong> en una red conmutada.</li>
+<li>Comprender el concepto de <strong>MTU</strong> y su impacto en la transmisión.</li>
+</ol>
+<h2 id="herramientas-necesarias">Herramientas necesarias</h2>
+<ul>
+<li>Linux con privilegios de superusuario.</li>
+<li>Comandos: <code>ip</code>, <code>ping</code>, <code>tcpdump</code>, <code>bridge</code>, <code>ethtool</code>.</li>
+<li>Conocimientos básicos de direccionamiento MAC e IP.</li>
+</ul>
+<h2 id="topologia">Topología</h2>
+<div class="mermaid">graph TB
+    C1[Cliente 1 10.0.1.2/24]
+    C2[Cliente 2 10.0.1.3/24]
+    C3[Cliente 3 10.0.1.4/24]
+    C4[Cliente 4 10.0.1.5/24]
+    SW[Switch Bridge]
+    R[Router 10.0.1.1/24]
+    ISP[Proveedor Internet]
+    C1 --- SW
+    C2 --- SW
+    C3 --- SW
+    C4 --- SW
+    SW --- R
+    R --- ISP</div>
+<p><strong>Direccionamiento:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Dispositivo</th>
+<th>Interfaz</th>
+<th>Dirección IP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cliente 1</td>
+<td>veth0</td>
+<td>10.0.1.2/24</td>
+</tr>
+<tr>
+<td>Cliente 2</td>
+<td>veth0</td>
+<td>10.0.1.3/24</td>
+</tr>
+<tr>
+<td>Cliente 3</td>
+<td>veth0</td>
+<td>10.0.1.4/24</td>
+</tr>
+<tr>
+<td>Cliente 4</td>
+<td>veth0</td>
+<td>10.0.1.5/24</td>
+</tr>
+<tr>
+<td>Switch</td>
+<td>br0</td>
+<td>- (capa 2)</td>
+</tr>
+<tr>
+<td>Router (LAN)</td>
+<td>br0</td>
+<td>10.0.1.1/24</td>
+</tr>
+<tr>
+<td>Router (WAN)</td>
+<td>veth-wan</td>
+<td>192.168.1.2/24</td>
+</tr>
+</tbody>
+</table>
+<h2 id="construccion-de-la-red">Construcción de la red</h2>
+<h3 id="paso-1-verificar-el-estado-actual">Paso 1: Verificar el estado actual</h3>
+<p>Asegurémonos de que el laboratorio 02 está funcionando:</p>
+<pre class="highlight"><code class="language-bash"># Verificar namespaces
+ip netns list
+
+# Verificar conectividad a Internet
+ip netns exec cliente1 ping -c 2 8.8.8.8</code></pre>
+<p>Si no existen los namespaces, ejecuta los comandos de los laboratorios 01 y 02 para crearlos.</p>
+<h3 id="paso-2-eliminar-la-configuracion-anterior-bridge-del-router">Paso 2: Eliminar la configuración anterior (bridge del router)</h3>
+<p>En el laboratorio 01, creamos un bridge <code>br0</code> dentro del router para conectar los clientes. Ahora vamos a mover ese bridge al <strong>namespace del switch</strong>.</p>
+<pre class="highlight"><code class="language-bash"># Eliminar el bridge del router
+ip netns exec router ip link set br0 down
+ip netns exec router ip link delete br0
+
+# Desconectar las interfaces veth del router
+ip netns exec router ip link set veth-r1 down
+ip netns exec router ip link set veth-r2 down
+ip link set veth-r1 netns 1
+ip link set veth-r2 netns 1</code></pre>
+<h3 id="paso-3-crear-el-namespace-del-switch">Paso 3: Crear el namespace del switch</h3>
+<pre class="highlight"><code class="language-bash">ip netns add switch</code></pre>
+<h3 id="paso-4-crear-el-bridge-en-el-switch">Paso 4: Crear el bridge en el switch</h3>
+<pre class="highlight"><code class="language-bash"># Crear bridge en el namespace switch
+ip netns exec switch ip link add br0 type bridge
+ip netns exec switch ip link set br0 up</code></pre>
+<h3 id="paso-5-crear-interfaces-para-los-4-clientes">Paso 5: Crear interfaces para los 4 clientes</h3>
+<pre class="highlight"><code class="language-bash"># Cliente 1
+ip link add veth-c1 type veth peer name veth-s1
+ip link set veth-c1 netns cliente1
+ip link set veth-s1 netns switch
+
+# Cliente 2
+ip link add veth-c2 type veth peer name veth-s2
+ip link set veth-c2 netns cliente2
+ip link set veth-s2 netns switch
+
+# Cliente 3
+ip link add veth-c3 type veth peer name veth-s3
+ip link set veth-c3 netns cliente3
+ip link set veth-s3 netns switch
+
+# Cliente 4
+ip link add veth-c4 type veth peer name veth-s4
+ip link set veth-c4 netns cliente4
+ip link set veth-s4 netns switch</code></pre>
+<h3 id="paso-6-crear-el-namespace-del-cliente-3-y-cliente-4">Paso 6: Crear el namespace del Cliente 3 y Cliente 4</h3>
+<pre class="highlight"><code class="language-bash">ip netns add cliente3
+ip netns add cliente4</code></pre>
+<h3 id="paso-7-configurar-los-clientes">Paso 7: Configurar los clientes</h3>
+<pre class="highlight"><code class="language-bash"># Cliente 1 (ya existente, solo configurar IP si no tiene)
+ip netns exec cliente1 ip addr add 10.0.1.2/24 dev veth-c1 || true
+ip netns exec cliente1 ip link set veth-c1 up
+ip netns exec cliente1 ip link set lo up
+
+# Cliente 2
+ip netns exec cliente2 ip addr add 10.0.1.3/24 dev veth-c2 || true
+ip netns exec cliente2 ip link set veth-c2 up
+ip netns exec cliente2 ip link set lo up
+
+# Cliente 3
+ip netns exec cliente3 ip addr add 10.0.1.4/24 dev veth-c3
+ip netns exec cliente3 ip link set veth-c3 up
+ip netns exec cliente3 ip link set lo up
+ip netns exec cliente3 ip route add default via 10.0.1.1
+
+# Cliente 4
+ip netns exec cliente4 ip addr add 10.0.1.5/24 dev veth-c4
+ip netns exec cliente4 ip link set veth-c4 up
+ip netns exec cliente4 ip link set lo up
+ip netns exec cliente4 ip route add default via 10.0.1.1</code></pre>
+<h3 id="paso-8-conectar-las-interfaces-del-switch-al-bridge">Paso 8: Conectar las interfaces del switch al bridge</h3>
+<pre class="highlight"><code class="language-bash"># En el namespace switch
+ip netns exec switch ip link set veth-s1 master br0
+ip netns exec switch ip link set veth-s2 master br0
+ip netns exec switch ip link set veth-s3 master br0
+ip netns exec switch ip link set veth-s4 master br0
+ip netns exec switch ip link set veth-s1 up
+ip netns exec switch ip link set veth-s2 up
+ip netns exec switch ip link set veth-s3 up
+ip netns exec switch ip link set veth-s4 up</code></pre>
+<h3 id="paso-9-conectar-el-switch-al-router">Paso 9: Conectar el switch al router</h3>
+<p>Necesitamos un enlace entre el switch y el router:</p>
+<pre class="highlight"><code class="language-bash"># Crear par veth switch-router
+ip link add veth-sr type veth peer name veth-rs
+ip link set veth-sr netns switch
+ip link set veth-rs netns router
+
+# Conectar al bridge del switch
+ip netns exec switch ip link set veth-sr master br0
+ip netns exec switch ip link set veth-sr up
+
+# Configurar IP en el router (interfaz hacia el switch)
+ip netns exec router ip addr add 10.0.1.1/24 dev veth-rs
+ip netns exec router ip link set veth-rs up</code></pre>
+<h3 id="paso-10-verificar-conectividad-entre-clientes">Paso 10: Verificar conectividad entre clientes</h3>
+<pre class="highlight"><code class="language-bash"># Cliente 1 a Cliente 3
+ip netns exec cliente1 ping -c 4 10.0.1.4
+
+# Cliente 2 a Cliente 4
+ip netns exec cliente2 ping -c 4 10.0.1.5
+
+# Cliente 3 al router
+ip netns exec cliente3 ping -c 4 10.0.1.1</code></pre>
+<p><strong>Salida esperada:</strong> Todas las pruebas con 0% de pérdida.</p>
+<h3 id="paso-11-verificar-conectividad-a-internet">Paso 11: Verificar conectividad a Internet</h3>
+<pre class="highlight"><code class="language-bash">ip netns exec cliente3 ping -c 4 8.8.8.8
+ip netns exec cliente4 curl -I http://google.com</code></pre>
+<h2 id="observacion-del-funcionamiento-del-switch">Observación del funcionamiento del switch</h2>
+<h3 id="paso-12-ver-la-tabla-de-direcciones-mac-del-switch">Paso 12: Ver la tabla de direcciones MAC del switch</h3>
+<p>El switch aprende las direcciones MAC de los dispositivos conectados:</p>
+<pre class="highlight"><code class="language-bash"># Ver tabla MAC del bridge
+ip netns exec switch bridge fdb show br br0</code></pre>
+<p><strong>Salida esperada:</strong></p>
+<pre class="highlight"><code>aa:bb:cc:00:01 dev veth-s1 master br0
+aa:bb:cc:00:02 dev veth-s2 master br0
+aa:bb:cc:00:03 dev veth-s3 master br0
+aa:bb:cc:00:04 dev veth-s4 master br0
+aa:bb:cc:00:ff dev veth-sr master br0</code></pre>
+<p>Cada dirección MAC está asociada a un puerto específico.</p>
+<h3 id="paso-13-capturar-trafico-en-el-switch">Paso 13: Capturar tráfico en el switch</h3>
+<p>Para observar cómo el switch reenvía tramas, capturamos en todas las interfaces:</p>
+<pre class="highlight"><code class="language-bash"># Capturar en el switch (interfaz br0)
+ip netns exec switch tcpdump -i br0 -n -e icmp</code></pre>
+<p>En otra terminal, enviamos un ping de Cliente 1 a Cliente 3:</p>
+<pre class="highlight"><code class="language-bash">ip netns exec cliente1 ping -c 1 10.0.1.4</code></pre>
+<p><strong>Interpretación de la captura:</strong></p>
+<ol>
+<li>Cliente 1 envía una trama con <strong>MAC origen = aa:bb:cc:00:01</strong> y <strong>MAC destino = aa:bb:cc:00:03</strong>.</li>
+<li>El switch recibe la trama por <code>veth-s1</code>.</li>
+<li>El switch consulta su tabla MAC y encuentra que la MAC destino está en <code>veth-s3</code>.</li>
+<li>El switch reenvía la trama <strong>solo por <code>veth-s3</code></strong> (no por los demás puertos).</li>
+<li>Cliente 3 recibe la trama y responde.</li>
+</ol>
+<p><strong>Esto demuestra la conmutación en capa 2:</strong> el switch aprende y reenvía solo al puerto correcto, reduciendo el tráfico innecesario.</p>
+<h2 id="analisis-de-mtu">Análisis de MTU</h2>
+<h3 id="paso-14-verificar-la-mtu-actual">Paso 14: Verificar la MTU actual</h3>
+<pre class="highlight"><code class="language-bash"># Ver MTU de las interfaces
+ip netns exec cliente1 ip link show veth-c1</code></pre>
+<p><strong>Salida esperada:</strong> <code>mtu 1500</code></p>
+<h3 id="paso-15-probar-mtu-con-ping">Paso 15: Probar MTU con ping</h3>
+<p>Enviamos un ping con tamaño mayor a 1500 bytes (con fragmentación):</p>
+<pre class="highlight"><code class="language-bash"># Ping con 2000 bytes (se fragmentará)
+ip netns exec cliente1 ping -c 2 -M do -s 2000 10.0.1.4</code></pre>
+<p><strong>Salida esperada:</strong>
+-   Si la MTU es 1500, el ping fallará con <code>Frag needed and DF set</code>.
+-   Si usamos <code>-M dont</code> (no fragmentar), el paquete se descarta.</p>
+<p>Esto demuestra la importancia de la MTU: los paquetes que exceden el tamaño máximo son fragmentados o descartados.</p>
+<h3 id="paso-16-cambiar-mtu-opcional">Paso 16: Cambiar MTU (opcional)</h3>
+<p>Podemos cambiar la MTU para soportar jumboframes:</p>
+<pre class="highlight"><code class="language-bash">ip netns exec cliente1 ip link set veth-c1 mtu 9000
+ip netns exec switch ip link set veth-s1 mtu 9000
+ip netns exec switch ip link set br0 mtu 9000</code></pre>
+<p>Ahora el ping con 9000 bytes debería funcionar (si todos los enlaces soportan jumboframes).</p>
+<h2 id="ejercicios-practicos">Ejercicios prácticos</h2>
+<h3 id="ejercicio-1-observar-el-aprendizaje-de-mac">Ejercicio 1: Observar el aprendizaje de MAC</h3>
+<ol>
+<li>
+<p>Limpiar la tabla MAC del switch:</p>
+<pre class="highlight"><code class="language-bash">ip netns exec switch bridge fdb flush dev br0</code></pre>
+</li>
+<li>
+<p>Enviar un ping de Cliente 1 a Cliente 2.</p>
+</li>
+<li>Ver la tabla MAC nuevamente.</li>
+<li><strong>Pregunta:</strong> ¿Cuánto tiempo tarda el switch en aprender la MAC de Cliente 2?</li>
+</ol>
+<h3 id="ejercicio-2-broadcast-en-la-red">Ejercicio 2: Broadcast en la red</h3>
+<ol>
+<li>
+<p>Enviar un ping de Cliente 1 a la dirección de broadcast <code>10.0.1.255</code>:</p>
+<pre class="highlight"><code class="language-bash">ip netns exec cliente1 ping -c 1 -b 10.0.1.255</code></pre>
+</li>
+<li>
+<p>Capturar en el switch para ver cómo se reenvía la trama de broadcast.</p>
+</li>
+<li><strong>Pregunta:</strong> ¿Por qué el switch envía el broadcast a todos los puertos?</li>
+</ol>
+<h3 id="ejercicio-3-impacto-de-la-mtu-en-el-rendimiento">Ejercicio 3: Impacto de la MTU en el rendimiento</h3>
+<ol>
+<li>
+<p>Medir el throughput con MTU 1500:</p>
+<pre class="highlight"><code class="language-bash">ip netns exec router iperf3 -s &amp;
+ip netns exec cliente1 iperf3 -c 10.0.1.1</code></pre>
+</li>
+<li>
+<p>Cambiar la MTU a 9000 en todos los enlaces y repetir la medición.</p>
+</li>
+<li><strong>Pregunta:</strong> ¿Mejora el throughput con jumboframes? ¿Por qué?</li>
+</ol>
+<h2 id="errores-comunes-y-soluciones">Errores comunes y soluciones</h2>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>Causa</th>
+<th>Solución</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Los clientes no pueden hacer ping entre sí</td>
+<td>El switch no tiene los puertos en el bridge.</td>
+<td>Verificar <code>bridge link show</code>.</td>
+</tr>
+<tr>
+<td><code>ping: sendmsg: Operation not permitted</code></td>
+<td>MTU demasiado pequeña.</td>
+<td>Aumentar MTU o usar <code>-M dont</code>.</td>
+</tr>
+<tr>
+<td>El switch no aprende MAC</td>
+<td>La interfaz está down.</td>
+<td>Verificar <code>ip link set ... up</code>.</td>
+</tr>
+<tr>
+<td>No sale a Internet</td>
+<td>El router no tiene ruta al switch.</td>
+<td>Verificar IP en <code>veth-rs</code> y que el switch esté conectado al router.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusiones-tecnicas">Conclusiones técnicas</h2>
+<p>En este laboratorio hemos:</p>
+<ol>
+<li><strong>Implementado una red conmutada</strong> usando un bridge en Linux como switch.</li>
+<li><strong>Conectado 4 clientes</strong> al switch y verificado su comunicación.</li>
+<li><strong>Observado el aprendizaje de direcciones MAC</strong> en el switch.</li>
+<li><strong>Analizado el reenvío de tramas</strong> en capa 2 (unicast, broadcast).</li>
+<li><strong>Comprendido el concepto de MTU</strong> y su impacto en la transmisión.</li>
+<li><strong>Demostrado la escalabilidad</strong> de una red conmutada.</li>
+</ol>
+<p>El switch es un componente fundamental en las redes modernas. Su capacidad para aprender direcciones MAC y reenviar tráfico solo por el puerto correcto permite:</p>
+<ul>
+<li>Mayor eficiencia en el uso del ancho de banda.</li>
+<li>Reducción de colisiones (en redes conmutadas punto a punto).</li>
+<li>Escalabilidad para conectar cientos o miles de dispositivos.</li>
+<li>Base para implementar VLANs y otras tecnologías de segmentación.</li>
+</ul>
+<p>La MTU, por su parte, es un parámetro crítico que debe ser configurado correctamente para evitar fragmentación y pérdida de rendimiento.</p>
+<h2 id="preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio</h2>
+<p>Hemos dejado la red con 4 clientes conectados a un switch, y el switch conectado al router con salida a Internet. En el <strong>Laboratorio 04</strong> comenzaremos a trabajar con <strong>direccionamiento IP y subredes</strong>, segmentando la red en diferentes subredes y configurando el enrutamiento entre ellas.</p>
+<hr/>
+<p><strong>¡Laboratorio 03 completado!</strong> Ahora tenemos una red conmutada escalable y hemos analizado el funcionamiento de los componentes de red. Continúa con el <strong>Laboratorio 04</strong>.</p>
+</div>
+<div class="col-md-3">
+<div class="bs-sidebar hidden-print affix well" role="complementary">
+<ul class="nav bs-sidenav">
+<li class="main active"><a href="#laboratorio-03-componentes-de-red-y-conmutacion">Laboratorio 03 – Componentes de Red y Conmutación</a></li>
+<li><a href="#contexto-empresarial">Contexto empresarial</a></li>
+<li><a href="#problema-inicial">Problema inicial</a></li>
+<li><a href="#objetivos-del-laboratorio">Objetivos del laboratorio</a></li>
+<li><a href="#herramientas-necesarias">Herramientas necesarias</a></li>
+<li><a href="#topologia">Topología</a></li>
+<li><a href="#construccion-de-la-red">Construcción de la red</a></li>
+<li><a href="#observacion-del-funcionamiento-del-switch">Observación del funcionamiento del switch</a></li>
+<li><a href="#analisis-de-mtu">Análisis de MTU</a></li>
+<li><a href="#ejercicios-practicos">Ejercicios prácticos</a></li>
+<li><a href="#errores-comunes-y-soluciones">Errores comunes y soluciones</a></li>
+<li><a href="#conclusiones-tecnicas">Conclusiones técnicas</a></li>
+<li><a href="#preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="footer">
+<hr/>
+</footer>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/bootstrap.min.js"></script>
+<script src="../../js/base.js"></script>
+<script src="../../search/main.js"></script>
+<script>
+        (function() {
+            const body = document.body;
+            const toggleBtn = document.getElementById('themeToggle');
+            const toggleIcon = toggleBtn ? toggleBtn.querySelector('i') : null;
+            const toggleText = toggleBtn ? toggleBtn.querySelector('.toggle-text') : null;
+
+            const savedTheme = localStorage.getItem('mkdocs-cluster-theme');
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                if (toggleText) toggleText.textContent = 'Claro';
+            } else {
+                body.classList.remove('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                if (toggleText) toggleText.textContent = 'Oscuro';
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    if (body.classList.contains('dark-mode')) {
+                        body.classList.remove('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'light');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                        if (toggleText) toggleText.textContent = 'Oscuro';
+                    } else {
+                        body.classList.add('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'dark');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                        if (toggleText) toggleText.textContent = 'Claro';
+                    }
+                });
+            }
+        })();
+        </script>
+<script type="module">import mermaid from "https://unpkg.com/mermaid@10.6.1/dist/mermaid.esm.min.mjs";
+mermaid.initialize({
+    theme: "default",
+    securityLevel: "loose"
+});</script></body>
+</html>

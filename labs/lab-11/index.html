@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="Laboratorios de redes desde cero" name="description"/>
+<meta content="Guillermo Castillo" name="author"/>
+<link href="../../img/favicon.ico" rel="shortcut icon"/>
+<title>11 - Arquitectura de Red Empresarial - Networking Lab – Manual de Implementación Profesional</title>
+<link href="../../css/bootstrap.min.css" rel="stylesheet"/>
+<link href="../../css/font-awesome.min.css" rel="stylesheet"/>
+<link href="../../css/base.css" rel="stylesheet"/>
+<link href="../../css/extra.css" rel="stylesheet"/>
+<!-- HTML5 shim and Respond.js IE8 support -->
+<!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+</head>
+<body>
+<!-- Checkbox oculto para controlar el menú -->
+<input class="sidebar-checkbox" id="sidebar-checkbox" type="checkbox"/>
+<!-- Sidebar izquierda -->
+<div class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<img alt="Logo" class="sidebar-logo" src="../../img/logo.png"/>
+<h3 class="sidebar-title">Networking Lab – Manual de Implementación Profesional</h3>
+<button class="theme-toggle btn btn-sm btn-default" id="themeToggle" title="Cambiar tema claro/oscuro">
+<i class="fa fa-moon-o"></i> <span class="toggle-text">Oscuro</span>
+</button>
+</div>
+<ul class="nav sidebar-nav" id="sidebar-nav">
+<li>
+<a href="../..">Inicio</a>
+</li>
+<li class="dropdown-submenu active">
+<a class="dropdown-toggle" data-toggle="dropdown" href="#">Laboratorios <span class="caret"></span></a>
+<ul class="dropdown-menu">
+<li>
+<a href="../lab-01/">01 - Fundamentos de Redes y Encapsulación</a>
+</li>
+<li>
+<a href="../lab-02/">02 - Transmisión de Datos y Capa Física</a>
+</li>
+<li>
+<a href="../lab-03/">03 - Componentes de Red y Conmutación</a>
+</li>
+<li>
+<a href="../lab-04/">04 - Direccionamiento IP y Subredes</a>
+</li>
+<li>
+<a href="../lab-05/">05 - Conmutación y VLANs</a>
+</li>
+<li>
+<a href="../lab-06/">06 - Enrutamiento y Conectividad entre Redes</a>
+</li>
+<li>
+<a href="../lab-07/">07 - Protocolos y Servicios de Red</a>
+</li>
+<li>
+<a href="../lab-08/">08 - Seguridad en Redes</a>
+</li>
+<li>
+<a href="../lab-09/">09 - VPN y Tunelización</a>
+</li>
+<li>
+<a href="../lab-10/">10 - Infraestructura WAN y Core</a>
+</li>
+<li class="active">
+<a href="./">11 - Arquitectura de Red Empresarial</a>
+</li>
+<li>
+<a href="../lab-12/">12 - Arquitecturas Modernas de Red</a>
+</li>
+<li>
+<a href="../lab-13/">13 - Monitoreo y Diagnóstico de Redes</a>
+</li>
+<li>
+<a href="../lab-14/">14 - Herramientas Linux Avanzadas</a>
+</li>
+<li>
+<a href="../lab-15/">15 - Implementación Práctica Integral</a>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<!-- Botón hamburguesa (etiqueta para el checkbox) -->
+<label class="sidebar-toggle" for="sidebar-checkbox" id="sidebarToggle">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</label>
+<div class="wrapper">
+<div class="main-content" id="mainContent">
+<div class="row">
+<div class="col-md-9" role="main">
+<h1 id="laboratorio-11-arquitectura-de-red-empresarial">Laboratorio 11 – Arquitectura de Red Empresarial</h1>
+<h2 id="contexto-empresarial">Contexto empresarial</h2>
+<p>La empresa <strong>Networking SecOps</strong> ha implementado su infraestructura WAN (Laboratorio 10). Ahora necesita diseñar la arquitectura de red completa para su sede central.</p>
+<h2 id="topologia">Topología</h2>
+<div class="mermaid">graph TB
+    C1[Core Switch 1]
+    C2[Core Switch 2]
+    D1[Dist Switch 1]
+    D2[Dist Switch 2]
+    A1[Access Switch 1]
+    A2[Access Switch 2]
+    A3[Access Switch 3]
+    FW[Firewall]
+    WEB[Servidor Web]
+    DNS[Servidor DNS]
+    V10[VLAN 10 Ventas]
+    V20[VLAN 20 IT]
+    V30[VLAN 30 Admin]
+    C1 --- C2
+    C1 --- D1
+    C1 --- D2
+    C2 --- D1
+    C2 --- D2
+    D1 --- A1
+    D1 --- A2
+    D1 --- A3
+    D2 --- A1
+    D2 --- A2
+    D2 --- A3
+    A1 --- V10
+    A1 --- V20
+    A1 --- V30
+    A2 --- V10
+    A2 --- V20
+    A2 --- V30
+    A3 --- V10
+    A3 --- V20
+    A3 --- V30
+    D1 --- FW
+    D2 --- FW
+    FW --- WEB
+    FW --- DNS
+    C1 --- Internet
+    C2 --- Internet</div>
+<p><strong>Direccionamiento:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Dispositivo</th>
+<th>Interfaz</th>
+<th>Dirección IP</th>
+<th>Rol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Core 1</td>
+<td>eth0</td>
+<td>10.0.0.1/24</td>
+<td>Core</td>
+</tr>
+<tr>
+<td>Core 2</td>
+<td>eth0</td>
+<td>10.0.0.2/24</td>
+<td>Core</td>
+</tr>
+<tr>
+<td>Dist 1</td>
+<td>eth0</td>
+<td>10.0.1.1/24</td>
+<td>Distribución</td>
+</tr>
+<tr>
+<td>Dist 2</td>
+<td>eth0</td>
+<td>10.0.1.2/24</td>
+<td>Distribución</td>
+</tr>
+<tr>
+<td>Firewall</td>
+<td>eth0 (WAN)</td>
+<td>192.168.100.1/24</td>
+<td>Seguridad</td>
+</tr>
+<tr>
+<td>Firewall</td>
+<td>eth1 (DMZ)</td>
+<td>10.0.99.1/24</td>
+<td>DMZ</td>
+</tr>
+<tr>
+<td>Firewall</td>
+<td>eth2 (LAN)</td>
+<td>10.0.0.254/24</td>
+<td>LAN</td>
+</tr>
+<tr>
+<td>Servidor Web</td>
+<td>-</td>
+<td>10.0.99.10/24</td>
+<td>DMZ</td>
+</tr>
+<tr>
+<td>Servidor DNS</td>
+<td>-</td>
+<td>10.0.99.5/24</td>
+<td>DMZ</td>
+</tr>
+<tr>
+<td>VLAN 10</td>
+<td>-</td>
+<td>10.0.10.0/24</td>
+<td>Ventas</td>
+</tr>
+<tr>
+<td>VLAN 20</td>
+<td>-</td>
+<td>10.0.20.0/24</td>
+<td>IT</td>
+</tr>
+<tr>
+<td>VLAN 30</td>
+<td>-</td>
+<td>10.0.30.0/24</td>
+<td>Admin</td>
+</tr>
+</tbody>
+</table>
+<h2 id="construccion">Construcción</h2>
+<h3 id="paso-1-crear-namespaces">Paso 1: Crear namespaces</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns add Core1
+sudo ip netns add Core2
+sudo ip netns add Dist1
+sudo ip netns add Dist2
+sudo ip netns add Access1
+sudo ip netns add Access2
+sudo ip netns add Access3
+sudo ip netns add Firewall
+sudo ip netns add ServidorWeb
+sudo ip netns add ServidorDNS</code></pre>
+<h3 id="paso-2-conectar-core-a-distribucion">Paso 2: Conectar Core a Distribución</h3>
+<pre class="highlight"><code class="language-bash">sudo ip link add veth-c1d1 type veth peer name veth-d1c1
+sudo ip link set veth-c1d1 netns Core1
+sudo ip link set veth-d1c1 netns Dist1
+sudo ip netns exec Core1 ip addr add 10.0.0.1/24 dev veth-c1d1
+sudo ip netns exec Core1 ip link set veth-c1d1 up
+sudo ip netns exec Dist1 ip addr add 10.0.1.1/24 dev veth-d1c1
+sudo ip netns exec Dist1 ip link set veth-d1c1 up
+
+sudo ip link add veth-c1d2 type veth peer name veth-d2c1
+sudo ip link set veth-c1d2 netns Core1
+sudo ip link set veth-d2c1 netns Dist2
+sudo ip netns exec Core1 ip addr add 10.0.0.2/24 dev veth-c1d2
+sudo ip netns exec Core1 ip link set veth-c1d2 up
+sudo ip netns exec Dist2 ip addr add 10.0.1.2/24 dev veth-d2c1
+sudo ip netns exec Dist2 ip link set veth-d2c1 up
+
+sudo ip link add veth-c2d1 type veth peer name veth-d1c2
+sudo ip link set veth-c2d1 netns Core2
+sudo ip link set veth-d1c2 netns Dist1
+sudo ip netns exec Core2 ip addr add 10.0.0.2/24 dev veth-c2d1
+sudo ip netns exec Core2 ip link set veth-c2d1 up
+sudo ip netns exec Dist1 ip addr add 10.0.1.1/24 dev veth-d1c2
+sudo ip netns exec Dist1 ip link set veth-d1c2 up
+
+sudo ip link add veth-c2d2 type veth peer name veth-d2c2
+sudo ip link set veth-c2d2 netns Core2
+sudo ip link set veth-d2c2 netns Dist2
+sudo ip netns exec Core2 ip addr add 10.0.0.2/24 dev veth-c2d2
+sudo ip netns exec Core2 ip link set veth-c2d2 up
+sudo ip netns exec Dist2 ip addr add 10.0.1.2/24 dev veth-d2c2
+sudo ip netns exec Dist2 ip link set veth-d2c2 up</code></pre>
+<h3 id="paso-3-conectar-distribucion-a-acceso">Paso 3: Conectar Distribución a Acceso</h3>
+<pre class="highlight"><code class="language-bash">sudo ip link add veth-d1a1 type veth peer name veth-a1d1
+sudo ip link set veth-d1a1 netns Dist1
+sudo ip link set veth-a1d1 netns Access1
+sudo ip netns exec Dist1 ip link set veth-d1a1 up
+sudo ip netns exec Access1 ip link set veth-a1d1 up
+
+sudo ip link add veth-d2a1 type veth peer name veth-a1d2
+sudo ip link set veth-d2a1 netns Dist2
+sudo ip link set veth-a1d2 netns Access1
+sudo ip netns exec Dist2 ip link set veth-d2a1 up
+sudo ip netns exec Access1 ip link set veth-a1d2 up
+
+sudo ip link add veth-d1a2 type veth peer name veth-a2d1
+sudo ip link set veth-d1a2 netns Dist1
+sudo ip link set veth-a2d1 netns Access2
+sudo ip netns exec Dist1 ip link set veth-d1a2 up
+sudo ip netns exec Access2 ip link set veth-a2d1 up
+
+sudo ip link add veth-d2a2 type veth peer name veth-a2d2
+sudo ip link set veth-d2a2 netns Dist2
+sudo ip link set veth-a2d2 netns Access2
+sudo ip netns exec Dist2 ip link set veth-d2a2 up
+sudo ip netns exec Access2 ip link set veth-a2d2 up
+
+sudo ip link add veth-d1a3 type veth peer name veth-a3d1
+sudo ip link set veth-d1a3 netns Dist1
+sudo ip link set veth-a3d1 netns Access3
+sudo ip netns exec Dist1 ip link set veth-d1a3 up
+sudo ip netns exec Access3 ip link set veth-a3d1 up
+
+sudo ip link add veth-d2a3 type veth peer name veth-a3d2
+sudo ip link set veth-d2a3 netns Dist2
+sudo ip link set veth-a3d2 netns Access3
+sudo ip netns exec Dist2 ip link set veth-d2a3 up
+sudo ip netns exec Access3 ip link set veth-a3d2 up</code></pre>
+<h3 id="paso-4-configurar-firewall-y-dmz">Paso 4: Configurar Firewall y DMZ</h3>
+<pre class="highlight"><code class="language-bash">sudo ip link add veth-fw-wan type veth peer name veth-wan-fw
+sudo ip link set veth-fw-wan netns Firewall
+sudo ip netns exec Firewall ip addr add 192.168.100.1/24 dev veth-fw-wan
+sudo ip netns exec Firewall ip link set veth-fw-wan up
+sudo ip addr add 192.168.100.2/24 dev veth-wan-fw
+sudo ip link set veth-wan-fw up
+
+sudo ip link add veth-fw-dmz type veth peer name veth-dmz-fw
+sudo ip link set veth-fw-dmz netns Firewall
+sudo ip netns exec Firewall ip addr add 10.0.99.1/24 dev veth-fw-dmz
+sudo ip netns exec Firewall ip link set veth-fw-dmz up
+sudo ip link set veth-dmz-fw netns ServidorWeb
+sudo ip netns exec ServidorWeb ip addr add 10.0.99.10/24 dev veth-dmz-fw
+sudo ip netns exec ServidorWeb ip link set veth-dmz-fw up
+sudo ip netns exec ServidorWeb ip route add default via 10.0.99.1
+
+sudo ip link add veth-fw-lan type veth peer name veth-lan-fw
+sudo ip link set veth-fw-lan netns Firewall
+sudo ip netns exec Firewall ip addr add 10.0.0.254/24 dev veth-fw-lan
+sudo ip netns exec Firewall ip link set veth-fw-lan up
+sudo ip link set veth-lan-fw netns Core1
+sudo ip netns exec Core1 ip addr add 10.0.0.1/24 dev veth-lan-fw
+sudo ip netns exec Core1 ip link set veth-lan-fw up</code></pre>
+<h3 id="paso-5-configurar-enrutamiento-y-nat">Paso 5: Configurar enrutamiento y NAT</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec Firewall sysctl -w net.ipv4.ip_forward=1
+sudo ip netns exec Firewall iptables -t nat -A POSTROUTING -o veth-fw-wan -j MASQUERADE
+sudo ip netns exec Firewall iptables -A FORWARD -i veth-fw-lan -o veth-fw-wan -j ACCEPT
+sudo ip netns exec Core1 ip route add default via 10.0.0.254
+sudo ip netns exec Core2 ip route add default via 10.0.0.254
+sudo ip netns exec Dist1 ip route add default via 10.0.0.1
+sudo ip netns exec Dist2 ip route add default via 10.0.0.1</code></pre>
+<h3 id="paso-6-verificar">Paso 6: Verificar</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec Core1 ping -c 4 8.8.8.8
+sudo ip netns exec Core1 ping -c 4 10.0.99.10</code></pre>
+<h2 id="alta-disponibilidad">Alta Disponibilidad</h2>
+<h3 id="simular-fallo-de-core1">Simular fallo de Core1</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec Core1 ip link set veth-c1d1 down
+sudo ip netns exec Dist1 ping -c 4 10.0.99.10</code></pre>
+<h2 id="segmentacion-vlan">Segmentación VLAN</h2>
+<table>
+<thead>
+<tr>
+<th>VLAN</th>
+<th>ID</th>
+<th>Subred</th>
+<th>Propósito</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ventas</td>
+<td>10</td>
+<td>10.0.10.0/24</td>
+<td>Departamento Ventas</td>
+</tr>
+<tr>
+<td>IT</td>
+<td>20</td>
+<td>10.0.20.0/24</td>
+<td>Departamento IT</td>
+</tr>
+<tr>
+<td>Admin</td>
+<td>30</td>
+<td>10.0.30.0/24</td>
+<td>Administración</td>
+</tr>
+<tr>
+<td>DMZ</td>
+<td>99</td>
+<td>10.0.99.0/24</td>
+<td>Servidores públicos</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ejercicios">Ejercicios</h2>
+<h3 id="ejercicio-1-agregar-redundancia-de-enlaces">Ejercicio 1: Agregar redundancia de enlaces</h3>
+<p>Conecta Access2 a Dist1 y Dist2 para redundancia.</p>
+<h3 id="ejercicio-2-configurar-stp">Ejercicio 2: Configurar STP</h3>
+<p>Investiga STP y cómo prevenir bucles.</p>
+<h2 id="conceptos-clave">Conceptos clave</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Aplicación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Modelo jerárquico</td>
+<td>Core-Distribución-Acceso</td>
+</tr>
+<tr>
+<td>Alta disponibilidad</td>
+<td>Redundancia Core1/Core2</td>
+</tr>
+<tr>
+<td>Redundancia</td>
+<td>Enlaces duales</td>
+</tr>
+<tr>
+<td>Segmentación</td>
+<td>VLAN 10, 20, 30</td>
+</tr>
+<tr>
+<td>DMZ</td>
+<td>Servidores aislados</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusiones">Conclusiones</h2>
+<p>La arquitectura jerárquica proporciona escalabilidad, disponibilidad y facilidad de administración. La redundancia elimina puntos únicos de fallo.</p>
+<hr/>
+<p><strong>¡Laboratorio 11 completado!</strong> Continúa con el <strong>Laboratorio 12</strong>.</p>
+</div>
+<div class="col-md-3">
+<div class="bs-sidebar hidden-print affix well" role="complementary">
+<ul class="nav bs-sidenav">
+<li class="main active"><a href="#laboratorio-11-arquitectura-de-red-empresarial">Laboratorio 11 – Arquitectura de Red Empresarial</a></li>
+<li><a href="#contexto-empresarial">Contexto empresarial</a></li>
+<li><a href="#topologia">Topología</a></li>
+<li><a href="#construccion">Construcción</a></li>
+<li><a href="#alta-disponibilidad">Alta Disponibilidad</a></li>
+<li><a href="#segmentacion-vlan">Segmentación VLAN</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#conceptos-clave">Conceptos clave</a></li>
+<li><a href="#conclusiones">Conclusiones</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="footer">
+<hr/>
+</footer>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/bootstrap.min.js"></script>
+<script src="../../js/base.js"></script>
+<script src="../../search/main.js"></script>
+<script>
+        (function() {
+            const body = document.body;
+            const toggleBtn = document.getElementById('themeToggle');
+            const toggleIcon = toggleBtn ? toggleBtn.querySelector('i') : null;
+            const toggleText = toggleBtn ? toggleBtn.querySelector('.toggle-text') : null;
+
+            const savedTheme = localStorage.getItem('mkdocs-cluster-theme');
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                if (toggleText) toggleText.textContent = 'Claro';
+            } else {
+                body.classList.remove('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                if (toggleText) toggleText.textContent = 'Oscuro';
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    if (body.classList.contains('dark-mode')) {
+                        body.classList.remove('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'light');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                        if (toggleText) toggleText.textContent = 'Oscuro';
+                    } else {
+                        body.classList.add('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'dark');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                        if (toggleText) toggleText.textContent = 'Claro';
+                    }
+                });
+            }
+        })();
+        </script>
+<script type="module">import mermaid from "https://unpkg.com/mermaid@10.6.1/dist/mermaid.esm.min.mjs";
+mermaid.initialize({
+    theme: "default",
+    securityLevel: "loose"
+});</script></body>
+</html>

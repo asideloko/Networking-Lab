@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="Laboratorios de redes desde cero" name="description"/>
+<meta content="Guillermo Castillo" name="author"/>
+<link href="../../img/favicon.ico" rel="shortcut icon"/>
+<title>07 - Protocolos y Servicios de Red - Networking Lab – Manual de Implementación Profesional</title>
+<link href="../../css/bootstrap.min.css" rel="stylesheet"/>
+<link href="../../css/font-awesome.min.css" rel="stylesheet"/>
+<link href="../../css/base.css" rel="stylesheet"/>
+<link href="../../css/extra.css" rel="stylesheet"/>
+<!-- HTML5 shim and Respond.js IE8 support -->
+<!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+</head>
+<body>
+<!-- Checkbox oculto para controlar el menú -->
+<input class="sidebar-checkbox" id="sidebar-checkbox" type="checkbox"/>
+<!-- Sidebar izquierda -->
+<div class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<img alt="Logo" class="sidebar-logo" src="../../img/logo.png"/>
+<h3 class="sidebar-title">Networking Lab – Manual de Implementación Profesional</h3>
+<button class="theme-toggle btn btn-sm btn-default" id="themeToggle" title="Cambiar tema claro/oscuro">
+<i class="fa fa-moon-o"></i> <span class="toggle-text">Oscuro</span>
+</button>
+</div>
+<ul class="nav sidebar-nav" id="sidebar-nav">
+<li>
+<a href="../..">Inicio</a>
+</li>
+<li class="dropdown-submenu active">
+<a class="dropdown-toggle" data-toggle="dropdown" href="#">Laboratorios <span class="caret"></span></a>
+<ul class="dropdown-menu">
+<li>
+<a href="../lab-01/">01 - Fundamentos de Redes y Encapsulación</a>
+</li>
+<li>
+<a href="../lab-02/">02 - Transmisión de Datos y Capa Física</a>
+</li>
+<li>
+<a href="../lab-03/">03 - Componentes de Red y Conmutación</a>
+</li>
+<li>
+<a href="../lab-04/">04 - Direccionamiento IP y Subredes</a>
+</li>
+<li>
+<a href="../lab-05/">05 - Conmutación y VLANs</a>
+</li>
+<li>
+<a href="../lab-06/">06 - Enrutamiento y Conectividad entre Redes</a>
+</li>
+<li class="active">
+<a href="./">07 - Protocolos y Servicios de Red</a>
+</li>
+<li>
+<a href="../lab-08/">08 - Seguridad en Redes</a>
+</li>
+<li>
+<a href="../lab-09/">09 - VPN y Tunelización</a>
+</li>
+<li>
+<a href="../lab-10/">10 - Infraestructura WAN y Core</a>
+</li>
+<li>
+<a href="../lab-11/">11 - Arquitectura de Red Empresarial</a>
+</li>
+<li>
+<a href="../lab-12/">12 - Arquitecturas Modernas de Red</a>
+</li>
+<li>
+<a href="../lab-13/">13 - Monitoreo y Diagnóstico de Redes</a>
+</li>
+<li>
+<a href="../lab-14/">14 - Herramientas Linux Avanzadas</a>
+</li>
+<li>
+<a href="../lab-15/">15 - Implementación Práctica Integral</a>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<!-- Botón hamburguesa (etiqueta para el checkbox) -->
+<label class="sidebar-toggle" for="sidebar-checkbox" id="sidebarToggle">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</label>
+<div class="wrapper">
+<div class="main-content" id="mainContent">
+<div class="row">
+<div class="col-md-9" role="main">
+<h1 id="laboratorio-07-protocolos-y-servicios-de-red">Laboratorio 07 – Protocolos y Servicios de Red</h1>
+<h2 id="contexto-empresarial">Contexto empresarial</h2>
+<p>La empresa <strong>Networking SecOps</strong> ya tiene su infraestructura de red funcionando con enrutamiento entre la sede y las sucursales (Laboratorio 06). Ahora necesita implementar <strong>servicios de red esenciales</strong> para que los usuarios puedan trabajar eficientemente:</p>
+<ol>
+<li><strong>DNS</strong> – Resolución de nombres para acceder a servidores por nombre en lugar de IP.</li>
+<li><strong>DHCP</strong> – Asignación automática de direcciones IP a los clientes.</li>
+<li><strong>NAT/PAT</strong> – Permitir que los clientes de la red interna accedan a Internet.</li>
+<li><strong>TCP/UDP</strong> – Comprender la diferencia entre ambos protocolos.</li>
+</ol>
+<p>El equipo de TI ha decidido implementar estos servicios en la sede central y documentar su funcionamiento para futuras expansiones.</p>
+<h2 id="problema-inicial">Problema inicial</h2>
+<ul>
+<li>Los clientes tienen direcciones IP configuradas manualmente (administración tediosa).</li>
+<li>No hay un servidor DNS interno que resuelva nombres locales.</li>
+<li>Los clientes de la sede y sucursales no pueden acceder a Internet.</li>
+<li>Se necesita implementar NAT para salida a Internet.</li>
+</ul>
+<h2 id="objetivos-del-laboratorio">Objetivos del laboratorio</h2>
+<ol>
+<li>Comprender la diferencia entre <strong>TCP y UDP</strong> y sus casos de uso.</li>
+<li>Implementar un servidor <strong>DNS</strong> con <code>dnsmasq</code>.</li>
+<li>Configurar un servidor <strong>DHCP</strong> para asignación automática de IPs.</li>
+<li>Implementar <strong>NAT/PAT</strong> para salida a Internet.</li>
+<li>Analizar el <strong>MSS</strong> (Maximum Segment Size) en TCP.</li>
+<li>Verificar los servicios con herramientas de diagnóstico.</li>
+</ol>
+<h2 id="herramientas-necesarias">Herramientas necesarias</h2>
+<ul>
+<li>Linux con privilegios de superusuario.</li>
+<li>Comandos: <code>ip</code>, <code>ping</code>, <code>tcpdump</code>, <code>curl</code>, <code>nslookup</code>, <code>dig</code>.</li>
+<li><code>dnsmasq</code> para servicios DNS y DHCP.</li>
+<li><code>iptables</code> para NAT.</li>
+</ul>
+<h2 id="topologia">Topología</h2>
+<p>La topología extiende la del laboratorio 06 agregando servidores DNS y DHCP en la sede.</p>
+<div class="mermaid">graph TB
+    subgraph Sede_Central
+        R1[Router 1 Sede 10.0.0.1]
+        LAN1[Red Sede 10.0.0.0/24]
+        DNS[Servidor DNS 10.0.0.5]
+        DHCP[Servidor DHCP 10.0.0.6]
+        NAT[NAT/PAT Gateway]
+    end
+    subgraph Sucursal_A
+        R2[Router 2 Sucursal A 10.0.1.1]
+        LAN2[Red Sucursal A 10.0.1.0/24]
+    end
+    subgraph Sucursal_B
+        R3[Router 3 Sucursal B 10.0.2.1]
+        LAN3[Red Sucursal B 10.0.2.0/24]
+    end
+    R1 --- R2
+    R2 --- R3
+    LAN1 --- R1
+    DNS --- R1
+    DHCP --- R1
+    NAT --- R1
+    LAN2 --- R2
+    LAN3 --- R3
+    R1 --- Internet((Internet))</div>
+<p><strong>Direccionamiento:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Dispositivo</th>
+<th>Interfaz</th>
+<th>Dirección IP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1 (Sede)</td>
+<td>eth0 (LAN)</td>
+<td>10.0.0.1/24</td>
+</tr>
+<tr>
+<td>R1 (Sede)</td>
+<td>eth1 (R1-R2)</td>
+<td>192.168.1.1/30</td>
+</tr>
+<tr>
+<td>R1 (Sede)</td>
+<td>WAN</td>
+<td>192.168.100.1/24</td>
+</tr>
+<tr>
+<td>R2 (Sucursal A)</td>
+<td>eth0 (LAN)</td>
+<td>10.0.1.1/24</td>
+</tr>
+<tr>
+<td>R2 (Sucursal A)</td>
+<td>eth1 (R1-R2)</td>
+<td>192.168.1.2/30</td>
+</tr>
+<tr>
+<td>R3 (Sucursal B)</td>
+<td>eth0 (LAN)</td>
+<td>10.0.2.1/24</td>
+</tr>
+<tr>
+<td>R3 (Sucursal B)</td>
+<td>eth1 (R2-R3)</td>
+<td>192.168.2.2/30</td>
+</tr>
+<tr>
+<td>Servidor DNS</td>
+<td>-</td>
+<td>10.0.0.5/24</td>
+</tr>
+<tr>
+<td>Servidor DHCP</td>
+<td>-</td>
+<td>10.0.0.6/24</td>
+</tr>
+<tr>
+<td>Cliente Sede (DHCP)</td>
+<td>-</td>
+<td>10.0.0.100/24</td>
+</tr>
+<tr>
+<td>Cliente Sucursal A</td>
+<td>-</td>
+<td>10.0.1.10/24</td>
+</tr>
+<tr>
+<td>Cliente Sucursal B</td>
+<td>-</td>
+<td>10.0.2.10/24</td>
+</tr>
+</tbody>
+</table>
+<h2 id="construccion-de-la-red">Construcción de la red</h2>
+<h3 id="paso-1-verificar-infraestructura-existente">Paso 1: Verificar infraestructura existente</h3>
+<p>Asegurémonos de que el laboratorio 06 está funcionando:</p>
+<pre class="highlight"><code class="language-bash"># Verificar namespaces
+sudo ip netns list
+
+# Verificar conectividad entre sede y sucursales
+sudo ip netns exec clienteSede ping -c 2 10.0.1.10</code></pre>
+<p>Si no existen los namespaces, ejecuta los comandos del laboratorio 06.</p>
+<h3 id="paso-2-crear-namespaces-para-servicios">Paso 2: Crear namespaces para servicios</h3>
+<pre class="highlight"><code class="language-bash"># Servidores de servicios
+sudo ip netns add servidorDNS
+sudo ip netns add servidorDHCP
+sudo ip netns add clienteDHCP</code></pre>
+<h3 id="paso-3-conectar-servicios-a-la-red">Paso 3: Conectar servicios a la red</h3>
+<pre class="highlight"><code class="language-bash"># Servidor DNS -&gt; R1
+sudo ip link add veth-dns type veth peer name veth-r1dns
+sudo ip link set veth-dns netns servidorDNS
+sudo ip link set veth-r1dns netns R1
+
+# Servidor DHCP -&gt; R1
+sudo ip link add veth-dhcp type veth peer name veth-r1dhcp
+sudo ip link set veth-dhcp netns servidorDHCP
+sudo ip link set veth-r1dhcp netns R1
+
+# Cliente DHCP -&gt; R1
+sudo ip link add veth-dhcpcl type veth peer name veth-r1dhcpcl
+sudo ip link set veth-dhcpcl netns clienteDHCP
+sudo ip link set veth-r1dhcpcl netns R1</code></pre>
+<h3 id="paso-4-asignar-direcciones-ip">Paso 4: Asignar direcciones IP</h3>
+<pre class="highlight"><code class="language-bash"># Servidor DNS
+sudo ip netns exec servidorDNS ip addr add 10.0.0.5/24 dev veth-dns
+sudo ip netns exec servidorDNS ip link set veth-dns up
+sudo ip netns exec servidorDNS ip link set lo up
+sudo ip netns exec servidorDNS ip route add default via 10.0.0.1
+
+# Servidor DHCP
+sudo ip netns exec servidorDHCP ip addr add 10.0.0.6/24 dev veth-dhcp
+sudo ip netns exec servidorDHCP ip link set veth-dhcp up
+sudo ip netns exec servidorDHCP ip link set lo up
+sudo ip netns exec servidorDHCP ip route add default via 10.0.0.1
+
+# Cliente DHCP (sin IP fija, usará DHCP)
+sudo ip netns exec clienteDHCP ip link set veth-dhcpcl up
+sudo ip netns exec clienteDHCP ip link set lo up</code></pre>
+<h3 id="paso-5-configurar-nat-en-r1-para-salida-a-internet">Paso 5: Configurar NAT en R1 para salida a Internet</h3>
+<pre class="highlight"><code class="language-bash"># Crear interfaz WAN en R1
+sudo ip link add veth-wan type veth peer name veth-host
+sudo ip link set veth-wan netns R1
+sudo ip netns exec R1 ip addr add 192.168.100.1/24 dev veth-wan
+sudo ip netns exec R1 ip link set veth-wan up
+sudo ip addr add 192.168.100.2/24 dev veth-host
+sudo ip link set veth-host up
+
+# Habilitar forwarding y NAT
+sudo ip netns exec R1 sysctl -w net.ipv4.ip_forward=1
+sudo ip netns exec R1 iptables -t nat -A POSTROUTING -o veth-wan -j MASQUERADE
+sudo ip netns exec R1 iptables -A FORWARD -i veth-r1c -o veth-wan -j ACCEPT
+sudo ip netns exec R1 iptables -A FORWARD -i veth-wan -o veth-r1c -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+# Ruta en el host para el retorno
+sudo ip route add 10.0.0.0/8 via 192.168.100.1</code></pre>
+<h3 id="paso-6-instalar-y-configurar-servidor-dns">Paso 6: Instalar y configurar servidor DNS</h3>
+<pre class="highlight"><code class="language-bash"># Instalar dnsmasq en el servidor DNS
+sudo ip netns exec servidorDNS apt-get update
+sudo ip netns exec servidorDNS apt-get install -y dnsmasq
+
+# Configurar dnsmasq
+sudo ip netns exec servidorDNS cat &gt; /etc/dnsmasq.conf &lt;&lt; 'EOF'
+interface=veth-dns
+bind-interfaces
+dhcp-range=10.0.0.100,10.0.0.200,255.255.255.0,12h
+dhcp-option=3,10.0.0.1
+dhcp-option=6,10.0.0.5
+server=8.8.8.8
+server=8.8.4.4
+EOF
+
+# Iniciar dnsmasq
+sudo ip netns exec servidorDNS dnsmasq</code></pre>
+<h3 id="paso-7-instalar-y-configurar-servidor-dhcp">Paso 7: Instalar y configurar servidor DHCP</h3>
+<pre class="highlight"><code class="language-bash"># Instalar dnsmasq en el servidor DHCP
+sudo ip netns exec servidorDHCP apt-get update
+sudo ip netns exec servidorDHCP apt-get install -y dnsmasq
+
+# Configurar dnsmasq como DHCP
+sudo ip netns exec servidorDHCP cat &gt; /etc/dnsmasq.conf &lt;&lt; 'EOF'
+interface=veth-dhcp
+bind-interfaces
+dhcp-range=10.0.0.100,10.0.0.200,255.255.255.0,12h
+dhcp-option=3,10.0.0.1
+dhcp-option=6,10.0.0.5
+EOF
+
+# Iniciar dnsmasq
+sudo ip netns exec servidorDHCP dnsmasq</code></pre>
+<h3 id="paso-8-configurar-cliente-dhcp">Paso 8: Configurar cliente DHCP</h3>
+<pre class="highlight"><code class="language-bash"># En el cliente DHCP, obtener IP mediante dhclient
+sudo ip netns exec clienteDHCP dhclient veth-dhcpcl</code></pre>
+<h3 id="paso-9-verificar-conectividad">Paso 9: Verificar conectividad</h3>
+<pre class="highlight"><code class="language-bash"># Cliente DHCP a Internet
+sudo ip netns exec clienteDHCP ping -c 4 8.8.8.8
+
+# Cliente DHCP a Sucursal A
+sudo ip netns exec clienteDHCP ping -c 4 10.0.1.10
+
+# Resolución DNS (usando el servidor configurado)
+sudo ip netns exec clienteDHCP nslookup google.com</code></pre>
+<p><strong>Salida esperada:</strong> Todos los pings con 0% de pérdida.</p>
+<h2 id="analisis-de-tcp-y-udp">Análisis de TCP y UDP</h2>
+<h3 id="paso-10-capturar-trafico-tcp-http">Paso 10: Capturar tráfico TCP (HTTP)</h3>
+<pre class="highlight"><code class="language-bash"># Iniciar captura en R1
+sudo ip netns exec R1 tcpdump -i veth-r1c -n -v tcp port 80</code></pre>
+<p>En otra terminal:</p>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec clienteDHCP curl -s http://google.com &gt; /dev/null</code></pre>
+<p><strong>Interpretación:</strong> Se observa el handshake TCP (SYN, SYN-ACK, ACK) y la transferencia de datos.</p>
+<h3 id="paso-11-capturar-trafico-udp-dns">Paso 11: Capturar tráfico UDP (DNS)</h3>
+<pre class="highlight"><code class="language-bash"># Iniciar captura en R1
+sudo ip netns exec R1 tcpdump -i veth-r1c -n -v udp port 53</code></pre>
+<p>En otra terminal:</p>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec clienteDHCP nslookup google.com</code></pre>
+<p><strong>Interpretación:</strong> Se observan paquetes UDP sin handshake previo.</p>
+<h2 id="analisis-de-mss">Análisis de MSS</h2>
+<h3 id="paso-12-verificar-mss-en-conexiones-tcp">Paso 12: Verificar MSS en conexiones TCP</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec clienteDHCP curl -v http://google.com 2&gt;&amp;1 | grep MSS</code></pre>
+<p><strong>Interpretación:</strong> El MSS típico en Ethernet es 1460 bytes (MTU 1500 - 40 bytes de overhead TCP/IP).</p>
+<h2 id="ejercicios-practicos">Ejercicios prácticos</h2>
+<h3 id="ejercicio-1-agregar-registros-dns-locales">Ejercicio 1: Agregar registros DNS locales</h3>
+<p>Agrega entradas al archivo <code>/etc/hosts</code> del servidor DNS para resolver nombres internos.</p>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec servidorDNS echo '10.0.0.10 servidor-interno.secops.local' &gt;&gt; /etc/hosts</code></pre>
+<h3 id="ejercicio-2-analizar-nat-en-r1">Ejercicio 2: Analizar NAT en R1</h3>
+<pre class="highlight"><code class="language-bash"># Ver tabla NAT
+sudo ip netns exec R1 iptables -t nat -L -v
+
+# Ver conexiones NAT activas
+sudo ip netns exec R1 conntrack -L</code></pre>
+<h3 id="ejercicio-3-verificar-con-dig">Ejercicio 3: Verificar con dig</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec clienteDHCP dig google.com</code></pre>
+<h2 id="errores-comunes-y-soluciones">Errores comunes y soluciones</h2>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>Causa</th>
+<th>Solución</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DHCP no asigna IP</td>
+<td>dnsmasq no está corriendo.</td>
+<td>Verificar proceso con <code>ps aux | grep dnsmasq</code>.</td>
+</tr>
+<tr>
+<td>DNS no resuelve</td>
+<td>Servidor DNS no configurado.</td>
+<td>Verificar <code>/etc/dnsmasq.conf</code>.</td>
+</tr>
+<tr>
+<td>No sale a Internet</td>
+<td>NAT no configurado.</td>
+<td>Verificar <code>ip_forward=1</code> y reglas de iptables.</td>
+</tr>
+<tr>
+<td>Paquetes fragmentados</td>
+<td>MSS incorrecto.</td>
+<td>Verificar MTU/MSS en la conexión.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conceptos-clave-del-tema-7-aplicados">Conceptos clave del Tema 7 aplicados</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Aplicación en el laboratorio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TCP</td>
+<td>Transferencia HTTP, conexión orientada</td>
+</tr>
+<tr>
+<td>UDP</td>
+<td>Consultas DNS, no orientado a conexión</td>
+</tr>
+<tr>
+<td>MSS</td>
+<td>Tamaño máximo de segmento TCP (1460 bytes)</td>
+</tr>
+<tr>
+<td>DNS</td>
+<td>Resolución de nombres con dnsmasq</td>
+</tr>
+<tr>
+<td>DHCP</td>
+<td>Asignación automática de IPs</td>
+</tr>
+<tr>
+<td>NAT/PAT</td>
+<td>Traducción de direcciones para salida a Internet</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusiones-tecnicas">Conclusiones técnicas</h2>
+<p>En este laboratorio hemos:</p>
+<ol>
+<li>Implementado <strong>servicios DNS y DHCP</strong> en la red.</li>
+<li>Configurado <strong>NAT/PAT</strong> para salida a Internet.</li>
+<li>Analizado la diferencia entre <strong>TCP y UDP</strong> mediante capturas.</li>
+<li>Verificado el <strong>MSS</strong> en conexiones TCP.</li>
+<li>Comprendido la importancia de los servicios de red para los usuarios.</li>
+</ol>
+<p>Los protocolos y servicios de red son la capa que permite a los usuarios finales utilizar la infraestructura de red de manera transparente. DNS y DHCP simplifican la administración, mientras que NAT permite el acceso a Internet con direcciones privadas.</p>
+<h2 id="preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio</h2>
+<p>Hemos dejado la red con servicios DNS, DHCP y NAT funcionando en la sede. En el <strong>Laboratorio 08</strong> exploraremos <strong>Seguridad en Redes</strong>, implementando firewalls, ACLs y una DMZ para proteger la infraestructura.</p>
+<hr/>
+<p><strong>¡Laboratorio 07 completado!</strong> Has implementado servicios de red esenciales. Continúa con el <strong>Laboratorio 08</strong>.</p>
+</div>
+<div class="col-md-3">
+<div class="bs-sidebar hidden-print affix well" role="complementary">
+<ul class="nav bs-sidenav">
+<li class="main active"><a href="#laboratorio-07-protocolos-y-servicios-de-red">Laboratorio 07 – Protocolos y Servicios de Red</a></li>
+<li><a href="#contexto-empresarial">Contexto empresarial</a></li>
+<li><a href="#problema-inicial">Problema inicial</a></li>
+<li><a href="#objetivos-del-laboratorio">Objetivos del laboratorio</a></li>
+<li><a href="#herramientas-necesarias">Herramientas necesarias</a></li>
+<li><a href="#topologia">Topología</a></li>
+<li><a href="#construccion-de-la-red">Construcción de la red</a></li>
+<li><a href="#analisis-de-tcp-y-udp">Análisis de TCP y UDP</a></li>
+<li><a href="#analisis-de-mss">Análisis de MSS</a></li>
+<li><a href="#ejercicios-practicos">Ejercicios prácticos</a></li>
+<li><a href="#errores-comunes-y-soluciones">Errores comunes y soluciones</a></li>
+<li><a href="#conceptos-clave-del-tema-7-aplicados">Conceptos clave del Tema 7 aplicados</a></li>
+<li><a href="#conclusiones-tecnicas">Conclusiones técnicas</a></li>
+<li><a href="#preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="footer">
+<hr/>
+</footer>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/bootstrap.min.js"></script>
+<script src="../../js/base.js"></script>
+<script src="../../search/main.js"></script>
+<script>
+        (function() {
+            const body = document.body;
+            const toggleBtn = document.getElementById('themeToggle');
+            const toggleIcon = toggleBtn ? toggleBtn.querySelector('i') : null;
+            const toggleText = toggleBtn ? toggleBtn.querySelector('.toggle-text') : null;
+
+            const savedTheme = localStorage.getItem('mkdocs-cluster-theme');
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                if (toggleText) toggleText.textContent = 'Claro';
+            } else {
+                body.classList.remove('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                if (toggleText) toggleText.textContent = 'Oscuro';
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    if (body.classList.contains('dark-mode')) {
+                        body.classList.remove('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'light');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                        if (toggleText) toggleText.textContent = 'Oscuro';
+                    } else {
+                        body.classList.add('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'dark');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                        if (toggleText) toggleText.textContent = 'Claro';
+                    }
+                });
+            }
+        })();
+        </script>
+<script type="module">import mermaid from "https://unpkg.com/mermaid@10.6.1/dist/mermaid.esm.min.mjs";
+mermaid.initialize({
+    theme: "default",
+    securityLevel: "loose"
+});</script></body>
+</html>

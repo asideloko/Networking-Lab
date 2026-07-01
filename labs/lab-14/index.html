@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="Laboratorios de redes desde cero" name="description"/>
+<meta content="Guillermo Castillo" name="author"/>
+<link href="../../img/favicon.ico" rel="shortcut icon"/>
+<title>14 - Herramientas Linux Avanzadas - Networking Lab – Manual de Implementación Profesional</title>
+<link href="../../css/bootstrap.min.css" rel="stylesheet"/>
+<link href="../../css/font-awesome.min.css" rel="stylesheet"/>
+<link href="../../css/base.css" rel="stylesheet"/>
+<link href="../../css/extra.css" rel="stylesheet"/>
+<!-- HTML5 shim and Respond.js IE8 support -->
+<!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+</head>
+<body>
+<!-- Checkbox oculto para controlar el menú -->
+<input class="sidebar-checkbox" id="sidebar-checkbox" type="checkbox"/>
+<!-- Sidebar izquierda -->
+<div class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<img alt="Logo" class="sidebar-logo" src="../../img/logo.png"/>
+<h3 class="sidebar-title">Networking Lab – Manual de Implementación Profesional</h3>
+<button class="theme-toggle btn btn-sm btn-default" id="themeToggle" title="Cambiar tema claro/oscuro">
+<i class="fa fa-moon-o"></i> <span class="toggle-text">Oscuro</span>
+</button>
+</div>
+<ul class="nav sidebar-nav" id="sidebar-nav">
+<li>
+<a href="../..">Inicio</a>
+</li>
+<li class="dropdown-submenu active">
+<a class="dropdown-toggle" data-toggle="dropdown" href="#">Laboratorios <span class="caret"></span></a>
+<ul class="dropdown-menu">
+<li>
+<a href="../lab-01/">01 - Fundamentos de Redes y Encapsulación</a>
+</li>
+<li>
+<a href="../lab-02/">02 - Transmisión de Datos y Capa Física</a>
+</li>
+<li>
+<a href="../lab-03/">03 - Componentes de Red y Conmutación</a>
+</li>
+<li>
+<a href="../lab-04/">04 - Direccionamiento IP y Subredes</a>
+</li>
+<li>
+<a href="../lab-05/">05 - Conmutación y VLANs</a>
+</li>
+<li>
+<a href="../lab-06/">06 - Enrutamiento y Conectividad entre Redes</a>
+</li>
+<li>
+<a href="../lab-07/">07 - Protocolos y Servicios de Red</a>
+</li>
+<li>
+<a href="../lab-08/">08 - Seguridad en Redes</a>
+</li>
+<li>
+<a href="../lab-09/">09 - VPN y Tunelización</a>
+</li>
+<li>
+<a href="../lab-10/">10 - Infraestructura WAN y Core</a>
+</li>
+<li>
+<a href="../lab-11/">11 - Arquitectura de Red Empresarial</a>
+</li>
+<li>
+<a href="../lab-12/">12 - Arquitecturas Modernas de Red</a>
+</li>
+<li>
+<a href="../lab-13/">13 - Monitoreo y Diagnóstico de Redes</a>
+</li>
+<li class="active">
+<a href="./">14 - Herramientas Linux Avanzadas</a>
+</li>
+<li>
+<a href="../lab-15/">15 - Implementación Práctica Integral</a>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<!-- Botón hamburguesa (etiqueta para el checkbox) -->
+<label class="sidebar-toggle" for="sidebar-checkbox" id="sidebarToggle">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</label>
+<div class="wrapper">
+<div class="main-content" id="mainContent">
+<div class="row">
+<div class="col-md-9" role="main">
+<h1 id="laboratorio-14-herramientas-linux-avanzadas">Laboratorio 14 – Herramientas Linux Avanzadas</h1>
+<h2 id="contexto-empresarial">Contexto empresarial</h2>
+<p>La empresa <strong>Networking SecOps</strong> ha implementado su infraestructura de red y sistemas de monitoreo (Laboratorio 13). Ahora el equipo de operaciones necesita dominar las herramientas avanzadas de Linux para administrar, diagnosticar y optimizar la red de manera eficiente.</p>
+<h2 id="topologia">Topología</h2>
+<div class="mermaid">graph TB
+    R[Router Linux]
+    WAN[Internet 203.0.113.2]
+    LAN1[Red Interna 10.0.0.0/24]
+    LAN2[Red DMZ 10.0.1.0/24]
+    H1[Host1 10.0.0.10]
+    H2[Host2 10.0.0.20]
+    S1[Servidor DMZ 10.0.1.10]
+    R --- WAN
+    R --- LAN1
+    R --- LAN2
+    H1 --- LAN1
+    H2 --- LAN1
+    S1 --- LAN2</div>
+<p><strong>Direccionamiento:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Dispositivo</th>
+<th>Interfaz</th>
+<th>Dirección IP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Router Linux</td>
+<td>eth0 (WAN)</td>
+<td>203.0.113.1/30</td>
+</tr>
+<tr>
+<td>Router Linux</td>
+<td>eth1 (LAN)</td>
+<td>10.0.0.1/24</td>
+</tr>
+<tr>
+<td>Router Linux</td>
+<td>eth2 (DMZ)</td>
+<td>10.0.1.1/24</td>
+</tr>
+<tr>
+<td>Host1</td>
+<td>-</td>
+<td>10.0.0.10/24</td>
+</tr>
+<tr>
+<td>Host2</td>
+<td>-</td>
+<td>10.0.0.20/24</td>
+</tr>
+<tr>
+<td>Servidor DMZ</td>
+<td>-</td>
+<td>10.0.1.10/24</td>
+</tr>
+</tbody>
+</table>
+<h2 id="construccion">Construcción</h2>
+<h3 id="paso-1-crear-namespaces">Paso 1: Crear namespaces</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns add Router
+sudo ip netns add Host1
+sudo ip netns add Host2
+sudo ip netns add ServidorDMZ</code></pre>
+<h3 id="paso-2-conectar-interfaces">Paso 2: Conectar interfaces</h3>
+<pre class="highlight"><code class="language-bash">sudo ip link add veth-r-wan type veth peer name veth-wan-r
+sudo ip link set veth-r-wan netns Router
+sudo ip netns exec Router ip addr add 203.0.113.1/30 dev veth-r-wan
+sudo ip netns exec Router ip link set veth-r-wan up
+sudo ip addr add 203.0.113.2/30 dev veth-wan-r
+sudo ip link set veth-wan-r up
+
+sudo ip link add veth-r-lan1 type veth peer name veth-lan1-r
+sudo ip link set veth-r-lan1 netns Router
+sudo ip netns exec Router ip addr add 10.0.0.1/24 dev veth-r-lan1
+sudo ip netns exec Router ip link set veth-r-lan1 up
+sudo ip link set veth-lan1-r netns Host1
+sudo ip netns exec Host1 ip addr add 10.0.0.10/24 dev veth-lan1-r
+sudo ip netns exec Host1 ip link set veth-lan1-r up
+sudo ip netns exec Host1 ip route add default via 10.0.0.1
+
+sudo ip link add veth-r-lan2 type veth peer name veth-lan2-r
+sudo ip link set veth-r-lan2 netns Router
+sudo ip netns exec Router ip addr add 10.0.1.1/24 dev veth-r-lan2
+sudo ip netns exec Router ip link set veth-r-lan2 up
+sudo ip link set veth-lan2-r netns ServidorDMZ
+sudo ip netns exec ServidorDMZ ip addr add 10.0.1.10/24 dev veth-lan2-r
+sudo ip netns exec ServidorDMZ ip link set veth-lan2-r up
+sudo ip netns exec ServidorDMZ ip route add default via 10.0.1.1</code></pre>
+<h3 id="paso-3-configurar-enrutamiento">Paso 3: Configurar enrutamiento</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec Router sysctl -w net.ipv4.ip_forward=1
+sudo ip netns exec Router ip route add default via 203.0.113.2
+sudo ip netns exec Router ip route show</code></pre>
+<h3 id="paso-4-iproute2">Paso 4: iproute2</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec Router ip addr show
+sudo ip netns exec Router ip link set veth-r-lan1 mtu 9000
+sudo ip netns exec Router ip route add 10.0.2.0/24 via 10.0.0.1
+sudo ip netns exec Router ip neigh show
+sudo ip netns exec Router ip rule show</code></pre>
+<h3 id="paso-5-ss">Paso 5: ss</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec Router ss -tln
+sudo ip netns exec Router ss -tulpn
+sudo ip netns exec Router ss -tn state established
+sudo ip netns exec Router ss -tnp dport = :443</code></pre>
+<h3 id="paso-6-nftables">Paso 6: nftables</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec Router nft add table inet filter
+sudo ip netns exec Router nft add chain inet filter input { type filter hook input priority 0; policy drop; }
+sudo ip netns exec Router nft add rule inet filter input iif lo accept
+sudo ip netns exec Router nft add rule inet filter input ct state established,related accept
+sudo ip netns exec Router nft add rule inet filter input tcp dport 22 accept
+sudo ip netns exec Router nft add rule inet filter input tcp dport { 80, 443 } accept
+sudo ip netns exec Router nft list ruleset</code></pre>
+<h3 id="paso-7-diagnostico">Paso 7: Diagnóstico</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec Router ethtool veth-r-lan1
+sudo ip netns exec Router ping -c 4 10.0.0.10
+sudo ip netns exec Router traceroute -n 8.8.8.8
+sudo ip netns exec Router tcpdump -i veth-r-lan1 -c 5 -n</code></pre>
+<h2 id="ejercicios">Ejercicios</h2>
+<h3 id="ejercicio-1-agregar-regla-nftables-para-bloquear-icmp">Ejercicio 1: Agregar regla nftables para bloquear ICMP</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec Router nft add rule inet filter input ip protocol icmp drop</code></pre>
+<h3 id="ejercicio-2-verificar-conexiones-con-ss">Ejercicio 2: Verificar conexiones con ss</h3>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec Host1 nc -l -p 9000 &amp;
+sudo ip netns exec Host2 nc 10.0.0.10 9000
+sudo ip netns exec Router ss -tn state established</code></pre>
+<h2 id="conceptos-clave">Conceptos clave</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Aplicación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>iproute2</td>
+<td>Administración moderna de red</td>
+</tr>
+<tr>
+<td>ss</td>
+<td>Análisis de sockets</td>
+</tr>
+<tr>
+<td>nftables</td>
+<td>Firewall moderno</td>
+</tr>
+<tr>
+<td>ethtool</td>
+<td>Diagnóstico físico</td>
+</tr>
+<tr>
+<td>Netcat</td>
+<td>Pruebas de conectividad</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusiones">Conclusiones</h2>
+<p>Las herramientas avanzadas de Linux permiten administrar y diagnosticar redes de manera eficiente, reemplazando las herramientas tradicionales obsoletas.</p>
+<hr/>
+<p><strong>¡Laboratorio 14 completado!</strong> Continúa con el <strong>Laboratorio 15</strong>.</p>
+</div>
+<div class="col-md-3">
+<div class="bs-sidebar hidden-print affix well" role="complementary">
+<ul class="nav bs-sidenav">
+<li class="main active"><a href="#laboratorio-14-herramientas-linux-avanzadas">Laboratorio 14 – Herramientas Linux Avanzadas</a></li>
+<li><a href="#contexto-empresarial">Contexto empresarial</a></li>
+<li><a href="#topologia">Topología</a></li>
+<li><a href="#construccion">Construcción</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#conceptos-clave">Conceptos clave</a></li>
+<li><a href="#conclusiones">Conclusiones</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="footer">
+<hr/>
+</footer>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/bootstrap.min.js"></script>
+<script src="../../js/base.js"></script>
+<script src="../../search/main.js"></script>
+<script>
+        (function() {
+            const body = document.body;
+            const toggleBtn = document.getElementById('themeToggle');
+            const toggleIcon = toggleBtn ? toggleBtn.querySelector('i') : null;
+            const toggleText = toggleBtn ? toggleBtn.querySelector('.toggle-text') : null;
+
+            const savedTheme = localStorage.getItem('mkdocs-cluster-theme');
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                if (toggleText) toggleText.textContent = 'Claro';
+            } else {
+                body.classList.remove('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                if (toggleText) toggleText.textContent = 'Oscuro';
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    if (body.classList.contains('dark-mode')) {
+                        body.classList.remove('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'light');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                        if (toggleText) toggleText.textContent = 'Oscuro';
+                    } else {
+                        body.classList.add('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'dark');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                        if (toggleText) toggleText.textContent = 'Claro';
+                    }
+                });
+            }
+        })();
+        </script>
+<script type="module">import mermaid from "https://unpkg.com/mermaid@10.6.1/dist/mermaid.esm.min.mjs";
+mermaid.initialize({
+    theme: "default",
+    securityLevel: "loose"
+});</script></body>
+</html>

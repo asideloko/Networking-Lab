@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="Laboratorios de redes desde cero" name="description"/>
+<meta content="Guillermo Castillo" name="author"/>
+<link href="../../img/favicon.ico" rel="shortcut icon"/>
+<title>06 - Enrutamiento y Conectividad entre Redes - Networking Lab – Manual de Implementación Profesional</title>
+<link href="../../css/bootstrap.min.css" rel="stylesheet"/>
+<link href="../../css/font-awesome.min.css" rel="stylesheet"/>
+<link href="../../css/base.css" rel="stylesheet"/>
+<link href="../../css/extra.css" rel="stylesheet"/>
+<!-- HTML5 shim and Respond.js IE8 support -->
+<!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+</head>
+<body>
+<!-- Checkbox oculto para controlar el menú -->
+<input class="sidebar-checkbox" id="sidebar-checkbox" type="checkbox"/>
+<!-- Sidebar izquierda -->
+<div class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<img alt="Logo" class="sidebar-logo" src="../../img/logo.png"/>
+<h3 class="sidebar-title">Networking Lab – Manual de Implementación Profesional</h3>
+<button class="theme-toggle btn btn-sm btn-default" id="themeToggle" title="Cambiar tema claro/oscuro">
+<i class="fa fa-moon-o"></i> <span class="toggle-text">Oscuro</span>
+</button>
+</div>
+<ul class="nav sidebar-nav" id="sidebar-nav">
+<li>
+<a href="../..">Inicio</a>
+</li>
+<li class="dropdown-submenu active">
+<a class="dropdown-toggle" data-toggle="dropdown" href="#">Laboratorios <span class="caret"></span></a>
+<ul class="dropdown-menu">
+<li>
+<a href="../lab-01/">01 - Fundamentos de Redes y Encapsulación</a>
+</li>
+<li>
+<a href="../lab-02/">02 - Transmisión de Datos y Capa Física</a>
+</li>
+<li>
+<a href="../lab-03/">03 - Componentes de Red y Conmutación</a>
+</li>
+<li>
+<a href="../lab-04/">04 - Direccionamiento IP y Subredes</a>
+</li>
+<li>
+<a href="../lab-05/">05 - Conmutación y VLANs</a>
+</li>
+<li class="active">
+<a href="./">06 - Enrutamiento y Conectividad entre Redes</a>
+</li>
+<li>
+<a href="../lab-07/">07 - Protocolos y Servicios de Red</a>
+</li>
+<li>
+<a href="../lab-08/">08 - Seguridad en Redes</a>
+</li>
+<li>
+<a href="../lab-09/">09 - VPN y Tunelización</a>
+</li>
+<li>
+<a href="../lab-10/">10 - Infraestructura WAN y Core</a>
+</li>
+<li>
+<a href="../lab-11/">11 - Arquitectura de Red Empresarial</a>
+</li>
+<li>
+<a href="../lab-12/">12 - Arquitecturas Modernas de Red</a>
+</li>
+<li>
+<a href="../lab-13/">13 - Monitoreo y Diagnóstico de Redes</a>
+</li>
+<li>
+<a href="../lab-14/">14 - Herramientas Linux Avanzadas</a>
+</li>
+<li>
+<a href="../lab-15/">15 - Implementación Práctica Integral</a>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<!-- Botón hamburguesa (etiqueta para el checkbox) -->
+<label class="sidebar-toggle" for="sidebar-checkbox" id="sidebarToggle">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</label>
+<div class="wrapper">
+<div class="main-content" id="mainContent">
+<div class="row">
+<div class="col-md-9" role="main">
+<h1 id="laboratorio-06-enrutamiento-y-conectividad-entre-redes">Laboratorio 06 – Enrutamiento y Conectividad entre Redes</h1>
+<h2 id="contexto-empresarial">Contexto empresarial</h2>
+<p>La empresa <strong>Networking SecOps</strong> ha implementado exitosamente su red con VLANs y Router-on-a-Stick. Ahora necesita <strong>conectar su sede central con dos sucursales</strong> (Sucursal A y Sucursal B) que se encuentran en ubicaciones geográficas diferentes. Cada sucursal tiene su propia red local y necesita comunicarse con la sede y entre sí.</p>
+<p>El equipo de redes ha decidido implementar:</p>
+<ol>
+<li><strong>Rutas estáticas</strong> iniciales para conectar las oficinas.</li>
+<li><strong>OSPF</strong> como protocolo de enrutamiento dinámico para adaptarse a cambios.</li>
+<li><strong>Túneles GRE</strong> para conectar redes no contiguas a través de Internet.</li>
+</ol>
+<h2 id="problema-inicial">Problema inicial</h2>
+<ul>
+<li>La sede central tiene una red con VLANs (Ventas, IT, Administración).</li>
+<li>Las sucursales A y B tienen sus propias redes locales.</li>
+<li>No hay conectividad entre las oficinas.</li>
+<li>Se necesita enrutar el tráfico entre todas las redes.</li>
+</ul>
+<h2 id="objetivos-del-laboratorio">Objetivos del laboratorio</h2>
+<ol>
+<li>Comprender los principios del enrutamiento IP.</li>
+<li>Configurar <strong>rutas estáticas</strong> y la <strong>ruta por defecto</strong>.</li>
+<li>Implementar <strong>OSPF</strong> (Open Shortest Path First) como protocolo IGP.</li>
+<li>Analizar la <strong>tabla de enrutamiento</strong> y el proceso de <strong>longest prefix match</strong>.</li>
+<li>Configurar un <strong>túnel GRE</strong> para interconectar redes remotas.</li>
+<li>Verificar la conectividad entre todas las oficinas.</li>
+</ol>
+<h2 id="topologia">Topología</h2>
+<p>La topología consta de tres routers (R1, R2, R3) que representan la sede y dos sucursales.</p>
+<div class="mermaid">graph TB
+    subgraph Sede_Central
+        R1[Router 1 Sede]
+        LAN1[Red Sede 10.0.0.0/24]
+        VLAN10[VLAN 10 Ventas 10.0.10.0/24]
+        VLAN20[VLAN 20 IT 10.0.20.0/24]
+        VLAN30[VLAN 30 Admin 10.0.30.0/24]
+    end
+    subgraph Sucursal_A
+        R2[Router 2 Sucursal A]
+        LAN2[Red Sucursal A 10.0.1.0/24]
+    end
+    subgraph Sucursal_B
+        R3[Router 3 Sucursal B]
+        LAN3[Red Sucursal B 10.0.2.0/24]
+    end
+    R1 --- R2
+    R2 --- R3
+    LAN1 --- R1
+    VLAN10 --- R1
+    VLAN20 --- R1
+    VLAN30 --- R1
+    LAN2 --- R2
+    LAN3 --- R3</div>
+<p><strong>Direccionamiento:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Dispositivo</th>
+<th>Interfaz</th>
+<th>Dirección IP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1 (Sede)</td>
+<td>eth0 (LAN)</td>
+<td>10.0.0.1/24</td>
+</tr>
+<tr>
+<td>R1 (Sede)</td>
+<td>eth1 (R1-R2)</td>
+<td>192.168.1.1/30</td>
+</tr>
+<tr>
+<td>R1 (Sede)</td>
+<td>VLAN 10</td>
+<td>10.0.10.1/24</td>
+</tr>
+<tr>
+<td>R1 (Sede)</td>
+<td>VLAN 20</td>
+<td>10.0.20.1/24</td>
+</tr>
+<tr>
+<td>R1 (Sede)</td>
+<td>VLAN 30</td>
+<td>10.0.30.1/24</td>
+</tr>
+<tr>
+<td>R2 (Sucursal A)</td>
+<td>eth0 (LAN)</td>
+<td>10.0.1.1/24</td>
+</tr>
+<tr>
+<td>R2 (Sucursal A)</td>
+<td>eth1 (R1-R2)</td>
+<td>192.168.1.2/30</td>
+</tr>
+<tr>
+<td>R2 (Sucursal A)</td>
+<td>eth2 (R2-R3)</td>
+<td>192.168.2.1/30</td>
+</tr>
+<tr>
+<td>R3 (Sucursal B)</td>
+<td>eth0 (LAN)</td>
+<td>10.0.2.1/24</td>
+</tr>
+<tr>
+<td>R3 (Sucursal B)</td>
+<td>eth1 (R2-R3)</td>
+<td>192.168.2.2/30</td>
+</tr>
+<tr>
+<td>Cliente Sede</td>
+<td>-</td>
+<td>10.0.0.10/24</td>
+</tr>
+<tr>
+<td>Cliente Sucursal A</td>
+<td>-</td>
+<td>10.0.1.10/24</td>
+</tr>
+<tr>
+<td>Cliente Sucursal B</td>
+<td>-</td>
+<td>10.0.2.10/24</td>
+</tr>
+</tbody>
+</table>
+<h2 id="construccion-de-la-red">Construcción de la red</h2>
+<h3 id="paso-1-crear-namespaces-y-enlaces">Paso 1: Crear namespaces y enlaces</h3>
+<p>Creamos tres routers y tres clientes (uno por oficina).</p>
+<pre class="highlight"><code class="language-bash"># Routers
+sudo ip netns add R1
+sudo ip netns add R2
+sudo ip netns add R3
+
+# Clientes
+sudo ip netns add clienteSede
+sudo ip netns add clienteSucA
+sudo ip netns add clienteSucB</code></pre>
+<h3 id="paso-2-conectar-routers-y-clientes">Paso 2: Conectar routers y clientes</h3>
+<pre class="highlight"><code class="language-bash"># Enlace R1 - R2
+sudo ip link add veth-r1r2 type veth peer name veth-r2r1
+sudo ip link set veth-r1r2 netns R1
+sudo ip link set veth-r2r1 netns R2
+
+# Enlace R2 - R3
+sudo ip link add veth-r2r3 type veth peer name veth-r3r2
+sudo ip link set veth-r2r3 netns R2
+sudo ip link set veth-r3r2 netns R3
+
+# Cliente Sede -&gt; R1
+sudo ip link add veth-c1 type veth peer name veth-r1c
+sudo ip link set veth-c1 netns clienteSede
+sudo ip link set veth-r1c netns R1
+
+# Cliente Sucursal A -&gt; R2
+sudo ip link add veth-c2 type veth peer name veth-r2c
+sudo ip link set veth-c2 netns clienteSucA
+sudo ip link set veth-r2c netns R2
+
+# Cliente Sucursal B -&gt; R3
+sudo ip link add veth-c3 type veth peer name veth-r3c
+sudo ip link set veth-c3 netns clienteSucB
+sudo ip link set veth-r3c netns R3</code></pre>
+<h3 id="paso-3-asignar-direcciones-ip-y-activar-interfaces">Paso 3: Asignar direcciones IP y activar interfaces</h3>
+<p><strong>Router R1 (Sede):</strong></p>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec R1 ip addr add 10.0.0.1/24 dev veth-r1c
+sudo ip netns exec R1 ip addr add 192.168.1.1/30 dev veth-r1r2
+sudo ip netns exec R1 ip link set veth-r1c up
+sudo ip netns exec R1 ip link set veth-r1r2 up
+sudo ip netns exec R1 ip link set lo up</code></pre>
+<p><strong>Router R2 (Sucursal A):</strong></p>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec R2 ip addr add 10.0.1.1/24 dev veth-r2c
+sudo ip netns exec R2 ip addr add 192.168.1.2/30 dev veth-r2r1
+sudo ip netns exec R2 ip addr add 192.168.2.1/30 dev veth-r2r3
+sudo ip netns exec R2 ip link set veth-r2c up
+sudo ip netns exec R2 ip link set veth-r2r1 up
+sudo ip netns exec R2 ip link set veth-r2r3 up
+sudo ip netns exec R2 ip link set lo up</code></pre>
+<p><strong>Router R3 (Sucursal B):</strong></p>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec R3 ip addr add 10.0.2.1/24 dev veth-r3c
+sudo ip netns exec R3 ip addr add 192.168.2.2/30 dev veth-r3r2
+sudo ip netns exec R3 ip link set veth-r3c up
+sudo ip netns exec R3 ip link set veth-r3r2 up
+sudo ip netns exec R3 ip link set lo up</code></pre>
+<p><strong>Clientes:</strong></p>
+<pre class="highlight"><code class="language-bash"># Sede
+sudo ip netns exec clienteSede ip addr add 10.0.0.10/24 dev veth-c1
+sudo ip netns exec clienteSede ip link set veth-c1 up
+sudo ip netns exec clienteSede ip link set lo up
+
+# Sucursal A
+sudo ip netns exec clienteSucA ip addr add 10.0.1.10/24 dev veth-c2
+sudo ip netns exec clienteSucA ip link set veth-c2 up
+sudo ip netns exec clienteSucA ip link set lo up
+
+# Sucursal B
+sudo ip netns exec clienteSucB ip addr add 10.0.2.10/24 dev veth-c3
+sudo ip netns exec clienteSucB ip link set veth-c3 up
+sudo ip netns exec clienteSucB ip link set lo up</code></pre>
+<h3 id="paso-4-configurar-rutas-estaticas">Paso 4: Configurar rutas estáticas</h3>
+<p><strong>En R1 (Sede):</strong></p>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec R1 ip route add 10.0.1.0/24 via 192.168.1.2
+sudo ip netns exec R1 ip route add 10.0.2.0/24 via 192.168.1.2</code></pre>
+<p><strong>En R2 (Sucursal A):</strong></p>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec R2 ip route add 10.0.0.0/24 via 192.168.1.1
+sudo ip netns exec R2 ip route add 10.0.2.0/24 via 192.168.2.2</code></pre>
+<p><strong>En R3 (Sucursal B):</strong></p>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec R3 ip route add 10.0.0.0/24 via 192.168.2.1
+sudo ip netns exec R3 ip route add 10.0.1.0/24 via 192.168.2.1</code></pre>
+<p><strong>Ruta por defecto en clientes:</strong></p>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec clienteSede ip route add default via 10.0.0.1
+sudo ip netns exec clienteSucA ip route add default via 10.0.1.1
+sudo ip netns exec clienteSucB ip route add default via 10.0.2.1</code></pre>
+<h3 id="paso-5-verificar-conectividad">Paso 5: Verificar conectividad</h3>
+<pre class="highlight"><code class="language-bash"># Desde Sede a Sucursal A
+sudo ip netns exec clienteSede ping -c 4 10.0.1.10
+
+# Desde Sucursal A a Sucursal B
+sudo ip netns exec clienteSucA ping -c 4 10.0.2.10
+
+# Ver tabla de enrutamiento en R1
+sudo ip netns exec R1 ip route show</code></pre>
+<p><strong>Salida esperada:</strong> 0% de pérdida en todos los pings.</p>
+<h3 id="paso-6-agregar-redundancia-enlace-r1-r3">Paso 6: Agregar redundancia (enlace R1-R3)</h3>
+<p>Para demostrar la ventaja de tener rutas alternativas:</p>
+<pre class="highlight"><code class="language-bash"># Crear enlace R1-R3
+sudo ip link add veth-r1r3 type veth peer name veth-r3r1
+sudo ip link set veth-r1r3 netns R1
+sudo ip link set veth-r3r1 netns R3
+sudo ip netns exec R1 ip addr add 192.168.3.1/30 dev veth-r1r3
+sudo ip netns exec R1 ip link set veth-r1r3 up
+sudo ip netns exec R3 ip addr add 192.168.3.2/30 dev veth-r3r1
+sudo ip netns exec R3 ip link set veth-r3r1 up
+
+# Agregar rutas estáticas redundantes
+sudo ip netns exec R1 ip route add 10.0.2.0/24 via 192.168.3.2
+sudo ip netns exec R3 ip route add 10.0.0.0/24 via 192.168.3.1</code></pre>
+<h3 id="paso-7-simular-fallo-y-verificar-redundancia">Paso 7: Simular fallo y verificar redundancia</h3>
+<pre class="highlight"><code class="language-bash"># Desconectar enlace R1-R2 (simular fallo)
+sudo ip netns exec R1 ip link set veth-r1r2 down
+sudo ip netns exec R2 ip link set veth-r2r1 down
+
+# Verificar conectividad por ruta alternativa
+sudo ip netns exec clienteSede ping -c 4 10.0.2.10</code></pre>
+<p><strong>Salida esperada:</strong> Debe funcionar usando la ruta alternativa por R3.</p>
+<h3 id="paso-8-configurar-tunel-gre">Paso 8: Configurar túnel GRE</h3>
+<p>Los túneles GRE permiten conectar redes no contiguas a través de Internet.</p>
+<pre class="highlight"><code class="language-bash"># En R1
+sudo ip netns exec R1 ip tunnel add gre1 mode gre remote 192.168.3.2 local 192.168.3.1 ttl 255
+sudo ip netns exec R1 ip addr add 10.100.0.1/30 dev gre1
+sudo ip netns exec R1 ip link set gre1 up
+
+# En R3
+sudo ip netns exec R3 ip tunnel add gre1 mode gre remote 192.168.3.1 local 192.168.3.2 ttl 255
+sudo ip netns exec R3 ip addr add 10.100.0.2/30 dev gre1
+sudo ip netns exec R3 ip link set gre1 up
+
+# Verificar túnel
+sudo ip netns exec R1 ping -c 4 10.100.0.2</code></pre>
+<h2 id="analisis-de-la-tabla-de-enrutamiento">Análisis de la tabla de enrutamiento</h2>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec R1 ip route show</code></pre>
+<p><strong>Interpretación de la salida:</strong>
+- Las rutas conectadas directamente (directas) aparecen con <code>dev</code>.
+- Las rutas estáticas aparecen con <code>via</code>.
+- La ruta por defecto (si existe) es <code>0.0.0.0/0</code>.</p>
+<h2 id="ejercicios-practicos">Ejercicios prácticos</h2>
+<h3 id="ejercicio-1-agregar-una-nueva-oficina">Ejercicio 1: Agregar una nueva oficina</h3>
+<p>Agrega una cuarta oficina (Sucursal C) con red 10.0.3.0/24, conéctala a R2 y configura las rutas necesarias para que todos los clientes se comuniquen.</p>
+<h3 id="ejercicio-2-verificar-el-ttl">Ejercicio 2: Verificar el TTL</h3>
+<p>Desde el cliente Sede, haz un <code>traceroute</code> a la Sucursal B y observa cómo los routers decrementan el TTL.</p>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec clienteSede traceroute -n 10.0.2.10</code></pre>
+<h3 id="ejercicio-3-recuperar-el-enlace">Ejercicio 3: Recuperar el enlace</h3>
+<p>Vuelve a activar el enlace R1-R2 y verifica la conectividad.</p>
+<pre class="highlight"><code class="language-bash">sudo ip netns exec R1 ip link set veth-r1r2 up
+sudo ip netns exec R2 ip link set veth-r2r1 up</code></pre>
+<h2 id="errores-comunes-y-soluciones">Errores comunes y soluciones</h2>
+<table>
+<thead>
+<tr>
+<th>Error</th>
+<th>Causa</th>
+<th>Solución</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ping falla entre oficinas</td>
+<td>Falta ruta de retorno.</td>
+<td>Verificar rutas en ambos sentidos.</td>
+</tr>
+<tr>
+<td>Traceroute muestra asteriscos</td>
+<td>Firewall bloquea ICMP.</td>
+<td>Permitir ICMP en las políticas.</td>
+</tr>
+<tr>
+<td>El túnel GRE no funciona</td>
+<td>IPs de extremos no accesibles.</td>
+<td>Verificar conectividad entre extremos.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conceptos-clave-del-tema-6-aplicados">Conceptos clave del Tema 6 aplicados</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Aplicación en el laboratorio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Enrutamiento</td>
+<td>Conexión entre redes diferentes</td>
+</tr>
+<tr>
+<td>Ruta estática</td>
+<td>Configuración manual de rutas</td>
+</tr>
+<tr>
+<td>Ruta por defecto</td>
+<td>Gateway para tráfico desconocido</td>
+</tr>
+<tr>
+<td>Tabla de enrutamiento</td>
+<td><code>ip route show</code> en cada router</td>
+</tr>
+<tr>
+<td>Longest prefix match</td>
+<td>Selección de ruta más específica</td>
+</tr>
+<tr>
+<td>Túnel GRE</td>
+<td>Conexión de redes no contiguas</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusiones-tecnicas">Conclusiones técnicas</h2>
+<p>En este laboratorio hemos:</p>
+<ol>
+<li>Implementado una topología con tres routers interconectados.</li>
+<li>Configurado <strong>rutas estáticas</strong> para interconectar las oficinas.</li>
+<li>Analizado la <strong>tabla de enrutamiento</strong> y el proceso de selección.</li>
+<li>Agregado <strong>redundancia</strong> con un enlace alternativo.</li>
+<li>Configurado un <strong>túnel GRE</strong> para conectar redes no contiguas.</li>
+</ol>
+<p>El enrutamiento es el corazón de la comunicación entre redes. Las rutas estáticas son simples pero no escalan, mientras que los protocolos dinámicos como OSPF ofrecen convergencia automática. Los túneles GRE permiten extender redes a través de infraestructuras IP.</p>
+<h2 id="preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio</h2>
+<p>En el <strong>Laboratorio 07</strong> exploraremos <strong>protocolos y servicios de red</strong> como DHCP, DNS, NAT y firewalls.</p>
+<hr/>
+<p><strong>¡Laboratorio 06 completado!</strong> Has implementado enrutamiento entre redes. Continúa con el <strong>Laboratorio 07</strong>.</p>
+</div>
+<div class="col-md-3">
+<div class="bs-sidebar hidden-print affix well" role="complementary">
+<ul class="nav bs-sidenav">
+<li class="main active"><a href="#laboratorio-06-enrutamiento-y-conectividad-entre-redes">Laboratorio 06 – Enrutamiento y Conectividad entre Redes</a></li>
+<li><a href="#contexto-empresarial">Contexto empresarial</a></li>
+<li><a href="#problema-inicial">Problema inicial</a></li>
+<li><a href="#objetivos-del-laboratorio">Objetivos del laboratorio</a></li>
+<li><a href="#topologia">Topología</a></li>
+<li><a href="#construccion-de-la-red">Construcción de la red</a></li>
+<li><a href="#analisis-de-la-tabla-de-enrutamiento">Análisis de la tabla de enrutamiento</a></li>
+<li><a href="#ejercicios-practicos">Ejercicios prácticos</a></li>
+<li><a href="#errores-comunes-y-soluciones">Errores comunes y soluciones</a></li>
+<li><a href="#conceptos-clave-del-tema-6-aplicados">Conceptos clave del Tema 6 aplicados</a></li>
+<li><a href="#conclusiones-tecnicas">Conclusiones técnicas</a></li>
+<li><a href="#preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="footer">
+<hr/>
+</footer>
+<script src="../../js/jquery.min.js"></script>
+<script src="../../js/bootstrap.min.js"></script>
+<script src="../../js/base.js"></script>
+<script src="../../search/main.js"></script>
+<script>
+        (function() {
+            const body = document.body;
+            const toggleBtn = document.getElementById('themeToggle');
+            const toggleIcon = toggleBtn ? toggleBtn.querySelector('i') : null;
+            const toggleText = toggleBtn ? toggleBtn.querySelector('.toggle-text') : null;
+
+            const savedTheme = localStorage.getItem('mkdocs-cluster-theme');
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                if (toggleText) toggleText.textContent = 'Claro';
+            } else {
+                body.classList.remove('dark-mode');
+                if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                if (toggleText) toggleText.textContent = 'Oscuro';
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    if (body.classList.contains('dark-mode')) {
+                        body.classList.remove('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'light');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-moon-o';
+                        if (toggleText) toggleText.textContent = 'Oscuro';
+                    } else {
+                        body.classList.add('dark-mode');
+                        localStorage.setItem('mkdocs-cluster-theme', 'dark');
+                        if (toggleIcon) toggleIcon.className = 'fa fa-sun-o';
+                        if (toggleText) toggleText.textContent = 'Claro';
+                    }
+                });
+            }
+        })();
+        </script>
+<script type="module">import mermaid from "https://unpkg.com/mermaid@10.6.1/dist/mermaid.esm.min.mjs";
+mermaid.initialize({
+    theme: "default",
+    securityLevel: "loose"
+});</script></body>
+</html>
