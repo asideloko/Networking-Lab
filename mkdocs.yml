@@ -29,8 +29,9 @@ plugins:
   - search
   - mermaid2:
       version: 10.6.1
-      theme: default
-      securityLevel: loose
+      arguments:
+        theme: default
+        securityLevel: loose
 
 nav:
   - Inicio: index.md
