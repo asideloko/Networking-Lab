@@ -2,6 +2,8 @@
 
 Repositorio con 15 laboratorios prácticos para aprender redes y seguridad desde cero, construyendo una infraestructura completa.
 
+# **https://asideloko.github.io/Networking-Lab/**
+
 ## Cómo usar este repositorio
 
 1.  Clona el repositorio.
@@ -14,12 +16,6 @@ Repositorio con 15 laboratorios prácticos para aprender redes y seguridad desde
     mkdocs serve
     ```
 4.  Abre tu navegador en `http://127.0.0.1:8000`.
-
-## Estructura
-
--   `docs/` → contenido editable.
--   `docs/labs/` → cada laboratorio en su carpeta.
--   `site/` → sitio generado (no subir a Git).
 
 ## Licencia
 
