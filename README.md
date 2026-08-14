@@ -20,3 +20,4 @@ Repositorio con 15 laboratorios prácticos para aprender redes y seguridad desde
 ## Licencia
 
 Uso educativo.
+https://leanpub.com/networking-fundamentos-implementacion
