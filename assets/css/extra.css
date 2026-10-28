@@ -1,0 +1,308 @@
+/* NETWORKING · SecOpsMX — diseño editorial */
+
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../fonts/ChakraPetch-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../fonts/ChakraPetch-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../fonts/ChakraPetch-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../fonts/ChakraPetch-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  --secops-purple: #5B14B6;
+  --secops-cyan: #00BBD9;
+}
+
+body,
+input,
+button,
+textarea,
+.wy-menu,
+.wy-nav-content {
+  font-family: "Chakra Petch", sans-serif;
+}
+
+body {
+  line-height: 1.55;
+}
+
+.wy-nav-top,
+.wy-side-nav-search {
+  background: var(--secops-purple);
+}
+
+.wy-side-nav-search input {
+  border-radius: 3px;
+}
+
+.wy-nav-side {
+  background: #20232b;
+}
+
+.wy-menu-vertical a {
+  color: #e4e4ec;
+}
+
+.wy-menu-vertical a:hover,
+.wy-menu-vertical li.current > a {
+  color: var(--secops-purple);
+}
+
+.wy-menu-vertical p.caption {
+  color: #00D9FF;
+  font-weight: 600;
+}
+
+.wy-nav-content {
+  max-width: 1100px;
+  background: transparent;
+}
+
+.rst-content {
+  line-height: 1.55;
+}
+
+.rst-content h1,
+.rst-content h2,
+.rst-content h3,
+.rst-content h4,
+.rst-content h5,
+.rst-content h6 {
+  color: var(--secops-purple);
+  font-family: "Chakra Petch", sans-serif;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.rst-content h1 {
+  font-size: 2em;
+  font-weight: 700;
+  border-bottom: 2px solid var(--secops-purple);
+  padding-bottom: 0.3em;
+}
+
+.rst-content h2 {
+  margin-top: 1.5em;
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid rgba(91, 20, 182, 0.2);
+}
+
+.rst-content a {
+  color: var(--secops-purple);
+  text-underline-offset: 0.18em;
+}
+
+.rst-content a:hover {
+  color: #008da5;
+}
+
+.rst-content p,
+.rst-content li {
+  line-height: 1.55;
+}
+
+.rst-content img {
+  max-width: 100%;
+  height: auto;
+}
+
+.rst-content img[src*="anexo_"] {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  margin: 1.5em auto;
+  padding: 0.6em;
+  background: #fff;
+  border: 1px solid rgba(91, 20, 182, 0.25);
+  border-left: 3px solid var(--secops-purple);
+  border-radius: 4px;
+  cursor: zoom-in;
+}
+
+.rst-content pre {
+  position: relative;
+  line-height: 1.45;
+  overflow-x: auto;
+  padding: 1em;
+  border: 1px solid rgba(0, 187, 217, 0.4);
+  border-left: 3px solid var(--secops-cyan);
+  border-radius: 4px;
+  background: #111820;
+  color: #e6edf3;
+}
+
+.rst-content code,
+.rst-content pre,
+.copy-command {
+  /* Chakra Petch no es monoespaciada: en terminal desalinea la salida de comandos */
+  font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.88em;
+}
+
+.rst-content :not(pre) > code {
+  padding: 0.12em 0.35em;
+  border: 1px solid rgba(91, 20, 182, 0.2);
+  border-radius: 3px;
+}
+
+.copy-command {
+  position: absolute;
+  top: 0.4em;
+  right: 0.4em;
+  z-index: 2;
+  padding: 0.35em 0.65em;
+  border: 1px solid var(--secops-cyan);
+  border-radius: 3px;
+  background: #182630;
+  color: #fff;
+  cursor: pointer;
+}
+
+.copy-command:hover {
+  background: var(--secops-purple);
+}
+
+.rst-content .admonition {
+  border-top-color: var(--secops-purple);
+}
+
+.rst-content .admonition-title {
+  background: rgba(91, 20, 182, 0.09);
+}
+
+footer,
+footer a {
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .wy-nav-content {
+    padding: 1.2em;
+  }
+
+  .rst-content h1 {
+    font-size: 1.65em;
+  }
+
+  .rst-content img[src*="anexo_"] {
+    max-height: 60vh;
+  }
+}
+
+/* Antetítulo "TEMA 01" */
+.rst-content .tema-num {
+  margin: 0 0 0.2em;
+  color: var(--secops-cyan);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  font-size: 0.95em;
+}
+
+/* Portada */
+.rst-content img.portada {
+  display: block;
+  width: 190px;
+  margin: 1em 0;
+}
+
+/* Figuras de los temas (SVG): bloque centrado y con marco discreto */
+.rst-content p > a.glightbox > img:not([src*="anexo_"]):not(.portada),
+.rst-content p > img:not([src*="anexo_"]):not(.portada) {
+  display: block;
+  margin: 1.2em auto;
+}
+
+/* Tablas */
+.rst-content table.docutils,
+.rst-content table {
+  border-collapse: collapse;
+}
+.rst-content table thead th {
+  background: rgba(91, 20, 182, 0.09);
+  color: var(--secops-purple);
+}
+
+/* Código largo: que se desplace en lugar de romper el diseño */
+.rst-content pre code {
+  white-space: pre;
+}
+
+/* ===== Laboratorios ===== */
+
+/* Bloques con lenguaje (pymdownx.highlight): un único marco oscuro, sin pre anidado claro */
+.rst-content div.highlight,
+.rst-content div[class^="highlight"] {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.rst-content div.highlight pre,
+.rst-content div[class^="highlight"] pre {
+  background: #111820 !important;
+  color: #e6edf3;
+  line-height: 1.45;
+  margin: 1em 0;
+}
+.rst-content pre > span:empty { display: none; }
+.rst-content pre code {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  color: inherit;
+}
+
+/* Salidas esperadas (bloques sin lenguaje): se distinguen de los comandos */
+.rst-content pre > code:not([class]) { color: #c9d6e2; }
+
+/* Diagramas Mermaid */
+.rst-content .mermaid {
+  display: flex;
+  justify-content: center;
+  margin: 1.4em 0;
+  padding: 0.9em;
+  background: #fff;
+  border: 1px solid rgba(91, 20, 182, 0.25);
+  border-left: 3px solid var(--secops-purple);
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.rst-content .mermaid svg { max-width: 100%; height: auto; }
+
+/* Portada del inicio */
+.rst-content img.logo-lab {
+  display: block;
+  width: 220px;
+  max-width: 60%;
+  margin: 0.5em 0 1.2em;
+}
+
+/* Tabla de laboratorios del inicio */
+.rst-content table.indice-labs td:first-child,
+.rst-content table.indice-labs th:first-child { width: 4.5em; text-align: center; }
+
+/* Tablas a todo el ancho */
+.rst-content table { display: table; width: 100%; }
+
+/* Separador final de cada laboratorio */
+.rst-content hr { border-color: rgba(91, 20, 182, 0.25); margin: 2em 0 1em; }
