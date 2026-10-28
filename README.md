@@ -10,6 +10,9 @@ El libro aborda los fundamentos, protocolos, arquitecturas y tecnologías que ha
 
 A través de laboratorios secuenciales, se trabajan escenarios de red, topologías, direccionamiento, configuración de tecnologías y comprobación de resultados, conectando los principios técnicos con su aplicación práctica.
 
+### Accede directamente 
+
+# https://asideloko.github.io/Networking-Lab/
 
 #### Áreas de práctica
 
@@ -25,23 +28,7 @@ Los laboratorios abarcan distintas áreas del networking, entre ellas:
 
 El sitio utiliza MkDocs para generar y visualizar la documentación.
 
-Para ejecutar en local 
 
-> git clone 
-
-Instalar dependencias
-
-Desde el directorio raíz del repositorio:
-
-> pip install -r requirements.txt
-
-
-
-Iniciar el servidor local
-
-> mkdocs serve
-
-Abre http://127.0.0.1:8000 en tu navegador.
 
 
 
