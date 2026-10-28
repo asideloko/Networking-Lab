@@ -1,0 +1,73 @@
+site_name: NETWORKING Lab — Manual de Implementación Profesional
+site_description: Laboratorios prácticos complementarios del libro NETWORKING · Guillermo Castillo · SecOpsMX
+site_author: Guillermo Castillo
+site_url: https://asideloko.github.io/Networking-Lab/
+copyright: Material complementario gratuito del libro NETWORKING · Uso educativo; no se autoriza su redistribución con fines comerciales.
+
+docs_dir: docs
+site_dir: site
+dev_addr: 127.0.0.1:8000
+
+theme:
+  name: readthedocs
+  language: es
+  navigation_depth: 3
+  collapse_navigation: false
+  titles_only: false
+  sticky_navigation: true
+  # El tema carga highlight.js desde un CDN con fondo claro: choca con el bloque oscuro de extra.css
+  highlightjs: false
+
+plugins:
+  - search:
+      lang: es
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - def_list
+  - footnotes
+  - toc:
+      permalink: true
+      title: En esta página
+      toc_depth: 3
+  - pymdownx.details
+  - pymdownx.highlight:
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_div_format
+  - pymdownx.tabbed:
+      alternate_style: true
+
+extra_css:
+  - assets/css/extra.css
+  - assets/css/pygments.css
+
+extra_javascript:
+  - assets/js/mermaid.min.js
+  - assets/js/extra.js
+
+nav:
+  - Inicio: index.md
+  - Laboratorios:
+      - "01 · Fundamentos de Redes y Encapsulación": labs/lab-01/index.md
+      - "02 · Transmisión de Datos y Capa Física": labs/lab-02/index.md
+      - "03 · Componentes de Red y Conmutación": labs/lab-03/index.md
+      - "04 · Direccionamiento IP y Subredes": labs/lab-04/index.md
+      - "05 · Conmutación y Segmentación de Red": labs/lab-05/index.md
+      - "06 · Enrutamiento y Conectividad entre Redes": labs/lab-06/index.md
+      - "07 · Protocolos y Servicios de Red": labs/lab-07/index.md
+      - "08 · Seguridad en Redes": labs/lab-08/index.md
+      - "09 · VPN y Tunelización": labs/lab-09/index.md
+      - "10 · Infraestructura WAN y Core": labs/lab-10/index.md
+      - "11 · Arquitectura de Red Empresarial": labs/lab-11/index.md
+      - "12 · Arquitecturas Modernas de Red": labs/lab-12/index.md
+      - "13 · Monitoreo y Diagnóstico de Redes": labs/lab-13/index.md
+      - "14 · Herramientas Linux Avanzadas": labs/lab-14/index.md
+      - "15 · Implementación Práctica Integral": labs/lab-15/index.md
