@@ -26,19 +26,7 @@ Los laboratorios abarcan distintas áreas del networking, entre ellas:
 - Monitorización, diagnóstico y resolución de problemas.
 - Implementación y verificación de escenarios de red.
 
-El sitio utiliza MkDocs para generar y visualizar la documentación.
-
-
-
-
-
-Construir y validar el sitio
-
-> mkdocs build --strict
-
-Los archivos generados se guardarán en el directorio "site/".
-
-
+El sitio utiliza MkDocs para generar y visualizar la documentación. 
 
 ##### Licencia y uso
 
