@@ -1,20 +1,21 @@
-# NETWORKING-LAB 
 
-## Laboratorios prácticos de redes 
+# NETWORKING-LAB
 
-### Del fundamento teórico a la implementación práctica.
+## Laboratorios prácticos de redes
 
-*NETWORKING-Lab* es el entorno de ejercicios practicos  complementario del libro *NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico, de Guillermo Castillo (SecOpsMX, 2026).*
+**Del fundamento teórico a la implementación práctica.**
 
-El libro aborda los fundamentos, protocolos, arquitecturas y tecnologías que hacen posible la comunicación entre sistemas y redes. Este laboratorio amplía ese recorrido mediante ejercicios prácticos que permiten explorar, configurar, implementar y verificar los conceptos estudiados.
+*NETWORKING-Lab* es el entorno de laboratorios prácticos que complementa el libro *NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico*, de Guillermo Castillo (SecOpsMX, 2026).
 
-A través de laboratorios secuenciales, se trabajan escenarios de red, topologías, direccionamiento, configuración de tecnologías y comprobación de resultados, conectando los principios técnicos con su aplicación práctica.
+El libro aborda los fundamentos, protocolos, arquitecturas y tecnologías que hacen posible la comunicación entre sistemas y redes. Este laboratorio amplía ese recorrido mediante ejercicios que permiten explorar, configurar, implementar y verificar los conceptos estudiados.
 
-### Accede directamente 
+Los laboratorios presentan escenarios de red, topologías, direccionamiento y configuración de tecnologías, además de actividades para comprobar resultados y relacionar los principios técnicos con su aplicación práctica.
 
-# https://asideloko.github.io/Networking-Lab/
+## Acceder a los laboratorios
 
-#### Áreas de práctica
+**[Abrir NETWORKING-Lab](https://asideloko.github.io/Networking-Lab/)**
+
+## Áreas de práctica
 
 Los laboratorios abarcan distintas áreas del networking, entre ellas:
 
@@ -26,15 +27,15 @@ Los laboratorios abarcan distintas áreas del networking, entre ellas:
 - Monitorización, diagnóstico y resolución de problemas.
 - Implementación y verificación de escenarios de red.
 
-El sitio utiliza MkDocs para generar y visualizar la documentación. 
+El sitio utiliza [MkDocs](https://www.mkdocs.org/) para generar y presentar la documentación.
 
-##### Licencia y uso
+## Licencia y uso
 
-Consulta los archivos y avisos de licencia del repositorio para conocer las condiciones aplicables al uso y la distribución de los materiales.
+Consulta los archivos y avisos de licencia de este repositorio para conocer las condiciones aplicables al uso y la distribución de los materiales.
 
+## Obra de referencia
 
+*NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico*
 
-
-
-##### Obra de referencia:*NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico*
-##### Autor: *Guillermo Castillo · SecOpsMX*
+**Autor:** Guillermo Castillo · SecOpsMX  
+**Edición:** 2026
