@@ -346,7 +346,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-8-configurar-router-on-a-stick">Paso 8: Configurar Router-on-a-Stick</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-9-configurar-nat">Paso 9: Configurar NAT</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-9-configurar-nat-y-salida-a-internet">Paso 9: Configurar NAT y salida a Internet</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
@@ -370,19 +370,21 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-06/#construccion-de-la-red">Construcción de la red</a>
         <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-0-limpiar-el-laboratorio-anterior">Paso 0: Limpiar el laboratorio anterior</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-1-crear-namespaces-y-enlaces">Paso 1: Crear namespaces y enlaces</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-2-conectar-routers-y-clientes">Paso 2: Conectar routers y clientes</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-3-asignar-direcciones-ip-y-activar-interfaces">Paso 3: Asignar direcciones IP y activar interfaces</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-configurar-rutas-estaticas">Paso 4: Configurar rutas estáticas</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-redundancia-enlace-r1-r3">Paso 6: Agregar redundancia (enlace R1-R3)</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-7-simular-fallo-y-verificar-redundancia">Paso 7: Simular fallo y verificar redundancia</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-7-simular-un-fallo-y-verificar-la-redundancia">Paso 7: Simular un fallo y verificar la redundancia</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-8-configurar-tunel-gre">Paso 8: Configurar túnel GRE</a>
     </li>
@@ -396,7 +398,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ejercicio-2-verificar-el-ttl">Ejercicio 2: Verificar el TTL</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ejercicio-3-recuperar-el-enlace">Ejercicio 3: Recuperar el enlace</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ejercicio-3-fallo-remoto-y-rutas-de-respaldo">Ejercicio 3: Fallo remoto y rutas de respaldo</a>
     </li>
         </ul>
     </li>
@@ -428,33 +430,33 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-2-crear-namespaces-para-servicios">Paso 2: Crear namespaces para servicios</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-3-conectar-servicios-a-la-red">Paso 3: Conectar servicios a la red</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-3-convertir-la-lan-de-la-sede-en-un-switch-bridge-y-conectar-los-servicios">Paso 3: Convertir la LAN de la sede en un switch (bridge) y conectar los servicios</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-4-asignar-direcciones-ip">Paso 4: Asignar direcciones IP</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-5-configurar-nat-en-r1-para-salida-a-internet">Paso 5: Configurar NAT en R1 para salida a Internet</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-5-salida-a-internet-para-toda-la-red-nat-en-r1">Paso 5: Salida a Internet para toda la red (NAT en R1)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-6-instalar-y-configurar-servidor-dns">Paso 6: Instalar y configurar servidor DNS</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-6-servidor-dns-solo-dns">Paso 6: Servidor DNS (solo DNS)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-7-instalar-y-configurar-servidor-dhcp">Paso 7: Instalar y configurar servidor DHCP</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-7-servidor-dhcp-solo-dhcp">Paso 7: Servidor DHCP (solo DHCP)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-8-configurar-cliente-dhcp">Paso 8: Configurar cliente DHCP</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-8-configurar-el-cliente-dhcp">Paso 8: Configurar el cliente DHCP</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-9-verificar-conectividad">Paso 9: Verificar conectividad</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-9-verificar-conectividad-y-servicios">Paso 9: Verificar conectividad y servicios</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-07/#analisis-de-tcp-y-udp">Análisis de TCP y UDP</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-10-capturar-trafico-tcp-http">Paso 10: Capturar tráfico TCP (HTTP)</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-10-capturar-trafico-tcp">Paso 10: Capturar tráfico TCP</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-11-capturar-trafico-udp-dns">Paso 11: Capturar tráfico UDP (DNS)</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-11-capturar-trafico-udp-dns-y-dhcp">Paso 11: Capturar tráfico UDP (DNS y DHCP)</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-07/#analisis-de-mss">Análisis de MSS</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-12-verificar-mss-en-conexiones-tcp">Paso 12: Verificar MSS en conexiones TCP</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-12-verificar-el-mss-en-el-handshake-tcp">Paso 12: Verificar el MSS en el handshake TCP</a>
     </li>
         </ul>
     </li>
@@ -466,9 +468,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-07/#ejercicio-3-verificar-con-dig">Ejercicio 3: Verificar con dig</a>
     </li>
-        </ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#ejercicio-4-probar-el-nat-desde-las-sucursales">Ejercicio 4: Probar el NAT desde las sucursales</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-07/#errores-comunes-y-soluciones">Errores comunes y soluciones</a>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-07/#conceptos-clave-del-tema-7-aplicados">Conceptos clave del Tema 7 aplicados</a>
     </li>
@@ -494,31 +496,35 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-1-verificar-infraestructura-existente">Paso 1: Verificar infraestructura existente</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-2-crear-namespaces-para-firewall-y-dmz">Paso 2: Crear namespaces para firewall y DMZ</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-2-el-firewall-pasa-a-ser-la-unica-salida">Paso 2: El firewall pasa a ser la única salida</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-3-conectar-firewall-a-las-zonas">Paso 3: Conectar firewall a las zonas</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-3-crear-namespaces-para-firewall-y-dmz">Paso 3: Crear namespaces para firewall y DMZ</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-4-configurar-cliente-y-servidor-interno">Paso 4: Configurar cliente y servidor interno</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-4-conectar-el-firewall-a-la-zona-externa-wan">Paso 4: Conectar el firewall a la zona externa (WAN)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-5-configurar-rutas-en-el-firewall">Paso 5: Configurar rutas en el firewall</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-5-crear-la-dmz-un-unico-segmento-con-los-dos-servidores">Paso 5: Crear la DMZ (un único segmento con los dos servidores)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-6-configurar-reglas-de-firewall-iptables">Paso 6: Configurar reglas de firewall (iptables)</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-6-conectar-el-firewall-a-la-lan-interna">Paso 6: Conectar el firewall a la LAN interna</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-7-verificar-reglas-de-firewall">Paso 7: Verificar reglas de firewall</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-7-configurar-el-firewall-reenvio-y-rutas">Paso 7: Configurar el firewall (reenvío y rutas)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-8-probar-conectividad">Paso 8: Probar conectividad</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-8-reglas-de-firewall-iptables">Paso 8: Reglas de firewall (iptables)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-9-configurar-ssh-para-acceso-seguro">Paso 9: Configurar SSH para acceso seguro</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-9-verificar-reglas-de-firewall">Paso 9: Verificar reglas de firewall</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-10-configurar-tls-para-servidor-web">Paso 10: Configurar TLS para servidor web</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-10-probar-conectividad">Paso 10: Probar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-11-configurar-ssh-para-acceso-seguro">Paso 11: Configurar SSH para acceso seguro</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-12-configurar-tls-para-el-servidor-web">Paso 12: Configurar TLS para el servidor web</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-08/#ejercicios-practicos">Ejercicios prácticos</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#ejercicio-1-agregar-regla-para-ssh">Ejercicio 1: Agregar regla para SSH</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#ejercicio-1-permitir-ssh-solo-desde-la-red-de-administracion">Ejercicio 1: Permitir SSH solo desde la red de administración</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#ejercicio-2-bloquear-icmp-ping">Ejercicio 2: Bloquear ICMP (ping)</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#ejercicio-2-bloquear-icmp">Ejercicio 2: Bloquear ICMP</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-08/#ejercicio-3-verificar-la-tabla-de-conexiones">Ejercicio 3: Verificar la tabla de conexiones</a>
     </li>
@@ -550,13 +556,13 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-1-verificar-infraestructura-existente">Paso 1: Verificar infraestructura existente</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-2-configurar-tunel-gre-entre-r1-y-r2">Paso 2: Configurar túnel GRE entre R1 y R2</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-2-crear-el-vpn-gateway-y-el-cliente-remoto">Paso 2: Crear el VPN Gateway y el cliente remoto</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-3-verificar-tunel-gre">Paso 3: Verificar túnel GRE</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-3-configurar-tunel-gre-entre-r1-y-r2">Paso 3: Configurar túnel GRE entre R1 y R2</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-4-configurar-tunel-gre-entre-r2-y-r3">Paso 4: Configurar túnel GRE entre R2 y R3</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-4-verificar-tunel-gre-y-crear-el-tunel-r2-r3">Paso 4: Verificar túnel GRE y crear el túnel R2-R3</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-5-agregar-rutas-a-traves-de-los-tuneles-gre">Paso 5: Agregar rutas a través de los túneles GRE</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-5-enviar-el-trafico-entre-oficinas-por-los-tuneles">Paso 5: Enviar el tráfico entre oficinas por los túneles</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-6-verificar-conectividad-a-traves-de-gre">Paso 6: Verificar conectividad a través de GRE</a>
     </li>
@@ -564,7 +570,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-09/#implementacion-de-ipsec">Implementación de IPsec</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-7-configurar-ipsec-entre-r1-y-r2">Paso 7: Configurar IPsec entre R1 y R2</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-7-cifrar-el-trafico-sede-sucursal-a-con-ipsec-esp-en-modo-tunel">Paso 7: Cifrar el tráfico Sede ↔ Sucursal A con IPsec (ESP en modo túnel)</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-8-verificar-ipsec">Paso 8: Verificar IPsec</a>
     </li>
@@ -572,17 +578,17 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-09/#implementacion-de-openvpn">Implementación de OpenVPN</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-9-configurar-openvpn-server">Paso 9: Configurar OpenVPN Server</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-9-openvpn-entre-el-cliente-remoto-y-el-vpn-gateway">Paso 9: OpenVPN entre el cliente remoto y el VPN Gateway</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-10-configurar-cliente-openvpn">Paso 10: Configurar cliente OpenVPN</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-10-verificar-openvpn">Paso 10: Verificar OpenVPN</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-09/#implementacion-de-wireguard">Implementación de WireGuard</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-11-configurar-wireguard-server">Paso 11: Configurar WireGuard Server</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-11-generar-las-claves">Paso 11: Generar las claves</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-12-configurar-cliente-wireguard">Paso 12: Configurar cliente WireGuard</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-12-configurar-el-servidor-vpn-gateway-y-el-cliente">Paso 12: Configurar el servidor (VPN Gateway) y el cliente</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-13-verificar-wireguard">Paso 13: Verificar WireGuard</a>
     </li>
@@ -620,31 +626,35 @@
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../lab-10/#contexto-empresarial">Contexto empresarial</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-10/#objetivos-del-laboratorio">Objetivos del laboratorio</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-10/#topologia">Topología</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-10/#construccion-de-la-red">Construcción de la red</a>
         <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-0-limpiar-laboratorios-anteriores-recomendado">Paso 0: Limpiar laboratorios anteriores (recomendado)</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-1-crear-namespaces">Paso 1: Crear namespaces</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-2-conectar-pe-a-p">Paso 2: Conectar PE a P</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-3-conectar-p-routers">Paso 3: Conectar P routers</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-4-configurar-redes-locales">Paso 4: Configurar redes locales</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-4-configurar-redes-locales-un-equipo-en-cada-lan">Paso 4: Configurar redes locales (un equipo en cada LAN)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-5-configurar-enrutamiento">Paso 5: Configurar enrutamiento</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-5-configurar-enrutamiento-estatico">Paso 5: Configurar enrutamiento estático</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-6-verificar-conectividad">Paso 6: Verificar conectividad</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-10/#analisis-mpls">Análisis MPLS</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-10/#analisis-mpls-conceptual">Análisis MPLS (conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-10/#comparacion-mpls-vs-sd-wan">Comparación MPLS vs SD-WAN</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-10/#ejercicios">Ejercicios</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-10/#ejercicio-1-simular-fallo">Ejercicio 1: Simular fallo</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-10/#ejercicio-1-simular-un-fallo-en-el-nucleo">Ejercicio 1: Simular un fallo en el núcleo</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-10/#ejercicio-2-balanceo-ecmp">Ejercicio 2: Balanceo ECMP</a>
     </li>
@@ -664,23 +674,27 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#construccion">Construcción</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#paso-1-crear-namespaces">Paso 1: Crear namespaces</a>
+    <li class="toctree-l3"><a class="reference internal" href="#paso-0-limpiar-laboratorios-anteriores">Paso 0: Limpiar laboratorios anteriores</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#paso-2-conectar-core-a-distribucion">Paso 2: Conectar Core a Distribución</a>
+    <li class="toctree-l3"><a class="reference internal" href="#paso-1-crear-namespaces-y-una-funcion-auxiliar">Paso 1: Crear namespaces y una función auxiliar</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#paso-3-conectar-distribucion-a-acceso">Paso 3: Conectar Distribución a Acceso</a>
+    <li class="toctree-l3"><a class="reference internal" href="#paso-2-enlaces-del-nucleo-y-de-distribucion-un-30-por-enlace">Paso 2: Enlaces del núcleo y de distribución (un /30 por enlace)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#paso-4-configurar-firewall-y-dmz">Paso 4: Configurar Firewall y DMZ</a>
+    <li class="toctree-l3"><a class="reference internal" href="#paso-3-firewall-internet-y-dmz">Paso 3: Firewall, Internet y DMZ</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#paso-5-configurar-enrutamiento-y-nat">Paso 5: Configurar enrutamiento y NAT</a>
+    <li class="toctree-l3"><a class="reference internal" href="#paso-4-rutas-estaticas-con-metrica-camino-principal-y-de-respaldo">Paso 4: Rutas estáticas con métrica (camino principal y de respaldo)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#paso-6-verificar">Paso 6: Verificar</a>
+    <li class="toctree-l3"><a class="reference internal" href="#paso-5-politica-del-firewall-y-nat">Paso 5: Política del firewall y NAT</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#paso-6-capa-de-acceso-con-vlan-access1">Paso 6: Capa de acceso con VLAN (Access1)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#paso-7-verificar">Paso 7: Verificar</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#alta-disponibilidad">Alta Disponibilidad</a>
+    <li class="toctree-l2"><a class="reference internal" href="#alta-disponibilidad">Alta disponibilidad</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#simular-fallo-de-core1">Simular fallo de Core1</a>
+    <li class="toctree-l3"><a class="reference internal" href="#simular-el-fallo-de-core1">Simular el fallo de Core1</a>
     </li>
         </ul>
     </li>
@@ -688,9 +702,11 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#ejercicios">Ejercicios</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#ejercicio-1-agregar-redundancia-de-enlaces">Ejercicio 1: Agregar redundancia de enlaces</a>
+    <li class="toctree-l3"><a class="reference internal" href="#ejercicio-1-agregar-redundancia-de-enlaces-en-el-acceso">Ejercicio 1: Agregar redundancia de enlaces en el acceso</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#ejercicio-2-configurar-stp">Ejercicio 2: Configurar STP</a>
+    <li class="toctree-l3"><a class="reference internal" href="#ejercicio-2-investigar-stp">Ejercicio 2: Investigar STP</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#ejercicio-3-replicar-el-acceso">Ejercicio 3: Replicar el acceso</a>
     </li>
         </ul>
     </li>
@@ -708,23 +724,27 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-12/#construccion">Construcción</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-1-crear-namespaces">Paso 1: Crear namespaces</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-0-limpiar-laboratorios-anteriores">Paso 0: Limpiar laboratorios anteriores</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-2-conectar-onpremise">Paso 2: Conectar OnPremise</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-1-crear-namespaces-y-la-funcion-auxiliar">Paso 1: Crear namespaces y la función auxiliar</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-3-conectar-cloud">Paso 3: Conectar Cloud</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-2-red-onpremise-un-unico-segmento-con-app-y-db">Paso 2: Red OnPremise (un único segmento con App y DB)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-4-conectar-onpremise-a-cloud">Paso 4: Conectar OnPremise a Cloud</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-3-red-en-la-nube-vpc-con-dos-subredes">Paso 3: Red en la nube (VPC con dos subredes)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-5-configurar-zero-trust-ztna">Paso 5: Configurar Zero Trust (ZTNA)</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-4-conectar-onpremise-con-la-nube-conectividad-hibrida">Paso 4: Conectar OnPremise con la nube (conectividad híbrida)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-6-configurar-usuarios-remotos">Paso 6: Configurar Usuarios Remotos</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-5-broker-de-acceso-ztna-e-identidad">Paso 5: Broker de acceso (ZTNA) e identidad</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-7-configurar-sase">Paso 7: Configurar SASE</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-6-usuarios-remotos">Paso 6: Usuarios remotos</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-8-microsegmentacion">Paso 8: Microsegmentación</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-7-servicios-de-prueba">Paso 7: Servicios de prueba</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-9-verificar">Paso 9: Verificar</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-8-politica-zero-trust-en-el-broker-acceso-minimo-por-aplicacion">Paso 8: Política Zero Trust en el broker (acceso mínimo por aplicación)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-9-microsegmentacion-entre-servidores">Paso 9: Microsegmentación entre servidores</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-10-verificar">Paso 10: Verificar</a>
     </li>
         </ul>
     </li>
@@ -756,7 +776,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-2-crear-servidores-de-monitoreo">Paso 2: Crear servidores de monitoreo</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-3-conectar-servidores-de-monitoreo">Paso 3: Conectar servidores de monitoreo</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-3-conectarlos-a-la-lan-de-onpremise">Paso 3: Conectarlos a la LAN de OnPremise</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-3b-salida-a-internet-opcional">Paso 3b: Salida a Internet (opcional)</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-4-herramientas-basicas-de-diagnostico">Paso 4: Herramientas básicas de diagnóstico</a>
     </li>
@@ -766,17 +788,17 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-7-analisis-de-rendimiento-con-iperf3">Paso 7: Análisis de rendimiento con iperf3</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-8-siem-basico-con-rsyslog">Paso 8: SIEM Básico con rsyslog</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-8-colector-central-de-logs-siem-basico-con-rsyslog">Paso 8: Colector central de logs (SIEM básico) con rsyslog</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-13/#ejercicios">Ejercicios</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#ejercicio-1-analizar-captura-wireshark">Ejercicio 1: Analizar captura Wireshark</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#ejercicio-1-analizar-una-captura">Ejercicio 1: Analizar una captura</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-13/#ejercicio-2-monitoreo-bidireccional">Ejercicio 2: Monitoreo bidireccional</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#ejercicio-3-simular-fallo-de-mtu">Ejercicio 3: Simular fallo de MTU</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#ejercicio-3-simular-un-fallo-de-mtu">Ejercicio 3: Simular un fallo de MTU</a>
     </li>
         </ul>
     </li>
@@ -796,15 +818,17 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#construccion">Construcción</a>
         <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-0-limpiar-el-entorno">Paso 0: Limpiar el entorno</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-1-crear-namespaces">Paso 1: Crear namespaces</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-2-conectar-interfaces">Paso 2: Conectar interfaces</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-3-configurar-enrutamiento">Paso 3: Configurar enrutamiento</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-3-configurar-enrutamiento-y-nat">Paso 3: Configurar enrutamiento y NAT</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-4-iproute2">Paso 4: iproute2</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-5-ss">Paso 5: ss</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-5-ss-sockets">Paso 5: ss (sockets)</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-6-nftables">Paso 6: nftables</a>
     </li>
@@ -814,7 +838,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#ejercicios">Ejercicios</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#ejercicio-1-agregar-regla-nftables-para-bloquear-icmp">Ejercicio 1: Agregar regla nftables para bloquear ICMP</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#ejercicio-1-bloquear-icmp-con-nftables">Ejercicio 1: Bloquear ICMP con nftables</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#ejercicio-2-verificar-conexiones-con-ss">Ejercicio 2: Verificar conexiones con ss</a>
     </li>
@@ -832,63 +856,55 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#topologia">Topología</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#151-configuracion-de-red-basica">15.1 Configuración de Red Básica</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#construccion">Construcción</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#configurar-router-linux">Configurar Router Linux</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#paso-0-limpiar-y-preparar">Paso 0: Limpiar y preparar</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#configurar-pc1">Configurar PC1</a>
+        </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#configurar-pc2">Configurar PC2</a>
-    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#151-configuracion-de-red-basica">15.1 Configuración de red básica</a>
+        <ul>
     <li class="toctree-l3"><a class="reference internal" href="../lab-15/#verificar">Verificar</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado">15.2 Subnetting Aplicado</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan">15.3 VLAN</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#configurar-open-vswitch">Configurar Open vSwitch</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#router-on-a-stick">Router-on-a-Stick</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre Redes</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="../lab-15/#rutas-estaticas">Rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-15/#ospf-con-frrouting">OSPF con FRRouting</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#reconvergencia-ante-un-fallo">Reconvergencia ante un fallo</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#155-firewall">15.5 Firewall</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#nftables">nftables</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-15/#verificar_1">Verificar</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#156-red-parcial-integrada">15.6 Red Parcial Integrada</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#156-servicios-dhcp-con-dnsmasq">15.6 Servicios: DHCP con dnsmasq</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#dhcp-con-dnsmasq">DHCP con dnsmasq</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-15/#validar">Validar</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#157-red-empresarial-completa">15.7 Red Empresarial Completa</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#157-red-empresarial-completa-vrrp-redundancia-de-gateway">15.7 Red empresarial completa: VRRP (redundancia de gateway)</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#vrrp-redundancia-de-gateway">VRRP (redundancia de gateway)</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#verificar-y-probar-el-failover">Verificar y probar el failover</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#158-troubleshooting-real">15.8 Troubleshooting Real</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#158-troubleshooting-real">15.8 Troubleshooting real</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#caso-degradacion-por-mtu-en-ipsec">Caso: Degradación por MTU en IPsec</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#caso-degradacion-por-mtu-en-un-tunel-ipsecgre">Caso: degradación por MTU en un túnel (IPsec/GRE)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#caso-agotamiento-de-tabla-arp">Caso: Agotamiento de tabla ARP</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#caso-agotamiento-de-la-tabla-arp">Caso: agotamiento de la tabla ARP</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-15/#script-de-verificacion-arp">Script de verificación ARP</a>
     </li>
@@ -929,259 +945,294 @@
 
 <h1 id="arquitectura-de-red-empresarial">Arquitectura de Red Empresarial<a class="headerlink" href="#arquitectura-de-red-empresarial" title="Permanent link">&para;</a></h1>
 <h2 id="contexto-empresarial">Contexto empresarial<a class="headerlink" href="#contexto-empresarial" title="Permanent link">&para;</a></h2>
-<p>La empresa <strong>Networking SecOps</strong> ha implementado su infraestructura WAN (Laboratorio 10). Ahora necesita diseñar la arquitectura de red completa para su sede central.</p>
+<p>La empresa <strong>Networking SecOps</strong> ha implementado su infraestructura WAN (Laboratorio 10). Ahora necesita diseñar la arquitectura de red completa para su sede central, con el modelo jerárquico <strong>Core - Distribución - Acceso</strong>, redundancia en el núcleo y una DMZ.</p>
+<div class="admonition info">
+<p class="admonition-title">Alcance</p>
+<p>Se construye <strong>una</strong> capa de acceso completa (<code>Access1</code>, con las tres VLAN) y la redundancia se logra con <strong>rutas estáticas con métrica</strong>. La alta disponibilidad de <em>gateway</em> con VRRP y la reconvergencia dinámica con OSPF se practican en el Laboratorio 15.</p>
+</div>
 <h2 id="topologia">Topología<a class="headerlink" href="#topologia" title="Permanent link">&para;</a></h2>
 <div class="mermaid">graph TB
-    C1[Core Switch 1]
-    C2[Core Switch 2]
-    D1[Dist Switch 1]
-    D2[Dist Switch 2]
-    A1[Access Switch 1]
-    A2[Access Switch 2]
-    A3[Access Switch 3]
+    Internet((Internet))
     FW[Firewall]
-    WEB[Servidor Web]
-    DNS[Servidor DNS]
+    C1[Core 1]
+    C2[Core 2]
+    D1[Dist 1]
+    D2[Dist 2]
+    A1[Access 1 switch VLAN]
     V10[VLAN 10 Ventas]
     V20[VLAN 20 IT]
     V30[VLAN 30 Admin]
+    WEB[Servidor Web DMZ]
+    DNS[Servidor DNS DMZ]
+    Internet --- FW
+    FW --- C1
+    FW --- C2
     C1 --- C2
     C1 --- D1
     C1 --- D2
     C2 --- D1
     C2 --- D2
     D1 --- A1
-    D1 --- A2
-    D1 --- A3
-    D2 --- A1
-    D2 --- A2
-    D2 --- A3
     A1 --- V10
     A1 --- V20
     A1 --- V30
-    A2 --- V10
-    A2 --- V20
-    A2 --- V30
-    A3 --- V10
-    A3 --- V20
-    A3 --- V30
-    D1 --- FW
-    D2 --- FW
     FW --- WEB
-    FW --- DNS
-    C1 --- Internet
-    C2 --- Internet</div>
-<p><strong>Direccionamiento:</strong></p>
+    FW --- DNS</div>
+<p><strong>Direccionamiento.</strong> Los enlaces punto a punto del núcleo usan subredes <code>/30</code> (una por enlace, sin repetir direcciones) dentro de <code>10.255.0.0/16</code>; las LAN, VLAN y DMZ usan <code>10.0.0.0/16</code>.</p>
 <table>
 <thead>
 <tr>
-<th>Dispositivo</th>
-<th>Interfaz</th>
-<th>Dirección IP</th>
-<th>Rol</th>
+<th>Enlace</th>
+<th>Subred</th>
+<th>Extremo A</th>
+<th>Extremo B</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Core 1</td>
-<td>eth0</td>
-<td>10.0.0.1/24</td>
-<td>Core</td>
+<td>Core1 - Core2</td>
+<td>10.255.0.0/30</td>
+<td>Core1 .1</td>
+<td>Core2 .2</td>
 </tr>
 <tr>
-<td>Core 2</td>
-<td>eth0</td>
-<td>10.0.0.2/24</td>
-<td>Core</td>
+<td>Core1 - Dist1</td>
+<td>10.255.1.0/30</td>
+<td>Core1 .1</td>
+<td>Dist1 .2</td>
 </tr>
 <tr>
-<td>Dist 1</td>
-<td>eth0</td>
-<td>10.0.1.1/24</td>
-<td>Distribución</td>
+<td>Core1 - Dist2</td>
+<td>10.255.1.4/30</td>
+<td>Core1 .5</td>
+<td>Dist2 .6</td>
 </tr>
 <tr>
-<td>Dist 2</td>
-<td>eth0</td>
-<td>10.0.1.2/24</td>
-<td>Distribución</td>
+<td>Core2 - Dist1</td>
+<td>10.255.1.8/30</td>
+<td>Core2 .9</td>
+<td>Dist1 .10</td>
 </tr>
 <tr>
-<td>Firewall</td>
-<td>eth0 (WAN)</td>
-<td>192.168.100.1/24</td>
-<td>Seguridad</td>
+<td>Core2 - Dist2</td>
+<td>10.255.1.12/30</td>
+<td>Core2 .13</td>
+<td>Dist2 .14</td>
 </tr>
 <tr>
-<td>Firewall</td>
-<td>eth1 (DMZ)</td>
-<td>10.0.99.1/24</td>
-<td>DMZ</td>
+<td>Core1 - Firewall</td>
+<td>10.255.2.0/30</td>
+<td>Core1 .1</td>
+<td>Firewall .2</td>
 </tr>
 <tr>
-<td>Firewall</td>
-<td>eth2 (LAN)</td>
-<td>10.0.0.254/24</td>
-<td>LAN</td>
+<td>Core2 - Firewall</td>
+<td>10.255.2.4/30</td>
+<td>Core2 .5</td>
+<td>Firewall .6</td>
 </tr>
 <tr>
-<td>Servidor Web</td>
-<td>-</td>
-<td>10.0.99.10/24</td>
-<td>DMZ</td>
+<td>Firewall - Internet (host)</td>
+<td>192.168.100.0/24</td>
+<td>Firewall .1</td>
+<td>host .2</td>
 </tr>
+</tbody>
+</table>
+<table>
+<thead>
 <tr>
-<td>Servidor DNS</td>
-<td>-</td>
-<td>10.0.99.5/24</td>
-<td>DMZ</td>
+<th>Segmento</th>
+<th>Subred</th>
+<th>Gateway</th>
+<th>Equipos</th>
 </tr>
+</thead>
+<tbody>
 <tr>
-<td>VLAN 10</td>
-<td>-</td>
+<td>VLAN 10 Ventas</td>
 <td>10.0.10.0/24</td>
-<td>Ventas</td>
+<td>Dist1 10.0.10.1</td>
+<td>ventas 10.0.10.10</td>
 </tr>
 <tr>
-<td>VLAN 20</td>
-<td>-</td>
+<td>VLAN 20 IT</td>
 <td>10.0.20.0/24</td>
-<td>IT</td>
+<td>Dist1 10.0.20.1</td>
+<td>it 10.0.20.10</td>
 </tr>
 <tr>
-<td>VLAN 30</td>
-<td>-</td>
+<td>VLAN 30 Admin</td>
 <td>10.0.30.0/24</td>
-<td>Admin</td>
+<td>Dist1 10.0.30.1</td>
+<td>admin 10.0.30.10</td>
+</tr>
+<tr>
+<td>DMZ</td>
+<td>10.0.99.0/24</td>
+<td>Firewall 10.0.99.1</td>
+<td>Web 10.0.99.10, DNS 10.0.99.5</td>
 </tr>
 </tbody>
 </table>
 <h2 id="construccion">Construcción<a class="headerlink" href="#construccion" title="Permanent link">&para;</a></h2>
-<h3 id="paso-1-crear-namespaces">Paso 1: Crear namespaces<a class="headerlink" href="#paso-1-crear-namespaces" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>Core1
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>Core2
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>Dist1
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>Dist2
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>Access1
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>Access2
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>Access3
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>Firewall
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>ServidorWeb
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>ServidorDNS
+<h3 id="paso-0-limpiar-laboratorios-anteriores">Paso 0: Limpiar laboratorios anteriores<a class="headerlink" href="#paso-0-limpiar-laboratorios-anteriores" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>ns<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>ip<span class="w"> </span>netns<span class="w"> </span>list<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>del<span class="w"> </span><span class="nv">$ns</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>del<span class="w"> </span>br-wan<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
 </code></pre></div>
-<h3 id="paso-2-conectar-core-a-distribucion">Paso 2: Conectar Core a Distribución<a class="headerlink" href="#paso-2-conectar-core-a-distribucion" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-c1d1<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-d1c1
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-c1d1<span class="w"> </span>netns<span class="w"> </span>Core1
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d1c1<span class="w"> </span>netns<span class="w"> </span>Dist1
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core1<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.0.1/24<span class="w"> </span>dev<span class="w"> </span>veth-c1d1
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-c1d1<span class="w"> </span>up
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.1.1/24<span class="w"> </span>dev<span class="w"> </span>veth-d1c1
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d1c1<span class="w"> </span>up
+<h3 id="paso-1-crear-namespaces-y-una-funcion-auxiliar">Paso 1: Crear namespaces y una función auxiliar<a class="headerlink" href="#paso-1-crear-namespaces-y-una-funcion-auxiliar" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>ns<span class="w"> </span><span class="k">in</span><span class="w"> </span>Core1<span class="w"> </span>Core2<span class="w"> </span>Dist1<span class="w"> </span>Dist2<span class="w"> </span>Access1<span class="w"> </span>Firewall<span class="w"> </span>ServidorWeb<span class="w"> </span>ServidorDNS<span class="w"> </span>ventas<span class="w"> </span>it<span class="w"> </span>admin<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span><span class="nv">$ns</span>
+<span class="k">done</span>
+<span class="k">for</span><span class="w"> </span>r<span class="w"> </span><span class="k">in</span><span class="w"> </span>Core1<span class="w"> </span>Core2<span class="w"> </span>Dist1<span class="w"> </span>Dist2<span class="w"> </span>Firewall<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$r</span><span class="w"> </span>sysctl<span class="w"> </span>-qw<span class="w"> </span>net.ipv4.ip_forward<span class="o">=</span><span class="m">1</span>
+<span class="k">done</span>
 
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-c1d2<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-d2c1
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-c1d2<span class="w"> </span>netns<span class="w"> </span>Core1
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d2c1<span class="w"> </span>netns<span class="w"> </span>Dist2
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core1<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.0.2/24<span class="w"> </span>dev<span class="w"> </span>veth-c1d2
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-c1d2<span class="w"> </span>up
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist2<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.1.2/24<span class="w"> </span>dev<span class="w"> </span>veth-d2c1
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist2<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d2c1<span class="w"> </span>up
-
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-c2d1<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-d1c2
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-c2d1<span class="w"> </span>netns<span class="w"> </span>Core2
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d1c2<span class="w"> </span>netns<span class="w"> </span>Dist1
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core2<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.0.2/24<span class="w"> </span>dev<span class="w"> </span>veth-c2d1
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core2<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-c2d1<span class="w"> </span>up
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.1.1/24<span class="w"> </span>dev<span class="w"> </span>veth-d1c2
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d1c2<span class="w"> </span>up
-
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-c2d2<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-d2c2
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-c2d2<span class="w"> </span>netns<span class="w"> </span>Core2
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d2c2<span class="w"> </span>netns<span class="w"> </span>Dist2
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core2<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.0.2/24<span class="w"> </span>dev<span class="w"> </span>veth-c2d2
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core2<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-c2d2<span class="w"> </span>up
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist2<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.1.2/24<span class="w"> </span>dev<span class="w"> </span>veth-d2c2
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist2<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d2c2<span class="w"> </span>up
+<span class="c1"># enlace NS_A IF_A IP_A NS_B IF_B IP_B : crea un par veth con una IP en cada extremo</span>
+enlace<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span><span class="nv">$2</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span><span class="nv">$5</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$2</span><span class="w"> </span>netns<span class="w"> </span><span class="nv">$1</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$5</span><span class="w"> </span>netns<span class="w"> </span><span class="nv">$4</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="nv">$3</span><span class="w"> </span>dev<span class="w"> </span><span class="nv">$2</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$2</span><span class="w"> </span>up
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$4</span><span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="nv">$6</span><span class="w"> </span>dev<span class="w"> </span><span class="nv">$5</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$4</span><span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$5</span><span class="w"> </span>up
+<span class="o">}</span>
 </code></pre></div>
-<h3 id="paso-3-conectar-distribucion-a-acceso">Paso 3: Conectar Distribución a Acceso<a class="headerlink" href="#paso-3-conectar-distribucion-a-acceso" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-d1a1<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-a1d1
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d1a1<span class="w"> </span>netns<span class="w"> </span>Dist1
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a1d1<span class="w"> </span>netns<span class="w"> </span>Access1
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d1a1<span class="w"> </span>up
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a1d1<span class="w"> </span>up
-
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-d2a1<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-a1d2
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d2a1<span class="w"> </span>netns<span class="w"> </span>Dist2
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a1d2<span class="w"> </span>netns<span class="w"> </span>Access1
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist2<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d2a1<span class="w"> </span>up
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a1d2<span class="w"> </span>up
-
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-d1a2<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-a2d1
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d1a2<span class="w"> </span>netns<span class="w"> </span>Dist1
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a2d1<span class="w"> </span>netns<span class="w"> </span>Access2
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d1a2<span class="w"> </span>up
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access2<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a2d1<span class="w"> </span>up
-
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-d2a2<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-a2d2
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d2a2<span class="w"> </span>netns<span class="w"> </span>Dist2
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a2d2<span class="w"> </span>netns<span class="w"> </span>Access2
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist2<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d2a2<span class="w"> </span>up
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access2<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a2d2<span class="w"> </span>up
-
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-d1a3<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-a3d1
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d1a3<span class="w"> </span>netns<span class="w"> </span>Dist1
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a3d1<span class="w"> </span>netns<span class="w"> </span>Access3
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d1a3<span class="w"> </span>up
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access3<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a3d1<span class="w"> </span>up
-
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-d2a3<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-a3d2
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d2a3<span class="w"> </span>netns<span class="w"> </span>Dist2
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a3d2<span class="w"> </span>netns<span class="w"> </span>Access3
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist2<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d2a3<span class="w"> </span>up
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access3<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a3d2<span class="w"> </span>up
+<h3 id="paso-2-enlaces-del-nucleo-y-de-distribucion-un-30-por-enlace">Paso 2: Enlaces del núcleo y de distribución (un /30 por enlace)<a class="headerlink" href="#paso-2-enlaces-del-nucleo-y-de-distribucion-un-30-por-enlace" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code>enlace<span class="w"> </span>Core1<span class="w"> </span>veth-c1c2<span class="w"> </span><span class="m">10</span>.255.0.1/30<span class="w">  </span>Core2<span class="w"> </span>veth-c2c1<span class="w"> </span><span class="m">10</span>.255.0.2/30
+enlace<span class="w"> </span>Core1<span class="w"> </span>veth-c1d1<span class="w"> </span><span class="m">10</span>.255.1.1/30<span class="w">  </span>Dist1<span class="w"> </span>veth-d1c1<span class="w"> </span><span class="m">10</span>.255.1.2/30
+enlace<span class="w"> </span>Core1<span class="w"> </span>veth-c1d2<span class="w"> </span><span class="m">10</span>.255.1.5/30<span class="w">  </span>Dist2<span class="w"> </span>veth-d2c1<span class="w"> </span><span class="m">10</span>.255.1.6/30
+enlace<span class="w"> </span>Core2<span class="w"> </span>veth-c2d1<span class="w"> </span><span class="m">10</span>.255.1.9/30<span class="w">  </span>Dist1<span class="w"> </span>veth-d1c2<span class="w"> </span><span class="m">10</span>.255.1.10/30
+enlace<span class="w"> </span>Core2<span class="w"> </span>veth-c2d2<span class="w"> </span><span class="m">10</span>.255.1.13/30<span class="w"> </span>Dist2<span class="w"> </span>veth-d2c2<span class="w"> </span><span class="m">10</span>.255.1.14/30
 </code></pre></div>
-<h3 id="paso-4-configurar-firewall-y-dmz">Paso 4: Configurar Firewall y DMZ<a class="headerlink" href="#paso-4-configurar-firewall-y-dmz" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-fw-wan<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-wan-fw
+<h3 id="paso-3-firewall-internet-y-dmz">Paso 3: Firewall, Internet y DMZ<a class="headerlink" href="#paso-3-firewall-internet-y-dmz" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Core &lt;-&gt; Firewall</span>
+enlace<span class="w"> </span>Core1<span class="w"> </span>veth-c1fw<span class="w"> </span><span class="m">10</span>.255.2.1/30<span class="w"> </span>Firewall<span class="w"> </span>veth-fwc1<span class="w"> </span><span class="m">10</span>.255.2.2/30
+enlace<span class="w"> </span>Core2<span class="w"> </span>veth-c2fw<span class="w"> </span><span class="m">10</span>.255.2.5/30<span class="w"> </span>Firewall<span class="w"> </span>veth-fwc2<span class="w"> </span><span class="m">10</span>.255.2.6/30
+
+<span class="c1"># Firewall &lt;-&gt; Internet (el host, 192.168.100.2)</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-fw-wan<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-wan-fw
 sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-fw-wan<span class="w"> </span>netns<span class="w"> </span>Firewall
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">192</span>.168.100.1/24<span class="w"> </span>dev<span class="w"> </span>veth-fw-wan
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-fw-wan<span class="w"> </span>up
 sudo<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">192</span>.168.100.2/24<span class="w"> </span>dev<span class="w"> </span>veth-wan-fw
 sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-wan-fw<span class="w"> </span>up
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">192</span>.168.100.2
 
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-fw-dmz<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-dmz-fw
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-fw-dmz<span class="w"> </span>netns<span class="w"> </span>Firewall
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.99.1/24<span class="w"> </span>dev<span class="w"> </span>veth-fw-dmz
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-fw-dmz<span class="w"> </span>up
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-dmz-fw<span class="w"> </span>netns<span class="w"> </span>ServidorWeb
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ServidorWeb<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.99.10/24<span class="w"> </span>dev<span class="w"> </span>veth-dmz-fw
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ServidorWeb<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-dmz-fw<span class="w"> </span>up
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ServidorWeb<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.0.99.1
+<span class="c1"># El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)</span>
+sudo<span class="w"> </span>sysctl<span class="w"> </span>-w<span class="w"> </span>net.ipv4.ip_forward<span class="o">=</span><span class="m">1</span>
+sudo<span class="w"> </span>iptables<span class="w"> </span>-t<span class="w"> </span>nat<span class="w"> </span>-C<span class="w"> </span>POSTROUTING<span class="w"> </span>-s<span class="w"> </span><span class="m">192</span>.168.100.0/24<span class="w"> </span>-o<span class="w"> </span>eth0<span class="w"> </span>-j<span class="w"> </span>MASQUERADE<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>sudo<span class="w"> </span>iptables<span class="w"> </span>-t<span class="w"> </span>nat<span class="w"> </span>-A<span class="w"> </span>POSTROUTING<span class="w"> </span>-s<span class="w"> </span><span class="m">192</span>.168.100.0/24<span class="w"> </span>-o<span class="w"> </span>eth0<span class="w"> </span>-j<span class="w"> </span>MASQUERADE
 
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-fw-lan<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-lan-fw
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-fw-lan<span class="w"> </span>netns<span class="w"> </span>Firewall
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.0.254/24<span class="w"> </span>dev<span class="w"> </span>veth-fw-lan
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-fw-lan<span class="w"> </span>up
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-lan-fw<span class="w"> </span>netns<span class="w"> </span>Core1
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core1<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.0.1/24<span class="w"> </span>dev<span class="w"> </span>veth-lan-fw
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-lan-fw<span class="w"> </span>up
+<span class="c1"># DMZ: un bridge en el firewall con los dos servidores públicos</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>br-dmz<span class="w"> </span><span class="nb">type</span><span class="w"> </span>bridge
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.99.1/24<span class="w"> </span>dev<span class="w"> </span>br-dmz
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>br-dmz<span class="w"> </span>up
+<span class="k">for</span><span class="w"> </span>s<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"ServidorWeb veth-web veth-fw-web 10.0.99.10/24"</span><span class="w"> </span><span class="s2">"ServidorDNS veth-dns veth-fw-dns 10.0.99.5/24"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="nb">set</span><span class="w"> </span>--<span class="w"> </span><span class="nv">$s</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span><span class="nv">$2</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span><span class="nv">$3</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$2</span><span class="w"> </span>netns<span class="w"> </span><span class="nv">$1</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$3</span><span class="w"> </span>netns<span class="w"> </span>Firewall
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$3</span><span class="w"> </span>master<span class="w"> </span>br-dmz
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$3</span><span class="w"> </span>up
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="nv">$4</span><span class="w"> </span>dev<span class="w"> </span><span class="nv">$2</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$2</span><span class="w"> </span>up
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>lo<span class="w"> </span>up
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.0.99.1
+<span class="k">done</span>
 </code></pre></div>
-<h3 id="paso-5-configurar-enrutamiento-y-nat">Paso 5: Configurar enrutamiento y NAT<a class="headerlink" href="#paso-5-configurar-enrutamiento-y-nat" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>sysctl<span class="w"> </span>-w<span class="w"> </span>net.ipv4.ip_forward<span class="o">=</span><span class="m">1</span>
+<h3 id="paso-4-rutas-estaticas-con-metrica-camino-principal-y-de-respaldo">Paso 4: Rutas estáticas con métrica (camino principal y de respaldo)<a class="headerlink" href="#paso-4-rutas-estaticas-con-metrica-camino-principal-y-de-respaldo" title="Permanent link">&para;</a></h3>
+<p>Cada router tiene un camino <strong>principal</strong> (métrica 10) y uno de <strong>respaldo</strong> (métrica 20). Dos rutas al mismo destino con la misma métrica no pueden coexistir.</p>
+<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Distribución: salida por defecto hacia el core (principal Core1 en Dist1, Core2 en Dist2)</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.255.1.1<span class="w">  </span>metric<span class="w"> </span><span class="m">10</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.255.1.9<span class="w">  </span>metric<span class="w"> </span><span class="m">20</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist2<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.255.1.13<span class="w"> </span>metric<span class="w"> </span><span class="m">10</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist2<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.255.1.5<span class="w">  </span>metric<span class="w"> </span><span class="m">20</span>
+
+<span class="c1"># Core: salida por el firewall (respaldo por el otro core) y rutas hacia las VLAN</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core1<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.255.2.2<span class="w"> </span>metric<span class="w"> </span><span class="m">10</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core1<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.255.0.2<span class="w"> </span>metric<span class="w"> </span><span class="m">20</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core2<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.255.2.6<span class="w"> </span>metric<span class="w"> </span><span class="m">10</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core2<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.255.0.1<span class="w"> </span>metric<span class="w"> </span><span class="m">20</span>
+<span class="k">for</span><span class="w"> </span>v<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="m">20</span><span class="w"> </span><span class="m">30</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core1<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.<span class="nv">$v</span>.0/24<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.255.1.2
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core2<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.<span class="nv">$v</span>.0/24<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.255.1.10
+<span class="w">  </span><span class="c1"># Firewall: hacia las VLAN, principal por Core1 y respaldo por Core2</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.<span class="nv">$v</span>.0/24<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.255.2.1<span class="w"> </span>metric<span class="w"> </span><span class="m">10</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.<span class="nv">$v</span>.0/24<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.255.2.5<span class="w"> </span>metric<span class="w"> </span><span class="m">20</span>
+<span class="k">done</span>
+</code></pre></div>
+<h3 id="paso-5-politica-del-firewall-y-nat">Paso 5: Política del firewall y NAT<a class="headerlink" href="#paso-5-politica-del-firewall-y-nat" title="Permanent link">&para;</a></h3>
+<p>Las VLAN (<code>10.0.10-30.0/24</code>) están dentro de <code>10.0.0.0/18</code>; la DMZ (<code>10.0.99.0/24</code>) queda fuera.</p>
+<div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>iptables<span class="w"> </span>-P<span class="w"> </span>FORWARD<span class="w"> </span>DROP
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>iptables<span class="w"> </span>-A<span class="w"> </span>FORWARD<span class="w"> </span>-m<span class="w"> </span>state<span class="w"> </span>--state<span class="w"> </span>ESTABLISHED,RELATED<span class="w"> </span>-j<span class="w"> </span>ACCEPT
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>iptables<span class="w"> </span>-A<span class="w"> </span>FORWARD<span class="w"> </span>-s<span class="w"> </span><span class="m">10</span>.0.0.0/18<span class="w"> </span>-o<span class="w"> </span>veth-fw-wan<span class="w"> </span>-j<span class="w"> </span>ACCEPT
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>iptables<span class="w"> </span>-A<span class="w"> </span>FORWARD<span class="w"> </span>-s<span class="w"> </span><span class="m">10</span>.0.0.0/18<span class="w"> </span>-o<span class="w"> </span>br-dmz<span class="w"> </span>-p<span class="w"> </span>icmp<span class="w"> </span>--icmp-type<span class="w"> </span>echo-request<span class="w"> </span>-j<span class="w"> </span>ACCEPT
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>iptables<span class="w"> </span>-A<span class="w"> </span>FORWARD<span class="w"> </span>-s<span class="w"> </span><span class="m">10</span>.0.0.0/18<span class="w"> </span>-o<span class="w"> </span>br-dmz<span class="w"> </span>-p<span class="w"> </span>tcp<span class="w"> </span>-m<span class="w"> </span>multiport<span class="w"> </span>--dports<span class="w"> </span><span class="m">22</span>,80,443<span class="w"> </span>-j<span class="w"> </span>ACCEPT
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>iptables<span class="w"> </span>-t<span class="w"> </span>nat<span class="w"> </span>-A<span class="w"> </span>POSTROUTING<span class="w"> </span>-o<span class="w"> </span>veth-fw-wan<span class="w"> </span>-j<span class="w"> </span>MASQUERADE
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>iptables<span class="w"> </span>-A<span class="w"> </span>FORWARD<span class="w"> </span>-i<span class="w"> </span>veth-fw-lan<span class="w"> </span>-o<span class="w"> </span>veth-fw-wan<span class="w"> </span>-j<span class="w"> </span>ACCEPT
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core1<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.0.0.254
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core2<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.0.0.254
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.0.0.1
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist2<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.0.0.1
 </code></pre></div>
-<h3 id="paso-6-verificar">Paso 6: Verificar<a class="headerlink" href="#paso-6-verificar" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">8</span>.8.8.8
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.99.10
+<h3 id="paso-6-capa-de-acceso-con-vlan-access1">Paso 6: Capa de acceso con VLAN (Access1)<a class="headerlink" href="#paso-6-capa-de-acceso-con-vlan-access1" title="Permanent link">&para;</a></h3>
+<p><code>Access1</code> es un switch (bridge con filtrado de VLAN) con un puerto de acceso por VLAN y un <em>trunk</em> 802.1Q hacia <code>Dist1</code>, que hace de <em>gateway</em> de cada VLAN con una subinterfaz (<em>router-on-a-stick</em>, como en el laboratorio 05). Requiere el módulo <code>8021q</code>.</p>
+<div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>br0<span class="w"> </span><span class="nb">type</span><span class="w"> </span>bridge
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>br0<span class="w"> </span><span class="nb">type</span><span class="w"> </span>bridge<span class="w"> </span>vlan_filtering<span class="w"> </span><span class="m">1</span><span class="w"> </span>vlan_default_pvid<span class="w"> </span><span class="m">0</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>br0<span class="w"> </span>up
+
+<span class="c1"># Trunk Access1 &lt;-&gt; Dist1</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-a1d1<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-d1a1
+sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a1d1<span class="w"> </span>netns<span class="w"> </span>Access1
+sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d1a1<span class="w"> </span>netns<span class="w"> </span>Dist1
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a1d1<span class="w"> </span>master<span class="w"> </span>br0
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-a1d1<span class="w"> </span>up
+<span class="k">for</span><span class="w"> </span>v<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="m">20</span><span class="w"> </span><span class="m">30</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access1<span class="w"> </span>bridge<span class="w"> </span>vlan<span class="w"> </span>add<span class="w"> </span>dev<span class="w"> </span>veth-a1d1<span class="w"> </span>vid<span class="w"> </span><span class="nv">$v</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d1a1<span class="w"> </span>up
+<span class="k">for</span><span class="w"> </span>v<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="m">20</span><span class="w"> </span><span class="m">30</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>link<span class="w"> </span>veth-d1a1<span class="w"> </span>name<span class="w"> </span>veth-d1a1.<span class="nv">$v</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span>vlan<span class="w"> </span>id<span class="w"> </span><span class="nv">$v</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.<span class="nv">$v</span>.1/24<span class="w"> </span>dev<span class="w"> </span>veth-d1a1.<span class="nv">$v</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-d1a1.<span class="nv">$v</span><span class="w"> </span>up
+<span class="k">done</span>
+
+<span class="c1"># Un equipo por VLAN (puerto de acceso sin etiqueta)</span>
+<span class="k">for</span><span class="w"> </span>h<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"ventas 10 veth-ven veth-a1ven"</span><span class="w"> </span><span class="s2">"it 20 veth-it veth-a1it"</span><span class="w"> </span><span class="s2">"admin 30 veth-adm veth-a1adm"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="nb">set</span><span class="w"> </span>--<span class="w"> </span><span class="nv">$h</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span><span class="nv">$3</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span><span class="nv">$4</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$3</span><span class="w"> </span>netns<span class="w"> </span><span class="nv">$1</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$4</span><span class="w"> </span>netns<span class="w"> </span>Access1
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$4</span><span class="w"> </span>master<span class="w"> </span>br0
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$4</span><span class="w"> </span>up
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Access1<span class="w"> </span>bridge<span class="w"> </span>vlan<span class="w"> </span>add<span class="w"> </span>dev<span class="w"> </span><span class="nv">$4</span><span class="w"> </span>vid<span class="w"> </span><span class="nv">$2</span><span class="w"> </span>pvid<span class="w"> </span>untagged
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.<span class="nv">$2</span>.10/24<span class="w"> </span>dev<span class="w"> </span><span class="nv">$3</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$3</span><span class="w"> </span>up
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>lo<span class="w"> </span>up
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.0.<span class="nv">$2</span>.1
+<span class="k">done</span>
 </code></pre></div>
-<h2 id="alta-disponibilidad">Alta Disponibilidad<a class="headerlink" href="#alta-disponibilidad" title="Permanent link">&para;</a></h2>
-<h3 id="simular-fallo-de-core1">Simular fallo de Core1<a class="headerlink" href="#simular-fallo-de-core1" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Core1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-c1d1<span class="w"> </span>down
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.99.10
+<h3 id="paso-7-verificar">Paso 7: Verificar<a class="headerlink" href="#paso-7-verificar" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Hacia Internet (el host) y hacia la DMZ, desde un equipo de la VLAN 10</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ventas<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">192</span>.168.100.2
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ventas<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.99.10
+
+<span class="c1"># Entre VLAN (las enruta Dist1)</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ventas<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.20.10
+
+<span class="c1"># Camino seguido hacia la DMZ: Dist1 -&gt; Core1 -&gt; Firewall (-I usa ICMP, que el firewall permite; con UDP el trazado se cortaría en el firewall)</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ventas<span class="w"> </span>traceroute<span class="w"> </span>-n<span class="w"> </span>-I<span class="w"> </span><span class="m">10</span>.0.99.10
 </code></pre></div>
+<h2 id="alta-disponibilidad">Alta disponibilidad<a class="headerlink" href="#alta-disponibilidad" title="Permanent link">&para;</a></h2>
+<h3 id="simular-el-fallo-de-core1">Simular el fallo de Core1<a class="headerlink" href="#simular-el-fallo-de-core1" title="Permanent link">&para;</a></h3>
+<p>Con rutas estáticas, un router solo retira un camino cuando <strong>su propio</strong> enlace cae. Para simular que Core1 deja de funcionar bajamos todos sus enlaces <strong>por ambos extremos</strong>:</p>
+<div class="language-bash highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>par<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"Core1 veth-c1c2"</span><span class="w"> </span><span class="s2">"Core2 veth-c2c1"</span><span class="w"> </span><span class="s2">"Core1 veth-c1d1"</span><span class="w"> </span><span class="s2">"Dist1 veth-d1c1"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">           </span><span class="s2">"Core1 veth-c1d2"</span><span class="w"> </span><span class="s2">"Dist2 veth-d2c1"</span><span class="w"> </span><span class="s2">"Core1 veth-c1fw"</span><span class="w"> </span><span class="s2">"Firewall veth-fwc1"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="nb">set</span><span class="w"> </span>--<span class="w"> </span><span class="nv">$par</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">$2</span><span class="w"> </span>down
+<span class="k">done</span>
+
+<span class="c1"># El tráfico sigue funcionando, ahora por Core2</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ventas<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.99.10
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ventas<span class="w"> </span>traceroute<span class="w"> </span>-n<span class="w"> </span>-I<span class="w"> </span><span class="m">10</span>.0.99.10
+</code></pre></div>
+<p><strong>Salida esperada:</strong> 0% de pérdida y un camino distinto (<code>10.255.1.9</code>, que es Core2).</p>
+<p>Para recuperar Core1, sube de nuevo esas interfaces (<code>up</code>) y vuelve a añadir las rutas de métrica 10 que se retiraron al bajar los enlaces (Paso 4).</p>
 <h2 id="segmentacion-vlan">Segmentación VLAN<a class="headerlink" href="#segmentacion-vlan" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1211,19 +1262,16 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <td>10.0.30.0/24</td>
 <td>Administración</td>
 </tr>
-<tr>
-<td>DMZ</td>
-<td>99</td>
-<td>10.0.99.0/24</td>
-<td>Servidores públicos</td>
-</tr>
 </tbody>
 </table>
+<p>La DMZ (<code>10.0.99.0/24</code>) <strong>no</strong> es una VLAN en este laboratorio: es un segmento propio del firewall.</p>
 <h2 id="ejercicios">Ejercicios<a class="headerlink" href="#ejercicios" title="Permanent link">&para;</a></h2>
-<h3 id="ejercicio-1-agregar-redundancia-de-enlaces">Ejercicio 1: Agregar redundancia de enlaces<a class="headerlink" href="#ejercicio-1-agregar-redundancia-de-enlaces" title="Permanent link">&para;</a></h3>
-<p>Conecta Access2 a Dist1 y Dist2 para redundancia.</p>
-<h3 id="ejercicio-2-configurar-stp">Ejercicio 2: Configurar STP<a class="headerlink" href="#ejercicio-2-configurar-stp" title="Permanent link">&para;</a></h3>
-<p>Investiga STP y cómo prevenir bucles.</p>
+<h3 id="ejercicio-1-agregar-redundancia-de-enlaces-en-el-acceso">Ejercicio 1: Agregar redundancia de enlaces en el acceso<a class="headerlink" href="#ejercicio-1-agregar-redundancia-de-enlaces-en-el-acceso" title="Permanent link">&para;</a></h3>
+<p>Conecta <code>Access1</code> también a <code>Dist2</code> con otro trunk. Piensa: ¿por qué aquí no se forma un bucle de capa 2? ¿Qué mecanismo haría falta para que los equipos cambiaran de <em>gateway</em> automáticamente si falla Dist1? (VRRP: Laboratorio 15.)</p>
+<h3 id="ejercicio-2-investigar-stp">Ejercicio 2: Investigar STP<a class="headerlink" href="#ejercicio-2-investigar-stp" title="Permanent link">&para;</a></h3>
+<p>Si conectaras dos switches por dos cables y los unieras en el mismo bridge, aparecería un bucle de capa 2. Crea esa topología con dos bridges y activa STP (<code>ip link set br0 type bridge stp_state 1</code>); observa qué puerto queda bloqueado con <code>bridge link show</code>.</p>
+<h3 id="ejercicio-3-replicar-el-acceso">Ejercicio 3: Replicar el acceso<a class="headerlink" href="#ejercicio-3-replicar-el-acceso" title="Permanent link">&para;</a></h3>
+<p>Crea <code>Access2</code> y <code>Access3</code> siguiendo el Paso 6 y comprueba que los equipos de la misma VLAN en distintos switches se alcanzan cuando todos los trunks transportan la VLAN.</p>
 <h2 id="conceptos-clave">Conceptos clave<a class="headerlink" href="#conceptos-clave" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1235,28 +1283,28 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <tbody>
 <tr>
 <td>Modelo jerárquico</td>
-<td>Core-Distribución-Acceso</td>
+<td>Core - Distribución - Acceso</td>
 </tr>
 <tr>
 <td>Alta disponibilidad</td>
-<td>Redundancia Core1/Core2</td>
+<td>Camino principal y de respaldo (métricas) en el núcleo</td>
 </tr>
 <tr>
 <td>Redundancia</td>
-<td>Enlaces duales</td>
+<td>Doble enlace Dist-Core y Core-Firewall</td>
 </tr>
 <tr>
 <td>Segmentación</td>
-<td>VLAN 10, 20, 30</td>
+<td>VLAN 10, 20, 30 en el acceso</td>
 </tr>
 <tr>
 <td>DMZ</td>
-<td>Servidores aislados</td>
+<td>Servidores aislados tras el firewall</td>
 </tr>
 </tbody>
 </table>
 <h2 id="conclusiones">Conclusiones<a class="headerlink" href="#conclusiones" title="Permanent link">&para;</a></h2>
-<p>La arquitectura jerárquica proporciona escalabilidad, disponibilidad y facilidad de administración. La redundancia elimina puntos únicos de fallo.</p>
+<p>La arquitectura jerárquica proporciona escalabilidad, disponibilidad y facilidad de administración. La redundancia elimina puntos únicos de fallo en el núcleo; con rutas estáticas la conmutación es posible pero limitada a fallos de enlaces propios, y los protocolos dinámicos (OSPF) y de <em>gateway</em> (VRRP) completan la solución.</p>
 <hr />
 <p><strong>¡Laboratorio 11 completado!</strong> Continúa con el <strong>Laboratorio 12</strong>.</p>
               

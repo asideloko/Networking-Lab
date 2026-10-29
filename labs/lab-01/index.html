@@ -346,7 +346,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-8-configurar-router-on-a-stick">Paso 8: Configurar Router-on-a-Stick</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-9-configurar-nat">Paso 9: Configurar NAT</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-9-configurar-nat-y-salida-a-internet">Paso 9: Configurar NAT y salida a Internet</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
@@ -370,19 +370,21 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-06/#construccion-de-la-red">Construcción de la red</a>
         <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-0-limpiar-el-laboratorio-anterior">Paso 0: Limpiar el laboratorio anterior</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-1-crear-namespaces-y-enlaces">Paso 1: Crear namespaces y enlaces</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-2-conectar-routers-y-clientes">Paso 2: Conectar routers y clientes</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-3-asignar-direcciones-ip-y-activar-interfaces">Paso 3: Asignar direcciones IP y activar interfaces</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-configurar-rutas-estaticas">Paso 4: Configurar rutas estáticas</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-redundancia-enlace-r1-r3">Paso 6: Agregar redundancia (enlace R1-R3)</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-7-simular-fallo-y-verificar-redundancia">Paso 7: Simular fallo y verificar redundancia</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-7-simular-un-fallo-y-verificar-la-redundancia">Paso 7: Simular un fallo y verificar la redundancia</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-8-configurar-tunel-gre">Paso 8: Configurar túnel GRE</a>
     </li>
@@ -396,7 +398,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ejercicio-2-verificar-el-ttl">Ejercicio 2: Verificar el TTL</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ejercicio-3-recuperar-el-enlace">Ejercicio 3: Recuperar el enlace</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ejercicio-3-fallo-remoto-y-rutas-de-respaldo">Ejercicio 3: Fallo remoto y rutas de respaldo</a>
     </li>
         </ul>
     </li>
@@ -428,33 +430,33 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-2-crear-namespaces-para-servicios">Paso 2: Crear namespaces para servicios</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-3-conectar-servicios-a-la-red">Paso 3: Conectar servicios a la red</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-3-convertir-la-lan-de-la-sede-en-un-switch-bridge-y-conectar-los-servicios">Paso 3: Convertir la LAN de la sede en un switch (bridge) y conectar los servicios</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-4-asignar-direcciones-ip">Paso 4: Asignar direcciones IP</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-5-configurar-nat-en-r1-para-salida-a-internet">Paso 5: Configurar NAT en R1 para salida a Internet</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-5-salida-a-internet-para-toda-la-red-nat-en-r1">Paso 5: Salida a Internet para toda la red (NAT en R1)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-6-instalar-y-configurar-servidor-dns">Paso 6: Instalar y configurar servidor DNS</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-6-servidor-dns-solo-dns">Paso 6: Servidor DNS (solo DNS)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-7-instalar-y-configurar-servidor-dhcp">Paso 7: Instalar y configurar servidor DHCP</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-7-servidor-dhcp-solo-dhcp">Paso 7: Servidor DHCP (solo DHCP)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-8-configurar-cliente-dhcp">Paso 8: Configurar cliente DHCP</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-8-configurar-el-cliente-dhcp">Paso 8: Configurar el cliente DHCP</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-9-verificar-conectividad">Paso 9: Verificar conectividad</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-9-verificar-conectividad-y-servicios">Paso 9: Verificar conectividad y servicios</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-07/#analisis-de-tcp-y-udp">Análisis de TCP y UDP</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-10-capturar-trafico-tcp-http">Paso 10: Capturar tráfico TCP (HTTP)</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-10-capturar-trafico-tcp">Paso 10: Capturar tráfico TCP</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-11-capturar-trafico-udp-dns">Paso 11: Capturar tráfico UDP (DNS)</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-11-capturar-trafico-udp-dns-y-dhcp">Paso 11: Capturar tráfico UDP (DNS y DHCP)</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-07/#analisis-de-mss">Análisis de MSS</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-12-verificar-mss-en-conexiones-tcp">Paso 12: Verificar MSS en conexiones TCP</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#paso-12-verificar-el-mss-en-el-handshake-tcp">Paso 12: Verificar el MSS en el handshake TCP</a>
     </li>
         </ul>
     </li>
@@ -466,9 +468,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-07/#ejercicio-3-verificar-con-dig">Ejercicio 3: Verificar con dig</a>
     </li>
-        </ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-07/#ejercicio-4-probar-el-nat-desde-las-sucursales">Ejercicio 4: Probar el NAT desde las sucursales</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-07/#errores-comunes-y-soluciones">Errores comunes y soluciones</a>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-07/#conceptos-clave-del-tema-7-aplicados">Conceptos clave del Tema 7 aplicados</a>
     </li>
@@ -494,31 +496,35 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-1-verificar-infraestructura-existente">Paso 1: Verificar infraestructura existente</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-2-crear-namespaces-para-firewall-y-dmz">Paso 2: Crear namespaces para firewall y DMZ</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-2-el-firewall-pasa-a-ser-la-unica-salida">Paso 2: El firewall pasa a ser la única salida</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-3-conectar-firewall-a-las-zonas">Paso 3: Conectar firewall a las zonas</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-3-crear-namespaces-para-firewall-y-dmz">Paso 3: Crear namespaces para firewall y DMZ</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-4-configurar-cliente-y-servidor-interno">Paso 4: Configurar cliente y servidor interno</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-4-conectar-el-firewall-a-la-zona-externa-wan">Paso 4: Conectar el firewall a la zona externa (WAN)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-5-configurar-rutas-en-el-firewall">Paso 5: Configurar rutas en el firewall</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-5-crear-la-dmz-un-unico-segmento-con-los-dos-servidores">Paso 5: Crear la DMZ (un único segmento con los dos servidores)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-6-configurar-reglas-de-firewall-iptables">Paso 6: Configurar reglas de firewall (iptables)</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-6-conectar-el-firewall-a-la-lan-interna">Paso 6: Conectar el firewall a la LAN interna</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-7-verificar-reglas-de-firewall">Paso 7: Verificar reglas de firewall</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-7-configurar-el-firewall-reenvio-y-rutas">Paso 7: Configurar el firewall (reenvío y rutas)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-8-probar-conectividad">Paso 8: Probar conectividad</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-8-reglas-de-firewall-iptables">Paso 8: Reglas de firewall (iptables)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-9-configurar-ssh-para-acceso-seguro">Paso 9: Configurar SSH para acceso seguro</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-9-verificar-reglas-de-firewall">Paso 9: Verificar reglas de firewall</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-10-configurar-tls-para-servidor-web">Paso 10: Configurar TLS para servidor web</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-10-probar-conectividad">Paso 10: Probar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-11-configurar-ssh-para-acceso-seguro">Paso 11: Configurar SSH para acceso seguro</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#paso-12-configurar-tls-para-el-servidor-web">Paso 12: Configurar TLS para el servidor web</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-08/#ejercicios-practicos">Ejercicios prácticos</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#ejercicio-1-agregar-regla-para-ssh">Ejercicio 1: Agregar regla para SSH</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#ejercicio-1-permitir-ssh-solo-desde-la-red-de-administracion">Ejercicio 1: Permitir SSH solo desde la red de administración</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#ejercicio-2-bloquear-icmp-ping">Ejercicio 2: Bloquear ICMP (ping)</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-08/#ejercicio-2-bloquear-icmp">Ejercicio 2: Bloquear ICMP</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-08/#ejercicio-3-verificar-la-tabla-de-conexiones">Ejercicio 3: Verificar la tabla de conexiones</a>
     </li>
@@ -550,13 +556,13 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-1-verificar-infraestructura-existente">Paso 1: Verificar infraestructura existente</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-2-configurar-tunel-gre-entre-r1-y-r2">Paso 2: Configurar túnel GRE entre R1 y R2</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-2-crear-el-vpn-gateway-y-el-cliente-remoto">Paso 2: Crear el VPN Gateway y el cliente remoto</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-3-verificar-tunel-gre">Paso 3: Verificar túnel GRE</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-3-configurar-tunel-gre-entre-r1-y-r2">Paso 3: Configurar túnel GRE entre R1 y R2</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-4-configurar-tunel-gre-entre-r2-y-r3">Paso 4: Configurar túnel GRE entre R2 y R3</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-4-verificar-tunel-gre-y-crear-el-tunel-r2-r3">Paso 4: Verificar túnel GRE y crear el túnel R2-R3</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-5-agregar-rutas-a-traves-de-los-tuneles-gre">Paso 5: Agregar rutas a través de los túneles GRE</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-5-enviar-el-trafico-entre-oficinas-por-los-tuneles">Paso 5: Enviar el tráfico entre oficinas por los túneles</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-6-verificar-conectividad-a-traves-de-gre">Paso 6: Verificar conectividad a través de GRE</a>
     </li>
@@ -564,7 +570,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-09/#implementacion-de-ipsec">Implementación de IPsec</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-7-configurar-ipsec-entre-r1-y-r2">Paso 7: Configurar IPsec entre R1 y R2</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-7-cifrar-el-trafico-sede-sucursal-a-con-ipsec-esp-en-modo-tunel">Paso 7: Cifrar el tráfico Sede ↔ Sucursal A con IPsec (ESP en modo túnel)</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-8-verificar-ipsec">Paso 8: Verificar IPsec</a>
     </li>
@@ -572,17 +578,17 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-09/#implementacion-de-openvpn">Implementación de OpenVPN</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-9-configurar-openvpn-server">Paso 9: Configurar OpenVPN Server</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-9-openvpn-entre-el-cliente-remoto-y-el-vpn-gateway">Paso 9: OpenVPN entre el cliente remoto y el VPN Gateway</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-10-configurar-cliente-openvpn">Paso 10: Configurar cliente OpenVPN</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-10-verificar-openvpn">Paso 10: Verificar OpenVPN</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-09/#implementacion-de-wireguard">Implementación de WireGuard</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-11-configurar-wireguard-server">Paso 11: Configurar WireGuard Server</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-11-generar-las-claves">Paso 11: Generar las claves</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-12-configurar-cliente-wireguard">Paso 12: Configurar cliente WireGuard</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-12-configurar-el-servidor-vpn-gateway-y-el-cliente">Paso 12: Configurar el servidor (VPN Gateway) y el cliente</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-09/#paso-13-verificar-wireguard">Paso 13: Verificar WireGuard</a>
     </li>
@@ -620,31 +626,35 @@
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../lab-10/#contexto-empresarial">Contexto empresarial</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-10/#objetivos-del-laboratorio">Objetivos del laboratorio</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-10/#topologia">Topología</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-10/#construccion-de-la-red">Construcción de la red</a>
         <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-0-limpiar-laboratorios-anteriores-recomendado">Paso 0: Limpiar laboratorios anteriores (recomendado)</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-1-crear-namespaces">Paso 1: Crear namespaces</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-2-conectar-pe-a-p">Paso 2: Conectar PE a P</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-3-conectar-p-routers">Paso 3: Conectar P routers</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-4-configurar-redes-locales">Paso 4: Configurar redes locales</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-4-configurar-redes-locales-un-equipo-en-cada-lan">Paso 4: Configurar redes locales (un equipo en cada LAN)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-5-configurar-enrutamiento">Paso 5: Configurar enrutamiento</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-5-configurar-enrutamiento-estatico">Paso 5: Configurar enrutamiento estático</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-10/#paso-6-verificar-conectividad">Paso 6: Verificar conectividad</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-10/#analisis-mpls">Análisis MPLS</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-10/#analisis-mpls-conceptual">Análisis MPLS (conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-10/#comparacion-mpls-vs-sd-wan">Comparación MPLS vs SD-WAN</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-10/#ejercicios">Ejercicios</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-10/#ejercicio-1-simular-fallo">Ejercicio 1: Simular fallo</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-10/#ejercicio-1-simular-un-fallo-en-el-nucleo">Ejercicio 1: Simular un fallo en el núcleo</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-10/#ejercicio-2-balanceo-ecmp">Ejercicio 2: Balanceo ECMP</a>
     </li>
@@ -664,23 +674,27 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#construccion">Construcción</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#paso-1-crear-namespaces">Paso 1: Crear namespaces</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#paso-0-limpiar-laboratorios-anteriores">Paso 0: Limpiar laboratorios anteriores</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#paso-2-conectar-core-a-distribucion">Paso 2: Conectar Core a Distribución</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#paso-1-crear-namespaces-y-una-funcion-auxiliar">Paso 1: Crear namespaces y una función auxiliar</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#paso-3-conectar-distribucion-a-acceso">Paso 3: Conectar Distribución a Acceso</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#paso-2-enlaces-del-nucleo-y-de-distribucion-un-30-por-enlace">Paso 2: Enlaces del núcleo y de distribución (un /30 por enlace)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#paso-4-configurar-firewall-y-dmz">Paso 4: Configurar Firewall y DMZ</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#paso-3-firewall-internet-y-dmz">Paso 3: Firewall, Internet y DMZ</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#paso-5-configurar-enrutamiento-y-nat">Paso 5: Configurar enrutamiento y NAT</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#paso-4-rutas-estaticas-con-metrica-camino-principal-y-de-respaldo">Paso 4: Rutas estáticas con métrica (camino principal y de respaldo)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#paso-6-verificar">Paso 6: Verificar</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#paso-5-politica-del-firewall-y-nat">Paso 5: Política del firewall y NAT</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#paso-6-capa-de-acceso-con-vlan-access1">Paso 6: Capa de acceso con VLAN (Access1)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#paso-7-verificar">Paso 7: Verificar</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-11/#alta-disponibilidad">Alta Disponibilidad</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-11/#alta-disponibilidad">Alta disponibilidad</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#simular-fallo-de-core1">Simular fallo de Core1</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#simular-el-fallo-de-core1">Simular el fallo de Core1</a>
     </li>
         </ul>
     </li>
@@ -688,9 +702,11 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#ejercicios">Ejercicios</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#ejercicio-1-agregar-redundancia-de-enlaces">Ejercicio 1: Agregar redundancia de enlaces</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#ejercicio-1-agregar-redundancia-de-enlaces-en-el-acceso">Ejercicio 1: Agregar redundancia de enlaces en el acceso</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#ejercicio-2-configurar-stp">Ejercicio 2: Configurar STP</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#ejercicio-2-investigar-stp">Ejercicio 2: Investigar STP</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#ejercicio-3-replicar-el-acceso">Ejercicio 3: Replicar el acceso</a>
     </li>
         </ul>
     </li>
@@ -708,23 +724,27 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-12/#construccion">Construcción</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-1-crear-namespaces">Paso 1: Crear namespaces</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-0-limpiar-laboratorios-anteriores">Paso 0: Limpiar laboratorios anteriores</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-2-conectar-onpremise">Paso 2: Conectar OnPremise</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-1-crear-namespaces-y-la-funcion-auxiliar">Paso 1: Crear namespaces y la función auxiliar</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-3-conectar-cloud">Paso 3: Conectar Cloud</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-2-red-onpremise-un-unico-segmento-con-app-y-db">Paso 2: Red OnPremise (un único segmento con App y DB)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-4-conectar-onpremise-a-cloud">Paso 4: Conectar OnPremise a Cloud</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-3-red-en-la-nube-vpc-con-dos-subredes">Paso 3: Red en la nube (VPC con dos subredes)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-5-configurar-zero-trust-ztna">Paso 5: Configurar Zero Trust (ZTNA)</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-4-conectar-onpremise-con-la-nube-conectividad-hibrida">Paso 4: Conectar OnPremise con la nube (conectividad híbrida)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-6-configurar-usuarios-remotos">Paso 6: Configurar Usuarios Remotos</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-5-broker-de-acceso-ztna-e-identidad">Paso 5: Broker de acceso (ZTNA) e identidad</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-7-configurar-sase">Paso 7: Configurar SASE</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-6-usuarios-remotos">Paso 6: Usuarios remotos</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-8-microsegmentacion">Paso 8: Microsegmentación</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-7-servicios-de-prueba">Paso 7: Servicios de prueba</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-9-verificar">Paso 9: Verificar</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-8-politica-zero-trust-en-el-broker-acceso-minimo-por-aplicacion">Paso 8: Política Zero Trust en el broker (acceso mínimo por aplicación)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-9-microsegmentacion-entre-servidores">Paso 9: Microsegmentación entre servidores</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-12/#paso-10-verificar">Paso 10: Verificar</a>
     </li>
         </ul>
     </li>
@@ -756,7 +776,9 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-2-crear-servidores-de-monitoreo">Paso 2: Crear servidores de monitoreo</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-3-conectar-servidores-de-monitoreo">Paso 3: Conectar servidores de monitoreo</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-3-conectarlos-a-la-lan-de-onpremise">Paso 3: Conectarlos a la LAN de OnPremise</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-3b-salida-a-internet-opcional">Paso 3b: Salida a Internet (opcional)</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-4-herramientas-basicas-de-diagnostico">Paso 4: Herramientas básicas de diagnóstico</a>
     </li>
@@ -766,17 +788,17 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-7-analisis-de-rendimiento-con-iperf3">Paso 7: Análisis de rendimiento con iperf3</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-8-siem-basico-con-rsyslog">Paso 8: SIEM Básico con rsyslog</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#paso-8-colector-central-de-logs-siem-basico-con-rsyslog">Paso 8: Colector central de logs (SIEM básico) con rsyslog</a>
     </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-13/#ejercicios">Ejercicios</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#ejercicio-1-analizar-captura-wireshark">Ejercicio 1: Analizar captura Wireshark</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#ejercicio-1-analizar-una-captura">Ejercicio 1: Analizar una captura</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-13/#ejercicio-2-monitoreo-bidireccional">Ejercicio 2: Monitoreo bidireccional</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#ejercicio-3-simular-fallo-de-mtu">Ejercicio 3: Simular fallo de MTU</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-13/#ejercicio-3-simular-un-fallo-de-mtu">Ejercicio 3: Simular un fallo de MTU</a>
     </li>
         </ul>
     </li>
@@ -796,15 +818,17 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#construccion">Construcción</a>
         <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-0-limpiar-el-entorno">Paso 0: Limpiar el entorno</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-1-crear-namespaces">Paso 1: Crear namespaces</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-2-conectar-interfaces">Paso 2: Conectar interfaces</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-3-configurar-enrutamiento">Paso 3: Configurar enrutamiento</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-3-configurar-enrutamiento-y-nat">Paso 3: Configurar enrutamiento y NAT</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-4-iproute2">Paso 4: iproute2</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-5-ss">Paso 5: ss</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-5-ss-sockets">Paso 5: ss (sockets)</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-6-nftables">Paso 6: nftables</a>
     </li>
@@ -814,7 +838,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#ejercicios">Ejercicios</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#ejercicio-1-agregar-regla-nftables-para-bloquear-icmp">Ejercicio 1: Agregar regla nftables para bloquear ICMP</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#ejercicio-1-bloquear-icmp-con-nftables">Ejercicio 1: Bloquear ICMP con nftables</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#ejercicio-2-verificar-conexiones-con-ss">Ejercicio 2: Verificar conexiones con ss</a>
     </li>
@@ -832,63 +856,55 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#topologia">Topología</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#151-configuracion-de-red-basica">15.1 Configuración de Red Básica</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#construccion">Construcción</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#configurar-router-linux">Configurar Router Linux</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#paso-0-limpiar-y-preparar">Paso 0: Limpiar y preparar</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#configurar-pc1">Configurar PC1</a>
+        </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#configurar-pc2">Configurar PC2</a>
-    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#151-configuracion-de-red-basica">15.1 Configuración de red básica</a>
+        <ul>
     <li class="toctree-l3"><a class="reference internal" href="../lab-15/#verificar">Verificar</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado">15.2 Subnetting Aplicado</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan">15.3 VLAN</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#configurar-open-vswitch">Configurar Open vSwitch</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#router-on-a-stick">Router-on-a-Stick</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre Redes</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="../lab-15/#rutas-estaticas">Rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-15/#ospf-con-frrouting">OSPF con FRRouting</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#reconvergencia-ante-un-fallo">Reconvergencia ante un fallo</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#155-firewall">15.5 Firewall</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#nftables">nftables</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-15/#verificar_1">Verificar</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#156-red-parcial-integrada">15.6 Red Parcial Integrada</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#156-servicios-dhcp-con-dnsmasq">15.6 Servicios: DHCP con dnsmasq</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#dhcp-con-dnsmasq">DHCP con dnsmasq</a>
-    </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-15/#validar">Validar</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#157-red-empresarial-completa">15.7 Red Empresarial Completa</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#157-red-empresarial-completa-vrrp-redundancia-de-gateway">15.7 Red empresarial completa: VRRP (redundancia de gateway)</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#vrrp-redundancia-de-gateway">VRRP (redundancia de gateway)</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#verificar-y-probar-el-failover">Verificar y probar el failover</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#158-troubleshooting-real">15.8 Troubleshooting Real</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#158-troubleshooting-real">15.8 Troubleshooting real</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#caso-degradacion-por-mtu-en-ipsec">Caso: Degradación por MTU en IPsec</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#caso-degradacion-por-mtu-en-un-tunel-ipsecgre">Caso: degradación por MTU en un túnel (IPsec/GRE)</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#caso-agotamiento-de-tabla-arp">Caso: Agotamiento de tabla ARP</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-15/#caso-agotamiento-de-la-tabla-arp">Caso: agotamiento de la tabla ARP</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-15/#script-de-verificacion-arp">Script de verificación ARP</a>
     </li>
