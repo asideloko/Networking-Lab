@@ -8,9 +8,11 @@ La empresa **Networking SecOps** ha implementado exitosamente su red con VLANs y
 
 El equipo de redes ha decidido implementar:
 
-1. **Rutas estáticas** iniciales para conectar las oficinas.
-2. **OSPF** como protocolo de enrutamiento dinámico para adaptarse a cambios.
-3. **Túneles GRE** para conectar redes no contiguas a través de Internet.
+1. **Rutas estáticas** para conectar las oficinas, con una ruta alternativa (métricas) para tolerar fallos.
+2. **Túneles GRE** para conectar redes no contiguas a través de Internet.
+
+!!! note "Alcance: enrutamiento dinámico"
+    Este laboratorio trabaja **solo con enrutamiento estático**. Las rutas estáticas no se adaptan solas a un fallo remoto; esa limitación es la que justifica un protocolo dinámico. **OSPF se implementa de forma real con FRRouting en el Laboratorio 15.**
 
 ## Problema inicial
 
@@ -23,23 +25,20 @@ El equipo de redes ha decidido implementar:
 
 1.  Comprender los principios del enrutamiento IP.
 2.  Configurar **rutas estáticas** y la **ruta por defecto**.
-3.  Implementar **OSPF** (Open Shortest Path First) como protocolo IGP.
+3.  Comprender por qué el enrutamiento estático no basta a escala (OSPF se practica en el Laboratorio 15).
 4.  Analizar la **tabla de enrutamiento** y el proceso de **longest prefix match**.
 5.  Configurar un **túnel GRE** para interconectar redes remotas.
 6.  Verificar la conectividad entre todas las oficinas.
 
 ## Topología
 
-La topología consta de tres routers (R1, R2, R3) que representan la sede y dos sucursales.
+La topología consta de tres routers (R1, R2, R3) que representan la sede y dos sucursales. Para centrarnos en el enrutamiento, la sede se simplifica a una sola LAN (`10.0.0.0/24`): las VLAN del Laboratorio 05 no se vuelven a montar aquí.
 
 ```mermaid
 graph TB
     subgraph Sede_Central
         R1[Router 1 Sede]
         LAN1[Red Sede 10.0.0.0/24]
-        VLAN10[VLAN 10 Ventas 10.0.10.0/24]
-        VLAN20[VLAN 20 IT 10.0.20.0/24]
-        VLAN30[VLAN 30 Admin 10.0.30.0/24]
     end
     subgraph Sucursal_A
         R2[Router 2 Sucursal A]
@@ -52,9 +51,7 @@ graph TB
     R1 --- R2
     R2 --- R3
     LAN1 --- R1
-    VLAN10 --- R1
-    VLAN20 --- R1
-    VLAN30 --- R1
+    R1 --- R3
     LAN2 --- R2
     LAN3 --- R3
 ```
@@ -65,19 +62,29 @@ graph TB
 |-------------|----------|--------------|
 | R1 (Sede) | eth0 (LAN) | 10.0.0.1/24 |
 | R1 (Sede) | eth1 (R1-R2) | 192.168.1.1/30 |
-| R1 (Sede) | VLAN 10 | 10.0.10.1/24 |
-| R1 (Sede) | VLAN 20 | 10.0.20.1/24 |
-| R1 (Sede) | VLAN 30 | 10.0.30.1/24 |
+| R1 (Sede) | eth2 (R1-R3, Paso 6) | 192.168.3.1/30 |
 | R2 (Sucursal A) | eth0 (LAN) | 10.0.1.1/24 |
 | R2 (Sucursal A) | eth1 (R1-R2) | 192.168.1.2/30 |
 | R2 (Sucursal A) | eth2 (R2-R3) | 192.168.2.1/30 |
 | R3 (Sucursal B) | eth0 (LAN) | 10.0.2.1/24 |
 | R3 (Sucursal B) | eth1 (R2-R3) | 192.168.2.2/30 |
+| R3 (Sucursal B) | eth2 (R1-R3, Paso 6) | 192.168.3.2/30 |
 | Cliente Sede | - | 10.0.0.10/24 |
 | Cliente Sucursal A | - | 10.0.1.10/24 |
 | Cliente Sucursal B | - | 10.0.2.10/24 |
 
 ## Construcción de la red
+
+### Paso 0: Limpiar el laboratorio anterior
+
+Este laboratorio construye una topología nueva. Eliminamos lo que dejó el Laboratorio 05 (al borrar un namespace desaparecen también sus interfaces y el extremo `veth-host` del host):
+
+```bash
+for ns in ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 router switch; do
+  sudo ip netns del $ns 2>/dev/null || true
+done
+sudo ip link del veth-host 2>/dev/null || true
+```
 
 ### Paso 1: Crear namespaces y enlaces
 
@@ -177,13 +184,23 @@ sudo ip netns exec clienteSucB ip link set veth-c3 up
 sudo ip netns exec clienteSucB ip link set lo up
 ```
 
-### Paso 4: Configurar rutas estáticas
+### Paso 4: Habilitar el reenvío y configurar rutas estáticas
+
+Un router solo reenvía paquetes entre interfaces si `ip_forward` vale 1. En un namespace nuevo vale 0, así que hay que activarlo **en cada router**:
+
+```bash
+for r in R1 R2 R3; do
+  sudo ip netns exec $r sysctl -w net.ipv4.ip_forward=1
+done
+```
+
+Las rutas hacia la sucursal más lejana se declaran con `metric 100` para poder añadir después, sin conflicto, una ruta mejor (Paso 6). Dos rutas al mismo prefijo con la misma métrica no pueden coexistir: `ip route add` respondería `File exists`.
 
 **En R1 (Sede):**
 
 ```bash
 sudo ip netns exec R1 ip route add 10.0.1.0/24 via 192.168.1.2
-sudo ip netns exec R1 ip route add 10.0.2.0/24 via 192.168.1.2
+sudo ip netns exec R1 ip route add 10.0.2.0/24 via 192.168.1.2 metric 100
 ```
 
 **En R2 (Sucursal A):**
@@ -196,7 +213,7 @@ sudo ip netns exec R2 ip route add 10.0.2.0/24 via 192.168.2.2
 **En R3 (Sucursal B):**
 
 ```bash
-sudo ip netns exec R3 ip route add 10.0.0.0/24 via 192.168.2.1
+sudo ip netns exec R3 ip route add 10.0.0.0/24 via 192.168.2.1 metric 100
 sudo ip netns exec R3 ip route add 10.0.1.0/24 via 192.168.2.1
 ```
 
@@ -223,9 +240,9 @@ sudo ip netns exec R1 ip route show
 
 **Salida esperada:** 0% de pérdida en todos los pings.
 
-### Paso 6: Agregar redundancia (enlace R1-R3)
+### Paso 6: Agregar un enlace directo R1-R3 (camino preferido)
 
-Para demostrar la ventaja de tener rutas alternativas:
+Un enlace directo es un camino más corto. Lo agregamos y le damos una **métrica menor (50)**: Linux elige siempre la ruta de menor métrica, y deja la ruta por R2 (métrica 100) como respaldo.
 
 ```bash
 # Crear enlace R1-R3
@@ -237,27 +254,49 @@ sudo ip netns exec R1 ip link set veth-r1r3 up
 sudo ip netns exec R3 ip addr add 192.168.3.2/30 dev veth-r3r1
 sudo ip netns exec R3 ip link set veth-r3r1 up
 
-# Agregar rutas estáticas redundantes
-sudo ip netns exec R1 ip route add 10.0.2.0/24 via 192.168.3.2
-sudo ip netns exec R3 ip route add 10.0.0.0/24 via 192.168.3.1
+# Rutas por el enlace directo (preferidas por su métrica menor)
+sudo ip netns exec R1 ip route add 10.0.2.0/24 via 192.168.3.2 metric 50
+sudo ip netns exec R3 ip route add 10.0.0.0/24 via 192.168.3.1 metric 50
 ```
 
-### Paso 7: Simular fallo y verificar redundancia
+Comprueba qué camino usa ahora el tráfico (debe pasar directamente por R3):
 
 ```bash
-# Desconectar enlace R1-R2 (simular fallo)
-sudo ip netns exec R1 ip link set veth-r1r2 down
-sudo ip netns exec R2 ip link set veth-r2r1 down
-
-# Verificar conectividad por ruta alternativa
-sudo ip netns exec clienteSede ping -c 4 10.0.2.10
+sudo ip netns exec R1 ip route show 10.0.2.0/24
+sudo ip netns exec clienteSede traceroute -n 10.0.2.10
 ```
 
-**Salida esperada:** Debe funcionar usando la ruta alternativa por R3.
+### Paso 7: Simular un fallo y verificar la redundancia
+
+Tiramos el **enlace preferido** (R1-R3) por **sus dos extremos**. Con rutas estáticas, un router solo "sabe" que un enlace cayó si es uno de sus propios enlaces: por eso el fallo debe afectar a ambos routers del enlace.
+
+```bash
+sudo ip netns exec R1 ip link set veth-r1r3 down
+sudo ip netns exec R3 ip link set veth-r3r1 down
+
+# La ruta de métrica 50 desaparece y entra la de métrica 100 (por R2)
+sudo ip netns exec R1 ip route show 10.0.2.0/24
+sudo ip netns exec clienteSede ping -c 4 10.0.2.10
+sudo ip netns exec clienteSede traceroute -n 10.0.2.10
+```
+
+**Salida esperada:** 0% de pérdida y un salto adicional (R2, `192.168.1.2`) en el `traceroute`.
+
+!!! warning "Limitación de las rutas estáticas"
+    Si en cambio cae el enlace R2-R3 (un fallo **remoto** para R1), R1 seguiría enviando tráfico por R2 y se perdería: las rutas estáticas no detectan fallos que no son de su propio enlace. Para eso existen los protocolos dinámicos (Laboratorio 15).
+
+Restablece el enlace antes de continuar:
+
+```bash
+sudo ip netns exec R1 ip link set veth-r1r3 up
+sudo ip netns exec R3 ip link set veth-r3r1 up
+sudo ip netns exec R1 ip route replace 10.0.2.0/24 via 192.168.3.2 metric 50
+sudo ip netns exec R3 ip route replace 10.0.0.0/24 via 192.168.3.1 metric 50
+```
 
 ### Paso 8: Configurar túnel GRE
 
-Los túneles GRE permiten conectar redes no contiguas a través de Internet.
+Los túneles GRE permiten conectar redes no contiguas a través de Internet. Necesitan el módulo `ip_gre` del kernel (`sudo modprobe ip_gre`). El túnel se monta sobre el enlace directo R1-R3 del Paso 6, que debe estar activo.
 
 ```bash
 # En R1
@@ -299,14 +338,9 @@ Desde el cliente Sede, haz un `traceroute` a la Sucursal B y observa cómo los r
 sudo ip netns exec clienteSede traceroute -n 10.0.2.10
 ```
 
-### Ejercicio 3: Recuperar el enlace
+### Ejercicio 3: Fallo remoto y rutas de respaldo
 
-Vuelve a activar el enlace R1-R2 y verifica la conectividad.
-
-```bash
-sudo ip netns exec R1 ip link set veth-r1r2 up
-sudo ip netns exec R2 ip link set veth-r2r1 up
-```
+Baja el enlace R2-R3 por **ambos extremos** (`veth-r2r3` en R2 y `veth-r3r2` en R3) y comprueba que `clienteSucA` ya no alcanza a `clienteSucB`, aunque físicamente exista el camino R2 → R1 → R3. Después agrega rutas de respaldo con métrica 100 (en R2 hacia `192.168.1.1`; en R3, para la Sucursal A, hacia `192.168.3.1`) y vuelve a probar.
 
 ## Errores comunes y soluciones
 
@@ -337,7 +371,7 @@ En este laboratorio hemos:
 4.  Agregado **redundancia** con un enlace alternativo.
 5.  Configurado un **túnel GRE** para conectar redes no contiguas.
 
-El enrutamiento es el corazón de la comunicación entre redes. Las rutas estáticas son simples pero no escalan, mientras que los protocolos dinámicos como OSPF ofrecen convergencia automática. Los túneles GRE permiten extender redes a través de infraestructuras IP.
+El enrutamiento es el corazón de la comunicación entre redes. Las rutas estáticas son simples pero no escalan ni reaccionan a fallos remotos; los protocolos dinámicos como OSPF ofrecen convergencia automática y se implementan en el Laboratorio 15. Los túneles GRE permiten extender redes a través de infraestructuras IP.
 
 ## Preparación para el siguiente laboratorio
 

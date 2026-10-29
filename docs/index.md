@@ -29,7 +29,7 @@ Al finalizar el laboratorio 15 tendrás una red funcional que integra enrutamien
 -   Ganas de aprender haciendo.
 
 !!! warning "Antes de empezar"
-    Los laboratorios crean *namespaces* de red, interfaces virtuales y reglas de firewall en tu equipo. Hazlos en una **máquina virtual o equipo de pruebas**, no en un servidor en producción. Los laboratorios 05, 06, 09 y 10 necesitan módulos del kernel (`8021q`, `ip_gre`, `wireguard`, `mpls_router`); una máquina virtual Linux estándar los incluye.
+    Los laboratorios crean *namespaces* de red, interfaces virtuales y reglas de firewall en tu equipo. Hazlos en una **máquina virtual o equipo de pruebas**, no en un servidor en producción. Algunos laboratorios necesitan módulos del kernel: `8021q` (05 y 11), `ip_gre` (06 y 09) y `wireguard`, `esp4`/`xfrm_user` y `tun` (09); una máquina virtual Linux estándar los incluye. El laboratorio 10 trata MPLS solo a nivel conceptual (no requiere `mpls_router`). El laboratorio 15 usa `frr`, `keepalived` y `dnsmasq-base`.
 
 ## Laboratorios
 

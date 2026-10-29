@@ -50,7 +50,7 @@ Se necesita **segmentar la red físicamente** usando **VLANs** para:
 | 10 | Ventas | 10.0.10.0/24 | 10.0.10.1 |
 | 20 | IT | 10.0.20.0/24 | 10.0.20.1 |
 | 30 | Administración | 10.0.30.0/24 | 10.0.30.1 |
-| 99 | Enlace (Native) | 10.0.99.0/30 | - |
+| 99 | Gestión (enlace, etiquetada) | 10.0.99.0/30 | - |
 
 ## Topología
 
@@ -115,7 +115,7 @@ ip netns add admin2
 
 ```bash
 ip netns exec switch ip link add br0 type bridge
-ip netns exec switch ip link set br0 type bridge vlan_filtering 1
+ip netns exec switch ip link set br0 type bridge vlan_filtering 1 vlan_default_pvid 0
 ip netns exec switch ip link set br0 up
 ```
 
@@ -129,9 +129,9 @@ ip link set veth-sv1 netns switch
 ip netns exec ventas1 ip addr add 10.0.10.2/24 dev veth-v1
 ip netns exec ventas1 ip link set veth-v1 up
 ip netns exec ventas1 ip route add default via 10.0.10.1
+ip netns exec switch ip link set veth-sv1 master br0
 ip netns exec switch ip link set veth-sv1 up
 ip netns exec switch bridge vlan add dev veth-sv1 vid 10 pvid untagged
-ip netns exec switch ip link set veth-sv1 master br0
 
 # Ventas 2
 ip link add veth-v2 type veth peer name veth-sv2
@@ -140,9 +140,9 @@ ip link set veth-sv2 netns switch
 ip netns exec ventas2 ip addr add 10.0.10.3/24 dev veth-v2
 ip netns exec ventas2 ip link set veth-v2 up
 ip netns exec ventas2 ip route add default via 10.0.10.1
+ip netns exec switch ip link set veth-sv2 master br0
 ip netns exec switch ip link set veth-sv2 up
 ip netns exec switch bridge vlan add dev veth-sv2 vid 10 pvid untagged
-ip netns exec switch ip link set veth-sv2 master br0
 
 # Ventas 3
 ip link add veth-v3 type veth peer name veth-sv3
@@ -151,9 +151,9 @@ ip link set veth-sv3 netns switch
 ip netns exec ventas3 ip addr add 10.0.10.4/24 dev veth-v3
 ip netns exec ventas3 ip link set veth-v3 up
 ip netns exec ventas3 ip route add default via 10.0.10.1
+ip netns exec switch ip link set veth-sv3 master br0
 ip netns exec switch ip link set veth-sv3 up
 ip netns exec switch bridge vlan add dev veth-sv3 vid 10 pvid untagged
-ip netns exec switch ip link set veth-sv3 master br0
 ```
 
 ### Paso 5: Configurar clientes VLAN 20 (IT)
@@ -166,9 +166,9 @@ ip link set veth-si1 netns switch
 ip netns exec it1 ip addr add 10.0.20.2/24 dev veth-i1
 ip netns exec it1 ip link set veth-i1 up
 ip netns exec it1 ip route add default via 10.0.20.1
+ip netns exec switch ip link set veth-si1 master br0
 ip netns exec switch ip link set veth-si1 up
 ip netns exec switch bridge vlan add dev veth-si1 vid 20 pvid untagged
-ip netns exec switch ip link set veth-si1 master br0
 
 # IT 2
 ip link add veth-i2 type veth peer name veth-si2
@@ -177,9 +177,9 @@ ip link set veth-si2 netns switch
 ip netns exec it2 ip addr add 10.0.20.3/24 dev veth-i2
 ip netns exec it2 ip link set veth-i2 up
 ip netns exec it2 ip route add default via 10.0.20.1
+ip netns exec switch ip link set veth-si2 master br0
 ip netns exec switch ip link set veth-si2 up
 ip netns exec switch bridge vlan add dev veth-si2 vid 20 pvid untagged
-ip netns exec switch ip link set veth-si2 master br0
 
 # IT 3
 ip link add veth-i3 type veth peer name veth-si3
@@ -188,9 +188,9 @@ ip link set veth-si3 netns switch
 ip netns exec it3 ip addr add 10.0.20.4/24 dev veth-i3
 ip netns exec it3 ip link set veth-i3 up
 ip netns exec it3 ip route add default via 10.0.20.1
+ip netns exec switch ip link set veth-si3 master br0
 ip netns exec switch ip link set veth-si3 up
 ip netns exec switch bridge vlan add dev veth-si3 vid 20 pvid untagged
-ip netns exec switch ip link set veth-si3 master br0
 ```
 
 ### Paso 6: Configurar clientes VLAN 30 (Administración)
@@ -203,9 +203,9 @@ ip link set veth-sa1 netns switch
 ip netns exec admin1 ip addr add 10.0.30.2/24 dev veth-a1
 ip netns exec admin1 ip link set veth-a1 up
 ip netns exec admin1 ip route add default via 10.0.30.1
+ip netns exec switch ip link set veth-sa1 master br0
 ip netns exec switch ip link set veth-sa1 up
 ip netns exec switch bridge vlan add dev veth-sa1 vid 30 pvid untagged
-ip netns exec switch ip link set veth-sa1 master br0
 
 # Admin 2
 ip link add veth-a2 type veth peer name veth-sa2
@@ -214,9 +214,9 @@ ip link set veth-sa2 netns switch
 ip netns exec admin2 ip addr add 10.0.30.3/24 dev veth-a2
 ip netns exec admin2 ip link set veth-a2 up
 ip netns exec admin2 ip route add default via 10.0.30.1
+ip netns exec switch ip link set veth-sa2 master br0
 ip netns exec switch ip link set veth-sa2 up
 ip netns exec switch bridge vlan add dev veth-sa2 vid 30 pvid untagged
-ip netns exec switch ip link set veth-sa2 master br0
 ```
 
 ### Paso 7: Configurar trunk (802.1Q)
@@ -225,12 +225,12 @@ ip netns exec switch ip link set veth-sa2 master br0
 ip link add veth-sr type veth peer name veth-rs
 ip link set veth-sr netns switch
 ip link set veth-rs netns router
+ip netns exec switch ip link set veth-sr master br0
 ip netns exec switch ip link set veth-sr up
 ip netns exec switch bridge vlan add dev veth-sr vid 10
 ip netns exec switch bridge vlan add dev veth-sr vid 20
 ip netns exec switch bridge vlan add dev veth-sr vid 30
 ip netns exec switch bridge vlan add dev veth-sr vid 99
-ip netns exec switch ip link set veth-sr master br0
 ```
 
 ### Paso 8: Configurar Router-on-a-Stick
@@ -252,7 +252,7 @@ ip netns exec router ip link set veth-rs.30 up
 ip netns exec router ip link set veth-rs.99 up
 ```
 
-### Paso 9: Configurar NAT
+### Paso 9: Configurar NAT y salida a Internet
 
 ```bash
 ip link add veth-host type veth peer name veth-wan
@@ -261,11 +261,20 @@ ip netns exec router ip addr add 192.168.1.2/24 dev veth-wan
 ip netns exec router ip link set veth-wan up
 ip addr add 192.168.1.1/24 dev veth-host
 ip link set veth-host up
+
+# El router necesita ruta por defecto hacia el host y NAT hacia fuera
+ip netns exec router ip route add default via 192.168.1.1
 ip netns exec router iptables -t nat -A POSTROUTING -o veth-wan -j MASQUERADE
-ip netns exec router iptables -A FORWARD -i veth-rs -o veth-wan -j ACCEPT
-ip netns exec router iptables -A FORWARD -i veth-wan -o veth-rs -m state --state RELATED,ESTABLISHED -j ACCEPT
-ip route add 10.0.0.0/8 via 192.168.1.2
+ip netns exec router iptables -A FORWARD -i 'veth-rs.+' -o veth-wan -j ACCEPT
+ip netns exec router iptables -A FORWARD -i veth-wan -o 'veth-rs.+' -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+# El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)
+sysctl -w net.ipv4.ip_forward=1
+iptables -t nat -C POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE 2>/dev/null || \
+  iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
 ```
+
+El router traduce (NAT) todo lo que sale por `veth-wan`, así que el host solo ve la red `192.168.1.0/24` y **no necesita una ruta de retorno** hacia las VLAN.
 
 ### Paso 10: Verificar conectividad
 
