@@ -269,7 +269,8 @@ ip netns exec router ip route add default via 192.168.1.1
 
 # El host reenvía y traduce el tráfico hacia tu red real (cambia eth0 por tu interfaz)
 sysctl -w net.ipv4.ip_forward=1
-iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
+iptables -t nat -C POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE 2>/dev/null || \
+  iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
 
 # NAT
 ip netns exec router iptables -t nat -A POSTROUTING -o veth-wan -j MASQUERADE
@@ -327,7 +328,7 @@ ip netns exec router ip route show
 
 **Análisis:**
 - Los clientes tienen una ruta por defecto hacia su gateway.
-- El router tiene rutas específicas para cada subred.
+- El router tiene una ruta *conectada* por cada subred (por las IP de `veth-rs`) y una ruta por defecto hacia el host.
 
 ### Paso 13: Capturar tráfico entre subredes
 
@@ -387,7 +388,7 @@ ip netns exec ventas4 ping -c 4 10.0.0.1
 
 | Error | Causa | Solución |
 |-------|-------|----------|
-| Clientes en diferentes subredes no pueden hacer ping | El router no tiene rutas. | Agregar rutas estáticas en el router. |
+| Clientes en diferentes subredes no pueden hacer ping | El router no tiene una IP de *gateway* en cada subred, o `ip_forward` vale 0. | Verificar `ip addr show dev veth-rs` en el router y `sysctl net.ipv4.ip_forward`. |
 | `ping: connect: Network is unreachable` | Máscara de subred incorrecta. | Verificar `ip addr show` en el cliente. |
 | No sale a Internet | NAT no configurado. | Verificar reglas de iptables y `ip_forward=1`. |
 
@@ -397,7 +398,7 @@ En este laboratorio hemos:
 
 1.  **Aplicado subnetting** para dividir una red en subredes más pequeñas.
 2.  **Implementado VLSM** para optimizar el uso de direcciones.
-3.  **Configurado rutas estáticas** en el router para comunicar subredes.
+3.  **Comprobado** que el router encamina entre las subredes porque las tiene directamente conectadas (no hacen falta rutas estáticas).
 4.  **Verificado la comunicación entre subredes** a través del router.
 
 ## Preparación para el siguiente laboratorio

@@ -11,7 +11,7 @@ El equipo de redes ha identificado los siguientes requisitos:
 1. **Conectar sucursales** de forma segura a la sede central.
 2. **Permitir teletrabajo** para empleados desde sus casas.
 3. **Proteger las comunicaciones** con cifrado.
-4. **Soportar protocolos de enrutamiento** dinámico sobre VPN.
+4. Entender por qué el enrutamiento dinámico sobre túneles (GRE + OSPF/BGP) se aborda más adelante (Laboratorio 15).
 
 ## Problema inicial
 
@@ -33,7 +33,7 @@ El equipo de redes ha identificado los siguientes requisitos:
 
 - Linux con privilegios de superusuario.
 - Comandos: `ip`, `ping`, `tcpdump`, `wg` (para WireGuard).
-- `strongswan` o `libreswan` para IPsec.
+- `iproute2` (subsistema `xfrm`) para IPsec, `openssl` para generar claves.
 - `openvpn` para OpenVPN.
 - `wireguard-tools` para WireGuard.
 
@@ -81,29 +81,88 @@ graph TB
 | R2 (Sucursal A) | eth2 (R2-R3) | 192.168.2.1/30 |
 | R3 (Sucursal B) | eth0 (LAN) | 10.0.2.1/24 |
 | R3 (Sucursal B) | eth1 (R2-R3) | 192.168.2.2/30 |
-| VPN Gateway | - | 192.168.100.10/24 |
-| Túnel GRE R1-R2 | gre1 | 10.10.0.1/30 |
-| Túnel GRE R2-R3 | gre1 | 10.10.0.5/30 |
-| OpenVPN Server | tun0 | 10.8.0.1/24 |
-| WireGuard Server | wg0 | 10.9.0.1/24 |
+| VPN Gateway (en la DMZ) | veth-vpngw | 10.0.99.20/24 (publicado por el firewall en 192.168.100.1) |
+| Cliente VPN (remoto) | veth-cvpn | 192.168.100.50/24 |
+| Túnel GRE R1-R2 | gre1 | 10.10.0.1/30 y 10.10.0.2/30 |
+| Túnel GRE R2-R3 | gre2 | 10.10.0.5/30 y 10.10.0.6/30 |
+| OpenVPN (punto a punto) | tun0 | 10.8.0.1 ↔ 10.8.0.2 |
+| WireGuard | wg0 | 10.9.0.1/24 (gateway) y 10.9.0.2/24 (cliente) |
 
 ## Construcción de la red
 
 ### Paso 1: Verificar infraestructura existente
 
-Asegurémonos de que el laboratorio 08 está funcionando:
+Asegurémonos de que los laboratorios 06 a 08 siguen en pie:
 
 ```bash
-# Verificar namespaces
 sudo ip netns list
-
-# Verificar conectividad entre sede y sucursales
 sudo ip netns exec clienteSede ping -c 2 10.0.1.10
+sudo ip netns exec clienteSede ping -c 2 192.168.100.2
 ```
 
-### Paso 2: Configurar túnel GRE entre R1 y R2
+Los túneles necesitan módulos del kernel; en una VM Linux estándar se cargan solos, o con `sudo modprobe ip_gre wireguard esp4 xfrm_user tun`.
 
-Los túneles GRE permiten conectar redes no contiguas.
+!!! info "Rutas y archivos"
+    Un `cat > /etc/...` dentro de un `ip netns exec` escribiría en el `/etc` real del host, y dos routers no pueden compartir el mismo `ipsec.conf`. Por eso los secretos y configuraciones de este laboratorio van en `/tmp/lab09/` y la configuración se hace con comandos (`ip`, `wg`) que **sí** son específicos de cada namespace.
+
+### Paso 2: Crear el VPN Gateway y el cliente remoto
+
+El *VPN Gateway* vive en la **DMZ** (`10.0.99.20`). El empleado remoto (`clienteVPN`) está en "Internet": se conecta al bridge `br-wan` del host (`192.168.100.50`). El firewall publica los puertos VPN hacia la DMZ y permite el acceso de los túneles a la LAN.
+
+```bash
+sudo ip netns add VPN_GW
+sudo ip netns add clienteVPN
+
+# VPN_GW dentro de la DMZ
+sudo ip link add veth-vpngw type veth peer name veth-fw-vpn
+sudo ip link set veth-vpngw netns VPN_GW
+sudo ip link set veth-fw-vpn netns firewall
+sudo ip netns exec firewall ip link set veth-fw-vpn master br-dmz
+sudo ip netns exec firewall ip link set veth-fw-vpn up
+sudo ip netns exec VPN_GW ip addr add 10.0.99.20/24 dev veth-vpngw
+sudo ip netns exec VPN_GW ip link set veth-vpngw up
+sudo ip netns exec VPN_GW ip link set lo up
+sudo ip netns exec VPN_GW ip route add default via 10.0.99.1
+sudo ip netns exec VPN_GW sysctl -w net.ipv4.ip_forward=1
+
+# clienteVPN en "Internet"
+sudo ip link add veth-cvpn type veth peer name veth-wan-cvpn
+sudo ip link set veth-cvpn netns clienteVPN
+sudo ip link set veth-wan-cvpn master br-wan
+sudo ip link set veth-wan-cvpn up
+sudo ip netns exec clienteVPN ip addr add 192.168.100.50/24 dev veth-cvpn
+sudo ip netns exec clienteVPN ip link set veth-cvpn up
+sudo ip netns exec clienteVPN ip link set lo up
+```
+
+Reglas del firewall: publicar los puertos VPN (DNAT), permitir que el gateway y sus túneles lleguen a la LAN, y devolver el tráfico de retorno hacia los túneles:
+
+```bash
+# Publicar WireGuard (51820/udp) y OpenVPN (1194/udp) hacia el VPN Gateway
+sudo ip netns exec firewall iptables -t nat -A PREROUTING -i veth-fw-wan -p udp -m multiport --dports 51820,1194 -j DNAT --to-destination 10.0.99.20
+sudo ip netns exec firewall iptables -I FORWARD 1 -i veth-fw-wan -o br-dmz -p udp -d 10.0.99.20 -m multiport --dports 51820,1194 -j ACCEPT
+
+# Los túneles (10.8.0.0/24 y 10.9.0.0/24, ambas dentro de 10.8.0.0/15) pueden llegar a la red interna
+sudo ip netns exec firewall iptables -I FORWARD 1 -i br-dmz -o veth-fw-lan -s 10.8.0.0/15 -d 10.0.0.0/22 -j ACCEPT
+sudo ip netns exec firewall ip route add 10.8.0.0/24 via 10.0.99.20
+sudo ip netns exec firewall ip route add 10.9.0.0/24 via 10.0.99.20
+
+# VPN_GW conoce la red interna a través del firewall
+sudo ip netns exec VPN_GW ip route add 10.0.0.0/22 via 10.0.99.1
+```
+
+Comprueba que el puerto publicado llega al gateway (DNAT), sin ninguna VPN todavía:
+
+```bash
+sudo ip netns exec clienteVPN ping -c 2 192.168.100.1
+sudo ip netns exec VPN_GW sh -c 'nc -u -l -p 51820 > /tmp/lab09_dnat.txt &'
+sudo ip netns exec clienteVPN sh -c 'echo prueba | nc -u -w 1 192.168.100.1 51820'
+cat /tmp/lab09_dnat.txt
+```
+
+### Paso 3: Configurar túnel GRE entre R1 y R2
+
+GRE encapsula paquetes IP dentro de otros paquetes IP, sin cifrarlos.
 
 ```bash
 # En R1 (Sede)
@@ -117,17 +176,12 @@ sudo ip netns exec R2 ip addr add 10.10.0.2/30 dev gre1
 sudo ip netns exec R2 ip link set gre1 up
 ```
 
-### Paso 3: Verificar túnel GRE
+### Paso 4: Verificar túnel GRE y crear el túnel R2-R3
 
 ```bash
-# Verificar estado del túnel
 sudo ip netns exec R1 ip tunnel show gre1
-
-# Probar conectividad
 sudo ip netns exec R1 ping -c 4 10.10.0.2
 ```
-
-### Paso 4: Configurar túnel GRE entre R2 y R3
 
 ```bash
 # En R2 (Sucursal A)
@@ -139,216 +193,171 @@ sudo ip netns exec R2 ip link set gre2 up
 sudo ip netns exec R3 ip tunnel add gre2 mode gre remote 192.168.2.1 local 192.168.2.2 ttl 255
 sudo ip netns exec R3 ip addr add 10.10.0.6/30 dev gre2
 sudo ip netns exec R3 ip link set gre2 up
+sudo ip netns exec R2 ping -c 2 10.10.0.6
 ```
 
-### Paso 5: Agregar rutas a través de los túneles GRE
+### Paso 5: Enviar el tráfico entre oficinas por los túneles
+
+Las rutas estáticas del laboratorio 06 ya existen para estos prefijos, y un segundo `ip route add` con la misma métrica fallaría (`File exists`). Damos al túnel una **métrica menor (10)** para que sea el camino preferido, o reemplazamos la ruta cuando su métrica era 0:
 
 ```bash
-# En R1 - ruta a Sucursal B vía túnel GRE
-sudo ip netns exec R1 ip route add 10.0.2.0/24 via 10.10.0.2 dev gre1
+# R1: hacia Sucursal B, vía GRE R1-R2 (métrica 10 < 50 < 100)
+sudo ip netns exec R1 ip route add 10.0.2.0/24 via 10.10.0.2 dev gre1 metric 10
 
-# En R2 - rutas a Sede y Sucursal B vía túneles
-sudo ip netns exec R2 ip route add 10.0.0.0/24 via 10.10.0.1 dev gre1
-sudo ip netns exec R2 ip route add 10.0.2.0/24 via 10.10.0.6 dev gre2
+# R2: hacia Sede y Sucursal B, vía túneles (reemplaza las rutas de métrica 0)
+sudo ip netns exec R2 ip route replace 10.0.0.0/24 via 10.10.0.1 dev gre1
+sudo ip netns exec R2 ip route replace 10.0.2.0/24 via 10.10.0.6 dev gre2
 
-# En R3 - ruta a Sede vía túnel GRE
-sudo ip netns exec R3 ip route add 10.0.0.0/24 via 10.10.0.5 dev gre2
+# R3: hacia Sede, vía túnel GRE R2-R3
+sudo ip netns exec R3 ip route add 10.0.0.0/24 via 10.10.0.5 dev gre2 metric 10
 ```
 
 ### Paso 6: Verificar conectividad a través de GRE
 
 ```bash
-# Desde Sede a Sucursal B (a través de túnel GRE)
 sudo ip netns exec clienteSede ping -c 4 10.0.2.10
+sudo ip netns exec R1 ip route get 10.0.2.10
+```
 
-# Ver tabla de enrutamiento en R1
-sudo ip netns exec R1 ip route show
+La segunda orden debe mostrar `dev gre1`. Para ver la encapsulación, captura en la interfaz física mientras haces ping: verás paquetes con protocolo GRE (47) que contienen el ICMP original.
+
+```bash
+sudo ip netns exec R1 tcpdump -i veth-r1r2 -n -c 4 proto gre
 ```
 
 ## Implementación de IPsec
 
-### Paso 7: Configurar IPsec entre R1 y R2
+### Paso 7: Cifrar el tráfico Sede ↔ Sucursal A con IPsec (ESP en modo túnel)
 
-**Configuración en R1 (Sede):**
-
-```bash
-# Instalar strongswan
-sudo ip netns exec R1 apt-get update
-sudo ip netns exec R1 apt-get install -y strongswan
-
-# Configurar /etc/ipsec.conf
-sudo ip netns exec R1 cat > /etc/ipsec.conf << 'EOF'
-config setup
-    charondebug="ike 2, knl 2, cfg 2"
-    uniqueids=no
-
-conn sede-sucursalA
-    auto=start
-    left=192.168.1.1
-    leftsubnet=10.0.0.0/24
-    right=192.168.1.2
-    rightsubnet=10.0.1.0/24
-    ikelifetime=28800s
-    lifetime=3600s
-    keyexchange=ikev2
-    authby=secret
-    ike=aes256-sha2_256-modp2048
-    esp=aes256-sha2_256
-EOF
-
-# Clave precompartida
-sudo ip netns exec R1 echo '192.168.1.1 192.168.1.2 : PSK "ClaveSecreta123"' > /etc/ipsec.secrets
-
-# Iniciar IPsec
-sudo ip netns exec R1 ipsec start
-```
-
-**Configuración en R2 (Sucursal A):**
+Una VPN IPsec de producción usa un demonio IKE (por ejemplo strongSwan) que negocia las claves. Los demonios guardan su configuración y sus *sockets* en rutas del sistema compartidas, así que **dos routers no pueden ejecutar uno cada uno dentro de namespaces sin trabajo adicional**. Para entender IPsec sin ese problema configuramos el kernel directamente (*manual keying*): definimos las **asociaciones de seguridad** (SA, con sus claves) y las **políticas** que dicen qué tráfico se cifra.
 
 ```bash
-# Configurar /etc/ipsec.conf en R2
-sudo ip netns exec R2 cat > /etc/ipsec.conf << 'EOF'
-config setup
-    charondebug="ike 2, knl 2, cfg 2"
-    uniqueids=no
+# Claves de prueba (las mismas en ambos extremos)
+KEY_ENC=0x$(openssl rand -hex 32)     # AES-256
+KEY_AUTH=0x$(openssl rand -hex 32)    # HMAC-SHA256
 
-conn sucursalA-sede
-    auto=start
-    left=192.168.1.2
-    leftsubnet=10.0.1.0/24
-    right=192.168.1.1
-    rightsubnet=10.0.0.0/24
-    ikelifetime=28800s
-    lifetime=3600s
-    keyexchange=ikev2
-    authby=secret
-    ike=aes256-sha2_256-modp2048
-    esp=aes256-sha2_256
-EOF
+for R in R1 R2; do
+  # SA R1->R2 (spi 0x1001, reqid 1) y SA R2->R1 (spi 0x1002, reqid 2)
+  sudo ip netns exec $R ip xfrm state add src 192.168.1.1 dst 192.168.1.2 proto esp spi 0x1001 reqid 1 mode tunnel \
+      auth 'hmac(sha256)' $KEY_AUTH enc 'cbc(aes)' $KEY_ENC
+  sudo ip netns exec $R ip xfrm state add src 192.168.1.2 dst 192.168.1.1 proto esp spi 0x1002 reqid 2 mode tunnel \
+      auth 'hmac(sha256)' $KEY_AUTH enc 'cbc(aes)' $KEY_ENC
+done
 
-# Clave precompartida
-sudo ip netns exec R2 echo '192.168.1.2 192.168.1.1 : PSK "ClaveSecreta123"' > /etc/ipsec.secrets
+# Políticas en R1: cifrar 10.0.0.0/24 -> 10.0.1.0/24 y aceptar lo recibido cifrado
+sudo ip netns exec R1 ip xfrm policy add src 10.0.0.0/24 dst 10.0.1.0/24 dir out \
+    tmpl src 192.168.1.1 dst 192.168.1.2 proto esp reqid 1 mode tunnel
+sudo ip netns exec R1 ip xfrm policy add src 10.0.1.0/24 dst 10.0.0.0/24 dir in \
+    tmpl src 192.168.1.2 dst 192.168.1.1 proto esp reqid 2 mode tunnel
+sudo ip netns exec R1 ip xfrm policy add src 10.0.1.0/24 dst 10.0.0.0/24 dir fwd \
+    tmpl src 192.168.1.2 dst 192.168.1.1 proto esp reqid 2 mode tunnel
 
-# Iniciar IPsec
-sudo ip netns exec R2 ipsec start
+# Políticas en R2 (espejo)
+sudo ip netns exec R2 ip xfrm policy add src 10.0.1.0/24 dst 10.0.0.0/24 dir out \
+    tmpl src 192.168.1.2 dst 192.168.1.1 proto esp reqid 2 mode tunnel
+sudo ip netns exec R2 ip xfrm policy add src 10.0.0.0/24 dst 10.0.1.0/24 dir in \
+    tmpl src 192.168.1.1 dst 192.168.1.2 proto esp reqid 1 mode tunnel
+sudo ip netns exec R2 ip xfrm policy add src 10.0.0.0/24 dst 10.0.1.0/24 dir fwd \
+    tmpl src 192.168.1.1 dst 192.168.1.2 proto esp reqid 1 mode tunnel
 ```
 
 ### Paso 8: Verificar IPsec
 
 ```bash
-# Verificar estado en R1
-sudo ip netns exec R1 ipsec status
+# Generar tráfico entre sede y sucursal A y capturar ESP en el enlace
+sudo ip netns exec R1 tcpdump -i veth-r1r2 -n -c 4 esp &
+sleep 1
+sudo ip netns exec clienteSede ping -c 3 10.0.1.10
+wait
 
-# Verificar asociaciones de seguridad
-sudo ip netns exec R1 ip xfrm state
-
-# Verificar políticas
+# Asociaciones de seguridad (con contadores) y políticas
+sudo ip netns exec R1 ip -s xfrm state
 sudo ip netns exec R1 ip xfrm policy
 ```
 
+**Salida esperada:** el *ping* responde, `tcpdump` solo muestra paquetes ESP (el contenido ICMP no es visible) y los contadores de la SA aumentan.
+
 ## Implementación de OpenVPN
 
-### Paso 9: Configurar OpenVPN Server
+### Paso 9: OpenVPN entre el cliente remoto y el VPN Gateway
+
+Un servidor OpenVPN de acceso remoto "real" necesita una PKI (CA, certificado de servidor y de cada cliente, parámetros DH) y no se genera en unos pocos comandos. Aquí usamos el modo de **clave estática compartida**, suficiente para ver el túnel `tun` y su sobrecarga sin PKI.
 
 ```bash
-# Instalar OpenVPN (en el VPN Gateway)
-sudo ip netns exec VPN_GW apt-get update
-sudo ip netns exec VPN_GW apt-get install -y openvpn
+sudo apt-get install -y openvpn
+mkdir -p /tmp/lab09
 
-# Generar configuración
-sudo ip netns exec VPN_GW cat > /etc/openvpn/server.conf << 'EOF'
-port 1194
-proto udp
-dev tun
-ca ca.crt
-cert server.crt
-key server.key
-dh dh.pem
-server 10.8.0.0 255.255.255.0
-ifconfig-pool-persist ipp.txt
-push "route 10.0.0.0 255.255.255.0"
-push "route 10.0.1.0 255.255.255.0"
-push "route 10.0.2.0 255.255.255.0"
-keepalive 10 120
-cipher AES-256-GCM
-auth SHA256
-user nobody
-group nogroup
-persist-key
-persist-tun
-status openvpn-status.log
-verb 3
-EOF
+# Clave compartida (OpenVPN 2.5 o superior)
+openvpn --genkey secret /tmp/lab09/static.key
 
-# Iniciar OpenVPN
-sudo ip netns exec VPN_GW systemctl start openvpn@server
+# VPN Gateway (escucha en 1194/udp; el túnel punto a punto es 10.8.0.1 <-> 10.8.0.2)
+sudo ip netns exec VPN_GW openvpn --daemon --writepid /tmp/lab09/ovpn-gw.pid --log /tmp/lab09/ovpn-gw.log \
+    --dev tun0 --dev-type tun --proto udp --lport 1194 --ifconfig 10.8.0.1 10.8.0.2 \
+    --secret /tmp/lab09/static.key --cipher AES-256-CBC --allow-deprecated-insecure-static-crypto
+
+# Cliente remoto: se conecta a la IP pública del firewall (que reenvía al gateway)
+sudo ip netns exec clienteVPN openvpn --daemon --writepid /tmp/lab09/ovpn-cli.pid --log /tmp/lab09/ovpn-cli.log \
+    --dev tun0 --dev-type tun --proto udp --remote 192.168.100.1 1194 --ifconfig 10.8.0.2 10.8.0.1 \
+    --secret /tmp/lab09/static.key --cipher AES-256-CBC --allow-deprecated-insecure-static-crypto \
+    --route 10.0.0.0 255.255.252.0
 ```
 
-### Paso 10: Configurar cliente OpenVPN
+!!! note "Versión de OpenVPN"
+    `--allow-deprecated-insecure-static-crypto` es obligatorio desde OpenVPN 2.6; en 2.5 o anteriores no existe y debe quitarse (y `--genkey secret` se escribe `--genkey --secret`). En producción usa certificados.
+
+### Paso 10: Verificar OpenVPN
 
 ```bash
-# En el cliente remoto
-sudo ip netns exec clienteVPN openvpn --config client.ovpn
+sudo ip netns exec clienteVPN ping -c 4 10.8.0.1
+sudo ip netns exec clienteVPN ping -c 4 10.0.0.10
+tail -3 /tmp/lab09/ovpn-cli.log
 ```
 
 ## Implementación de WireGuard
 
-### Paso 11: Configurar WireGuard Server
+### Paso 11: Generar las claves
+
+WireGuard autentica a cada extremo con un par de claves. Cada lado conserva su clave privada y entrega solo la pública al otro:
 
 ```bash
-# Instalar WireGuard (en el VPN Gateway)
-sudo ip netns exec VPN_GW apt-get update
-sudo ip netns exec VPN_GW apt-get install -y wireguard
-
-# Generar claves
-sudo ip netns exec VPN_GW wg genkey | tee /etc/wireguard/privatekey | wg pubkey > /etc/wireguard/publickey
-
-# Configurar interfaz
-sudo ip netns exec VPN_GW cat > /etc/wireguard/wg0.conf << 'EOF'
-[Interface]
-Address = 10.9.0.1/24
-ListenPort = 51820
-PrivateKey = CLAVE_PRIVADA_SERVIDOR
-SaveConfig = false
-
-[Peer]
-PublicKey = CLAVE_PUBLICA_CLIENTE
-AllowedIPs = 10.9.0.2/32
-EOF
-
-# Activar interfaz
-sudo ip netns exec VPN_GW wg-quick up wg0
+sudo apt-get install -y wireguard-tools
+mkdir -p /tmp/lab09 && cd /tmp/lab09
+umask 077
+wg genkey | tee gw.key  | wg pubkey > gw.pub
+wg genkey | tee cli.key | wg pubkey > cli.pub
 ```
 
-### Paso 12: Configurar cliente WireGuard
+### Paso 12: Configurar el servidor (VPN Gateway) y el cliente
+
+Creamos la interfaz **dentro** de cada namespace y la configuramos con `wg set` (no usamos `wg-quick`, que lee `/etc/wireguard` del host):
 
 ```bash
-# En el cliente remoto
-sudo ip netns exec clienteVPN cat > /etc/wireguard/wg0.conf << 'EOF'
-[Interface]
-Address = 10.9.0.2/24
-PrivateKey = CLAVE_PRIVADA_CLIENTE
-ListenPort = 51820
+# VPN Gateway: 10.9.0.1, escucha en 51820, conoce la clave pública del cliente
+sudo ip -n VPN_GW link add wg0 type wireguard
+sudo ip netns exec VPN_GW wg set wg0 listen-port 51820 private-key /tmp/lab09/gw.key \
+    peer $(cat /tmp/lab09/cli.pub) allowed-ips 10.9.0.2/32
+sudo ip -n VPN_GW addr add 10.9.0.1/24 dev wg0
+sudo ip -n VPN_GW link set wg0 up
 
-[Peer]
-PublicKey = CLAVE_PUBLICA_SERVIDOR
-Endpoint = 192.168.100.10:51820
-AllowedIPs = 10.0.0.0/8
-PersistentKeepalive = 25
-EOF
-
-# Activar
-sudo ip netns exec clienteVPN wg-quick up wg0
+# Cliente remoto: 10.9.0.2, apunta a la IP pública del firewall
+sudo ip -n clienteVPN link add wg0 type wireguard
+sudo ip netns exec clienteVPN wg set wg0 private-key /tmp/lab09/cli.key \
+    peer $(cat /tmp/lab09/gw.pub) endpoint 192.168.100.1:51820 \
+    allowed-ips 10.9.0.1/32,10.0.0.0/22 persistent-keepalive 25
+sudo ip -n clienteVPN addr add 10.9.0.2/24 dev wg0
+sudo ip -n clienteVPN link set wg0 up
+sudo ip -n clienteVPN route add 10.0.0.0/22 dev wg0
 ```
 
 ### Paso 13: Verificar WireGuard
 
 ```bash
-# Verificar estado del servidor
+# Estado del servidor (debe mostrar un handshake reciente tras el primer ping)
+sudo ip netns exec clienteVPN ping -c 4 10.9.0.1
 sudo ip netns exec VPN_GW wg show
 
-# Verificar conectividad
-sudo ip netns exec clienteVPN ping -c 4 10.9.0.1
+# Acceso a la red interna a través del túnel
+sudo ip netns exec clienteVPN ping -c 4 10.0.0.10
 ```
 
 ## Análisis y comparación
@@ -369,7 +378,7 @@ sudo ip netns exec clienteVPN ping -c 4 10.9.0.1
 sudo ip netns exec R1 tcpdump -i gre1 -n -v
 
 # Capturar tráfico IPsec
-sudo ip netns exec R1 tcpdump -i veth-r1r2 -n -v esp
+sudo ip netns exec R1 tcpdump -i veth-r1r2 -n -v esp   # (visto en el Paso 8)
 ```
 
 **Interpretación:**
@@ -382,7 +391,7 @@ sudo ip netns exec R1 tcpdump -i veth-r1r2 -n -v esp
 
 ### Ejercicio 1: Agregar un nuevo túnel GRE
 
-Configura un túnel GRE entre R1 y R3 directo para redundancia.
+Configura un túnel GRE entre R1 y R3 sobre el enlace directo `192.168.3.0/30` que se creó en el Paso 6 del laboratorio 06 (debe seguir activo) para tener redundancia.
 
 ```bash
 # En R1
@@ -398,11 +407,11 @@ sudo ip netns exec R3 ip link set gre3 up
 
 ### Ejercicio 2: Agregar rutas redundantes
 
-Configura rutas con métrica diferente para failover.
+Configura una ruta con métrica distinta a las existentes para failover (en R1 ya hay rutas a `10.0.2.0/24` con métricas 10, 50 y 100; repetir una métrica da `File exists`).
 
 ```bash
 # En R1
-sudo ip netns exec R1 ip route add 10.0.2.0/24 via 10.10.0.9 dev gre3 metric 100
+sudo ip netns exec R1 ip route add 10.0.2.0/24 via 10.10.0.9 dev gre3 metric 20
 ```
 
 ### Ejercicio 3: Configurar WireGuard en Sucursal
@@ -414,9 +423,9 @@ Implementa WireGuard entre R2 y R3 como alternativa.
 | Error | Causa | Solución |
 |-------|-------|----------|
 | Túnel GRE no sube | IPs de extremos incorrectas | Verificar `ip tunnel show` |
-| IPsec no establece | Claves no coinciden | Verificar PSK en ambos extremos |
-| OpenVPN no conecta | Certificados expirados | Regenerar certificados |
-| WireGuard no handshake | Puerto bloqueado | Verificar firewall |
+| IPsec no cifra | SPI/claves distintos o políticas que no coinciden | Comparar `ip xfrm state` y `ip xfrm policy` en ambos extremos |
+| OpenVPN no conecta | Clave estática distinta, puerto no publicado o versión de OpenVPN | Revisar `/tmp/lab09/ovpn-*.log` y la regla DNAT del firewall |
+| WireGuard sin handshake | Puerto bloqueado, `endpoint` o claves públicas cruzadas mal | Verificar DNAT/FORWARD en el firewall y `wg show` |
 
 ## Conceptos clave del Tema 9 aplicados
 
@@ -433,8 +442,8 @@ Implementa WireGuard entre R2 y R3 como alternativa.
 En este laboratorio hemos:
 
 1.  Configurado **túneles GRE** para conectar redes no contiguas.
-2.  Implementado **IPsec** para cifrar comunicaciones entre sedes.
-3.  Configurado **OpenVPN** para acceso remoto de empleados.
+2.  Implementado **IPsec** (ESP en modo túnel, con claves manuales) para cifrar comunicaciones entre sedes.
+3.  Configurado **OpenVPN** en modo de clave estática para el acceso remoto (sin PKI).
 4.  Implementado **WireGuard** como alternativa moderna y ligera.
 5.  Comparado las diferentes tecnologías VPN y sus características.
 
@@ -442,7 +451,7 @@ Las VPN son esenciales para conectar sedes y proporcionar acceso remoto seguro. 
 
 ## Preparación para el siguiente laboratorio
 
-Hemos dejado la red con túneles GRE, IPsec, OpenVPN y WireGuard funcionando. En el **Laboratorio 10** exploraremos **Infraestructura WAN y Core**, implementando enrutamiento dinámico OSPF y BGP para redes de gran escala.
+Hemos dejado la red con túneles GRE, IPsec (claves manuales), OpenVPN (clave estática) y WireGuard. En el **Laboratorio 10** exploraremos **Infraestructura WAN y Core**, montando una red troncal WAN con routers PE y P y rutas estáticas con redundancia (el enrutamiento dinámico llega en el Laboratorio 15).
 
 ---
 

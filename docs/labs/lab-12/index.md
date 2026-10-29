@@ -6,231 +6,265 @@
 
 La empresa **Networking SecOps** ha implementado su arquitectura empresarial tradicional (Laboratorio 11). Ahora necesita modernizar su infraestructura para adaptarse a los nuevos modelos de trabajo híbrido.
 
+!!! warning "Qué es real y qué es simulado"
+    - **Real y ejecutable:** conectividad híbrida OnPremise ↔ VPC, acceso remoto con *política por aplicación* en un broker (modelo ZTNA simplificado con `iptables`) y **microsegmentación** entre servidores.
+    - **Simulado / conceptual:** el *Identity Provider* (solo se representa como un nodo alcanzable, no autentica a nadie) y **SASE** (SWG, CASB, SD-WAN en un PoP): se explica en el análisis, pero no se construye. Un ZTNA real verifica identidad, dispositivo y contexto en cada conexión; aquí solo se emula la parte de *acceso mínimo por aplicación*.
+
 ## Topología
 
 ```mermaid
 graph TB
-    R1[Router Core]
+    R1[OnPremise Router]
     APP[Servidor App]
     DB[Servidor DB]
-    VPC[VPC AWS]
+    VPC[AWS VPC Router]
     EC2[EC2 Server]
+    RDS[RDS Server]
     ZTNA[ZTNA Broker]
-    IDP[Identity Provider]
-    SASE[SASE PoP]
+    IDP[Identity Provider simulado]
     USER1[Usuario Remoto 1]
     USER2[Usuario Remoto 2]
     USER1 --- ZTNA
     USER2 --- ZTNA
     ZTNA --- IDP
-    ZTNA --- APP
-    ZTNA --- EC2
-    R1 --- VPC
+    ZTNA --- R1
+    ZTNA --- VPC
     R1 --- APP
     R1 --- DB
-    SASE --- R1
-    SASE --- VPC
-    R1 --- Internet
-    VPC --- Internet
+    R1 --- VPC
+    VPC --- EC2
+    VPC --- RDS
 ```
 
 **Direccionamiento:**
 
 | Dispositivo | Interfaz | Dirección IP | Ubicación |
 |-------------|----------|--------------|-----------|
-| Router Core | eth0 (LAN) | 10.0.0.1/24 | OnPremise |
+| OnPremise (router) | br-lan | 10.0.0.1/24 | OnPremise |
 | Servidor App | - | 10.0.0.10/24 | OnPremise |
 | Servidor DB | - | 10.0.0.20/24 | OnPremise |
-| VPC Gateway | - | 10.100.0.1/16 | AWS Cloud |
-| EC2 Server | - | 10.100.1.10/24 | AWS Cloud |
-| ZTNA Broker | - | 203.0.113.10 | Proxy Cloud |
-| SASE PoP | - | 198.51.100.10 | SASE Cloud |
+| OnPremise ↔ VPC | enlace híbrido | 172.16.255.0/30 (OnPremise .1, VPC .2) | Conexión privada |
+| VPC (router) | subred de aplicaciones | 10.100.1.1/24 | AWS (VPC 10.100.0.0/16) |
+| EC2 Server | - | 10.100.1.10/24 | AWS |
+| VPC (router) | subred de datos | 10.100.2.1/24 | AWS |
+| RDS Server | - | 10.100.2.10/24 | AWS |
+| ZTNA Broker ↔ OnPremise | conector | 172.16.254.0/30 (OnPremise .1, Broker .2) | Broker |
+| ZTNA Broker ↔ VPC | conector | 172.16.253.0/30 (VPC .1, Broker .2) | Broker |
+| ZTNA Broker ↔ IDP | - | 192.168.200.0/30 (Broker .1, IDP .2) | Broker |
+| ZTNA Broker (usuarios) | br-users | 10.8.0.1/24 | Broker |
+| Usuario 1 / Usuario 2 | - | 10.8.0.2/24 y 10.8.0.3/24 | Remoto |
 
 ## Construcción
 
-### Paso 1: Crear namespaces
+### Paso 0: Limpiar laboratorios anteriores
 
 ```bash
-sudo ip netns add OnPremise
-sudo ip netns add AppServer
-sudo ip netns add DBServer
-sudo ip netns add AWS_VPC
-sudo ip netns add EC2_Server
-sudo ip netns add ZTNA_Broker
-sudo ip netns add IDP
-sudo ip netns add SASE_PoP
-sudo ip netns add User1
-sudo ip netns add User2
+for ns in $(ip netns list | awk '{print $1}'); do sudo ip netns del $ns; done
+sudo ip link del br-wan 2>/dev/null || true
 ```
 
-### Paso 2: Conectar OnPremise
+### Paso 1: Crear namespaces y la función auxiliar
 
 ```bash
-sudo ip link add veth-op-app type veth peer name veth-app-op
-sudo ip link set veth-op-app netns OnPremise
-sudo ip link set veth-app-op netns AppServer
-sudo ip netns exec OnPremise ip addr add 10.0.0.1/24 dev veth-op-app
-sudo ip netns exec OnPremise ip link set veth-op-app up
-sudo ip netns exec AppServer ip addr add 10.0.0.10/24 dev veth-app-op
-sudo ip netns exec AppServer ip link set veth-app-op up
-sudo ip netns exec AppServer ip route add default via 10.0.0.1
+for ns in OnPremise AppServer DBServer AWS_VPC EC2_Server RDS_Server ZTNA_Broker IDP User1 User2; do
+  sudo ip netns add $ns
+done
+# Los routers deben reenviar paquetes
+for r in OnPremise AWS_VPC ZTNA_Broker; do
+  sudo ip netns exec $r sysctl -qw net.ipv4.ip_forward=1
+done
 
-sudo ip link add veth-op-db type veth peer name veth-db-op
-sudo ip link set veth-op-db netns OnPremise
-sudo ip link set veth-db-op netns DBServer
-sudo ip netns exec OnPremise ip addr add 10.0.0.2/24 dev veth-op-db
-sudo ip netns exec OnPremise ip link set veth-op-db up
-sudo ip netns exec DBServer ip addr add 10.0.0.20/24 dev veth-db-op
-sudo ip netns exec DBServer ip link set veth-db-op up
-sudo ip netns exec DBServer ip route add default via 10.0.0.1
+# enlace NS_A IF_A IP_A NS_B IF_B IP_B
+enlace() {
+  sudo ip link add $2 type veth peer name $5
+  sudo ip link set $2 netns $1
+  sudo ip link set $5 netns $4
+  sudo ip netns exec $1 ip addr add $3 dev $2
+  sudo ip netns exec $1 ip link set $2 up
+  sudo ip netns exec $4 ip addr add $6 dev $5
+  sudo ip netns exec $4 ip link set $5 up
+}
 ```
 
-### Paso 3: Conectar Cloud
+### Paso 2: Red OnPremise (un único segmento con App y DB)
+
+La LAN `10.0.0.0/24` es **un solo segmento**: el router la presenta con un bridge y los servidores se conectan a él (no se reutiliza la subred en dos interfaces distintas).
 
 ```bash
-sudo ip link add veth-vpc-ec2 type veth peer name veth-ec2-vpc
-sudo ip link set veth-vpc-ec2 netns AWS_VPC
-sudo ip link set veth-ec2-vpc netns EC2_Server
-sudo ip netns exec AWS_VPC ip addr add 10.100.0.1/16 dev veth-vpc-ec2
-sudo ip netns exec AWS_VPC ip link set veth-vpc-ec2 up
-sudo ip netns exec EC2_Server ip addr add 10.100.1.10/24 dev veth-ec2-vpc
-sudo ip netns exec EC2_Server ip link set veth-ec2-vpc up
-sudo ip netns exec EC2_Server ip route add default via 10.100.0.1
+sudo ip netns exec OnPremise ip link add br-lan type bridge
+sudo ip netns exec OnPremise ip addr add 10.0.0.1/24 dev br-lan
+sudo ip netns exec OnPremise ip link set br-lan up
+
+for s in "AppServer veth-app veth-op-app 10.0.0.10/24" "DBServer veth-db veth-op-db 10.0.0.20/24"; do
+  set -- $s
+  sudo ip link add $2 type veth peer name $3
+  sudo ip link set $2 netns $1
+  sudo ip link set $3 netns OnPremise
+  sudo ip netns exec OnPremise ip link set $3 master br-lan
+  sudo ip netns exec OnPremise ip link set $3 up
+  sudo ip netns exec $1 ip addr add $4 dev $2
+  sudo ip netns exec $1 ip link set $2 up
+  sudo ip netns exec $1 ip link set lo up
+  sudo ip netns exec $1 ip route add default via 10.0.0.1
+done
 ```
 
-### Paso 4: Conectar OnPremise a Cloud
+### Paso 3: Red en la nube (VPC con dos subredes)
+
+Una VPC `10.100.0.0/16` se organiza en subredes. Cada servidor tiene un *gateway* que **está dentro de su propia subred**.
 
 ```bash
-sudo ip link add veth-op-vpc type veth peer name veth-vpc-op
-sudo ip link set veth-op-vpc netns OnPremise
-sudo ip link set veth-vpc-op netns AWS_VPC
-sudo ip netns exec OnPremise ip addr add 192.168.100.1/30 dev veth-op-vpc
-sudo ip netns exec OnPremise ip link set veth-op-vpc up
-sudo ip netns exec AWS_VPC ip addr add 192.168.100.2/30 dev veth-vpc-op
-sudo ip netns exec AWS_VPC ip link set veth-vpc-op up
-sudo ip netns exec OnPremise ip route add 10.100.0.0/16 via 192.168.100.2
-sudo ip netns exec AWS_VPC ip route add 10.0.0.0/24 via 192.168.100.1
+enlace AWS_VPC veth-vpc-ec2 10.100.1.1/24 EC2_Server veth-ec2 10.100.1.10/24
+enlace AWS_VPC veth-vpc-rds 10.100.2.1/24 RDS_Server veth-rds 10.100.2.10/24
+sudo ip netns exec EC2_Server ip route add default via 10.100.1.1
+sudo ip netns exec RDS_Server ip route add default via 10.100.2.1
+sudo ip netns exec EC2_Server ip link set lo up
+sudo ip netns exec RDS_Server ip link set lo up
 ```
 
-### Paso 5: Configurar Zero Trust (ZTNA)
+### Paso 4: Conectar OnPremise con la nube (conectividad híbrida)
 
 ```bash
-sudo ip link add veth-broker-op type veth peer name veth-op-broker
-sudo ip link set veth-broker-op netns ZTNA_Broker
-sudo ip link set veth-op-broker netns OnPremise
-sudo ip netns exec ZTNA_Broker ip addr add 203.0.113.10/32 dev veth-broker-op
-sudo ip netns exec ZTNA_Broker ip link set veth-broker-op up
-sudo ip netns exec OnPremise ip route add 203.0.113.10/32 dev veth-op-broker
-
-sudo ip link add veth-broker-cloud type veth peer name veth-cloud-broker
-sudo ip link set veth-broker-cloud netns ZTNA_Broker
-sudo ip link set veth-cloud-broker netns AWS_VPC
-sudo ip netns exec ZTNA_Broker ip addr add 203.0.113.20/32 dev veth-broker-cloud
-sudo ip netns exec ZTNA_Broker ip link set veth-broker-cloud up
-sudo ip netns exec AWS_VPC ip route add 203.0.113.10/32 via 203.0.113.20
-
-sudo ip link add veth-broker-idp type veth peer name veth-idp-broker
-sudo ip link set veth-broker-idp netns ZTNA_Broker
-sudo ip link set veth-idp-broker netns IDP
-sudo ip netns exec ZTNA_Broker ip addr add 192.168.200.1/30 dev veth-broker-idp
-sudo ip netns exec ZTNA_Broker ip link set veth-broker-idp up
-sudo ip netns exec IDP ip addr add 192.168.200.2/30 dev veth-idp-broker
-sudo ip netns exec IDP ip link set veth-idp-broker up
+enlace OnPremise veth-op-vpc 172.16.255.1/30 AWS_VPC veth-vpc-op 172.16.255.2/30
+sudo ip netns exec OnPremise ip route add 10.100.0.0/16 via 172.16.255.2
+sudo ip netns exec AWS_VPC ip route add 10.0.0.0/24 via 172.16.255.1
 ```
 
-### Paso 6: Configurar Usuarios Remotos
+### Paso 5: Broker de acceso (ZTNA) e identidad
+
+El broker es el **único** punto de entrada de los usuarios remotos. Se conecta a OnPremise y a la nube mediante "conectores" y a un proveedor de identidad (simulado).
 
 ```bash
-sudo ip link add veth-user1 type veth peer name veth-broker-u1
-sudo ip link set veth-user1 netns User1
-sudo ip link set veth-broker-u1 netns ZTNA_Broker
-sudo ip netns exec User1 ip addr add 10.8.0.2/24 dev veth-user1
-sudo ip netns exec User1 ip link set veth-user1 up
-sudo ip netns exec User1 ip route add default via 10.8.0.1
-sudo ip netns exec ZTNA_Broker ip addr add 10.8.0.1/24 dev veth-broker-u1
-sudo ip netns exec ZTNA_Broker ip link set veth-broker-u1 up
+enlace ZTNA_Broker veth-bk-op 172.16.254.2/30 OnPremise veth-op-bk 172.16.254.1/30
+enlace ZTNA_Broker veth-bk-vpc 172.16.253.2/30 AWS_VPC veth-vpc-bk 172.16.253.1/30
+enlace ZTNA_Broker veth-bk-idp 192.168.200.1/30 IDP veth-idp 192.168.200.2/30
 
-sudo ip link add veth-user2 type veth peer name veth-broker-u2
-sudo ip link set veth-user2 netns User2
-sudo ip link set veth-broker-u2 netns ZTNA_Broker
-sudo ip netns exec User2 ip addr add 10.8.0.3/24 dev veth-user2
-sudo ip netns exec User2 ip link set veth-user2 up
-sudo ip netns exec User2 ip route add default via 10.8.0.1
-sudo ip netns exec ZTNA_Broker ip addr add 10.8.0.1/24 dev veth-broker-u2
-sudo ip netns exec ZTNA_Broker ip link set veth-broker-u2 up
+# Rutas del broker hacia las aplicaciones y de ellas de vuelta hacia los usuarios
+sudo ip netns exec ZTNA_Broker ip route add 10.0.0.0/24 via 172.16.254.1
+sudo ip netns exec ZTNA_Broker ip route add 10.100.0.0/16 via 172.16.253.1
+sudo ip netns exec OnPremise ip route add 10.8.0.0/24 via 172.16.254.2
+sudo ip netns exec AWS_VPC ip route add 10.8.0.0/24 via 172.16.253.2
 ```
 
-### Paso 7: Configurar SASE
+### Paso 6: Usuarios remotos
+
+Los usuarios comparten un único segmento `10.8.0.0/24` mediante un bridge en el broker (una sola IP `10.8.0.1`, no repetida en dos interfaces).
 
 ```bash
-sudo ip link add veth-sase-op type veth peer name veth-op-sase
-sudo ip link set veth-sase-op netns SASE_PoP
-sudo ip link set veth-op-sase netns OnPremise
-sudo ip netns exec SASE_PoP ip addr add 198.51.100.10/32 dev veth-sase-op
-sudo ip netns exec SASE_PoP ip link set veth-sase-op up
-sudo ip netns exec OnPremise ip route add 198.51.100.10/32 dev veth-op-sase
+sudo ip netns exec ZTNA_Broker ip link add br-users type bridge
+sudo ip netns exec ZTNA_Broker ip addr add 10.8.0.1/24 dev br-users
+sudo ip netns exec ZTNA_Broker ip link set br-users up
 
-sudo ip link add veth-sase-cloud type veth peer name veth-cloud-sase
-sudo ip link set veth-sase-cloud netns SASE_PoP
-sudo ip link set veth-cloud-sase netns AWS_VPC
-sudo ip netns exec SASE_PoP ip addr add 198.51.100.20/32 dev veth-sase-cloud
-sudo ip netns exec SASE_PoP ip link set veth-sase-cloud up
-sudo ip netns exec AWS_VPC ip route add 198.51.100.10/32 via 198.51.100.20
+for u in "User1 veth-user1 veth-bk-u1 10.8.0.2/24" "User2 veth-user2 veth-bk-u2 10.8.0.3/24"; do
+  set -- $u
+  sudo ip link add $2 type veth peer name $3
+  sudo ip link set $2 netns $1
+  sudo ip link set $3 netns ZTNA_Broker
+  sudo ip netns exec ZTNA_Broker ip link set $3 master br-users
+  sudo ip netns exec ZTNA_Broker ip link set $3 up
+  sudo ip netns exec $1 ip addr add $4 dev $2
+  sudo ip netns exec $1 ip link set $2 up
+  sudo ip netns exec $1 ip link set lo up
+  sudo ip netns exec $1 ip route add default via 10.8.0.1
+done
 ```
 
-### Paso 8: Microsegmentación
+### Paso 7: Servicios de prueba
+
+Cada aplicación se representa con un servicio TCP sencillo (`nc` en modo escucha):
 
 ```bash
-sudo ip netns exec AppServer iptables -A OUTPUT -d 10.0.0.20 -p tcp --dport 3306 -j ACCEPT
-sudo ip netns exec AppServer iptables -A OUTPUT -j DROP
+sudo ip netns exec AppServer sh -c 'nc -lk -p 8080 >/dev/null 2>&1 </dev/null &'
+sudo ip netns exec DBServer  sh -c 'nc -lk -p 3306 >/dev/null 2>&1 </dev/null &'
+sudo ip netns exec EC2_Server sh -c 'nc -lk -p 8080 >/dev/null 2>&1 </dev/null &'
+sudo ip netns exec RDS_Server sh -c 'nc -lk -p 5432 >/dev/null 2>&1 </dev/null &'
+```
+
+### Paso 8: Política Zero Trust en el broker (acceso mínimo por aplicación)
+
+Por defecto **nada** pasa a través del broker. Se abre solo lo necesario para cada usuario: el Usuario 1 accede a la aplicación on-premise y el Usuario 2 a la aplicación en la nube.
+
+```bash
+sudo ip netns exec ZTNA_Broker iptables -P FORWARD DROP
+sudo ip netns exec ZTNA_Broker iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+sudo ip netns exec ZTNA_Broker iptables -A FORWARD -s 10.8.0.2 -d 10.0.0.10 -p tcp --dport 8080 -j ACCEPT
+sudo ip netns exec ZTNA_Broker iptables -A FORWARD -s 10.8.0.3 -d 10.100.1.10 -p tcp --dport 8080 -j ACCEPT
+```
+
+### Paso 9: Microsegmentación entre servidores
+
+Cada servidor acepta **solo** lo que su función necesita, con política por defecto "denegar":
+
+```bash
+# DB (on-premise): solo el servidor App, y solo al puerto 3306
+sudo ip netns exec DBServer iptables -P INPUT DROP
+sudo ip netns exec DBServer iptables -A INPUT -i lo -j ACCEPT
+sudo ip netns exec DBServer iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 sudo ip netns exec DBServer iptables -A INPUT -s 10.0.0.10 -p tcp --dport 3306 -j ACCEPT
-sudo ip netns exec DBServer iptables -A INPUT -j DROP
-sudo ip netns exec EC2_Server iptables -A OUTPUT -d 10.100.2.10 -p tcp --dport 5432 -j ACCEPT
-sudo ip netns exec EC2_Server iptables -A OUTPUT -j DROP
+
+# RDS (nube): solo EC2, y solo al puerto 5432
+sudo ip netns exec RDS_Server iptables -P INPUT DROP
+sudo ip netns exec RDS_Server iptables -A INPUT -i lo -j ACCEPT
+sudo ip netns exec RDS_Server iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+sudo ip netns exec RDS_Server iptables -A INPUT -s 10.100.1.10 -p tcp --dport 5432 -j ACCEPT
 ```
 
-### Paso 9: Verificar
+### Paso 10: Verificar
 
 ```bash
-sudo ip netns exec User1 ping -c 4 10.0.0.10
-sudo ip netns exec User1 ping -c 4 10.100.1.10
+# Usuario 1: SÍ a la app on-premise, NO a la de la nube
+sudo ip netns exec User1 nc -zv -w 2 10.0.0.10 8080
+sudo ip netns exec User1 nc -zv -w 2 10.100.1.10 8080
+
+# Usuario 2: SÍ a la app en la nube, NO a la on-premise ni a las bases de datos
+sudo ip netns exec User2 nc -zv -w 2 10.100.1.10 8080
+sudo ip netns exec User2 nc -zv -w 2 10.0.0.10 8080
+sudo ip netns exec User2 nc -zv -w 2 10.0.0.20 3306
+
+# Microsegmentación: App -> DB (SÍ, 3306); App -> DB por otro puerto (NO); EC2 -> RDS (SÍ); on-premise -> RDS (NO)
+sudo ip netns exec AppServer nc -zv -w 2 10.0.0.20 3306
+sudo ip netns exec AppServer nc -zv -w 2 10.0.0.20 22
+sudo ip netns exec EC2_Server nc -zv -w 2 10.100.2.10 5432
+sudo ip netns exec AppServer nc -zv -w 2 10.100.2.10 5432
 ```
+
+**Salida esperada:** `succeeded` en las conexiones permitidas y expiración del tiempo de espera en las demás. Se verifica con conexiones TCP a puertos concretos (no con `ping`): las políticas son por aplicación y puerto.
 
 ## Análisis
 
-**Cloud Networking:** VPC con conectividad híbrida.
+**Cloud Networking:** VPC con subredes y conectividad híbrida (aquí, un enlace privado entre OnPremise y la VPC).
 
-**Zero Trust:** Verificación continua, mínimo privilegio.
+**Zero Trust:** verificación continua y mínimo privilegio: ningún usuario obtiene acceso a la red, solo a aplicaciones concretas.
 
-**ZTNA:** Acceso remoto seguro por aplicación.
+**ZTNA:** acceso remoto por aplicación a través de un broker (en el laboratorio, con una política estática; en producción, decidida por el proveedor de identidad y el estado del dispositivo).
 
-**SASE:** SD-WAN + SWG + CASB integrados.
+**SASE (conceptual):** SD-WAN + SWG + CASB + ZTNA como servicio en la nube. No se construye en este laboratorio.
 
-**Microsegmentación:** Políticas granulares App→DB, EC2→RDS.
+**Microsegmentación:** políticas granulares App→DB y EC2→RDS.
 
 ## Ejercicios
 
 ### Ejercicio 1: Agregar usuario remoto
 
-Configura un tercer usuario en ZTNA.
+Configura un tercer usuario en el broker (`10.8.0.4`) con acceso solo a la base de datos de la nube por el puerto 5432 y comprueba que los demás usuarios no ganan ese acceso.
 
 ### Ejercicio 2: Definir políticas SASE
 
-Define políticas de seguridad para el tráfico entre usuarios y aplicaciones.
+Redacta (sin implementarlas) las políticas que un SASE aplicaría al tráfico de los usuarios: categorías web permitidas (SWG), aplicaciones SaaS autorizadas (CASB) y condiciones de dispositivo.
 
 ## Conceptos clave
 
 | Concepto | Aplicación |
 |----------|------------|
-| Cloud Networking | VPC, conectividad híbrida |
-| Zero Trust | Verificación continua |
-| ZTNA | Acceso remoto por aplicación |
-| SASE | SD-WAN + SWG + CASB |
-| Microsegmentación | Políticas granulares |
+| Cloud Networking | VPC con subredes, conectividad híbrida |
+| Zero Trust | Denegar por defecto, acceso mínimo |
+| ZTNA | Acceso remoto por aplicación (broker) |
+| SASE | SD-WAN + SWG + CASB (conceptual) |
+| Microsegmentación | Políticas granulares entre servidores |
 
 ## Conclusiones
 
-Las arquitecturas modernas combinan Cloud Networking, Zero Trust, ZTNA, SASE y microsegmentación para adaptarse a entornos híbridos con agilidad y seguridad.
+Las arquitecturas modernas combinan Cloud Networking, Zero Trust, ZTNA, SASE y microsegmentación para adaptarse a entornos híbridos con agilidad y seguridad. En este laboratorio se ha implementado la conectividad híbrida, el acceso mínimo por aplicación y la microsegmentación; la verificación de identidad y SASE quedan como conceptos explicados.
 
 ---
 
