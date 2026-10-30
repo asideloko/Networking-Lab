@@ -4,21 +4,21 @@
 
 ## Contexto empresarial
 
-La empresa **Networking SecOps** ya cuenta con su red local funcionando (Clientes 1 y 2 conectados al router mediante bridge). El equipo de operaciones ha notado que la red funciona correctamente para comunicaciones internas, pero necesitan **conectar la oficina a Internet** para que los empleados puedan acceder a servicios en la nube, correo electrónico y navegación web.
+La empresa **Networking SecOps** ya cuenta con su red local funcionando (Clientes 1 y 2 conectados mediante el bridge del equipo `router`, laboratorio 01). El equipo de operaciones ha notado que la red funciona correctamente para comunicaciones internas, pero necesitan **conectar la oficina a Internet** para que los empleados puedan acceder a servicios en la nube, correo electrónico y navegación web.
 
 El CTO ha solicitado que, además de implementar la salida a Internet, se **documente el proceso de transmisión de datos**, explicando cómo viajan los bits desde el equipo del usuario hasta el router y cómo se comporta la señal en el medio físico.
 
 ## Problema inicial
 
 -   Los clientes (10.0.1.2 y 10.0.1.3) no tienen salida a Internet.
--   El router tiene conectividad hacia Internet a través de la interfaz `eth0` del host, pero no está configurado para compartir esa conexión.
--   Se requiere habilitar **NAT (Network Address Translation)** para que los clientes puedan salir a Internet con la IP pública del router.
+-   El router todavía no tiene ninguna interfaz hacia el exterior. En este laboratorio le añadimos un enlace virtual hacia el **host**, que actuará como representación de la red externa; la conectividad real hacia Internet depende de la interfaz física o inalámbrica del host (`eth0`, `wlan0`…).
+-   Se requiere **enrutar** el tráfico de los clientes hacia ese enlace y aplicar **NAT (Network Address Translation)** para que salgan con una dirección distinta de la privada `10.0.1.x`.
 -   Además, se debe **analizar el flujo de bits** y observar cómo se transmite la información a nivel físico.
 
 ## Objetivos del laboratorio
 
 1.  Comprender los conceptos de transmisión de datos: bits, señales digitales/analógicas, codificación y modulación.
-2.  Implementar conectividad a Internet mediante NAT en el router.
+2.  Implementar la salida a Internet combinando enrutamiento y NAT.
 3.  Configurar las rutas por defecto para que los clientes salgan a través del router.
 4.  Capturar y analizar paquetes para observar el flujo de datos.
 5.  Medir el rendimiento y la latencia en la red.
@@ -35,11 +35,13 @@ El CTO ha solicitado que, además de implementar la salida a Internet, se **docu
 graph TB
     C1[Cliente 1 10.0.1.2/24]
     C2[Cliente 2 10.0.1.3/24]
-    R[Router 10.0.1.1/24]
+    R["Router (bridge br0) 10.0.1.1/24"]
+    H["Host (representa la red externa)"]
     ISP[Proveedor Internet]
     C1 --- R
     C2 --- R
-    R --- ISP
+    R -- "enlace veth virtual" --- H
+    H -- "interfaz física real del host" --- ISP
 ```
 
 **Direccionamiento:**
@@ -50,9 +52,9 @@ graph TB
 | Cliente 2   | veth0    | 10.0.1.3/24        |
 | Router (LAN)| br0      | 10.0.1.1/24        |
 | Router (WAN)| veth-wan | 192.168.1.2/24    |
-| Host        | eth0     | 192.168.1.1/24    |
+| Host (extremo del enlace virtual) | veth-host | 192.168.1.1/24 |
 
-Nota: La IP del host (192.168.1.1) debe ser la que tenga tu máquina real. Si usas WiFi, puede ser 192.168.0.x, 10.0.0.x, etc. Ajusta según tu entorno.
+**Nota:** `192.168.1.0/24` es aquí el direccionamiento **del enlace virtual** entre el router y el host, y es independiente del direccionamiento de la interfaz física real del host (`eth0`, `wlan0`…). `192.168.1.1` no es «la IP del host», sino la dirección que le damos a `veth-host`; solo debe cambiarse si tu red real ya usa ese rango (véase el aviso del paso 4).
 
 ## Construcción de la red
 
@@ -72,20 +74,20 @@ Si no existen los namespaces, ejecuta los comandos del laboratorio 01 para crear
 
 ### Paso 2: Crear una interfaz WAN para el router
 
-Ahora vamos a conectar el router a la red exterior. Usaremos la interfaz de red del host (ej. `eth0`, `wlan0`) y crearemos un par veth.
+Ahora vamos a conectar el router al host. Un par **veth** crea un enlace Ethernet virtual entre dos interfaces; **por sí mismo no proporciona conexión a Internet**. La salida real depende de la interfaz física del host (`eth0`, `wlan0`…), del reenvío IP y de la traducción que configuraremos en los pasos siguientes.
 
 ```bash
 # Crear par veth para la conexión WAN
 ip link add veth-host type veth peer name veth-wan
 
-# Asignar veth-host al host (namespace root)
+# veth-host permanece en el host (namespace raíz)
 # veth-wan lo asignamos al router
 ip link set veth-wan netns router
 ```
 
 ### Paso 3: Configurar IP en la interfaz WAN del router
 
-Necesitamos que el router tenga una IP en la misma subred que el host. Asumimos que el host tiene IP 192.168.1.1/24.
+Ambos extremos del enlace virtual necesitan una IP en la misma subred. Usamos `192.168.1.0/24` para este enlace.
 
 ```bash
 # Configurar IP en el router
@@ -97,7 +99,7 @@ ip addr add 192.168.1.1/24 dev veth-host
 ip link set veth-host up
 ```
 
-**Nota:** Si tu host tiene una IP diferente (ej. 10.0.0.1), ajusta las IPs. Para saber tu IP, ejecuta `ip addr show` y busca la interfaz activa.
+**Nota:** Ejecuta `ip addr show` y comprueba que ninguna interfaz real del host use ya `192.168.1.0/24`; si es así, elige otro rango para el enlace virtual.
 
 ### Paso 4: Dar al router una ruta por defecto hacia el host
 
@@ -117,9 +119,11 @@ iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
 !!! warning "Evita solapar tu red real"
     Si tu red doméstica ya usa `192.168.1.0/24`, el enlace host–router chocará con ella. En ese caso elige otro rango libre para este enlace (por ejemplo `192.168.77.0/24`) y úsalo en todos los pasos y laboratorios siguientes.
 
-### Paso 5: Habilitar NAT en el router
+### Paso 5: Habilitar reenvío y NAT en el router
 
-NAT permite que los clientes de la red local (10.0.1.0/24) salgan a Internet usando la IP del router (192.168.1.2).
+El **enrutamiento** y el **NAT** son dos operaciones distintas y consecutivas: primero el router decide, según su tabla de rutas, por qué interfaz sale el paquete (aquí, `veth-wan` por la ruta por defecto); después, al salir, la regla de NAT reescribe la dirección de origen. **NAT por sí solo no proporciona conectividad**: sin ruta y sin `ip_forward` el paquete nunca llegaría a esa regla.
+
+Con esta regla los clientes (10.0.1.0/24) salen con la dirección del router en el enlace (192.168.1.2).
 
 ```bash
 # Habilitar forwarding en el router
@@ -145,7 +149,7 @@ ip netns exec cliente2 ip route add default via 10.0.1.1
 
 ### Paso 7: Configurar ruta en el host para que el tráfico de retorno llegue al router
 
-Para que el tráfico de Internet llegue de vuelta al router, el host necesita saber cómo llegar a 10.0.1.0/24:
+En este laboratorio hay **doble NAT** (router y host, véase el paso 10), de modo que el host solo ve la dirección `192.168.1.2` y las respuestas vuelven por la tabla de conexiones, no por una ruta hacia `10.0.1.0/24`. Por eso esta ruta **no es imprescindible** para la salida a Internet; resulta útil si quieres alcanzar `10.0.1.0/24` desde el propio host (por ejemplo, para hacer `ping 10.0.1.2`):
 
 ```bash
 ip route add 10.0.1.0/24 via 192.168.1.2
@@ -166,7 +170,7 @@ ip netns exec cliente1 nslookup google.com
 ip netns exec cliente1 curl -I http://google.com
 ```
 
-**Salida esperada:**
+**Resultado esperado** (si el host dispone de salida real a Internet):
 - `ping` 0% de pérdida.
 - `nslookup` devuelve una IP.
 - `curl` devuelve un código HTTP 301 o 200.
@@ -179,7 +183,7 @@ Vamos a observar cómo viajan los datos desde el cliente hasta Internet.
 
 ```bash
 # Iniciar captura en el router (interfaz br0 y veth-wan)
-ip netns exec router tcpdump -i any -n -v -c 10 'host 8.8.8.8 or host google.com'
+ip netns exec router tcpdump -i any -n -c 10 'tcp port 80'
 ```
 
 En otra terminal, ejecutar:
@@ -190,32 +194,50 @@ ip netns exec cliente1 curl -s http://google.com > /dev/null
 
 ### Paso 10: Analizar la captura
 
-Deberías ver paquetes que salen por `br0` (desde el cliente) y por `veth-wan` (hacia Internet).
+Deberías ver paquetes que entran por `br0` (desde el cliente) y salen por `veth-wan` (hacia el host).
+
+!!! note "Captura esquemática, no transcripción literal"
+    `curl http://google.com` conecta con la dirección IP que devuelva el DNS para `google.com`, que **no** es `8.8.8.8` (esa es la IP del DNS público de Google). Para que la lectura sea clara, el esquema siguiente usa `8.8.8.8` como si fuera el servidor web. En tu ejecución real verás la IP de destino que resuelva tu DNS, otros números de secuencia y, si el servidor responde con una redirección, tráfico adicional. Es un **esquema conceptual** del proceso, no una salida garantizada.
 
 ```
-14:23:45.678901 br0  In  IP 10.0.1.2.54321 > 8.8.8.8.80: Flags [S], seq 123456
-14:23:45.678902 veth-wan Out IP 192.168.1.2.54321 > 8.8.8.8.80: Flags [S], seq 123456
-14:23:45.679001 veth-wan In  IP 8.8.8.8.80 > 192.168.1.2.54321: Flags [S.], seq 789012
-14:23:45.679002 br0  Out IP 10.0.1.1.80 > 10.0.1.2.54321: Flags [S.], seq 789012
+br0      In  IP 10.0.1.2.54321   > 8.8.8.8.80:       Flags [S]
+veth-wan Out IP 192.168.1.2.54321 > 8.8.8.8.80:       Flags [S]
+veth-wan In  IP 8.8.8.8.80       > 192.168.1.2.54321: Flags [S.]
+br0      Out IP 8.8.8.8.80       > 10.0.1.2.54321:    Flags [S.]
 ```
 
 **Interpretación:**
 
-1.  El cliente (10.0.1.2) envía un SYN a 8.8.8.8.
-2.  El router recibe el paquete y cambia la IP origen por la suya (192.168.1.2) gracias a NAT.
-3.  El paquete sale por veth-wan hacia el host y luego a Internet.
-4.  La respuesta llega al router y éste la redirige al cliente.
-5.  Se observa claramente el cambio de IP en el proceso de traducción.
+1.  El cliente (10.0.1.2) envía un SYN al servidor (8.8.8.8:80) usando como *gateway* a `10.0.1.1`.
+2.  El router **reenvía** el paquete según su ruta por defecto y, al salir por `veth-wan`, el NAT cambia la IP de origen por la suya (192.168.1.2).
+3.  El paquete llega al host, que aplica una **segunda traducción** (`MASQUERADE` por la interfaz real) antes de salir a la red exterior.
+4.  En la respuesta, el origen **sigue siendo el servidor** (`8.8.8.8:80`). Cada traductor deshace su cambio usando su tabla de conexiones: el host restituye `192.168.1.2` y el router restituye `10.0.1.2:54321` como destino.
+5.  La dirección `10.0.1.1` es el *gateway* del cliente, nunca el origen de la respuesta del servidor.
+
+### Doble NAT: qué dirección ve cada tramo
+
+| Tramo | Origen visto | Destino visto |
+|-------|--------------|---------------|
+| Cliente → router (`br0`) | 10.0.1.2:54321 | servidor:80 |
+| Router → host (`veth-wan`) | 192.168.1.2:54321 | servidor:80 |
+| Host → red exterior (`eth0`) | IP de `eth0` del host, puerto posiblemente reasignado | servidor:80 |
+
+Hay **dos traducciones sucesivas** (una en el router y otra en el host), no una única traducción realizada por el router. Es una arquitectura válida como demostración de doble NAT, aunque en redes reales conviene evitarla cuando es posible. Puedes comprobar el segundo salto capturando en el host: `tcpdump -i veth-host -n 'tcp port 80'`, y las conexiones traducidas con `conntrack -L` (si está instalado).
 
 ## Análisis de la transmisión de datos
 
+!!! warning "Un paquete capturado no es una señal medida"
+    `tcpdump` muestra **tramas y paquetes** ya formados por el sistema operativo. No permite observar la forma de onda eléctrica, óptica o radioeléctrica, ni el esquema de codificación o modulación empleado: esas magnitudes se miden con otros instrumentos (osciloscopio, analizador de espectro, medidores de potencia óptica) o con estadísticas del controlador (por ejemplo `ethtool` o `iw`). En este laboratorio, además, el medio es un par veth **puramente software**: no existe señal física.
+
 ### Bits y señales
 
-Cuando ejecutas `ping` o `curl`, los datos generados por la aplicación se convierten en:
+Cuando ejecutas `ping` o `curl` sobre un enlace **físico real**, los datos generados por la aplicación se convierten en:
 
-1.  **Bits**: La información se codifica como unos y ceros.
-2.  **Señal digital**: Los bits se convierten en señales eléctricas/ópticas.
-3.  **Transmisión**: La señal viaja por el medio (cable o aire).
+1.  **Bits**: La información se representa como unos y ceros (representación binaria, lógica).
+2.  **Señal**: la tarjeta de red (capa física) convierte esos bits en una señal eléctrica, óptica o radioeléctrica mediante un esquema de codificación o modulación.
+3.  **Transmisión**: La señal viaja por el medio (cable, fibra o aire).
+
+La diferencia es importante: los bits son una **representación de los datos**; la señal es su **transmisión física**. Un par veth entre namespaces omite el paso 2 y el 3.
 
 En una red Ethernet real, el esquema de codificación más común hoy es **PAM5** (1000BASE-T) o **PAM16** (10GBASE-T), que transmiten múltiples bits por símbolo.
 
@@ -295,7 +317,7 @@ ip netns exec router iperf3 -s &
 ip netns exec cliente1 iperf3 -c 10.0.1.1
 ```
 
-**Pregunta:** ¿Cuál es el throughput alcanzado? ¿Por qué no llega a 1 Gbps?
+**Pregunta:** ¿Cuál es el throughput alcanzado? ¿De qué depende (CPU, número de núcleos, tamaño de segmento) si el enlace es virtual y no tiene una velocidad nominal fija?
 
 ## Errores comunes y soluciones
 
@@ -311,16 +333,16 @@ ip netns exec cliente1 iperf3 -c 10.0.1.1
 En este laboratorio hemos:
 
 1.  **Ampliado la red local** agregando conectividad a Internet mediante NAT.
-2.  **Observado el flujo de datos** desde el cliente hasta el router y luego hacia Internet.
-3.  **Comprendido la transmisión de datos** a nivel de bits, señales y modulación.
+2.  **Observado el flujo de datos** desde el cliente hasta el router y el host, incluida la doble traducción de direcciones.
+3.  **Comprendido conceptualmente la transmisión de datos** a nivel de bits, señales y modulación (sin medirlas físicamente, algo que una captura de paquetes no permite).
 4.  **Medido el rendimiento** y la latencia de la red.
-5.  **Analizado el proceso de encapsulación** y la traducción de direcciones (NAT).
+5.  **Analizado el proceso de encapsulación** y la traducción de direcciones (NAT), distinguiéndolo del enrutamiento.
 
 Los conceptos de transmisión de datos son fundamentales para entender las limitaciones y capacidades de las redes. El ancho de banda, la latencia, el ruido y la modulación determinan el rendimiento real que los usuarios experimentan.
 
 ## Preparación para el siguiente laboratorio
 
-Hemos dejado la red con salida a Internet, NAT y rutas configuradas. En el **Laboratorio 03** agregaremos más dispositivos: un switch con múltiples clientes y configuración de VLANs para segmentar el tráfico.
+Hemos dejado la red con salida a Internet (doble NAT), rutas y reenvío configurados. En el **Laboratorio 03** agregaremos más dispositivos: un switch con múltiples clientes, el estudio de la tabla MAC y de la MTU. (La segmentación con VLAN llega en el laboratorio 05.)
 
 ---
 

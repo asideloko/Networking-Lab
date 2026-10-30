@@ -47,8 +47,8 @@ graph TB
     subgraph Internet
         EXT[Red Externa]
     end
+    FW["Firewall (punto de control entre zonas)"]
     subgraph DMZ
-        FW[Firewall]
         WEB[Servidor Web 10.0.99.10]
         DNS_PUB[Servidor DNS 10.0.99.5]
     end
@@ -65,13 +65,25 @@ graph TB
     EXT --- FW
     FW --- WEB
     FW --- DNS_PUB
-    FW --- R1
+    FW ---|"LAN 10.0.0.254 (br-lan de R1)"| R1
     R1 --- LAN1
     LAN1 --- CLI
     LAN1 --- SRV
     R1 --- R2
     R2 --- R3
 ```
+
+El **firewall es el punto de control entre las tres zonas** (Externa, DMZ e Interna): todo el tráfico entre ellas debe atravesarlo, y no basta con dibujar una conexión. Qué puede alcanzar cada zona queda definido por las reglas del Paso 8:
+
+| Origen \ Destino | Externa | DMZ | Interna |
+|------------------|:-------:|:---:|:-------:|
+| **Externa** | — | Solo servicios publicados (80/443 al web, 53/UDP al DNS) | Denegado |
+| **DMZ** | Denegado (no hay regla de salida) | — | Denegado |
+| **Interna** | Permitido (con NAT) | Limitado: ICMP, SSH y HTTPS | — |
+
+Las respuestas a conexiones ya establecidas se permiten por seguimiento de estado (`ESTABLISHED,RELATED`).
+
+**Cómo se conectan R1 y el firewall.** Ambos están en el **mismo segmento de capa 2** de la sede: el firewall (`10.0.0.254`) se une al bridge `br-lan` de R1 (Paso 6). Los equipos internos (clientes y servidor interno) usan como *gateway* predeterminado a **R1 (`10.0.0.1`)**; R1 conoce las sucursales y envía al firewall (`10.0.0.254`) todo lo que no conoce (su ruta por defecto). El firewall, a su vez, devuelve a R1 el tráfico hacia las sucursales (`10.0.1.0/24` y `10.0.2.0/24`).
 
 **Direccionamiento:**
 
@@ -80,10 +92,10 @@ graph TB
 | Firewall | veth-fw-wan (WAN) | 192.168.100.1/24 (host: 192.168.100.2/24) | Externa |
 | Firewall | br-dmz (DMZ) | 10.0.99.1/24 | DMZ |
 | Firewall | veth-fw-lan (LAN) | 10.0.0.254/24 | Interna |
-| R1 (Sede) | eth0 (LAN) | 10.0.0.1/24 | Interna |
-| R1 (Sede) | eth1 (R1-R2) | 192.168.1.1/30 | Interna |
-| R2 (Sucursal A) | eth0 (LAN) | 10.0.1.1/24 | Interna |
-| R3 (Sucursal B) | eth0 (LAN) | 10.0.2.1/24 | Interna |
+| R1 (Sede) | `br-lan` (LAN) | 10.0.0.1/24 | Interna |
+| R1 (Sede) | `veth-r1r2` (R1-R2) | 192.168.1.1/30 | Interna |
+| R2 (Sucursal A) | `veth-r2c` (LAN) | 10.0.1.1/24 | Interna |
+| R3 (Sucursal B) | `veth-r3c` (LAN) | 10.0.2.1/24 | Interna |
 | Servidor Web | - | 10.0.99.10/24 | DMZ |
 | Servidor DNS | - | 10.0.99.5/24 | DMZ |
 | Cliente Interno (`clienteSede`) | - | 10.0.0.10/24 | Interna |
@@ -239,6 +251,17 @@ Definimos "red interna" como `10.0.0.0/22`, que agrupa la sede (`10.0.0.0/24`) y
 
 **Política por defecto: denegar todo**
 
+Una política de firewall se evalúa **por cadena, dirección y zona**, no solo por puerto. En Netfilter hay que distinguir:
+
+| Tipo de tráfico | Cadena | Ejemplo aquí |
+|-----------------|--------|--------------|
+| Entrante (destinado al propio firewall) | `INPUT` | SSH al firewall: denegado por la política |
+| Reenviado (atraviesa el firewall entre zonas) | `FORWARD` | Internet → DMZ, LAN → Internet |
+| Saliente (generado por el propio firewall) | `OUTPUT` | Aceptado por defecto |
+| Respuestas de conexiones establecidas | `INPUT`/`FORWARD` con `state` | Aceptadas por las reglas `ESTABLISHED,RELATED` |
+
+Casi todas las reglas de este laboratorio son de `FORWARD` porque el firewall controla tráfico que **lo atraviesa**; una regla de `INPUT` no afecta a ese tráfico.
+
 ```bash
 # Establecer políticas por defecto
 sudo ip netns exec firewall iptables -P INPUT DROP
@@ -263,6 +286,9 @@ sudo ip netns exec firewall iptables -A FORWARD -i veth-fw-wan -o br-dmz -p tcp 
 # Servidor DNS (puerto 53 UDP)
 sudo ip netns exec firewall iptables -A FORWARD -i veth-fw-wan -o br-dmz -p udp -d 10.0.99.5 --dport 53 -j ACCEPT
 ```
+
+!!! note "Permitir el reenvío no equivale a publicar el servicio"
+    Estas reglas permiten el reenvío **si el paquete llega con ese destino** por la interfaz externa. En una red real, los servidores de la DMZ tienen direcciones privadas y para publicarlos se necesita además una traducción de destino (**DNAT**) o direccionamiento público, junto con las rutas y políticas de seguridad. Aquí, para probar, el host añade una ruta directa hacia la DMZ (Paso 10).
 
 **Reglas desde Internet hacia LAN Interna (denegado):**
 
@@ -294,6 +320,11 @@ sudo ip netns exec firewall iptables -A FORWARD -i veth-fw-lan -o br-dmz -s 10.0
 # Principio de mínimo privilegio: una DMZ comprometida no debe alcanzar la LAN
 sudo ip netns exec firewall iptables -A FORWARD -i br-dmz -o veth-fw-lan -j DROP
 ```
+
+Un servidor público **no debe recibir acceso irrestricto a la red interna**: la comunicación DMZ → LAN debe limitarse a políticas explícitas (por ejemplo, solo el puerto de base de datos de un servidor concreto, si la aplicación lo requiere). Aquí se deniega por completo. Observa también que el lado contrario (LAN → DMZ) está **acotado**: solo ICMP, SSH y HTTPS hacia hosts concretos, y no «todo».
+
+!!! info "ACL frente a firewall con seguimiento de estado"
+    Una **ACL** es un mecanismo de control de tráfico (una lista ordenada de reglas permitir/denegar) que puede aplicarse en distintos puntos: un router, un switch, una interfaz. Una ACL clásica evalúa cada paquete de forma independiente. Un **firewall con seguimiento de estado** (como `iptables` con `conntrack` o `nftables`) además recuerda las conexiones y permite automáticamente las respuestas. En este laboratorio las reglas de `FORWARD` con `-m state` actúan como firewall con estado; las reglas que restringen orígenes y puertos (por ejemplo `-s 10.0.0.0/22`) se comportan como las ACL.
 
 ### Paso 9: Verificar reglas de firewall
 
@@ -342,6 +373,9 @@ sudo ip route del 10.0.0.0/22 via 192.168.100.1
 
 ### Paso 11: Configurar SSH para acceso seguro
 
+!!! warning "Habilitar SSH no equivale a asegurar el servicio"
+    **SSH protege el canal de administración** (autenticación y cifrado), pero la seguridad del servicio depende además de la gestión de claves, la restricción de orígenes, la desactivación de contraseñas y root, la actualización del software y el registro de accesos. Aquí aplicamos solo una parte (clave en lugar de contraseña, acceso limitado por el firewall) con un `sshd` de demostración (`StrictModes no`, claves en `/tmp`); no es una configuración de producción.
+
 Arrancamos un `sshd` **dentro** del namespace del servidor web (no con `systemctl`, que actuaría sobre el host), con una configuración propia: solo se permite autenticación por clave.
 
 ```bash
@@ -375,6 +409,9 @@ sudo ip netns exec clienteSede ssh -i /tmp/lab08/id_admin \
 ```
 
 ### Paso 12: Configurar TLS para el servidor web
+
+!!! warning "Generar un certificado no equivale a asegurar la comunicación"
+    **TLS protege las comunicaciones de aplicación** mediante autenticación del servidor y cifrado, **siempre que** el cliente valide el certificado (cadena de confianza, nombre, caducidad) y se usen versiones y cifrados adecuados. Un certificado **autofirmado** como el de este paso cifra el canal, pero no demuestra la identidad del servidor a quien no lo haya aceptado previamente.
 
 Generamos un certificado autofirmado y servimos HTTPS con `openssl s_server` dentro del namespace del servidor web (un servidor mínimo, suficiente para observar el cifrado; `-ign_eof` evita que se cierre al ejecutarse en segundo plano sin teclado):
 
@@ -434,12 +471,12 @@ sudo ip netns exec firewall conntrack -L
 
 | Concepto | Aplicación en el laboratorio |
 |----------|------------------------------|
-| Tríada CIA | Confidencialidad, Integridad, Disponibilidad |
-| Firewall | Filtrado de tráfico con iptables |
-| DMZ | Segmentación de servidores públicos |
-| ACLs | Control de acceso basado en reglas |
-| SSH | Acceso remoto seguro |
-| TLS | Cifrado de comunicaciones web |
+| Tríada CIA | Confidencialidad (TLS, SSH), Integridad (TLS, SSH), Disponibilidad (filtrado y política por defecto) |
+| Firewall | Control entre zonas con seguimiento de estado (`iptables`) |
+| DMZ | Segmentación de servidores públicos con acceso limitado a la LAN |
+| ACLs | Reglas de control de tráfico (origen, destino, puerto); no equivalen a un firewall con estado |
+| SSH | Canal de administración cifrado |
+| TLS | Autenticación y cifrado de la comunicación de aplicación |
 
 ## Conclusiones técnicas
 
@@ -452,7 +489,7 @@ En este laboratorio hemos:
 5.  Probado **TLS** con un certificado autofirmado y un servidor HTTPS mínimo (`openssl s_server`); en producción se usaría un servidor web real y un certificado emitido por una CA.
 6.  Aplicado los principios de la tríada **CIA** en la práctica.
 
-La seguridad en redes es un proceso continuo que combina múltiples capas de defensa. El firewall controla el tráfico, la DMZ aísla servidores expuestos, SSH protege el acceso administrativo y TLS cifra las comunicaciones. Ninguna medida es suficiente por sí sola; la combinación de todas ellas proporciona una postura de seguridad robusta.
+La seguridad en redes es un proceso continuo que combina múltiples capas de defensa. El firewall controla el tráfico entre zonas, la DMZ aísla servidores expuestos, SSH protege el acceso administrativo y TLS cifra las comunicaciones de aplicación. Ninguna medida es suficiente por sí sola, y cada una depende de una buena configuración y de su mantenimiento; la combinación de varias, bien configuradas, reduce la superficie de ataque.
 
 ## Preparación para el siguiente laboratorio
 

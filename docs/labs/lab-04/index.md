@@ -11,10 +11,12 @@ La empresa **Networking SecOps** ha seguido creciendo. Ahora cuenta con **dos de
 
 La red actual (todos los clientes en una sola subred `10.0.1.0/24`) ya no es suficiente. Se necesita **segmentar la red** en subredes separadas para:
 
--   Aislar el tráfico entre departamentos.
--   Aplicar políticas de seguridad diferentes.
--   Mejorar el rendimiento reduciendo dominios de broadcast.
+-   Separar lógicamente el direccionamiento de cada departamento (el tráfico entre ellos pasa a ser tráfico **enrutado**, sobre el que se pueden aplicar políticas).
+-   Preparar la aplicación de políticas de seguridad diferentes.
 -   Optimizar el uso del espacio de direcciones.
+
+!!! warning "Subred IP no es lo mismo que VLAN"
+    Una **subred IP** es una división lógica de **capa 3**; una **VLAN** es una división lógica de **capa 2** (dominio de broadcast). Suelen asociarse una VLAN con una subred IP, pero no son conceptos equivalentes. En este laboratorio solo dividimos el direccionamiento (capa 3): todos los equipos siguen conectados al **mismo bridge**, es decir, al mismo dominio de broadcast. Reducir los dominios de broadcast exigirá VLAN (laboratorio 05).
 
 ## Problema inicial
 
@@ -28,7 +30,7 @@ La red actual (todos los clientes en una sola subred `10.0.1.0/24`) ya no es suf
 1.  Comprender la estructura de las direcciones IPv4 (32 bits).
 2.  Aplicar **subnetting** para dividir una red en subredes más pequeñas.
 3.  Implementar **VLSM** (Variable Length Subnet Mask) para optimizar direcciones.
-4.  Configurar **subinterfaces** en el router para soportar múltiples subredes.
+4.  Configurar **varias direcciones IP (una por subred) en la interfaz del router** para que actúe como *gateway* de cada subred. (Las subinterfaces con etiquetas VLAN se estudian en el laboratorio 05.)
 5.  Verificar la comunicación entre subredes mediante enrutamiento.
 6.  Analizar la relación Red-Subred-Host.
 
@@ -40,12 +42,12 @@ La red actual (todos los clientes en una sola subred `10.0.1.0/24`) ya no es suf
 
 ## Diseño de subredes
 
-**Red base:** `10.0.0.0/24` (para simplificar, aunque en producción sería una red privada /24).
+**Red base:** `10.0.0.0/24`. Las tres subredes se calculan **dentro** de este bloque. La asignación es un **ejemplo de reparto de direcciones**, no una arquitectura obligatoria para todas las empresas.
 
 **Requisitos:**
 -   Subred 1: Ventas → 10 hosts (mínimo /28 → 14 hosts útiles).
 -   Subred 2: IT → 6 hosts (mínimo /29 → 6 hosts útiles).
--   Subred 3: Enlace router-switch → 2 hosts (mínimo /30 → 2 hosts útiles).
+-   Subred 3: Enlace de gestión router-switch → 2 hosts (mínimo /30 → 2 hosts útiles).
 
 **Cálculo VLSM:**
 
@@ -54,6 +56,16 @@ La red actual (todos los clientes en una sola subred `10.0.1.0/24`) ya no es suf
 | Ventas | 10 | /28 | 16 | 10.0.0.0/28 | 10.0.0.1 - 10.0.0.14 | 10.0.0.15 |
 | IT | 6 | /29 | 8 | 10.0.0.16/29 | 10.0.0.17 - 10.0.0.22 | 10.0.0.23 |
 | Enlace Router-Switch | 2 | /30 | 4 | 10.0.0.24/30 | 10.0.0.25 - 10.0.0.26 | 10.0.0.27 |
+
+**Quién usa cada dirección y por qué:**
+
+| Subred | Hosts (clientes) | Gateway | Motivo |
+|--------|------------------|---------|--------|
+| Ventas `10.0.0.0/28` | `10.0.0.1` – `10.0.0.3` (los de la demostración; el rango admite hasta `.13`) | `10.0.0.14` (última útil) | Convención de este laboratorio: se reserva la **última** dirección útil para el router y las primeras para los equipos. |
+| IT `10.0.0.16/29` | `10.0.0.17` – `10.0.0.19` (admite hasta `.21`) | `10.0.0.22` (última útil) | Misma convención. |
+| Enlace `10.0.0.24/30` | — | Router `10.0.0.25`, switch `10.0.0.26` | Las dos únicas direcciones útiles identifican ambos extremos. |
+
+La convención «primera dirección útil = gateway» es habitual, pero no obligatoria: lo importante es que sea una dirección fija, documentada y **no asignada a un cliente**.
 
 ## Topología
 
@@ -65,8 +77,8 @@ graph TB
     I1[IT 1 10.0.0.17/29]
     I2[IT 2 10.0.0.18/29]
     I3[IT 3 10.0.0.19/29]
-    R[Router 10.0.0.25/30]
-    SW[Switch 10.0.0.26/30]
+    R["Router veth-rs: 10.0.0.25/30 · gateway Ventas 10.0.0.14/28 · gateway IT 10.0.0.22/29"]
+    SW["Switch (bridge br0, gestión 10.0.0.26/30)"]
     Internet((Internet))
     V1 --- SW
     V2 --- SW
@@ -78,7 +90,10 @@ graph TB
     R --- Internet
 ```
 
-**Nota sobre la topología:** En esta implementación, el switch es un bridge en Linux que opera en capa 2. Los clientes en diferentes subredes están conectados al mismo switch físico (bridge), pero **no pueden comunicarse directamente** porque están en diferentes subredes. La comunicación entre subredes debe pasar por el router.
+**Nota sobre la topología (qué diseño se representa):** el router se conecta al switch mediante **un único enlace** (`veth-rs`) que es un **puerto de acceso sin etiquetas** del bridge. **No es un enlace troncal** con VLAN y subinterfaces; ese diseño es distinto y se estudia en el laboratorio 05. Dos consecuencias:
+
+-   Todos los equipos (Ventas, IT, el switch y el router) comparten **un único dominio de broadcast**. Los clientes de subredes distintas *podrían* comunicarse directamente a nivel de enlace si se les configurara una dirección de la otra subred; lo que se les impide es hacerlo por IP, porque cada uno solo considera «local» su propia subred y manda lo demás al gateway.
+-   La subred `/30` **no es un enlace de tránsito de capa 3** entre dos redes: es el direccionamiento de **gestión** del switch (`10.0.0.26`) y de una de las direcciones del router (`10.0.0.25`), ambos sobre el mismo segmento de capa 2. Se incluye para practicar VLSM y para dar al switch una IP de administración.
 
 ## Construcción de la red
 
@@ -291,7 +306,7 @@ ip netns exec ventas1 ping -c 4 10.0.0.2
 ip netns exec it1 ping -c 4 10.0.0.18
 ```
 
-**Salida esperada:** 0% de pérdida (comunicación directa a través del switch).
+**Resultado esperado:** 0% de pérdida (comunicación directa a través del switch).
 
 ### Paso 10: Verificar conectividad entre subredes
 
@@ -300,7 +315,7 @@ ip netns exec it1 ping -c 4 10.0.0.18
 ip netns exec ventas1 ping -c 4 10.0.0.17
 ```
 
-**Salida esperada:** 0% de pérdida (el tráfico pasa por el router).
+**Resultado esperado:** 0% de pérdida (el tráfico pasa por el router).
 
 ### Paso 11: Verificar conectividad a Internet
 
@@ -312,7 +327,7 @@ ip netns exec ventas1 ping -c 4 8.8.8.8
 ip netns exec it1 curl -I http://google.com
 ```
 
-**Salida esperada:** Respuestas exitosas (NAT funciona).
+**Resultado esperado:** Respuestas exitosas (si el host tiene salida real a Internet).
 
 ## Observación y análisis
 
@@ -345,9 +360,11 @@ ip netns exec ventas1 ping -c 1 10.0.0.17
 
 **Interpretación:**
 1.  El paquete sale de Ventas 1 con origen 10.0.0.1 y destino 10.0.0.17.
-2.  El switch lo recibe y, al ver que el destino no está en la misma subred, lo envía al router (gateway).
-3.  El router recibe el paquete, consulta su tabla de enrutamiento y lo reenvía por la misma interfaz hacia el switch.
-4.  El switch entrega el paquete a IT 1.
+2.  **Es Ventas 1 quien decide** que 10.0.0.17 no está en su subred (`10.0.0.0/28`) y, por su ruta por defecto, envía la trama con IP destino 10.0.0.17 pero **MAC destino = la del gateway** (`10.0.0.14`, resuelta por ARP). El switch no examina direcciones IP: conmuta la trama por la MAC.
+3.  El router recibe el paquete, consulta su tabla de enrutamiento (10.0.0.17 pertenece a la red conectada `10.0.0.16/29`) y lo reenvía **por la misma interfaz** con una nueva trama (MAC origen: la del router; MAC destino: la de IT 1). Por entrar y salir por la misma interfaz, Linux puede enviar a Ventas 1 un *ICMP redirect*, aviso de que existe un camino directo; los clientes de este laboratorio no lo aplican porque no comparten subred IP.
+4.  El switch conmuta esa trama hacia el puerto de IT 1.
+
+En la captura verás cada ICMP **dos veces** (entrada y salida del router por `veth-rs`), con distintas MAC pero las mismas IP: es la huella de un router que reenvía por una sola interfaz (*router-on-a-stick* sin VLAN).
 
 ## Ejercicios prácticos
 
@@ -398,12 +415,12 @@ En este laboratorio hemos:
 
 1.  **Aplicado subnetting** para dividir una red en subredes más pequeñas.
 2.  **Implementado VLSM** para optimizar el uso de direcciones.
-3.  **Comprobado** que el router encamina entre las subredes porque las tiene directamente conectadas (no hacen falta rutas estáticas).
+3.  **Comprobado** que el router encamina entre las subredes porque las tiene directamente conectadas (no hacen falta rutas estáticas). Hemos visto además que dividir en subredes IP **no** separa los dominios de broadcast.
 4.  **Verificado la comunicación entre subredes** a través del router.
 
 ## Preparación para el siguiente laboratorio
 
-Hemos dejado la red con dos subredes (Ventas e IT) y un enlace /30 al router. En el **Laboratorio 05** implementaremos **VLANs** para segmentar físicamente el tráfico.
+Hemos dejado la red con dos subredes (Ventas e IT) y un segmento /30 de gestión entre router y switch, todo en un mismo dominio de broadcast. En el **Laboratorio 05** implementaremos **VLAN** para separar también la capa 2. Cambiaremos el direccionamiento a redes `/24` independientes porque allí el objetivo es estudiar la segmentación, no el reparto VLSM: son escenarios distintos y **no** describen la misma infraestructura.
 
 ---
 

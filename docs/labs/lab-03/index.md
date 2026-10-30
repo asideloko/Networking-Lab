@@ -44,16 +44,18 @@ graph TB
     C2[Cliente 2 10.0.1.3/24]
     C3[Cliente 3 10.0.1.4/24]
     C4[Cliente 4 10.0.1.5/24]
-    SW[Switch Bridge]
-    R[Router 10.0.1.1/24]
+    SW["Switch (namespace switch): bridge br0, capa 2"]
+    R["Router (namespace router): veth-rs 10.0.1.1/24, capa 3"]
     ISP[Proveedor Internet]
     C1 --- SW
     C2 --- SW
     C3 --- SW
     C4 --- SW
-    SW --- R
+    SW -- "enlace virtual veth-sr / veth-rs" --- R
     R --- ISP
 ```
+
+El **switch** (namespace `switch`) y el **router** (namespace `router`) son ahora dos equipos lógicos distintos. El bridge `br0` pertenece solo al switch; la dirección IP `10.0.1.1` pertenece a la interfaz `veth-rs` del router, que está conectada al bridge mediante un enlace virtual. Así se separa la función de capa 2 (conmutar tramas) de la de capa 3 (*gateway* hacia otras redes).
 
 **Direccionamiento:**
 
@@ -63,8 +65,8 @@ graph TB
 | Cliente 2   | veth0    | 10.0.1.3/24        |
 | Cliente 3   | veth0    | 10.0.1.4/24        |
 | Cliente 4   | veth0    | 10.0.1.5/24        |
-| Switch      | br0      | - (capa 2)         |
-| Router (LAN)| br0      | 10.0.1.1/24        |
+| Switch      | br0 (puertos `veth-s1`…`veth-s4` y `veth-sr`) | - (capa 2, sin IP) |
+| Router (LAN)| veth-rs  | 10.0.1.1/24        |
 | Router (WAN)| veth-wan | 192.168.1.2/24    |
 
 ## Construcción de la red
@@ -92,6 +94,9 @@ ip netns exec router ip link delete br0
 ip netns exec router ip link delete veth-r1
 ip netns exec router ip link delete veth-r2
 ```
+
+!!! warning "Las reglas del laboratorio 02 mencionaban `br0`"
+    Las reglas de `FORWARD` del router creadas en el laboratorio 02 usan `-i br0`. Al borrar el bridge del router esas reglas dejan de aplicarse. Con la política por defecto (`ACCEPT`) la salida a Internet seguirá funcionando, pero conviene mantener la coherencia: tras el Paso 9 sustituye `br0` por `veth-rs` en ellas (`iptables -D FORWARD -i br0 …` y `iptables -A FORWARD -i veth-rs …`, ejecutadas con `ip netns exec router`). La regla de `MASQUERADE` usa `-o veth-wan` y no se ve afectada.
 
 ### Paso 3: Crear el namespace del switch
 
@@ -212,7 +217,7 @@ ip netns exec cliente2 ping -c 4 10.0.1.5
 ip netns exec cliente3 ping -c 4 10.0.1.1
 ```
 
-**Salida esperada:** Todas las pruebas con 0% de pérdida.
+**Resultado esperado:** Todas las pruebas con 0% de pérdida.
 
 ### Paso 11: Verificar conectividad a Internet
 
@@ -232,7 +237,7 @@ El switch aprende las direcciones MAC de los dispositivos conectados:
 ip netns exec switch bridge fdb show br br0
 ```
 
-**Salida esperada** (las direcciones MAC serán distintas en tu equipo, pues Linux las genera al azar; para poder seguirlas, anótalas con `ip netns exec cliente1 ip link show veth-c1`):
+**Ejemplo de salida** (representativo; las direcciones MAC serán distintas en tu equipo, pues Linux las genera al azar; para poder seguirlas, anótalas con `ip netns exec cliente1 ip link show veth-c1`):
 
 ```
 5e:1c:9a:03:77:b1 dev veth-s1 master br0
@@ -240,11 +245,13 @@ c2:4d:08:6f:12:e4 dev veth-s2 master br0
 ...
 ```
 
-Cada dirección MAC está asociada a un puerto específico. Solo aparecen las MAC de los equipos que ya han enviado tráfico: si la tabla está vacía, ejecuta antes los pings del Paso 10.
+**Qué significa cada entrada:** `5e:1c:9a:03:77:b1 dev veth-s1 master br0` quiere decir «la MAC `5e:1c:…` se ha visto como **origen** de una trama recibida por el puerto `veth-s1`; por tanto, las tramas cuyo destino sea esa MAC deben salir por `veth-s1`». El switch **aprende** leyendo la MAC de origen de cada trama entrante y **consulta** la tabla usando la MAC de destino. Solo aparecen las MAC de los equipos que ya han enviado tráfico: si la tabla está vacía, ejecuta antes los pings del Paso 10. Si la MAC de destino no está en la tabla (o es *broadcast*), el switch inunda la trama por todos los puertos excepto el de entrada. Las entradas caducan tras un tiempo de envejecimiento (por defecto, 300 s en Linux).
+
+También verás entradas con `permanent` o `self`: corresponden a las MAC de las propias interfaces del bridge y no a equipos aprendidos.
 
 ### Paso 13: Capturar tráfico en el switch
 
-Para observar cómo el switch reenvía tramas, capturamos en todas las interfaces:
+Para observar cómo el switch reenvía tramas, capturamos en el bridge. Ten en cuenta que `br0` ve el tráfico que **entra o sale por el propio bridge**, no distingue por sí solo por qué puerto físico salió cada trama; para comprobar que el reenvío es selectivo, captura además en un puerto concreto (por ejemplo `-i veth-s4`, que **no** debería ver el ping entre Cliente 1 y Cliente 3 una vez aprendidas las MAC):
 
 ```bash
 # Capturar en el switch (interfaz br0)
@@ -265,9 +272,22 @@ ip netns exec cliente1 ping -c 1 10.0.1.4
 4.  El switch reenvía la trama **solo por `veth-s3`** (no por los demás puertos).
 5.  Cliente 3 recibe la trama y responde.
 
-**Esto demuestra la conmutación en capa 2:** el switch aprende y reenvía solo al puerto correcto, reduciendo el tráfico innecesario.
+**Esto demuestra la conmutación en capa 2:** el switch aprende y reenvía solo al puerto correcto, reduciendo el tráfico innecesario. (La primera trama de la conversación puede inundarse si la MAC de destino aún no se conoce, y ARP se envía por *broadcast*.)
+
+!!! info "Bridge Linux frente a switch físico"
+    La equivalencia funcional es una herramienta didáctica. Un bridge Linux no reproduce necesariamente funciones propias de un switch empresarial: STP configurado y gestionado por defecto, administración avanzada (SNMP, CLI de proveedor), QoS por hardware, PoE, apilado o rendimiento por ASIC.
 
 ## Análisis de MTU
+
+Conviene distinguir cinco magnitudes que suelen confundirse:
+
+| Concepto | Qué es |
+|----------|--------|
+| **MTU de una interfaz** | Tamaño máximo del **paquete IP** (cabecera IP + datos) que la interfaz puede transmitir. Con 1500, un paquete IP de hasta 1500 bytes. |
+| **Carga útil (payload)** | Los datos que van dentro del paquete (en IPv4 sin opciones, 1500 − 20 de cabecera IP = 1480 para TCP/UDP/ICMP). |
+| **Tamaño total de la trama Ethernet** | Paquete IP **más** la cabecera Ethernet (14 bytes) y el FCS (4): hasta 1518 bytes con MTU 1500 (1522 con etiqueta 802.1Q). La cabecera Ethernet se añade *fuera* del MTU. |
+| **Fragmentación IPv4** | División de un paquete mayor que la MTU en fragmentos, si el bit DF no lo prohíbe. |
+| **Path MTU Discovery (PMTUD)** | Mecanismo con el que el origen descubre la MTU más pequeña del camino, enviando paquetes con DF y atendiendo los mensajes ICMP «fragmentation needed». |
 
 ### Paso 14: Verificar la MTU actual
 
@@ -276,18 +296,18 @@ ip netns exec cliente1 ping -c 1 10.0.1.4
 ip netns exec cliente1 ip link show veth-c1
 ```
 
-**Salida esperada:** `mtu 1500`
+**Resultado esperado:** `mtu 1500`
 
 ### Paso 15: Probar MTU con ping
 
-Enviamos un ping con tamaño mayor a 1500 bytes (con fragmentación):
+Enviamos un ping con una carga mayor que la MTU. **Recuerda:** la opción `-s` de `ping` indica el tamaño de los **datos ICMP**; el paquete IP resultante mide `-s` + 8 (cabecera ICMP) + 20 (cabecera IP). Con `-s 2000` el paquete IP mide 2028 bytes:
 
 ```bash
-# Ping con 2000 bytes (se fragmentará)
+# Ping con 2000 bytes de datos (paquete IP de 2028 bytes: se fragmentará)
 ip netns exec cliente1 ping -c 2 -M do -s 2000 10.0.1.4
 ```
 
-**Salida esperada:** con `-M do` (prohibir fragmentación) y MTU 1500, el propio `ping` rechaza el envío antes de transmitirlo:
+**Resultado esperado:** con `-M do` (prohibir fragmentación) y MTU 1500, el propio `ping` rechaza el envío antes de transmitirlo:
 
 ```
 ping: local error: message too long, mtu=1500
@@ -299,19 +319,23 @@ Si en cambio permites la fragmentación (`-M dont`, el valor por defecto en Linu
 ip netns exec cliente1 ping -c 2 -M dont -s 2000 10.0.1.4
 ```
 
-Esto demuestra la importancia de la MTU: los paquetes que exceden el tamaño máximo deben fragmentarse o, si está prohibido, no pueden enviarse.
+Esto demuestra la importancia de la MTU: los paquetes que exceden el tamaño máximo deben fragmentarse o, si está prohibido, no pueden enviarse. En el tamaño máximo sin fragmentar, `-s 1472` (1472 + 8 + 20 = 1500) funciona con `-M do` y `-s 1473` no.
+
+Este experimento es **local**: el error lo genera el propio origen. En un camino real con varios saltos, PMTUD depende de que los routers intermedios devuelvan ICMP «fragmentation needed» y de que ningún filtro lo bloquee.
 
 ### Paso 16: Cambiar MTU (opcional)
 
-Podemos cambiar la MTU para soportar jumboframes:
+Podemos cambiar la MTU para soportar jumboframes entre Cliente 1 y Cliente 3. La MTU debe subirse en **todos los extremos del camino**: ambos clientes y los puertos del switch por los que pasa la trama (y el bridge, que adopta la menor MTU de sus puertos):
 
 ```bash
 ip netns exec cliente1 ip link set veth-c1 mtu 9000
+ip netns exec cliente3 ip link set veth-c3 mtu 9000
 ip netns exec switch ip link set veth-s1 mtu 9000
+ip netns exec switch ip link set veth-s3 mtu 9000
 ip netns exec switch ip link set br0 mtu 9000
 ```
 
-Ahora el ping con 9000 bytes debería funcionar (si todos los enlaces soportan jumboframes).
+Ahora un ping con `-s 8972` (8972 + 8 + 20 = 9000) y `-M do` entre Cliente 1 y Cliente 3 debería funcionar. Un ping con `-s 9000` no cabría: sumaría 28 bytes de cabeceras. Los otros puertos del bridge (`veth-s2`, `veth-s4`, `veth-sr`) conservan 1500, de modo que el tráfico hacia ellos sigue limitado por esa MTU.
 
 ## Ejercicios prácticos
 
@@ -348,7 +372,7 @@ Ahora el ping con 9000 bytes debería funcionar (si todos los enlaces soportan j
     ip netns exec cliente1 iperf3 -c 10.0.1.1
     ```
 
-2.  Cambiar la MTU a 9000 en todos los enlaces y repetir la medición.
+2.  Cambiar la MTU a 9000 en todos los enlaces del camino (`veth-c1`, `veth-s1`, `br0`, `veth-sr`, `veth-rs`) y repetir la medición.
 3.  **Pregunta:** ¿Mejora el throughput con jumboframes? ¿Por qué?
 
 ## Errores comunes y soluciones
@@ -374,7 +398,7 @@ En este laboratorio hemos:
 El switch es un componente fundamental en las redes modernas. Su capacidad para aprender direcciones MAC y reenviar tráfico solo por el puerto correcto permite:
 
 -   Mayor eficiencia en el uso del ancho de banda.
--   Reducción de colisiones (en redes conmutadas punto a punto).
+-   Dominios de colisión separados por puerto (en redes conmutadas dúplex, las colisiones prácticamente desaparecen).
 -   Escalabilidad para conectar cientos o miles de dispositivos.
 -   Base para implementar VLANs y otras tecnologías de segmentación.
 
@@ -382,7 +406,7 @@ La MTU, por su parte, es un parámetro crítico que debe ser configurado correct
 
 ## Preparación para el siguiente laboratorio
 
-Hemos dejado la red con 4 clientes conectados a un switch, y el switch conectado al router con salida a Internet. En el **Laboratorio 04** comenzaremos a trabajar con **direccionamiento IP y subredes**, segmentando la red en diferentes subredes y configurando el enrutamiento entre ellas.
+Hemos dejado la red con 4 clientes conectados a un switch, y el switch conectado al router con salida a Internet. En el **Laboratorio 04** comenzaremos a trabajar con **direccionamiento IP y subredes**, segmentando la red en diferentes subredes y y preparando el enrutamiento entre ellas.
 
 ---
 
