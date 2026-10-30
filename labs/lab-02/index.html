@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/labs/lab-02/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>02 · Transmisión de Datos y Capa Física - NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>02 · Transmisión de Datos y Capa Física - NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link href="../../assets/css/extra.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="../.." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -42,6 +42,8 @@
                 <li class="toctree-l1"><a class="reference internal" href="../..">Inicio</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../..#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../..#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../..#requisitos">Requisitos</a>
     </li>
@@ -126,7 +128,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -141,6 +143,8 @@
     <li class="toctree-l3"><a class="reference internal" href="#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -350,6 +354,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-05/#observacion">Observación</a>
@@ -381,6 +387,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -669,6 +677,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../lab-11/">11 · Arquitectura de Red Empresarial</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#topologia">Topología</a>
     </li>
@@ -834,6 +846,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#ejercicios">Ejercicios</a>
@@ -870,7 +884,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -912,6 +926,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -924,7 +940,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href="../..">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -945,19 +961,19 @@
 
 <h1 id="transmision-de-datos-y-capa-fisica">Transmisión de Datos y Capa Física<a class="headerlink" href="#transmision-de-datos-y-capa-fisica" title="Permanent link">&para;</a></h1>
 <h2 id="contexto-empresarial">Contexto empresarial<a class="headerlink" href="#contexto-empresarial" title="Permanent link">&para;</a></h2>
-<p>La empresa <strong>Networking SecOps</strong> ya cuenta con su red local funcionando (Clientes 1 y 2 conectados al router mediante bridge). El equipo de operaciones ha notado que la red funciona correctamente para comunicaciones internas, pero necesitan <strong>conectar la oficina a Internet</strong> para que los empleados puedan acceder a servicios en la nube, correo electrónico y navegación web.</p>
+<p>La empresa <strong>Networking SecOps</strong> ya cuenta con su red local funcionando (Clientes 1 y 2 conectados mediante el bridge del equipo <code>router</code>, laboratorio 01). El equipo de operaciones ha notado que la red funciona correctamente para comunicaciones internas, pero necesitan <strong>conectar la oficina a Internet</strong> para que los empleados puedan acceder a servicios en la nube, correo electrónico y navegación web.</p>
 <p>El CTO ha solicitado que, además de implementar la salida a Internet, se <strong>documente el proceso de transmisión de datos</strong>, explicando cómo viajan los bits desde el equipo del usuario hasta el router y cómo se comporta la señal en el medio físico.</p>
 <h2 id="problema-inicial">Problema inicial<a class="headerlink" href="#problema-inicial" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Los clientes (10.0.1.2 y 10.0.1.3) no tienen salida a Internet.</li>
-<li>El router tiene conectividad hacia Internet a través de la interfaz <code>eth0</code> del host, pero no está configurado para compartir esa conexión.</li>
-<li>Se requiere habilitar <strong>NAT (Network Address Translation)</strong> para que los clientes puedan salir a Internet con la IP pública del router.</li>
+<li>El router todavía no tiene ninguna interfaz hacia el exterior. En este laboratorio le añadimos un enlace virtual hacia el <strong>host</strong>, que actuará como representación de la red externa; la conectividad real hacia Internet depende de la interfaz física o inalámbrica del host (<code>eth0</code>, <code>wlan0</code>…).</li>
+<li>Se requiere <strong>enrutar</strong> el tráfico de los clientes hacia ese enlace y aplicar <strong>NAT (Network Address Translation)</strong> para que salgan con una dirección distinta de la privada <code>10.0.1.x</code>.</li>
 <li>Además, se debe <strong>analizar el flujo de bits</strong> y observar cómo se transmite la información a nivel físico.</li>
 </ul>
 <h2 id="objetivos-del-laboratorio">Objetivos del laboratorio<a class="headerlink" href="#objetivos-del-laboratorio" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Comprender los conceptos de transmisión de datos: bits, señales digitales/analógicas, codificación y modulación.</li>
-<li>Implementar conectividad a Internet mediante NAT en el router.</li>
+<li>Implementar la salida a Internet combinando enrutamiento y NAT.</li>
 <li>Configurar las rutas por defecto para que los clientes salgan a través del router.</li>
 <li>Capturar y analizar paquetes para observar el flujo de datos.</li>
 <li>Medir el rendimiento y la latencia en la red.</li>
@@ -972,11 +988,13 @@
 <div class="mermaid">graph TB
     C1[Cliente 1 10.0.1.2/24]
     C2[Cliente 2 10.0.1.3/24]
-    R[Router 10.0.1.1/24]
+    R["Router (bridge br0) 10.0.1.1/24"]
+    H["Host (representa la red externa)"]
     ISP[Proveedor Internet]
     C1 --- R
     C2 --- R
-    R --- ISP</div>
+    R -- "enlace veth virtual" --- H
+    H -- "interfaz física real del host" --- ISP</div>
 <p><strong>Direccionamiento:</strong></p>
 <table>
 <thead>
@@ -1008,13 +1026,13 @@
 <td>192.168.1.2/24</td>
 </tr>
 <tr>
-<td>Host</td>
-<td>eth0</td>
+<td>Host (extremo del enlace virtual)</td>
+<td>veth-host</td>
 <td>192.168.1.1/24</td>
 </tr>
 </tbody>
 </table>
-<p>Nota: La IP del host (192.168.1.1) debe ser la que tenga tu máquina real. Si usas WiFi, puede ser 192.168.0.x, 10.0.0.x, etc. Ajusta según tu entorno.</p>
+<p><strong>Nota:</strong> <code>192.168.1.0/24</code> es aquí el direccionamiento <strong>del enlace virtual</strong> entre el router y el host, y es independiente del direccionamiento de la interfaz física real del host (<code>eth0</code>, <code>wlan0</code>…). <code>192.168.1.1</code> no es «la IP del host», sino la dirección que le damos a <code>veth-host</code>; solo debe cambiarse si tu red real ya usa ese rango (véase el aviso del paso 4).</p>
 <h2 id="construccion-de-la-red">Construcción de la red<a class="headerlink" href="#construccion-de-la-red" title="Permanent link">&para;</a></h2>
 <h3 id="paso-1-verificar-el-estado-actual">Paso 1: Verificar el estado actual<a class="headerlink" href="#paso-1-verificar-el-estado-actual" title="Permanent link">&para;</a></h3>
 <p>Primero, asegurémonos de que la red del laboratorio 01 sigue funcionando:</p>
@@ -1026,16 +1044,16 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 </code></pre></div>
 <p>Si no existen los namespaces, ejecuta los comandos del laboratorio 01 para crearlos.</p>
 <h3 id="paso-2-crear-una-interfaz-wan-para-el-router">Paso 2: Crear una interfaz WAN para el router<a class="headerlink" href="#paso-2-crear-una-interfaz-wan-para-el-router" title="Permanent link">&para;</a></h3>
-<p>Ahora vamos a conectar el router a la red exterior. Usaremos la interfaz de red del host (ej. <code>eth0</code>, <code>wlan0</code>) y crearemos un par veth.</p>
+<p>Ahora vamos a conectar el router al host. Un par <strong>veth</strong> crea un enlace Ethernet virtual entre dos interfaces; <strong>por sí mismo no proporciona conexión a Internet</strong>. La salida real depende de la interfaz física del host (<code>eth0</code>, <code>wlan0</code>…), del reenvío IP y de la traducción que configuraremos en los pasos siguientes.</p>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Crear par veth para la conexión WAN</span>
 ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-host<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-wan
 
-<span class="c1"># Asignar veth-host al host (namespace root)</span>
+<span class="c1"># veth-host permanece en el host (namespace raíz)</span>
 <span class="c1"># veth-wan lo asignamos al router</span>
 ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-wan<span class="w"> </span>netns<span class="w"> </span>router
 </code></pre></div>
 <h3 id="paso-3-configurar-ip-en-la-interfaz-wan-del-router">Paso 3: Configurar IP en la interfaz WAN del router<a class="headerlink" href="#paso-3-configurar-ip-en-la-interfaz-wan-del-router" title="Permanent link">&para;</a></h3>
-<p>Necesitamos que el router tenga una IP en la misma subred que el host. Asumimos que el host tiene IP 192.168.1.1/24.</p>
+<p>Ambos extremos del enlace virtual necesitan una IP en la misma subred. Usamos <code>192.168.1.0/24</code> para este enlace.</p>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Configurar IP en el router</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>router<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">192</span>.168.1.2/24<span class="w"> </span>dev<span class="w"> </span>veth-wan
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>router<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-wan<span class="w"> </span>up
@@ -1044,7 +1062,7 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">192</span>.168.1.1/24<span class="w"> </span>dev<span class="w"> </span>veth-host
 ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-host<span class="w"> </span>up
 </code></pre></div>
-<p><strong>Nota:</strong> Si tu host tiene una IP diferente (ej. 10.0.0.1), ajusta las IPs. Para saber tu IP, ejecuta <code>ip addr show</code> y busca la interfaz activa.</p>
+<p><strong>Nota:</strong> Ejecuta <code>ip addr show</code> y comprueba que ninguna interfaz real del host use ya <code>192.168.1.0/24</code>; si es así, elige otro rango para el enlace virtual.</p>
 <h3 id="paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host<a class="headerlink" href="#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host" title="Permanent link">&para;</a></h3>
 <p>El router solo conoce sus redes directamente conectadas (<code>10.0.1.0/24</code> y <code>192.168.1.0/24</code>). Sin una ruta por defecto no sabe a dónde enviar el tráfico hacia Internet y responde <code>Destination Net Unreachable</code>. Su salida es el host (<code>192.168.1.1</code>):</p>
 <div class="language-bash highlight"><pre><span></span><code>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>router<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">192</span>.168.1.1
@@ -1057,8 +1075,9 @@ iptables<span class="w"> </span>-t<span class="w"> </span>nat<span class="w"> </
 <p class="admonition-title">Evita solapar tu red real</p>
 <p>Si tu red doméstica ya usa <code>192.168.1.0/24</code>, el enlace host–router chocará con ella. En ese caso elige otro rango libre para este enlace (por ejemplo <code>192.168.77.0/24</code>) y úsalo en todos los pasos y laboratorios siguientes.</p>
 </div>
-<h3 id="paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router<a class="headerlink" href="#paso-5-habilitar-nat-en-el-router" title="Permanent link">&para;</a></h3>
-<p>NAT permite que los clientes de la red local (10.0.1.0/24) salgan a Internet usando la IP del router (192.168.1.2).</p>
+<h3 id="paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router<a class="headerlink" href="#paso-5-habilitar-reenvio-y-nat-en-el-router" title="Permanent link">&para;</a></h3>
+<p>El <strong>enrutamiento</strong> y el <strong>NAT</strong> son dos operaciones distintas y consecutivas: primero el router decide, según su tabla de rutas, por qué interfaz sale el paquete (aquí, <code>veth-wan</code> por la ruta por defecto); después, al salir, la regla de NAT reescribe la dirección de origen. <strong>NAT por sí solo no proporciona conectividad</strong>: sin ruta y sin <code>ip_forward</code> el paquete nunca llegaría a esa regla.</p>
+<p>Con esta regla los clientes (10.0.1.0/24) salen con la dirección del router en el enlace (192.168.1.2).</p>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Habilitar forwarding en el router</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>router<span class="w"> </span>sysctl<span class="w"> </span>-w<span class="w"> </span>net.ipv4.ip_forward<span class="o">=</span><span class="m">1</span>
 
@@ -1076,7 +1095,7 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente2<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.0.1.1
 </code></pre></div>
 <h3 id="paso-7-configurar-ruta-en-el-host-para-que-el-trafico-de-retorno-llegue-al-router">Paso 7: Configurar ruta en el host para que el tráfico de retorno llegue al router<a class="headerlink" href="#paso-7-configurar-ruta-en-el-host-para-que-el-trafico-de-retorno-llegue-al-router" title="Permanent link">&para;</a></h3>
-<p>Para que el tráfico de Internet llegue de vuelta al router, el host necesita saber cómo llegar a 10.0.1.0/24:</p>
+<p>En este laboratorio hay <strong>doble NAT</strong> (router y host, véase el paso 10), de modo que el host solo ve la dirección <code>192.168.1.2</code> y las respuestas vuelven por la tabla de conexiones, no por una ruta hacia <code>10.0.1.0/24</code>. Por eso esta ruta <strong>no es imprescindible</strong> para la salida a Internet; resulta útil si quieres alcanzar <code>10.0.1.0/24</code> desde el propio host (por ejemplo, para hacer <code>ping 10.0.1.2</code>):</p>
 <div class="language-bash highlight"><pre><span></span><code>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.1.0/24<span class="w"> </span>via<span class="w"> </span><span class="m">192</span>.168.1.2
 </code></pre></div>
 <h3 id="paso-8-verificar-conectividad-a-internet">Paso 8: Verificar conectividad a Internet<a class="headerlink" href="#paso-8-verificar-conectividad-a-internet" title="Permanent link">&para;</a></h3>
@@ -1090,7 +1109,7 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 <span class="c1"># Desde Cliente 1, hacer una petición web</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente1<span class="w"> </span>curl<span class="w"> </span>-I<span class="w"> </span>http://google.com
 </code></pre></div>
-<p><strong>Salida esperada:</strong>
+<p><strong>Resultado esperado</strong> (si el host dispone de salida real a Internet):
 - <code>ping</code> 0% de pérdida.
 - <code>nslookup</code> devuelve una IP.
 - <code>curl</code> devuelve un código HTTP 301 o 200.</p>
@@ -1098,34 +1117,71 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 <h3 id="paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web<a class="headerlink" href="#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web" title="Permanent link">&para;</a></h3>
 <p>Vamos a observar cómo viajan los datos desde el cliente hasta Internet.</p>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Iniciar captura en el router (interfaz br0 y veth-wan)</span>
-ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>router<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>any<span class="w"> </span>-n<span class="w"> </span>-v<span class="w"> </span>-c<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="s1">'host 8.8.8.8 or host google.com'</span>
+ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>router<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>any<span class="w"> </span>-n<span class="w"> </span>-c<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="s1">'tcp port 80'</span>
 </code></pre></div>
 <p>En otra terminal, ejecutar:</p>
 <div class="language-bash highlight"><pre><span></span><code>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente1<span class="w"> </span>curl<span class="w"> </span>-s<span class="w"> </span>http://google.com<span class="w"> </span>&gt;<span class="w"> </span>/dev/null
 </code></pre></div>
 <h3 id="paso-10-analizar-la-captura">Paso 10: Analizar la captura<a class="headerlink" href="#paso-10-analizar-la-captura" title="Permanent link">&para;</a></h3>
-<p>Deberías ver paquetes que salen por <code>br0</code> (desde el cliente) y por <code>veth-wan</code> (hacia Internet).</p>
-<div class="language-text highlight"><pre><span></span><code>14:23:45.678901 br0  In  IP 10.0.1.2.54321 &gt; 8.8.8.8.80: Flags [S], seq 123456
-14:23:45.678902 veth-wan Out IP 192.168.1.2.54321 &gt; 8.8.8.8.80: Flags [S], seq 123456
-14:23:45.679001 veth-wan In  IP 8.8.8.8.80 &gt; 192.168.1.2.54321: Flags [S.], seq 789012
-14:23:45.679002 br0  Out IP 10.0.1.1.80 &gt; 10.0.1.2.54321: Flags [S.], seq 789012
+<p>Deberías ver paquetes que entran por <code>br0</code> (desde el cliente) y salen por <code>veth-wan</code> (hacia el host).</p>
+<div class="admonition note">
+<p class="admonition-title">Captura esquemática, no transcripción literal</p>
+<p><code>curl http://google.com</code> conecta con la dirección IP que devuelva el DNS para <code>google.com</code>, que <strong>no</strong> es <code>8.8.8.8</code> (esa es la IP del DNS público de Google). Para que la lectura sea clara, el esquema siguiente usa <code>8.8.8.8</code> como si fuera el servidor web. En tu ejecución real verás la IP de destino que resuelva tu DNS, otros números de secuencia y, si el servidor responde con una redirección, tráfico adicional. Es un <strong>esquema conceptual</strong> del proceso, no una salida garantizada.</p>
+</div>
+<div class="language-text highlight"><pre><span></span><code>br0      In  IP 10.0.1.2.54321   &gt; 8.8.8.8.80:       Flags [S]
+veth-wan Out IP 192.168.1.2.54321 &gt; 8.8.8.8.80:       Flags [S]
+veth-wan In  IP 8.8.8.8.80       &gt; 192.168.1.2.54321: Flags [S.]
+br0      Out IP 8.8.8.8.80       &gt; 10.0.1.2.54321:    Flags [S.]
 </code></pre></div>
 <p><strong>Interpretación:</strong></p>
 <ol>
-<li>El cliente (10.0.1.2) envía un SYN a 8.8.8.8.</li>
-<li>El router recibe el paquete y cambia la IP origen por la suya (192.168.1.2) gracias a NAT.</li>
-<li>El paquete sale por veth-wan hacia el host y luego a Internet.</li>
-<li>La respuesta llega al router y éste la redirige al cliente.</li>
-<li>Se observa claramente el cambio de IP en el proceso de traducción.</li>
+<li>El cliente (10.0.1.2) envía un SYN al servidor (8.8.8.8:80) usando como <em>gateway</em> a <code>10.0.1.1</code>.</li>
+<li>El router <strong>reenvía</strong> el paquete según su ruta por defecto y, al salir por <code>veth-wan</code>, el NAT cambia la IP de origen por la suya (192.168.1.2).</li>
+<li>El paquete llega al host, que aplica una <strong>segunda traducción</strong> (<code>MASQUERADE</code> por la interfaz real) antes de salir a la red exterior.</li>
+<li>En la respuesta, el origen <strong>sigue siendo el servidor</strong> (<code>8.8.8.8:80</code>). Cada traductor deshace su cambio usando su tabla de conexiones: el host restituye <code>192.168.1.2</code> y el router restituye <code>10.0.1.2:54321</code> como destino.</li>
+<li>La dirección <code>10.0.1.1</code> es el <em>gateway</em> del cliente, nunca el origen de la respuesta del servidor.</li>
 </ol>
+<h3 id="doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo<a class="headerlink" href="#doble-nat-que-direccion-ve-cada-tramo" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Tramo</th>
+<th>Origen visto</th>
+<th>Destino visto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cliente → router (<code>br0</code>)</td>
+<td>10.0.1.2:54321</td>
+<td>servidor:80</td>
+</tr>
+<tr>
+<td>Router → host (<code>veth-wan</code>)</td>
+<td>192.168.1.2:54321</td>
+<td>servidor:80</td>
+</tr>
+<tr>
+<td>Host → red exterior (<code>eth0</code>)</td>
+<td>IP de <code>eth0</code> del host, puerto posiblemente reasignado</td>
+<td>servidor:80</td>
+</tr>
+</tbody>
+</table>
+<p>Hay <strong>dos traducciones sucesivas</strong> (una en el router y otra en el host), no una única traducción realizada por el router. Es una arquitectura válida como demostración de doble NAT, aunque en redes reales conviene evitarla cuando es posible. Puedes comprobar el segundo salto capturando en el host: <code>tcpdump -i veth-host -n 'tcp port 80'</code>, y las conexiones traducidas con <code>conntrack -L</code> (si está instalado).</p>
 <h2 id="analisis-de-la-transmision-de-datos">Análisis de la transmisión de datos<a class="headerlink" href="#analisis-de-la-transmision-de-datos" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Un paquete capturado no es una señal medida</p>
+<p><code>tcpdump</code> muestra <strong>tramas y paquetes</strong> ya formados por el sistema operativo. No permite observar la forma de onda eléctrica, óptica o radioeléctrica, ni el esquema de codificación o modulación empleado: esas magnitudes se miden con otros instrumentos (osciloscopio, analizador de espectro, medidores de potencia óptica) o con estadísticas del controlador (por ejemplo <code>ethtool</code> o <code>iw</code>). En este laboratorio, además, el medio es un par veth <strong>puramente software</strong>: no existe señal física.</p>
+</div>
 <h3 id="bits-y-senales">Bits y señales<a class="headerlink" href="#bits-y-senales" title="Permanent link">&para;</a></h3>
-<p>Cuando ejecutas <code>ping</code> o <code>curl</code>, los datos generados por la aplicación se convierten en:</p>
+<p>Cuando ejecutas <code>ping</code> o <code>curl</code> sobre un enlace <strong>físico real</strong>, los datos generados por la aplicación se convierten en:</p>
 <ol>
-<li><strong>Bits</strong>: La información se codifica como unos y ceros.</li>
-<li><strong>Señal digital</strong>: Los bits se convierten en señales eléctricas/ópticas.</li>
-<li><strong>Transmisión</strong>: La señal viaja por el medio (cable o aire).</li>
+<li><strong>Bits</strong>: La información se representa como unos y ceros (representación binaria, lógica).</li>
+<li><strong>Señal</strong>: la tarjeta de red (capa física) convierte esos bits en una señal eléctrica, óptica o radioeléctrica mediante un esquema de codificación o modulación.</li>
+<li><strong>Transmisión</strong>: La señal viaja por el medio (cable, fibra o aire).</li>
 </ol>
+<p>La diferencia es importante: los bits son una <strong>representación de los datos</strong>; la señal es su <strong>transmisión física</strong>. Un par veth entre namespaces omite el paso 2 y el 3.</p>
 <p>En una red Ethernet real, el esquema de codificación más común hoy es <strong>PAM5</strong> (1000BASE-T) o <strong>PAM16</strong> (10GBASE-T), que transmiten múltiples bits por símbolo.</p>
 <h3 id="modulacion-en-medios-inalambricos">Modulación en medios inalámbricos<a class="headerlink" href="#modulacion-en-medios-inalambricos" title="Permanent link">&para;</a></h3>
 <p>Si el enlace incluye WiFi, la señal se modula usando <strong>QAM (Quadrature Amplitude Modulation)</strong>:</p>
@@ -1177,7 +1233,7 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 <span class="c1"># En Cliente 1</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente1<span class="w"> </span>iperf3<span class="w"> </span>-c<span class="w"> </span><span class="m">10</span>.0.1.1
 </code></pre></div>
-<p><strong>Pregunta:</strong> ¿Cuál es el throughput alcanzado? ¿Por qué no llega a 1 Gbps?</p>
+<p><strong>Pregunta:</strong> ¿Cuál es el throughput alcanzado? ¿De qué depende (CPU, número de núcleos, tamaño de segmento) si el enlace es virtual y no tiene una velocidad nominal fija?</p>
 <h2 id="errores-comunes-y-soluciones">Errores comunes y soluciones<a class="headerlink" href="#errores-comunes-y-soluciones" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1214,14 +1270,14 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 <p>En este laboratorio hemos:</p>
 <ol>
 <li><strong>Ampliado la red local</strong> agregando conectividad a Internet mediante NAT.</li>
-<li><strong>Observado el flujo de datos</strong> desde el cliente hasta el router y luego hacia Internet.</li>
-<li><strong>Comprendido la transmisión de datos</strong> a nivel de bits, señales y modulación.</li>
+<li><strong>Observado el flujo de datos</strong> desde el cliente hasta el router y el host, incluida la doble traducción de direcciones.</li>
+<li><strong>Comprendido conceptualmente la transmisión de datos</strong> a nivel de bits, señales y modulación (sin medirlas físicamente, algo que una captura de paquetes no permite).</li>
 <li><strong>Medido el rendimiento</strong> y la latencia de la red.</li>
-<li><strong>Analizado el proceso de encapsulación</strong> y la traducción de direcciones (NAT).</li>
+<li><strong>Analizado el proceso de encapsulación</strong> y la traducción de direcciones (NAT), distinguiéndolo del enrutamiento.</li>
 </ol>
 <p>Los conceptos de transmisión de datos son fundamentales para entender las limitaciones y capacidades de las redes. El ancho de banda, la latencia, el ruido y la modulación determinan el rendimiento real que los usuarios experimentan.</p>
 <h2 id="preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio<a class="headerlink" href="#preparacion-para-el-siguiente-laboratorio" title="Permanent link">&para;</a></h2>
-<p>Hemos dejado la red con salida a Internet, NAT y rutas configuradas. En el <strong>Laboratorio 03</strong> agregaremos más dispositivos: un switch con múltiples clientes y configuración de VLANs para segmentar el tráfico.</p>
+<p>Hemos dejado la red con salida a Internet (doble NAT), rutas y reenvío configurados. En el <strong>Laboratorio 03</strong> agregaremos más dispositivos: un switch con múltiples clientes, el estudio de la tabla MAC y de la MTU. (La segmentación con VLAN llega en el laboratorio 05.)</p>
 <hr />
 <p><strong>¡Laboratorio 02 completado!</strong> Ahora los clientes tienen acceso a Internet y hemos analizado el proceso de transmisión de datos. Continúa con el <strong>Laboratorio 03</strong>.</p>
               

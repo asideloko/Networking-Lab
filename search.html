@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Guillermo Castillo" />
       <link rel="shortcut icon" href="./img/favicon.ico" />
-    <title>NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="./css/theme.css" />
     <link rel="stylesheet" href="./css/theme_extra.css" />
         <link href="./assets/css/extra.css" rel="stylesheet" />
@@ -22,7 +22,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="./." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="./." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -35,6 +35,8 @@
                 <li class="toctree-l1"><a class="reference internal" href="./.">Inicio</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="./.#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="./.#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="./.#requisitos">Requisitos</a>
     </li>
@@ -119,7 +121,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="./labs/lab-02/#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="./labs/lab-02/#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="./labs/lab-02/#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="./labs/lab-02/#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -134,6 +136,8 @@
     <li class="toctree-l3"><a class="reference internal" href="./labs/lab-02/#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="./labs/lab-02/#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="./labs/lab-02/#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -343,6 +347,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="./labs/lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="./labs/lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="./labs/lab-05/#observacion">Observación</a>
@@ -374,6 +380,8 @@
     <li class="toctree-l3"><a class="reference internal" href="./labs/lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="./labs/lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="./labs/lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="./labs/lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -662,6 +670,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="./labs/lab-11/">11 · Arquitectura de Red Empresarial</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="./labs/lab-11/#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="./labs/lab-11/#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="./labs/lab-11/#topologia">Topología</a>
     </li>
@@ -827,6 +839,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="./labs/lab-14/#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="./labs/lab-14/#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="./labs/lab-14/#ejercicios">Ejercicios</a>
@@ -863,7 +877,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="./labs/lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="./labs/lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="./labs/lab-15/#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="./labs/lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -905,6 +919,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="./labs/lab-15/#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="./labs/lab-15/#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="./labs/lab-15/#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -917,7 +933,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="./.">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href="./.">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">

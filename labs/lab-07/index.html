@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/labs/lab-07/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>07 · Protocolos y Servicios de Red - NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>07 · Protocolos y Servicios de Red - NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link href="../../assets/css/extra.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="../.." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -42,6 +42,8 @@
                 <li class="toctree-l1"><a class="reference internal" href="../..">Inicio</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../..#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../..#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../..#requisitos">Requisitos</a>
     </li>
@@ -126,7 +128,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -141,6 +143,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -350,6 +354,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-05/#observacion">Observación</a>
@@ -381,6 +387,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -669,6 +677,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../lab-11/">11 · Arquitectura de Red Empresarial</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#topologia">Topología</a>
     </li>
@@ -834,6 +846,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#ejercicios">Ejercicios</a>
@@ -870,7 +884,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -912,6 +926,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -924,7 +940,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href="../..">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -953,9 +969,13 @@
 <li><strong>TCP/UDP</strong> – Comprender la diferencia entre ambos protocolos.</li>
 </ol>
 <p>El equipo de TI ha decidido implementar estos servicios en la sede central y documentar su funcionamiento para futuras expansiones.</p>
+<div class="admonition info">
+<p class="admonition-title">Servicios independientes</p>
+<p><strong>DHCP</strong> entrega parámetros de configuración de red (dirección, máscara, gateway, servidor DNS). <strong>DNS</strong> resuelve nombres a registros de recursos (direcciones, entre otros). Son servicios <strong>independientes</strong>: recibir una IP por DHCP no garantiza que la resolución DNS funcione (por ejemplo, si el servidor DNS anunciado no responde), y un DNS operativo no sirve de nada a un cliente sin dirección. Aquí los alojamos en equipos distintos y los verificamos por separado.</p>
+</div>
 <h2 id="problema-inicial">Problema inicial<a class="headerlink" href="#problema-inicial" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Los clientes tienen direcciones IP configuradas manualmente (administración tediosa).</li>
+<li>Los clientes tienen direcciones IP configuradas manualmente (administración tediosa). En este laboratorio automatizamos solo la <strong>LAN de la sede</strong>; las sucursales mantienen direccionamiento fijo (véase «Alcance de DHCP»).</li>
 <li>No hay un servidor DNS interno que resuelva nombres locales.</li>
 <li>Los clientes de la sede y sucursales no pueden acceder a Internet.</li>
 <li>Se necesita implementar NAT para salida a Internet.</li>
@@ -965,8 +985,8 @@
 <li>Comprender la diferencia entre <strong>TCP y UDP</strong> y sus casos de uso.</li>
 <li>Implementar un servidor <strong>DNS</strong> con <code>dnsmasq</code>.</li>
 <li>Configurar un servidor <strong>DHCP</strong> para asignación automática de IPs.</li>
-<li>Implementar <strong>NAT/PAT</strong> para salida a Internet.</li>
-<li>Analizar el <strong>MSS</strong> (Maximum Segment Size) en TCP.</li>
+<li>Implementar <strong>NAT/PAT</strong> para salida a Internet y distinguir la traducción de direcciones de la traducción de puertos.</li>
+<li>Analizar el <strong>MSS</strong> (Maximum Segment Size) en TCP y no confundirlo con la MTU.</li>
 <li>Verificar los servicios con herramientas de diagnóstico.</li>
 </ol>
 <h2 id="herramientas-necesarias">Herramientas necesarias<a class="headerlink" href="#herramientas-necesarias" title="Permanent link">&para;</a></h2>
@@ -996,9 +1016,9 @@
     end
     R1 --- R2
     R2 --- R3
-    LAN1 --- R1
-    DNS --- R1
-    DHCP --- R1
+    LAN1 ---|"br-lan"| R1
+    DNS --- LAN1
+    DHCP --- LAN1
     NAT --- R1
     LAN2 --- R2
     LAN3 --- R3
@@ -1015,23 +1035,28 @@
 <tbody>
 <tr>
 <td>R1 (Sede)</td>
-<td>eth0 (LAN)</td>
+<td><code>br-lan</code> (interfaz IP de la LAN; el bridge hace de switch)</td>
 <td>10.0.0.1/24</td>
 </tr>
 <tr>
 <td>R1 (Sede)</td>
-<td>eth1 (R1-R2)</td>
+<td><code>veth-r1c</code>, <code>veth-r1dns</code>, <code>veth-r1dhcp</code>, <code>veth-r1dhcpcl</code> (miembros de <code>br-lan</code>)</td>
+<td>sin IP propia</td>
+</tr>
+<tr>
+<td>R1 (Sede)</td>
+<td><code>veth-r1r2</code> (R1-R2)</td>
 <td>192.168.1.1/30</td>
+</tr>
+<tr>
+<td>R1 (Sede)</td>
+<td><code>veth-r1r3</code> (R1-R3, laboratorio 06)</td>
+<td>192.168.3.1/30</td>
 </tr>
 <tr>
 <td>R1 (Sede)</td>
 <td>WAN (<code>veth-wan</code>)</td>
 <td>192.168.100.1/24 (host: 192.168.100.2/24)</td>
-</tr>
-<tr>
-<td>R1 (Sede)</td>
-<td>br-lan (switch de la LAN)</td>
-<td>10.0.0.1/24</td>
 </tr>
 <tr>
 <td>R2 (Sucursal A)</td>
@@ -1080,6 +1105,7 @@
 </tr>
 </tbody>
 </table>
+<p>Cuando una interfaz es <strong>miembro de un bridge</strong> (<code>veth-r1c</code>…), no mantiene una configuración IP propia: la dirección pertenece a la interfaz del bridge (<code>br-lan</code>). Por eso el Paso 3 retira <code>10.0.0.1/24</code> de <code>veth-r1c</code> y la asigna a <code>br-lan</code>: no hay dos interfaces con la misma dirección.</p>
 <h2 id="construccion-de-la-red">Construcción de la red<a class="headerlink" href="#construccion-de-la-red" title="Permanent link">&para;</a></h2>
 <h3 id="paso-1-verificar-infraestructura-existente">Paso 1: Verificar infraestructura existente<a class="headerlink" href="#paso-1-verificar-infraestructura-existente" title="Permanent link">&para;</a></h3>
 <p>Asegurémonos de que el laboratorio 06 está funcionando (con el enlace directo R1-R3 restablecido):</p>
@@ -1177,6 +1203,7 @@ sudo<span class="w"> </span>sysctl<span class="w"> </span>-w<span class="w"> </s
 sudo<span class="w"> </span>iptables<span class="w"> </span>-t<span class="w"> </span>nat<span class="w"> </span>-C<span class="w"> </span>POSTROUTING<span class="w"> </span>-s<span class="w"> </span><span class="m">192</span>.168.100.0/24<span class="w"> </span>-o<span class="w"> </span>eth0<span class="w"> </span>-j<span class="w"> </span>MASQUERADE<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>sudo<span class="w"> </span>iptables<span class="w"> </span>-t<span class="w"> </span>nat<span class="w"> </span>-A<span class="w"> </span>POSTROUTING<span class="w"> </span>-s<span class="w"> </span><span class="m">192</span>.168.100.0/24<span class="w"> </span>-o<span class="w"> </span>eth0<span class="w"> </span>-j<span class="w"> </span>MASQUERADE
 </code></pre></div>
+<p>Conviene distinguir dos términos: <strong>NAT</strong> (traducción de direcciones) cambia la IP de origen o destino; <strong>PAT</strong> (traducción de direcciones y puertos, lo que Linux llama <em>masquerade</em> cuando enmascara muchas IP privadas tras una sola) permite que <strong>múltiples conexiones privadas compartan una dirección de salida</strong> (<code>192.168.100.1</code>), diferenciándolas por la información de transporte (puerto de origen TCP/UDP o identificador ICMP). La tabla <code>conntrack</code> recuerda qué conexión corresponde a cada traducción.</p>
 <p>La regla de R1 no filtra por origen (<code>-o veth-wan</code>): traduce <strong>todo</strong> lo que sale por la WAN, ya venga de la sede o de las sucursales. Lo que sí hacía falta eran las <strong>rutas por defecto</strong> de R2 y R3. Como R1 enmascara el tráfico con <code>192.168.100.1</code>, el host solo conoce la red <code>192.168.100.0/24</code> y no necesita rutas de retorno hacia <code>10.0.0.0/8</code>.</p>
 <p>Comprueba la salida desde cada oficina (el host responde en <code>192.168.100.2</code> aunque no tengas Internet):</p>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>clienteSede<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">192</span>.168.100.2
@@ -1184,7 +1211,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>clienteSucB<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">192</span>.168.100.2
 </code></pre></div>
 <h3 id="paso-6-servidor-dns-solo-dns">Paso 6: Servidor DNS (solo DNS)<a class="headerlink" href="#paso-6-servidor-dns-solo-dns" title="Permanent link">&para;</a></h3>
-<p>Un servidor DNS no debe repartir direcciones: ese es el trabajo del servidor DHCP. Configuramos <code>dnsmasq</code> únicamente con la función DNS, con un dominio interno y reenvío a DNS públicos:</p>
+<p>Un servidor DNS no debe repartir direcciones: ese es el trabajo del servidor DHCP. Configuramos <code>dnsmasq</code> únicamente con la función DNS, con un dominio interno y reenvío a DNS públicos. <code>8.8.8.8</code> y <code>8.8.4.4</code> son <strong>DNS públicos de ejemplo</strong> (reenviadores externos), no servidores internos de la empresa: el servidor interno es <code>10.0.0.5</code>, que consulta a los externos solo para nombres que no conoce:</p>
 <div class="language-bash highlight"><pre><span></span><code>mkdir<span class="w"> </span>-p<span class="w"> </span>/tmp/lab07
 touch<span class="w"> </span>/tmp/lab07/hosts
 
@@ -1229,7 +1256,16 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>clienteDHCP<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>show
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>clienteDHCP<span class="w"> </span>cat<span class="w"> </span>/etc/resolv.conf
 </code></pre></div>
-<p><strong>Salida esperada:</strong> una dirección en <code>10.0.0.100-200</code>, una ruta por defecto vía <code>10.0.0.1</code> y <code>nameserver 10.0.0.5</code>.</p>
+<p><strong>Resultado esperado:</strong> una dirección en <code>10.0.0.100-200</code>, una ruta por defecto vía <code>10.0.0.1</code> y <code>nameserver 10.0.0.5</code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Alcance de DHCP: quién recibe concesión directa y quién necesitaría relay</p>
+<p>DHCPv4 comienza con un <code>DHCPDISCOVER</code> enviado por <strong>broadcast</strong> de capa 2, y los broadcasts <strong>no atraviesan routers</strong> de forma ordinaria. Por eso:</p>
+<ul>
+<li>Los clientes de la <strong>LAN de la sede</strong> (mismo dominio de broadcast que <code>servidorDHCP</code>, a través de <code>br-lan</code>) reciben concesión <strong>directamente</strong>. Es el caso de <code>clienteDHCP</code>.</li>
+<li>Los clientes de la <strong>Sucursal A y B</strong> estarían en otro dominio de broadcast: para que el servidor de la sede les diera concesiones haría falta un <strong>agente DHCP relay</strong> en R2 y R3 (por ejemplo <code>dhcrelay</code> o <code>dhcp-helper</code>), que retransmite las solicitudes como unicast hacia <code>10.0.0.6</code>, y un <code>dhcp-range</code> en el servidor para sus subredes.</li>
+<li>Que exista <strong>conectividad IP</strong> entre sede y sucursal <strong>no basta</strong>: el DISCOVER inicial no usa IP enrutable. En este laboratorio los clientes de sucursal mantienen IP fija y el relay se deja como concepto.</li>
+</ul>
+</div>
 <h3 id="paso-9-verificar-conectividad-y-servicios">Paso 9: Verificar conectividad y servicios<a class="headerlink" href="#paso-9-verificar-conectividad-y-servicios" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># El cliente DHCP alcanza a las sucursales (a través de R1) y a la salida de la red</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>clienteDHCP<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.1.10
@@ -1243,7 +1279,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>clienteDHCP<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">8</span>.8.8.8
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>clienteDHCP<span class="w"> </span>nslookup<span class="w"> </span>google.com
 </code></pre></div>
-<p><strong>Salida esperada:</strong> 0% de pérdida; <code>nslookup</code> devuelve <code>10.0.0.20</code> para el nombre interno y una IP pública para <code>google.com</code> (esto último solo si tu equipo tiene Internet).</p>
+<p><strong>Resultado esperado:</strong> 0% de pérdida; <code>nslookup</code> devuelve <code>10.0.0.20</code> para el nombre interno y una IP pública para <code>google.com</code> (esto último solo si tu equipo tiene Internet).</p>
 <h2 id="analisis-de-tcp-y-udp">Análisis de TCP y UDP<a class="headerlink" href="#analisis-de-tcp-y-udp" title="Permanent link">&para;</a></h2>
 <h3 id="paso-10-capturar-trafico-tcp">Paso 10: Capturar tráfico TCP<a class="headerlink" href="#paso-10-capturar-trafico-tcp" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Iniciar captura en el bridge de R1 (ve todo el tráfico de la LAN)</span>
@@ -1267,7 +1303,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>br-lan<span class="w"> </span>-n<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="s1">'tcp[tcpflags] &amp; tcp-syn != 0'</span>
 </code></pre></div>
 <p>En otra terminal repite la conexión del Paso 10 (<code>nc -l</code> en el servidor y <code>nc</code> en el cliente).</p>
-<p><strong>Interpretación:</strong> en las opciones del SYN aparece <code>mss 1460</code>: MTU 1500 − 20 bytes (IP) − 20 bytes (TCP). Cada extremo anuncia el MSS máximo que acepta recibir.</p>
+<p><strong>Interpretación:</strong> en las opciones del SYN aparece <code>mss 1460</code>. El <strong>MSS</strong> es el tamaño máximo de <strong>datos TCP</strong> que un extremo anuncia que puede recibir en un segmento, <strong>sin contar las cabeceras TCP e IP</strong>. Se deduce de la MTU de la interfaz: 1500 (MTU) − 20 (IP) − 20 (TCP) = 1460. No debe confundirse con la <strong>MTU</strong>, que es el tamaño máximo del <strong>paquete IP</strong> completo en un enlace. Cada extremo anuncia su propio MSS y el emisor no enviará segmentos mayores que el MSS del otro. (Los 40 bytes de cabeceras se restan suponiendo IPv4 sin opciones; si hay opciones TCP, como marcas de tiempo, los datos por segmento son algo menos.)</p>
 <h2 id="ejercicios-practicos">Ejercicios prácticos<a class="headerlink" href="#ejercicios-practicos" title="Permanent link">&para;</a></h2>
 <h3 id="ejercicio-1-agregar-registros-dns-locales">Ejercicio 1: Agregar registros DNS locales<a class="headerlink" href="#ejercicio-1-agregar-registros-dns-locales" title="Permanent link">&para;</a></h3>
 <p>Agrega una entrada al archivo de hosts <strong>del servidor DNS</strong> (no al <code>/etc/hosts</code> de tu equipo) y pide a <code>dnsmasq</code> que lo relea con <code>SIGHUP</code>:</p>
@@ -1306,7 +1342,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 </tr>
 <tr>
 <td>MSS</td>
-<td>Tamaño máximo de segmento TCP (1460 bytes)</td>
+<td>Máximo de datos TCP por segmento, sin cabeceras (1460 bytes con MTU 1500); no es la MTU</td>
 </tr>
 <tr>
 <td>DNS</td>
@@ -1318,14 +1354,14 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 </tr>
 <tr>
 <td>NAT/PAT</td>
-<td>Traducción de direcciones para salida a Internet</td>
+<td>Traducción de direcciones (y puertos) para salida a Internet</td>
 </tr>
 </tbody>
 </table>
 <h2 id="conclusiones-tecnicas">Conclusiones técnicas<a class="headerlink" href="#conclusiones-tecnicas" title="Permanent link">&para;</a></h2>
 <p>En este laboratorio hemos:</p>
 <ol>
-<li>Implementado <strong>servicios DNS y DHCP</strong> en la red.</li>
+<li>Implementado <strong>servicios DNS y DHCP</strong> independientes en la LAN de la sede (las sucursales necesitarían un relay DHCP).</li>
 <li>Configurado <strong>NAT/PAT</strong> para salida a Internet.</li>
 <li>Analizado la diferencia entre <strong>TCP y UDP</strong> mediante capturas.</li>
 <li>Verificado el <strong>MSS</strong> en conexiones TCP.</li>

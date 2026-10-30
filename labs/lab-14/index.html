@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/labs/lab-14/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>14 · Herramientas Linux Avanzadas - NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>14 · Herramientas Linux Avanzadas - NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link href="../../assets/css/extra.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="../.." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -42,6 +42,8 @@
                 <li class="toctree-l1"><a class="reference internal" href="../..">Inicio</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../..#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../..#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../..#requisitos">Requisitos</a>
     </li>
@@ -126,7 +128,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -141,6 +143,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -350,6 +354,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-05/#observacion">Observación</a>
@@ -381,6 +387,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -669,6 +677,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../lab-11/">11 · Arquitectura de Red Empresarial</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#topologia">Topología</a>
     </li>
@@ -834,6 +846,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#ejercicios">Ejercicios</a>
@@ -870,7 +884,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -912,6 +926,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -924,7 +940,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href="../..">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -948,12 +964,12 @@
 <p>La empresa <strong>Networking SecOps</strong> ha implementado su infraestructura de red y sistemas de monitoreo (Laboratorio 13). Ahora el equipo de operaciones necesita dominar las herramientas avanzadas de Linux para administrar, diagnosticar y optimizar la red de manera eficiente.</p>
 <div class="admonition info">
 <p class="admonition-title">Laboratorio independiente</p>
-<p>Este laboratorio monta su <strong>propia</strong> topología (un router Linux con LAN y DMZ) para practicar las herramientas con calma; no depende de los anteriores. Empieza limpiando el entorno.</p>
+<p>Este laboratorio monta su <strong>propia</strong> topología (un router Linux con LAN y DMZ) para practicar las herramientas con calma; no depende de los anteriores. Empieza limpiando <strong>solo los recursos propios de este escenario</strong> (no todo lo que haya en tu equipo).</p>
 </div>
 <h2 id="topologia">Topología<a class="headerlink" href="#topologia" title="Permanent link">&para;</a></h2>
 <div class="mermaid">graph TB
     R[Router Linux]
-    WAN[Internet 203.0.113.2]
+    WAN["«Internet» = el host, 203.0.113.2"]
     LAN1[Red Interna 10.0.0.0/24]
     LAN2[Red DMZ 10.0.1.0/24]
     H1[Host1 10.0.0.10]
@@ -1007,12 +1023,17 @@
 </tr>
 </tbody>
 </table>
+<p><strong>Sobre <code>203.0.113.0/30</code>.</strong> Ese bloque pertenece al espacio <strong>reservado para documentación y ejemplos</strong> (TEST-NET-3, RFC 5737): no es una dirección pública real asignada a un proveedor. Aquí <strong>el host actúa como representación de la red externa</strong> (extremo <code>203.0.113.2</code> del enlace virtual); la salida a Internet real, si existe, depende de la interfaz física del host (véase el opcional del Paso 3).</p>
 <h2 id="construccion">Construcción<a class="headerlink" href="#construccion" title="Permanent link">&para;</a></h2>
 <h3 id="paso-0-limpiar-el-entorno">Paso 0: Limpiar el entorno<a class="headerlink" href="#paso-0-limpiar-el-entorno" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>ns<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>ip<span class="w"> </span>netns<span class="w"> </span>list<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>del<span class="w"> </span><span class="nv">$ns</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
-sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>del<span class="w"> </span>br-wan<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
+<p>Elimina únicamente los <em>namespaces</em> que crea este laboratorio, por nombre. <strong>No</strong> uses un bucle que borre todos los de <code>ip netns list</code>: un usuario puede tener otros entornos virtuales, laboratorios o servicios que utilicen <em>namespaces</em>, y esa orden los eliminaría. Esta limpieza solo afecta a los cuatro nombres de este escenario (<code>Router</code>, <code>Host1</code>, <code>Host2</code> y <code>ServidorDMZ</code>, con esa capitalización; son distintos de <code>router</code> o <code>host1</code> de laboratorios anteriores).</p>
+<div class="language-bash highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>ns<span class="w"> </span><span class="k">in</span><span class="w"> </span>Router<span class="w"> </span>Host1<span class="w"> </span>Host2<span class="w"> </span>ServidorDMZ<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>del<span class="w"> </span><span class="nv">$ns</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
+<span class="k">done</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>del<span class="w"> </span>veth-wan-r<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span><span class="w">   </span><span class="c1"># extremo en el host, si quedó de un intento anterior</span>
 sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>ethtool<span class="w"> </span>traceroute<span class="w"> </span>tcpdump<span class="w"> </span>netcat-openbsd<span class="w"> </span>nftables
 </code></pre></div>
+<p>Si los <em>namespaces</em> de los laboratorios anteriores te estorban, elimínalos tú <strong>por nombre</strong> (véase el Paso 0 del laboratorio 10) y no con un bucle general.</p>
 <h3 id="paso-1-crear-namespaces">Paso 1: Crear namespaces<a class="headerlink" href="#paso-1-crear-namespaces" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>Router
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>Host1
@@ -1097,15 +1118,26 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ServidorDMZ<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-lan2-r<span class="w"> </span>mtu<span class="w"> </span><span class="m">9000</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span>-M<span class="w"> </span><span class="k">do</span><span class="w"> </span>-s<span class="w"> </span><span class="m">8972</span><span class="w"> </span><span class="m">10</span>.0.1.10<span class="w">   </span><span class="c1"># 8972 + 28 = 9000: pasa</span>
 </code></pre></div>
+<p>El cálculo <code>8972 + 28 = 9000</code> es correcto para IPv4 con cabeceras IP (20) e ICMP (8) <strong>sin opciones</strong>: la opción <code>-s</code> de <code>ping</code> indica el tamaño de los <strong>datos ICMP</strong>, no el tamaño total del paquete IP (que es <code>-s</code> + 28).</p>
 <p>(Si la cambiaras en un solo extremo, los paquetes grandes del lado de MTU mayor serían descartados por el otro.) Restablécela:</p>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-r-lan2<span class="w"> </span>mtu<span class="w"> </span><span class="m">1500</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ServidorDMZ<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-lan2-r<span class="w"> </span>mtu<span class="w"> </span><span class="m">1500</span>
 </code></pre></div>
-<p><strong>Agregar una ruta estática.</strong> El siguiente salto debe ser <strong>otro</strong> equipo alcanzable directamente (no una dirección del propio router). Supongamos que existe una red <code>10.0.2.0/24</code> detrás de Host1:</p>
-<div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.2.0/24<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.0.0.10
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>get<span class="w"> </span><span class="m">10</span>.0.2.55
+<p><strong>Agregar una ruta estática.</strong> El siguiente salto debe ser <strong>otro</strong> equipo alcanzable directamente (no una dirección del propio router). Supongamos que existe una red <code>10.0.2.0/24</code> detrás de Host1. Para que <strong>la ruta funcione como se describe</strong>, Host1 tiene que <strong>actuar como siguiente salto de capa 3 y reenviar tráfico</strong>, y tener esa red (o un camino hacia ella); de lo contrario la ruta se instala pero el tráfico no llega. Lo simulamos con una interfaz ficticia:</p>
+<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Host1 como siguiente salto: reenvía y tiene la red 10.0.2.0/24 «detrás»</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Host1<span class="w"> </span>sysctl<span class="w"> </span>-w<span class="w"> </span>net.ipv4.ip_forward<span class="o">=</span><span class="m">1</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Host1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>dum0<span class="w"> </span><span class="nb">type</span><span class="w"> </span>dummy
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Host1<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.2.1/24<span class="w"> </span>dev<span class="w"> </span>dum0
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Host1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>dum0<span class="w"> </span>up
+
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.2.0/24<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.0.0.10
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>get<span class="w"> </span><span class="m">10</span>.0.2.1<span class="w">       </span><span class="c1"># muestra via 10.0.0.10</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">10</span>.0.2.1<span class="w">          </span><span class="c1"># llega: Host1 es el siguiente salto</span>
+
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>del<span class="w"> </span><span class="m">10</span>.0.2.0/24
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Host1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>del<span class="w"> </span>dum0
 </code></pre></div>
+<p>Sin el <code>ip_forward</code> y la red detrás de Host1, la ruta se instalaría igualmente (<code>ip route get</code> la mostraría), pero un paquete dirigido a otro equipo de <code>10.0.2.0/24</code> no tendría adónde ir.</p>
 <h3 id="paso-5-ss-sockets">Paso 5: ss (sockets)<a class="headerlink" href="#paso-5-ss-sockets" title="Permanent link">&para;</a></h3>
 <p>Arrancamos dos servicios de prueba en Host1 y establecemos una conexión desde Host2:</p>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Host1<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">'nc -lk -p 9000 &gt;/dev/null 2&gt;&amp;1 &lt;/dev/null &amp;'</span>
@@ -1117,7 +1149,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Host1<span class="w"> </span>ss<span class="w"> </span>-tn<span class="w"> </span>state<span class="w"> </span>established<span class="w">   </span><span class="c1"># conexiones establecidas (verás la de Host2)</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Host1<span class="w"> </span>ss<span class="w"> </span>-tn<span class="w"> </span><span class="nv">dport</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>:9000<span class="w">       </span><span class="c1"># filtrar por puerto</span>
 </code></pre></div>
-<p><code>ss</code> muestra los sockets <strong>del namespace en el que se ejecuta</strong>: una conexión solo aparece en los equipos que son sus extremos, no en el router que la reenvía.</p>
+<p><code>ss</code> muestra los sockets <strong>del namespace en el que se ejecuta</strong>. Una conexión TCP solo aparece en los equipos que son sus <strong>extremos</strong>: un router que simplemente <strong>reenvía</strong> tráfico entre sus interfaces <strong>no aparece como extremo</strong> (para él los paquetes pasan, no terminan en un socket; puede verse el seguimiento de la conexión con <code>conntrack</code>, no con <code>ss</code>).</p>
 <h3 id="paso-6-nftables">Paso 6: nftables<a class="headerlink" href="#paso-6-nftables" title="Permanent link">&para;</a></h3>
 <p>Cuando una orden <code>nft</code> lleva llaves y puntos y coma, hay que <strong>entrecomillarla</strong>: sin comillas, el <em>shell</em> corta la orden en cada <code>;</code>.</p>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>nft<span class="w"> </span>add<span class="w"> </span>table<span class="w"> </span>inet<span class="w"> </span>filter
@@ -1130,6 +1162,42 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>nft<span class="w"> </span>-a<span class="w"> </span>list<span class="w"> </span>ruleset
 </code></pre></div>
 <p>La opción <code>-a</code> muestra el <em>handle</em> de cada regla, que sirve para borrarla (<code>nft delete rule inet filter input handle N</code>).</p>
+<p><strong>Las cadenas <code>input</code>, <code>forward</code> y <code>output</code>.</strong> Son tres puntos de enganche distintos del flujo de un paquete en el router:</p>
+<table>
+<thead>
+<tr>
+<th>Cadena</th>
+<th>Qué controla</th>
+<th>Ejemplo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>input</code></td>
+<td>Tráfico <strong>dirigido al propio router</strong> (destino = una IP del router)</td>
+<td>SSH o ping <strong>al router</strong> (<code>10.0.0.1</code>)</td>
+</tr>
+<tr>
+<td><code>forward</code></td>
+<td>Tráfico que <strong>atraviesa</strong> el router hacia otra red</td>
+<td>Host1 → ServidorDMZ</td>
+</tr>
+<tr>
+<td><code>output</code></td>
+<td>Tráfico <strong>generado por el propio router</strong></td>
+<td>Un <code>ping</code> lanzado desde el router</td>
+</tr>
+</tbody>
+</table>
+<p>Una regla de <code>input</code> <strong>controla el tráfico dirigido al router, no el que lo atraviesa</strong>. Esta diferencia es fundamental para comprender un firewall. Compruébalo: aunque la cadena <code>input</code> tiene política <code>drop</code>, Host1 sigue alcanzando al servidor de la DMZ, porque ese tráfico pasa por <code>forward</code>, que aún no tiene reglas:</p>
+<div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Host1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">10</span>.0.1.10<span class="w">        </span><span class="c1"># funciona: no pasa por input</span>
+</code></pre></div>
+<p>Ahora añadimos una cadena <code>forward</code> con política <code>drop</code> y solo lo necesario:</p>
+<div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>nft<span class="w"> </span>add<span class="w"> </span>chain<span class="w"> </span>inet<span class="w"> </span>filter<span class="w"> </span>forward<span class="w"> </span><span class="s1">'{ type filter hook forward priority 0 ; policy drop ; }'</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>nft<span class="w"> </span>add<span class="w"> </span>rule<span class="w"> </span>inet<span class="w"> </span>filter<span class="w"> </span>forward<span class="w"> </span>ct<span class="w"> </span>state<span class="w"> </span>established,related<span class="w"> </span>accept
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>nft<span class="w"> </span>add<span class="w"> </span>rule<span class="w"> </span>inet<span class="w"> </span>filter<span class="w"> </span>forward<span class="w"> </span>iifname<span class="w"> </span><span class="s2">"br-lan"</span><span class="w"> </span>oifname<span class="w"> </span><span class="s2">"veth-r-lan2"</span><span class="w"> </span>tcp<span class="w"> </span>dport<span class="w"> </span><span class="m">22</span><span class="w"> </span>accept
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Host1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span>-W<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">10</span>.0.1.10<span class="w">   </span><span class="c1"># ahora falla: forward lo descarta</span>
+</code></pre></div>
 <h3 id="paso-7-diagnostico">Paso 7: Diagnóstico<a class="headerlink" href="#paso-7-diagnostico" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>ethtool<span class="w"> </span>veth-r-lan2<span class="w">          </span><span class="c1"># velocidad, dúplex, estado del enlace</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>ethtool<span class="w"> </span>-S<span class="w"> </span>veth-r-lan2<span class="w">       </span><span class="c1"># estadísticas del controlador</span>
@@ -1138,6 +1206,13 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Router<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>br-lan<span class="w"> </span>-c<span class="w"> </span><span class="m">5</span><span class="w"> </span>-n
 </code></pre></div>
 <p>Con Internet disponible en tu equipo: <code>sudo ip netns exec Router traceroute -n 8.8.8.8</code>.</p>
+<h3 id="paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva<a class="headerlink" href="#paso-8-limpieza-selectiva" title="Permanent link">&para;</a></h3>
+<p>Al terminar, elimina <strong>solo</strong> lo creado por este laboratorio:</p>
+<div class="language-bash highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>ns<span class="w"> </span><span class="k">in</span><span class="w"> </span>Router<span class="w"> </span>Host1<span class="w"> </span>Host2<span class="w"> </span>ServidorDMZ<span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>del<span class="w"> </span><span class="nv">$ns</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span>true<span class="p">;</span><span class="w"> </span><span class="k">done</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>del<span class="w"> </span>veth-wan-r<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
+sudo<span class="w"> </span>iptables<span class="w"> </span>-t<span class="w"> </span>nat<span class="w"> </span>-D<span class="w"> </span>POSTROUTING<span class="w"> </span>-s<span class="w"> </span><span class="m">203</span>.0.113.0/30<span class="w"> </span>-o<span class="w"> </span>eth0<span class="w"> </span>-j<span class="w"> </span>MASQUERADE<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span><span class="w">   </span><span class="c1"># solo si lo añadiste (ajusta eth0)</span>
+</code></pre></div>
+<p>Eliminar un <em>namespace</em> borra también sus interfaces y sus reglas de <code>nft</code>/<code>iptables</code>; las órdenes que tocaron el <strong>host</strong> (<code>veth-wan-r</code>, la regla de <code>MASQUERADE</code> y <code>net.ipv4.ip_forward</code>) hay que revertirlas aparte.</p>
 <h2 id="ejercicios">Ejercicios<a class="headerlink" href="#ejercicios" title="Permanent link">&para;</a></h2>
 <h3 id="ejercicio-1-bloquear-icmp-con-nftables">Ejercicio 1: Bloquear ICMP con nftables<a class="headerlink" href="#ejercicio-1-bloquear-icmp-con-nftables" title="Permanent link">&para;</a></h3>
 <p>Una regla añadida con <code>add</code> va <strong>al final</strong> de la cadena, después de la que acepta el ping. Insértala al principio:</p>
@@ -1166,11 +1241,11 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 </tr>
 <tr>
 <td>ss</td>
-<td>Análisis de sockets</td>
+<td>Análisis de sockets del namespace donde se ejecuta</td>
 </tr>
 <tr>
 <td>nftables</td>
-<td>Firewall moderno</td>
+<td>Firewall moderno; <code>input</code> ≠ <code>forward</code> ≠ <code>output</code></td>
 </tr>
 <tr>
 <td>ethtool</td>
@@ -1183,7 +1258,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 </tbody>
 </table>
 <h2 id="conclusiones">Conclusiones<a class="headerlink" href="#conclusiones" title="Permanent link">&para;</a></h2>
-<p>Las herramientas avanzadas de Linux permiten administrar y diagnosticar redes de manera eficiente, reemplazando las herramientas tradicionales obsoletas.</p>
+<p>Las herramientas avanzadas de Linux (<code>ip</code>, <code>ss</code>, <code>nft</code>) permiten administrar y diagnosticar redes de manera eficiente y han sustituido en la práctica a las tradicionales (<code>ifconfig</code>, <code>netstat</code>, <code>iptables</code>), que siguen existiendo en muchos sistemas. Entender <strong>dónde engancha cada regla</strong> (<code>input</code>, <code>forward</code>, <code>output</code>) es clave para comprender un firewall.</p>
 <hr />
 <p><strong>¡Laboratorio 14 completado!</strong> Continúa con el <strong>Laboratorio 15</strong>.</p>
               

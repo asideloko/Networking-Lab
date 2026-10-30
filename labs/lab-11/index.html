@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/labs/lab-11/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>11 · Arquitectura de Red Empresarial - NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>11 · Arquitectura de Red Empresarial - NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link href="../../assets/css/extra.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="../.." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -42,6 +42,8 @@
                 <li class="toctree-l1"><a class="reference internal" href="../..">Inicio</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../..#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../..#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../..#requisitos">Requisitos</a>
     </li>
@@ -126,7 +128,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -141,6 +143,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -350,6 +354,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-05/#observacion">Observación</a>
@@ -381,6 +387,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -669,6 +677,10 @@
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">11 · Arquitectura de Red Empresarial</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#topologia">Topología</a>
     </li>
@@ -834,6 +846,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#ejercicios">Ejercicios</a>
@@ -870,7 +884,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -912,6 +926,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -924,7 +940,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href="../..">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -946,9 +962,45 @@
 <h1 id="arquitectura-de-red-empresarial">Arquitectura de Red Empresarial<a class="headerlink" href="#arquitectura-de-red-empresarial" title="Permanent link">&para;</a></h1>
 <h2 id="contexto-empresarial">Contexto empresarial<a class="headerlink" href="#contexto-empresarial" title="Permanent link">&para;</a></h2>
 <p>La empresa <strong>Networking SecOps</strong> ha implementado su infraestructura WAN (Laboratorio 10). Ahora necesita diseñar la arquitectura de red completa para su sede central, con el modelo jerárquico <strong>Core - Distribución - Acceso</strong>, redundancia en el núcleo y una DMZ.</p>
+<h3 id="funcion-de-cada-capa">Función de cada capa<a class="headerlink" href="#funcion-de-cada-capa" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Capa</th>
+<th>Función</th>
+<th>En este laboratorio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Core</strong></td>
+<td>Transporte de <strong>alto rendimiento</strong> entre los bloques de la arquitectura; debe ser simple y rápido, sin aplicar políticas complejas.</td>
+<td><code>Core1</code>, <code>Core2</code></td>
+</tr>
+<tr>
+<td><strong>Distribución</strong></td>
+<td><strong>Agregación</strong> de los switches de acceso, <strong>políticas</strong> y <strong>enrutamiento entre segmentos</strong> (aquí, entre VLAN).</td>
+<td><code>Dist1</code> (gateway de las VLAN), <code>Dist2</code></td>
+</tr>
+<tr>
+<td><strong>Acceso</strong></td>
+<td><strong>Conexión de los dispositivos finales</strong> y segmentación en VLAN.</td>
+<td><code>Access1</code> (switch con VLAN)</td>
+</tr>
+</tbody>
+</table>
+<p>El <strong>firewall perimetral</strong> controla el tráfico entre el interior, la DMZ e Internet. No basta con dibujar los tres niveles: cada uno tiene una función distinta.</p>
+<div class="admonition note">
+<p class="admonition-title">Relación con el laboratorio 05</p>
+<p>En el laboratorio 05 estudiamos <strong>de forma aislada</strong> los mecanismos de segmentación (VLAN, trunk 802.1Q, router-on-a-stick). Aquí esos mismos mecanismos se incorporan <strong>dentro de una arquitectura empresarial jerárquica</strong>. No son el mismo escenario: cambian los dispositivos, los nombres y el direccionamiento (aquí <code>10.0.10–30.0/24</code> y enlaces <code>10.255.x.x</code>).</p>
+</div>
 <div class="admonition info">
 <p class="admonition-title">Alcance</p>
 <p>Se construye <strong>una</strong> capa de acceso completa (<code>Access1</code>, con las tres VLAN) y la redundancia se logra con <strong>rutas estáticas con métrica</strong>. La alta disponibilidad de <em>gateway</em> con VRRP y la reconvergencia dinámica con OSPF se practican en el Laboratorio 15.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Tener dos Core y dos Distribution no demuestra alta disponibilidad</p>
+<p>La redundancia <strong>física</strong> solo se convierte en <strong>disponibilidad</strong> si existen mecanismos que (1) eviten bucles, (2) detecten el fallo y (3) muevan el tráfico (y los <em>gateways</em>) al camino alternativo. En esta práctica: el <strong>núcleo</strong> tolera la caída de <code>Core1</code> (mediante rutas de respaldo y fallo <strong>local</strong>), pero las VLAN dependen de <strong>un único <em>gateway</em></strong>, <code>Dist1</code>, porque <code>Access1</code> solo se conecta a él. Si <code>Dist1</code> falla, las VLAN pierden conectividad aunque <code>Dist2</code> esté sana. Resolverlo requiere un segundo trunk, un protocolo contra bucles de capa 2 (STP/RSTP) y redundancia de <em>gateway</em> (VRRP): ejercicios y Laboratorio 15.</p>
 </div>
 <h2 id="topologia">Topología<a class="headerlink" href="#topologia" title="Permanent link">&para;</a></h2>
 <div class="mermaid">graph TB
@@ -1077,7 +1129,16 @@
 </table>
 <h2 id="construccion">Construcción<a class="headerlink" href="#construccion" title="Permanent link">&para;</a></h2>
 <h3 id="paso-0-limpiar-laboratorios-anteriores">Paso 0: Limpiar laboratorios anteriores<a class="headerlink" href="#paso-0-limpiar-laboratorios-anteriores" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>ns<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>ip<span class="w"> </span>netns<span class="w"> </span>list<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>del<span class="w"> </span><span class="nv">$ns</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
+<p>Este laboratorio es un <strong>escenario nuevo</strong>: reutiliza nombres como <code>Firewall</code> o <code>ServidorWeb</code> con otra función y otro direccionamiento. Elimina <strong>solo los namespaces de los laboratorios anteriores, por nombre</strong> (no todos los namespaces del equipo):</p>
+<div class="language-bash highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>ns<span class="w"> </span><span class="k">in</span><span class="w"> </span>cliente1<span class="w"> </span>cliente2<span class="w"> </span>cliente3<span class="w"> </span>cliente4<span class="w"> </span>router<span class="w"> </span>switch<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>ventas1<span class="w"> </span>ventas2<span class="w"> </span>ventas3<span class="w"> </span>it1<span class="w"> </span>it2<span class="w"> </span>it3<span class="w"> </span>admin1<span class="w"> </span>admin2<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>R1<span class="w"> </span>R2<span class="w"> </span>R3<span class="w"> </span>clienteSede<span class="w"> </span>clienteSucA<span class="w"> </span>clienteSucB<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>servidorDNS<span class="w"> </span>servidorDHCP<span class="w"> </span>clienteDHCP<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>firewall<span class="w"> </span>servidorWeb<span class="w"> </span>servidorDNS_PUB<span class="w"> </span>servidorInterno<span class="w"> </span>VPN_GW<span class="w"> </span>clienteVPN<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>PE1<span class="w"> </span>PE2<span class="w"> </span>PE3<span class="w"> </span>P1<span class="w"> </span>P2<span class="w"> </span>P3<span class="w"> </span>host1<span class="w"> </span>host2<span class="w"> </span>host3<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>Core1<span class="w"> </span>Core2<span class="w"> </span>Dist1<span class="w"> </span>Dist2<span class="w"> </span>Access1<span class="w"> </span>Firewall<span class="w"> </span>ServidorWeb<span class="w"> </span>ServidorDNS<span class="w"> </span>ventas<span class="w"> </span>it<span class="w"> </span>admin<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>del<span class="w"> </span><span class="nv">$ns</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
+<span class="k">done</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>del<span class="w"> </span>br-wan<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
 </code></pre></div>
 <h3 id="paso-1-crear-namespaces-y-una-funcion-auxiliar">Paso 1: Crear namespaces y una función auxiliar<a class="headerlink" href="#paso-1-crear-namespaces-y-una-funcion-auxiliar" title="Permanent link">&para;</a></h3>
@@ -1144,6 +1205,10 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 </code></pre></div>
 <h3 id="paso-4-rutas-estaticas-con-metrica-camino-principal-y-de-respaldo">Paso 4: Rutas estáticas con métrica (camino principal y de respaldo)<a class="headerlink" href="#paso-4-rutas-estaticas-con-metrica-camino-principal-y-de-respaldo" title="Permanent link">&para;</a></h3>
 <p>Cada router tiene un camino <strong>principal</strong> (métrica 10) y uno de <strong>respaldo</strong> (métrica 20). Dos rutas al mismo destino con la misma métrica no pueden coexistir.</p>
+<div class="admonition warning">
+<p class="admonition-title">Una métrica mayor no garantiza <em>failover</em></p>
+<p>La ruta de respaldo (métrica 20) solo se <strong>usa</strong> cuando la principal desaparece de la tabla, y con rutas estáticas eso ocurre únicamente si <strong>la interfaz del propio router</strong> cae. Si la interfaz sigue activa pero existe una falla <strong>más allá</strong> (el siguiente salto no responde, el enlace remoto está cortado), la ruta estática ordinaria <strong>no lo detecta</strong> y el tráfico se pierde. Para cubrir ese caso harían falta un protocolo dinámico (OSPF), detección de fallos (BFD) o rutas condicionadas a la accesibilidad del siguiente salto.</p>
+</div>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Distribución: salida por defecto hacia el core (principal Core1 en Dist1, Core2 en Dist2)</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.255.1.1<span class="w">  </span>metric<span class="w"> </span><span class="m">10</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Dist1<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.255.1.9<span class="w">  </span>metric<span class="w"> </span><span class="m">20</span>
@@ -1164,6 +1229,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <span class="k">done</span>
 </code></pre></div>
 <h3 id="paso-5-politica-del-firewall-y-nat">Paso 5: Política del firewall y NAT<a class="headerlink" href="#paso-5-politica-del-firewall-y-nat" title="Permanent link">&para;</a></h3>
+<p><strong>Por qué la DMZ usa una red distinta de las VLAN internas</strong> (<code>10.0.99.0/24</code> frente a <code>10.0.10–30.0/24</code>): son <strong>zonas de confianza diferentes</strong>. La DMZ aloja servidores expuestos a Internet y, si se compromete, no debe dar acceso a la LAN. Al estar en una subred y un segmento propios, <strong>toda comunicación entre ellas pasa por el firewall</strong>, que decide qué se permite (aquí solo desde el interior hacia la DMZ y nunca al revés).</p>
 <p>Las VLAN (<code>10.0.10-30.0/24</code>) están dentro de <code>10.0.0.0/18</code>; la DMZ (<code>10.0.99.0/24</code>) queda fuera.</p>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>iptables<span class="w"> </span>-P<span class="w"> </span>FORWARD<span class="w"> </span>DROP
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>Firewall<span class="w"> </span>iptables<span class="w"> </span>-A<span class="w"> </span>FORWARD<span class="w"> </span>-m<span class="w"> </span>state<span class="w"> </span>--state<span class="w"> </span>ESTABLISHED,RELATED<span class="w"> </span>-j<span class="w"> </span>ACCEPT
@@ -1207,6 +1273,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.0.<span class="nv">$2</span>.1
 <span class="k">done</span>
 </code></pre></div>
+<p><strong>Quién es el <em>gateway</em> de cada VLAN.</strong> <code>Dist1</code> mediante las subinterfaces <code>veth-d1a1.10/.20/.30</code> (direcciones <code>.1</code>); <code>Dist2</code> <strong>no</strong> es gateway de ninguna VLAN. Si <code>Dist1</code> falla, no hay otro equipo que asuma esas direcciones: la continuidad del <em>gateway</em> requeriría VRRP.</p>
 <h3 id="paso-7-verificar">Paso 7: Verificar<a class="headerlink" href="#paso-7-verificar" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Hacia Internet (el host) y hacia la DMZ, desde un equipo de la VLAN 10</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ventas<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">192</span>.168.100.2
@@ -1231,7 +1298,8 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ventas<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.99.10
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ventas<span class="w"> </span>traceroute<span class="w"> </span>-n<span class="w"> </span>-I<span class="w"> </span><span class="m">10</span>.0.99.10
 </code></pre></div>
-<p><strong>Salida esperada:</strong> 0% de pérdida y un camino distinto (<code>10.255.1.9</code>, que es Core2).</p>
+<p><strong>Resultado esperado:</strong> 0% de pérdida y un camino distinto (<code>10.255.1.9</code>, que es Core2).</p>
+<p>Este resultado demuestra la tolerancia a la caída de <strong>un Core</strong> con rutas estáticas y fallo local. <strong>No</strong> demuestra tolerancia a la caída de <code>Dist1</code> ni a fallos remotos.</p>
 <p>Para recuperar Core1, sube de nuevo esas interfaces (<code>up</code>) y vuelve a añadir las rutas de métrica 10 que se retiraron al bajar los enlaces (Paso 4).</p>
 <h2 id="segmentacion-vlan">Segmentación VLAN<a class="headerlink" href="#segmentacion-vlan" title="Permanent link">&para;</a></h2>
 <table>
@@ -1286,12 +1354,12 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <td>Core - Distribución - Acceso</td>
 </tr>
 <tr>
-<td>Alta disponibilidad</td>
-<td>Camino principal y de respaldo (métricas) en el núcleo</td>
+<td>Redundancia en el núcleo</td>
+<td>Camino principal y de respaldo (métricas); limitada a fallos locales</td>
 </tr>
 <tr>
-<td>Redundancia</td>
-<td>Doble enlace Dist-Core y Core-Firewall</td>
+<td>Redundancia física</td>
+<td>Doble enlace Dist-Core y Core-Firewall (no equivale por sí sola a alta disponibilidad)</td>
 </tr>
 <tr>
 <td>Segmentación</td>
@@ -1304,7 +1372,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 </tbody>
 </table>
 <h2 id="conclusiones">Conclusiones<a class="headerlink" href="#conclusiones" title="Permanent link">&para;</a></h2>
-<p>La arquitectura jerárquica proporciona escalabilidad, disponibilidad y facilidad de administración. La redundancia elimina puntos únicos de fallo en el núcleo; con rutas estáticas la conmutación es posible pero limitada a fallos de enlaces propios, y los protocolos dinámicos (OSPF) y de <em>gateway</em> (VRRP) completan la solución.</p>
+<p>La arquitectura jerárquica proporciona escalabilidad y facilidad de administración, y permite diseñar para la disponibilidad. La redundancia elimina puntos únicos de fallo en el núcleo <strong>si</strong> hay mecanismos que detecten fallos y muevan el tráfico: con rutas estáticas la conmutación es posible pero limitada a fallos de enlaces propios. Las VLAN siguen dependiendo de un único <em>gateway</em> (<code>Dist1</code>). Los protocolos dinámicos (OSPF), los protocolos contra bucles (STP/RSTP) y de <em>gateway</em> (VRRP) completan la solución.</p>
 <hr />
 <p><strong>¡Laboratorio 11 completado!</strong> Continúa con el <strong>Laboratorio 12</strong>.</p>
               

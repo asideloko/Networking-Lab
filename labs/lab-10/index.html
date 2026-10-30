@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/labs/lab-10/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>10 · Infraestructura WAN y Core - NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>10 · Infraestructura WAN y Core - NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link href="../../assets/css/extra.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="../.." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -42,6 +42,8 @@
                 <li class="toctree-l1"><a class="reference internal" href="../..">Inicio</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../..#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../..#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../..#requisitos">Requisitos</a>
     </li>
@@ -126,7 +128,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -141,6 +143,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -350,6 +354,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-05/#observacion">Observación</a>
@@ -381,6 +387,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -669,6 +677,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../lab-11/">11 · Arquitectura de Red Empresarial</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#topologia">Topología</a>
     </li>
@@ -834,6 +846,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#ejercicios">Ejercicios</a>
@@ -870,7 +884,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -912,6 +926,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -924,7 +940,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href="../..">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -948,16 +964,17 @@
 <p>La empresa <strong>Networking SecOps</strong> ha implementado exitosamente su red con VPN y tunelización (Laboratorio 09). Ahora necesita expandir su infraestructura a nivel geográfico, conectando múltiples sucursales y centros de datos a través de una red WAN robusta y escalable.</p>
 <h2 id="objetivos-del-laboratorio">Objetivos del laboratorio<a class="headerlink" href="#objetivos-del-laboratorio" title="Permanent link">&para;</a></h2>
 <ol>
-<li>Construir una red troncal de proveedor con <strong>routers PE</strong> (<em>Provider Edge</em>) y <strong>routers P</strong> (<em>Provider</em>) en malla parcial.</li>
+<li>Construir una <strong>simulación de una topología WAN con roles PE/P</strong>: <strong>routers PE</strong> (<em>Provider Edge</em>) y <strong>routers P</strong> (<em>Provider</em>) en malla parcial, con direccionamiento IP y rutas estáticas.</li>
 <li>Interconectar tres LAN remotas a través del núcleo con <strong>rutas estáticas</strong>.</li>
 <li>Comprobar la <strong>redundancia</strong> de la malla y el reparto de carga con <strong>ECMP</strong>.</li>
-<li>Comprender (a nivel conceptual) cómo MPLS reenvía por etiquetas y en qué se diferencia de SD-WAN.</li>
+<li>Comprender (a nivel conceptual) cómo MPLS reenvía por etiquetas, en qué se diferencia del enrutamiento IP convencional y en qué se diferencia de SD-WAN.</li>
 </ol>
 <div class="admonition warning">
 <p class="admonition-title">Qué es ejecutable y qué es conceptual</p>
 <ul>
 <li><strong>Ejecutable:</strong> topología PE/P, rutas estáticas, failover por métricas y ECMP.</li>
-<li><strong>Conceptual:</strong> MPLS (<em>push/swap/pop</em>) y SD-WAN. Aquí <strong>no</strong> se configuran etiquetas reales (eso exigiría los módulos <code>mpls_router</code> y <code>mpls_iptunnel</code>) y no se usa OSPF ni BGP: con rutas estáticas el núcleo <strong>no reconverge solo</strong> ante fallos remotos. El enrutamiento dinámico se practica en el Laboratorio 15.</li>
+<li><strong>Conceptual:</strong> MPLS (<em>push/swap/pop</em>) y SD-WAN.</li>
+<li><strong>No es</strong> una implementación funcional de un <em>core</em> MPLS: la topología usa los <strong>nombres</strong> PE/P para el rol de cada equipo, pero lo que se ejecuta es <strong>enrutamiento IP convencional</strong> con rutas estáticas. Aquí <strong>no</strong> se configuran etiquetas reales (eso exigiría los módulos <code>mpls_router</code> y <code>mpls_iptunnel</code>) y no se usa OSPF ni BGP: con rutas estáticas el núcleo <strong>no reconverge solo</strong> ante fallos remotos. El enrutamiento dinámico se practica en el Laboratorio 15.</li>
 </ul>
 </div>
 <h2 id="topologia">Topología<a class="headerlink" href="#topologia" title="Permanent link">&para;</a></h2>
@@ -1103,11 +1120,19 @@
 </table>
 <h2 id="construccion-de-la-red">Construcción de la red<a class="headerlink" href="#construccion-de-la-red" title="Permanent link">&para;</a></h2>
 <h3 id="paso-0-limpiar-laboratorios-anteriores-recomendado">Paso 0: Limpiar laboratorios anteriores (recomendado)<a class="headerlink" href="#paso-0-limpiar-laboratorios-anteriores-recomendado" title="Permanent link">&para;</a></h3>
-<p>Este laboratorio usa una topología nueva e independiente. Para no mezclar equipos, elimina lo construido en los laboratorios 01 a 09:</p>
-<div class="language-bash highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>ns<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>ip<span class="w"> </span>netns<span class="w"> </span>list<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>del<span class="w"> </span><span class="nv">$ns</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
+<p>Este laboratorio usa una topología nueva e independiente (<strong>un escenario distinto</strong> de los anteriores: otros dispositivos, otro direccionamiento). Para no mezclar equipos, elimina <strong>solo los namespaces creados en los laboratorios 01 a 09</strong>, por nombre. No uses un bucle que borre todos los namespaces de <code>ip netns list</code>: eliminaría también los de otros entornos o servicios de tu equipo.</p>
+<div class="language-bash highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>ns<span class="w"> </span><span class="k">in</span><span class="w"> </span>cliente1<span class="w"> </span>cliente2<span class="w"> </span>cliente3<span class="w"> </span>cliente4<span class="w"> </span>router<span class="w"> </span>switch<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>ventas1<span class="w"> </span>ventas2<span class="w"> </span>ventas3<span class="w"> </span>it1<span class="w"> </span>it2<span class="w"> </span>it3<span class="w"> </span>admin1<span class="w"> </span>admin2<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>R1<span class="w"> </span>R2<span class="w"> </span>R3<span class="w"> </span>clienteSede<span class="w"> </span>clienteSucA<span class="w"> </span>clienteSucB<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>servidorDNS<span class="w"> </span>servidorDHCP<span class="w"> </span>clienteDHCP<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>firewall<span class="w"> </span>servidorWeb<span class="w"> </span>servidorDNS_PUB<span class="w"> </span>servidorInterno<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>VPN_GW<span class="w"> </span>clienteVPN<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>del<span class="w"> </span><span class="nv">$ns</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
+<span class="k">done</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>del<span class="w"> </span>br-wan<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>del<span class="w"> </span>veth-host<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
 </code></pre></div>
+<p>Si ya habías limpiado parte de esos laboratorios, los errores se ignoran (<code>|| true</code>). Solo se tocan los nombres de la lista.</p>
 <h3 id="paso-1-crear-namespaces">Paso 1: Crear namespaces<a class="headerlink" href="#paso-1-crear-namespaces" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>PE1
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>PE2
@@ -1225,20 +1250,70 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>host1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.1.0.10
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>host1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.2.0.10
 
-<span class="c1"># Camino que sigue el tráfico (host1 -&gt; host3 pasa por PE1, P1, P3, PE3)</span>
+<span class="c1"># Camino que sigue el tráfico (host1 -&gt; host3 pasa por PE1, P1, P3, PE3).</span>
+<span class="c1"># Son saltos IP convencionales: en un core MPLS real los P no consultarían la tabla IP, sino etiquetas.</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>host1<span class="w"> </span>traceroute<span class="w"> </span>-n<span class="w"> </span><span class="m">10</span>.2.0.10
 
 <span class="c1"># Entre routers PE</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>PE1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">192</span>.168.1.5
 </code></pre></div>
 <h2 id="analisis-mpls-conceptual">Análisis MPLS (conceptual)<a class="headerlink" href="#analisis-mpls-conceptual" title="Permanent link">&para;</a></h2>
-<p>MPLS utiliza etiquetas para el reenvío. El flujo es:</p>
+<div class="admonition warning">
+<p class="admonition-title">Lo que ejecutamos arriba no es MPLS</p>
+<p>Las rutas estáticas del Paso 5 son <strong>rutas IP convencionales</strong>. <strong>No crean una LFIB, no asignan etiquetas MPLS y no demuestran intercambio de etiquetas.</strong> Cada router decide por la <strong>dirección IP de destino</strong> (<em>longest prefix match</em>). Lo que sigue explica qué haría MPLS en la misma topología, sin implementarlo.</p>
+</div>
+<p><strong>MPLS</strong> (<em>Multiprotocol Label Switching</em>, RFC 3031) reenvía paquetes según una <strong>etiqueta</strong> de corta longitud, no según la dirección IP de destino. Los <strong>PE</strong> participan en la <strong>entrada y salida</strong> del dominio MPLS; los <strong>P</strong> realizan <strong>conmutación de etiquetas</strong> sin mirar el paquete IP. Las operaciones son:</p>
 <ol>
-<li><strong>Push</strong>: PE1 añade etiqueta al paquete.</li>
-<li><strong>Swap</strong>: P routers intercambian etiquetas.</li>
-<li><strong>Pop</strong>: PE3 elimina etiqueta y entrega.</li>
+<li><strong>Push</strong>: el PE de entrada añade una etiqueta al paquete.</li>
+<li><strong>Swap</strong>: cada P sustituye la etiqueta de entrada por la de salida, según su tabla.</li>
+<li><strong>Pop</strong>: se retira la etiqueta (en el último P, por <em>penultimate hop popping</em>, o en el PE de salida).</li>
 </ol>
+<p><strong>Ejemplo de recorrido</strong> (ilustrativo, los números de etiqueta son inventados) para el tráfico <code>host1 → host3</code>, que en MPLS seguiría el mismo camino PE1 → P1 → P3 → PE3:</p>
+<table>
+<thead>
+<tr>
+<th>Salto</th>
+<th>Equipo</th>
+<th>Operación</th>
+<th>Etiqueta en el paquete</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>PE1</td>
+<td><strong>Push</strong> (clasifica <code>10.2.0.0/24</code> en una FEC)</td>
+<td>→ 100</td>
+</tr>
+<tr>
+<td>2</td>
+<td>P1</td>
+<td><strong>Swap</strong> (consulta su LFIB)</td>
+<td>100 → 200</td>
+</tr>
+<tr>
+<td>3</td>
+<td>P3</td>
+<td><strong>Pop</strong> (<em>penultimate hop popping</em>, el PE final recibe el paquete sin etiqueta)</td>
+<td>200 → ninguna</td>
+</tr>
+<tr>
+<td>4</td>
+<td>PE3</td>
+<td>Reenvío IP normal hacia <code>host3</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Qué le falta a la simulación para ser una red MPLS real:</strong></p>
+<ul>
+<li><strong>Distribución de etiquetas</strong>: un protocolo como <strong>LDP</strong> (o RSVP-TE, o segment routing) reparte las etiquetas entre routers vecinos y las asocia a cada prefijo (FEC) que el IGP conoce. Sin él, no hay correspondencia etiqueta ↔ destino.</li>
+<li><strong>Un IGP</strong> (como OSPF o IS-IS) que dé a LDP la topología de transporte.</li>
+<li><strong>Las tablas MPLS</strong> (LFIB), que sustituyen en el núcleo a la consulta de la tabla de rutas IP, y el soporte de etiquetas en las interfaces (módulos <code>mpls_router</code> y <code>mpls_iptunnel</code> en Linux).</li>
+</ul>
+<p>Entonces, ¿para qué sirve? Entre otras cosas, para <strong>VPN de capa 3 (L3VPN)</strong>, <strong>ingeniería de tráfico</strong> y <strong>QoS</strong> en redes de proveedor.</p>
 <h2 id="comparacion-mpls-vs-sd-wan">Comparación MPLS vs SD-WAN<a class="headerlink" href="#comparacion-mpls-vs-sd-wan" title="Permanent link">&para;</a></h2>
+<p><strong>SD-WAN no es sinónimo de MPLS.</strong> MPLS es una <strong>tecnología de reenvío</strong> dentro de la red de un proveedor; SD-WAN es un <strong>enfoque de gestión y control</strong> de la conectividad WAN basado en <strong>políticas y selección de caminos</strong>, que puede utilizar <strong>distintos transportes</strong> (MPLS, Internet de banda ancha, 4G/5G…). De hecho, una SD-WAN puede usar un circuito MPLS como uno de sus transportes.</p>
 <table>
 <thead>
 <tr>
@@ -1249,32 +1324,38 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 </thead>
 <tbody>
 <tr>
+<td>Naturaleza</td>
+<td>Mecanismo de reenvío por etiquetas</td>
+<td>Plano de control/gestión centralizado sobre varios transportes</td>
+</tr>
+<tr>
 <td>Control</td>
-<td>Distribuido</td>
-<td>Centralizado</td>
+<td>Distribuido (protocolos entre routers)</td>
+<td>Centralizado (orquestador y políticas)</td>
 </tr>
 <tr>
 <td>Transporte</td>
-<td>Circuitos privados</td>
-<td>Múltiples enlaces</td>
+<td>Red del proveedor (con SLA)</td>
+<td>Varios enlaces (MPLS, banda ancha, móvil)</td>
 </tr>
 <tr>
 <td>QoS</td>
-<td>Garantizada</td>
-<td>Best-effort</td>
+<td>Posible y con SLA según contrato</td>
+<td>Depende del transporte elegido y de las políticas aplicadas</td>
 </tr>
 <tr>
 <td>Costo</td>
-<td>Alto</td>
-<td>Bajo</td>
+<td>Suele ser mayor por Mbps</td>
+<td>Suele ser menor, según el diseño</td>
 </tr>
 <tr>
 <td>Agilidad</td>
-<td>Baja</td>
-<td>Alta</td>
+<td>Menor (aprovisionamiento del proveedor)</td>
+<td>Mayor</td>
 </tr>
 </tbody>
 </table>
+<p>Los valores de coste y agilidad son tendencias habituales, no reglas.</p>
 <h2 id="ejercicios">Ejercicios<a class="headerlink" href="#ejercicios" title="Permanent link">&para;</a></h2>
 <h3 id="ejercicio-1-simular-un-fallo-en-el-nucleo">Ejercicio 1: Simular un fallo en el núcleo<a class="headerlink" href="#ejercicio-1-simular-un-fallo-en-el-nucleo" title="Permanent link">&para;</a></h3>
 <p>Tiramos el enlace directo P1-P3 (camino preferido) <strong>por sus dos extremos</strong>: así ambos routers retiran su ruta y activan la de respaldo por P2.</p>
@@ -1283,13 +1364,13 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>host1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.2.0.10
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>host1<span class="w"> </span>traceroute<span class="w"> </span>-n<span class="w"> </span><span class="m">10</span>.2.0.10
 </code></pre></div>
-<p><strong>Salida esperada:</strong> 0% de pérdida y un salto más (P2, <code>192.168.1.14</code>). Restablece después el enlace (<code>up</code> en ambos extremos) y vuelve a añadir las rutas de métrica 0 que se retiraron al bajar la interfaz.</p>
+<p><strong>Resultado esperado:</strong> 0% de pérdida y un salto más (P2, <code>192.168.1.14</code>). Restablece después el enlace (<code>up</code> en ambos extremos) y vuelve a añadir las rutas de métrica 0 que se retiraron al bajar la interfaz.</p>
 <div class="admonition warning">
 <p class="admonition-title">Sin reconvergencia automática</p>
 <p>Si en lugar del enlace P1-P3 cae el P2-P3, P1 <strong>no se entera</strong> y sigue usando una ruta estática que ya no sirve. Detectar fallos remotos es tarea de OSPF/BGP (Laboratorio 15).</p>
 </div>
 <h3 id="ejercicio-2-balanceo-ecmp">Ejercicio 2: Balanceo ECMP<a class="headerlink" href="#ejercicio-2-balanceo-ecmp" title="Permanent link">&para;</a></h3>
-<p>ECMP reparte el tráfico entre varios caminos de igual coste. Se define con <strong>una sola ruta de varios saltos</strong> (<code>nexthop</code>), no con dos <code>ip route add</code> (el segundo daría <code>File exists</code>). Por defecto el reparto se calcula solo con las IP de origen y destino; con la política 1 también se usan los puertos y se ven los dos caminos:</p>
+<p><strong>ECMP</strong> (<em>Equal-Cost Multi-Path</em>) reparte el tráfico entre varios caminos de <strong>igual coste</strong>: es <strong>balanceo de carga</strong>, distinto del <em>failover</em>, que es la <strong>selección de una ruta alternativa</strong> cuando falla la principal (Ejercicio 1). ECMP <strong>no equivale a alta disponibilidad completa</strong>: si un camino cae, los flujos que lo usaban se interrumpen hasta que se detecta el fallo y se reasignan, y las aplicaciones pueden notarlo. Se define con <strong>una sola ruta de varios saltos</strong> (<code>nexthop</code>), no con dos <code>ip route add</code> (el segundo daría <code>File exists</code>). Por defecto el reparto se calcula solo con las IP de origen y destino; con la política 1 también se usan los puertos y se ven los dos caminos:</p>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>P1<span class="w"> </span>sysctl<span class="w"> </span>-w<span class="w"> </span>net.ipv4.fib_multipath_hash_policy<span class="o">=</span><span class="m">1</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>P1<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>replace<span class="w"> </span><span class="m">10</span>.2.0.0/24<span class="w"> </span>nexthop<span class="w"> </span>via<span class="w"> </span><span class="m">192</span>.168.1.18<span class="w"> </span>weight<span class="w"> </span><span class="m">1</span><span class="w"> </span>nexthop<span class="w"> </span>via<span class="w"> </span><span class="m">192</span>.168.1.14<span class="w"> </span>weight<span class="w"> </span><span class="m">1</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>P1<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>show<span class="w"> </span><span class="m">10</span>.2.0.0/24
@@ -1310,24 +1391,24 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <tbody>
 <tr>
 <td>MPLS</td>
-<td>Backbone con etiquetas</td>
+<td>Explicado conceptualmente (push/swap/pop); <strong>no</strong> implementado</td>
 </tr>
 <tr>
 <td>SD-WAN</td>
-<td>Optimización multi-enlace</td>
+<td>Explicado conceptualmente: gestión por políticas sobre varios transportes</td>
 </tr>
 <tr>
-<td>Backbone</td>
-<td>Red troncal con P y PE (rutas estáticas con respaldo)</td>
+<td>Topología PE/P</td>
+<td>Roles de proveedor con enrutamiento IP y rutas estáticas con respaldo</td>
 </tr>
 <tr>
 <td>ECMP</td>
-<td>Reparto de carga entre caminos de igual coste</td>
+<td>Reparto de carga entre caminos de igual coste (no es <em>failover</em> ni alta disponibilidad completa)</td>
 </tr>
 </tbody>
 </table>
 <h2 id="conclusiones">Conclusiones<a class="headerlink" href="#conclusiones" title="Permanent link">&para;</a></h2>
-<p>MPLS permite ingeniería de tráfico y QoS mediante el reenvío por etiquetas (la calidad no es automática: depende de cómo el proveedor la configure). SD-WAN ofrece flexibilidad y reducción de costos. Las arquitecturas híbridas aprovechan lo mejor de ambos mundos.</p>
+<p>Hemos construido una <strong>simulación de una topología WAN con roles PE/P</strong> y rutas IP estáticas, y hemos explicado MPLS de forma conceptual: para que fuese un core MPLS faltarían la distribución de etiquetas (LDP) y las tablas de etiquetas. MPLS permite ingeniería de tráfico y QoS mediante el reenvío por etiquetas (la calidad no es automática: depende de cómo el proveedor la configure). SD-WAN es un enfoque de gestión por políticas que puede apoyarse en MPLS, banda ancha u otros transportes, y suele ofrecer flexibilidad y reducción de costos. Las arquitecturas híbridas combinan ambos.</p>
 <hr />
 <p><strong>¡Laboratorio 10 completado!</strong> Continúa con el <strong>Laboratorio 11</strong>.</p>
               

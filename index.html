@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="Laboratorios prácticos complementarios del libro NETWORKING · Guillermo Castillo · SecOpsMX" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="Laboratorios de explicación y simulación de redes, complementarios del libro NETWORKING · Guillermo Castillo · SecOpsMX" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/" />
       <link rel="shortcut icon" href="img/favicon.ico" />
-    <title>NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="css/theme.css" />
     <link rel="stylesheet" href="css/theme_extra.css" />
         <link href="assets/css/extra.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -42,6 +42,8 @@
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Inicio</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#requisitos">Requisitos</a>
     </li>
@@ -126,7 +128,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="labs/lab-02/#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="labs/lab-02/#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="labs/lab-02/#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="labs/lab-02/#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -141,6 +143,8 @@
     <li class="toctree-l3"><a class="reference internal" href="labs/lab-02/#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="labs/lab-02/#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="labs/lab-02/#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -350,6 +354,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="labs/lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="labs/lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="labs/lab-05/#observacion">Observación</a>
@@ -381,6 +387,8 @@
     <li class="toctree-l3"><a class="reference internal" href="labs/lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="labs/lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="labs/lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="labs/lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -669,6 +677,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="labs/lab-11/">11 · Arquitectura de Red Empresarial</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="labs/lab-11/#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="labs/lab-11/#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="labs/lab-11/#topologia">Topología</a>
     </li>
@@ -834,6 +846,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="labs/lab-14/#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="labs/lab-14/#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="labs/lab-14/#ejercicios">Ejercicios</a>
@@ -870,7 +884,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="labs/lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="labs/lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="labs/lab-15/#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="labs/lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -912,6 +926,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="labs/lab-15/#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="labs/lab-15/#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="labs/lab-15/#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -924,7 +940,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href=".">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href=".">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -943,22 +959,55 @@
                 <p class="tema-num">LABORATORIO PRÁCTICO</p>
 
 <h1 id="networking-lab">NETWORKING Lab<a class="headerlink" href="#networking-lab" title="Permanent link">&para;</a></h1>
-<p><img alt="Networking Lab" class="logo-lab" src="img/logo.png" /></p>
-<p>Manual práctico complementario del libro <strong>NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico</strong>. En él <strong>construirás una infraestructura de red empresarial completa</strong>, paso a paso, y llevarás la teoría a la terminal.</p>
+<p><img alt="Networking Lab" class="logo-lab" src="logo.png" /></p>
+<p><strong>Laboratorios de explicación y simulación de redes.</strong> Material práctico complementario del libro <strong>NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico</strong>. Cada laboratorio presenta <strong>escenarios ilustrativos</strong> para comprender protocolos, tecnologías, arquitecturas y procesos de comunicación, y lleva la teoría a la terminal mediante comandos de demostración.</p>
+<div class="admonition info">
+<p class="admonition-title">Qué son (y qué no son) estos laboratorios</p>
+<p>Son <strong>representaciones didácticas</strong> construidas con <em>namespaces</em> de red de Linux: simplifican la realidad para explicar cómo funciona cada tecnología. <strong>No</strong> son procedimientos de implementación profesional ni reproducen todos los componentes de una infraestructura real. Un ejemplo explica correctamente un proceso cuando <strong>representa correctamente ese proceso</strong>; cuando una simplificación afecta a lo explicado (por ejemplo, rutas IP estáticas en lugar de MPLS real), la página lo indica.</p>
+</div>
 <h2 id="metodologia">Metodología<a class="headerlink" href="#metodologia" title="Permanent link">&para;</a></h2>
 <p>El proyecto consta de <strong>15 laboratorios</strong>, uno por cada tema del libro. Cada laboratorio:</p>
 <ol>
 <li>Estudia un tema teórico.</li>
 <li>Identifica los conceptos implementables.</li>
-<li>Diseña un escenario empresarial realista.</li>
+<li>Plantea un escenario empresarial ilustrativo.</li>
 <li>Diseña la topología y el direccionamiento.</li>
-<li>Implementa la configuración paso a paso.</li>
+<li>Muestra la configuración paso a paso como ejemplo de demostración.</li>
 <li>Explica cada procedimiento.</li>
 <li>Verifica cada etapa.</li>
-<li>Muestra el resultado esperado.</li>
+<li>Muestra el resultado esperado o una salida de ejemplo (véase la convención siguiente).</li>
 <li>Prepara el siguiente laboratorio.</li>
 </ol>
-<p>Al finalizar el laboratorio 15 tendrás una red funcional que integra enrutamiento, conmutación, VLAN, VPN, seguridad, monitoreo y más.</p>
+<p>Al finalizar el laboratorio 15 habrás recorrido un escenario que integra direccionamiento, enrutamiento, firewall, servicios y redundancia de <em>gateway</em>, entendiendo qué demuestra cada ejemplo y cuáles son sus límites.</p>
+<h2 id="como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios<a class="headerlink" href="#como-leer-las-salidas-de-los-laboratorios" title="Permanent link">&para;</a></h2>
+<p>En los laboratorios se mezclan comandos, capturas y resultados. Para no confundirlos se usan estas etiquetas:</p>
+<table>
+<thead>
+<tr>
+<th>Etiqueta</th>
+<th>Significado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Ejemplo de salida</strong></td>
+<td>Resultado <strong>representativo</strong>, no necesariamente ejecutado: los números, horas y direcciones MAC cambiarán en tu equipo.</td>
+</tr>
+<tr>
+<td><strong>Captura de referencia</strong></td>
+<td>Evidencia de una <strong>ejecución concreta</strong>.</td>
+</tr>
+<tr>
+<td><strong>Resultado esperado</strong></td>
+<td>Comportamiento que <strong>debería producirse</strong> bajo las condiciones descritas.</td>
+</tr>
+<tr>
+<td><strong>Esquema conceptual</strong></td>
+<td><strong>Representación simplificada</strong> de un proceso; no una transcripción literal.</td>
+</tr>
+</tbody>
+</table>
+<p>Cada laboratorio distingue tres niveles: el <strong>conceptual</strong> (cómo funciona la tecnología), el <strong>representativo</strong> (cómo lo ilustra la topología o el ejemplo) y el <strong>técnico</strong> (qué comportamiento tendría una configuración real y en qué condiciones).</p>
 <h2 id="requisitos">Requisitos<a class="headerlink" href="#requisitos" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Un sistema Linux (máquina virtual, WSL2 o instalación real) con privilegios de superusuario.</li>
@@ -970,7 +1019,7 @@
 <p>Los laboratorios crean <em>namespaces</em> de red, interfaces virtuales y reglas de firewall en tu equipo. Hazlos en una <strong>máquina virtual o equipo de pruebas</strong>, no en un servidor en producción. Algunos laboratorios necesitan módulos del kernel: <code>8021q</code> (05 y 11), <code>ip_gre</code> (06 y 09) y <code>wireguard</code>, <code>esp4</code>/<code>xfrm_user</code> y <code>tun</code> (09); una máquina virtual Linux estándar los incluye. El laboratorio 10 trata MPLS solo a nivel conceptual (no requiere <code>mpls_router</code>). El laboratorio 15 usa <code>frr</code>, <code>keepalived</code> y <code>dnsmasq-base</code>.</p>
 </div>
 <h2 id="laboratorios">Laboratorios<a class="headerlink" href="#laboratorios" title="Permanent link">&para;</a></h2>
-<p>Realízalos en orden: <strong>comienza por el laboratorio 01</strong>.</p>
+<p>Realízalos en orden: <strong>comienza por el laboratorio 01</strong>. No todos usan la misma topología: cuando un laboratorio abre un <strong>escenario nuevo</strong> (otro direccionamiento, otros dispositivos o nombres reutilizados con otra función), la página lo indica al principio.</p>
 <table>
 <thead>
 <tr>
@@ -1108,5 +1157,5 @@
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2026-10-29 22:55:54.971066+00:00
+Build Date UTC : 2026-10-30 05:56:40.347974+00:00
 -->

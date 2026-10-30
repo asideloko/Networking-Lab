@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/labs/lab-12/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>12 · Arquitecturas Modernas de Red - NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>12 · Arquitecturas Modernas de Red - NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link href="../../assets/css/extra.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="../.." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -42,6 +42,8 @@
                 <li class="toctree-l1"><a class="reference internal" href="../..">Inicio</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../..#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../..#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../..#requisitos">Requisitos</a>
     </li>
@@ -126,7 +128,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -141,6 +143,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -350,6 +354,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-05/#observacion">Observación</a>
@@ -381,6 +387,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -669,6 +677,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../lab-11/">11 · Arquitectura de Red Empresarial</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#topologia">Topología</a>
     </li>
@@ -834,6 +846,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#ejercicios">Ejercicios</a>
@@ -870,7 +884,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -912,6 +926,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -924,7 +940,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href="../..">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -952,6 +968,10 @@
 <li><strong>Real y ejecutable:</strong> conectividad híbrida OnPremise ↔ VPC, acceso remoto con <em>política por aplicación</em> en un broker (modelo ZTNA simplificado con <code>iptables</code>) y <strong>microsegmentación</strong> entre servidores.</li>
 <li><strong>Simulado / conceptual:</strong> el <em>Identity Provider</em> (solo se representa como un nodo alcanzable, no autentica a nadie) y <strong>SASE</strong> (SWG, CASB, SD-WAN en un PoP): se explica en el análisis, pero no se construye. Un ZTNA real verifica identidad, dispositivo y contexto en cada conexión; aquí solo se emula la parte de <em>acceso mínimo por aplicación</em>.</li>
 </ul>
+</div>
+<div class="admonition info">
+<p class="admonition-title">Nube: abstracción didáctica, no la arquitectura real de AWS</p>
+<p>La VPC se representa como un router Linux y EC2/RDS como <em>namespaces</em>. Es una <strong>abstracción válida para enseñar</strong>, pero no reproduce AWS: una <strong>VPC</strong> es una <strong>red virtual definida en la infraestructura del proveedor</strong> (con tablas de rutas, gateways, grupos de seguridad y ACL propios); una <strong>instancia EC2</strong> es un <strong>recurso de cómputo</strong>; <strong>RDS</strong> es un <strong>servicio administrado de bases de datos</strong> (no un host al que se accede por SSH); y la conectividad y la seguridad de AWS usan componentes específicos. <strong>No debe equipararse un <em>namespace</em> Linux con una instancia administrada en la nube.</strong></p>
 </div>
 <h2 id="topologia">Topología<a class="headerlink" href="#topologia" title="Permanent link">&para;</a></h2>
 <div class="mermaid">graph TB
@@ -1006,7 +1026,7 @@
 </tr>
 <tr>
 <td>OnPremise ↔ VPC</td>
-<td>enlace híbrido</td>
+<td>enlace híbrido (un <code>veth</code>)</td>
 <td>172.16.255.0/30 (OnPremise .1, VPC .2)</td>
 <td>Conexión privada</td>
 </tr>
@@ -1066,9 +1086,19 @@
 </tr>
 </tbody>
 </table>
+<p>La red <code>10.8.0.0/24</code> es una <strong>red virtual de acceso de los usuarios del escenario</strong>. Que exista no prueba que haya un sistema ZTNA real: el control lo ejerce la política del Paso 8.</p>
 <h2 id="construccion">Construcción<a class="headerlink" href="#construccion" title="Permanent link">&para;</a></h2>
 <h3 id="paso-0-limpiar-laboratorios-anteriores">Paso 0: Limpiar laboratorios anteriores<a class="headerlink" href="#paso-0-limpiar-laboratorios-anteriores" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>ns<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>ip<span class="w"> </span>netns<span class="w"> </span>list<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>del<span class="w"> </span><span class="nv">$ns</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
+<p>Este laboratorio es un <strong>escenario nuevo</strong> (otros equipos y direccionamiento). Elimina <strong>solo los namespaces de los laboratorios anteriores, por nombre</strong>:</p>
+<div class="language-bash highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>ns<span class="w"> </span><span class="k">in</span><span class="w"> </span>cliente1<span class="w"> </span>cliente2<span class="w"> </span>cliente3<span class="w"> </span>cliente4<span class="w"> </span>router<span class="w"> </span>switch<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>ventas1<span class="w"> </span>ventas2<span class="w"> </span>ventas3<span class="w"> </span>it1<span class="w"> </span>it2<span class="w"> </span>it3<span class="w"> </span>admin1<span class="w"> </span>admin2<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>R1<span class="w"> </span>R2<span class="w"> </span>R3<span class="w"> </span>clienteSede<span class="w"> </span>clienteSucA<span class="w"> </span>clienteSucB<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>servidorDNS<span class="w"> </span>servidorDHCP<span class="w"> </span>clienteDHCP<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>firewall<span class="w"> </span>servidorWeb<span class="w"> </span>servidorDNS_PUB<span class="w"> </span>servidorInterno<span class="w"> </span>VPN_GW<span class="w"> </span>clienteVPN<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>PE1<span class="w"> </span>PE2<span class="w"> </span>PE3<span class="w"> </span>P1<span class="w"> </span>P2<span class="w"> </span>P3<span class="w"> </span>host1<span class="w"> </span>host2<span class="w"> </span>host3<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>Core1<span class="w"> </span>Core2<span class="w"> </span>Dist1<span class="w"> </span>Dist2<span class="w"> </span>Access1<span class="w"> </span>Firewall<span class="w"> </span>ServidorWeb<span class="w"> </span>ServidorDNS<span class="w"> </span>ventas<span class="w"> </span>it<span class="w"> </span>admin<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>del<span class="w"> </span><span class="nv">$ns</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
+<span class="k">done</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>del<span class="w"> </span>br-wan<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
 </code></pre></div>
 <h3 id="paso-1-crear-namespaces-y-la-funcion-auxiliar">Paso 1: Crear namespaces y la función auxiliar<a class="headerlink" href="#paso-1-crear-namespaces-y-la-funcion-auxiliar" title="Permanent link">&para;</a></h3>
@@ -1120,12 +1150,14 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>RDS_Server<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>lo<span class="w"> </span>up
 </code></pre></div>
 <h3 id="paso-4-conectar-onpremise-con-la-nube-conectividad-hibrida">Paso 4: Conectar OnPremise con la nube (conectividad híbrida)<a class="headerlink" href="#paso-4-conectar-onpremise-con-la-nube-conectividad-hibrida" title="Permanent link">&para;</a></h3>
+<p>Un <code>veth</code> representa una conexión virtual entre dos extremos, <strong>pero no reproduce por sí mismo una VPN, AWS Direct Connect ni una interconexión privada empresarial</strong>: no hay cifrado, negociación, ni medio contratado con el proveedor. Aquí solo sirve para ilustrar que ambos entornos están enlazados.</p>
 <div class="language-bash highlight"><pre><span></span><code>enlace<span class="w"> </span>OnPremise<span class="w"> </span>veth-op-vpc<span class="w"> </span><span class="m">172</span>.16.255.1/30<span class="w"> </span>AWS_VPC<span class="w"> </span>veth-vpc-op<span class="w"> </span><span class="m">172</span>.16.255.2/30
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>OnPremise<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.100.0.0/16<span class="w"> </span>via<span class="w"> </span><span class="m">172</span>.16.255.2
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>AWS_VPC<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.0.0.0/24<span class="w"> </span>via<span class="w"> </span><span class="m">172</span>.16.255.1
 </code></pre></div>
 <h3 id="paso-5-broker-de-acceso-ztna-e-identidad">Paso 5: Broker de acceso (ZTNA) e identidad<a class="headerlink" href="#paso-5-broker-de-acceso-ztna-e-identidad" title="Permanent link">&para;</a></h3>
 <p>El broker es el <strong>único</strong> punto de entrada de los usuarios remotos. Se conecta a OnPremise y a la nube mediante "conectores" y a un proveedor de identidad (simulado).</p>
+<p><strong>IDP y broker no son el mismo componente.</strong> El <strong>proveedor de identidad (IDP)</strong> participa en la <strong>autenticación</strong> y en la emisión o validación de la identidad (y, normalmente, de sus atributos). El <strong>broker</strong> (punto de aplicación de políticas) <strong>aplica o coordina</strong> las políticas de acceso según la arquitectura, consultando lo que el IDP afirma. En el laboratorio el IDP es solo un nodo alcanzable que <strong>no autentica a nadie</strong>.</p>
 <div class="language-bash highlight"><pre><span></span><code>enlace<span class="w"> </span>ZTNA_Broker<span class="w"> </span>veth-bk-op<span class="w"> </span><span class="m">172</span>.16.254.2/30<span class="w"> </span>OnPremise<span class="w"> </span>veth-op-bk<span class="w"> </span><span class="m">172</span>.16.254.1/30
 enlace<span class="w"> </span>ZTNA_Broker<span class="w"> </span>veth-bk-vpc<span class="w"> </span><span class="m">172</span>.16.253.2/30<span class="w"> </span>AWS_VPC<span class="w"> </span>veth-vpc-bk<span class="w"> </span><span class="m">172</span>.16.253.1/30
 enlace<span class="w"> </span>ZTNA_Broker<span class="w"> </span>veth-bk-idp<span class="w"> </span><span class="m">192</span>.168.200.1/30<span class="w"> </span>IDP<span class="w"> </span>veth-idp<span class="w"> </span><span class="m">192</span>.168.200.2/30
@@ -1164,6 +1196,10 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 </code></pre></div>
 <h3 id="paso-8-politica-zero-trust-en-el-broker-acceso-minimo-por-aplicacion">Paso 8: Política Zero Trust en el broker (acceso mínimo por aplicación)<a class="headerlink" href="#paso-8-politica-zero-trust-en-el-broker-acceso-minimo-por-aplicacion" title="Permanent link">&para;</a></h3>
 <p>Por defecto <strong>nada</strong> pasa a través del broker. Se abre solo lo necesario para cada usuario: el Usuario 1 accede a la aplicación on-premise y el Usuario 2 a la aplicación en la nube.</p>
+<div class="admonition warning">
+<p class="admonition-title">Una IP de origen no es una identidad</p>
+<p>Las reglas identifican al usuario por su dirección (<code>-s 10.8.0.2</code>), que es un <strong>sustituto</strong> de la identidad. En un ZTNA real la decisión se basa en la identidad verificada del usuario, el estado del dispositivo y el contexto, <strong>no</strong> en la dirección de red. Lo que sí ilustra bien este paso es el <strong>acceso por recurso y puerto</strong>: el usuario no recibe acceso a la red interna ni a la subred de datos, solo a <strong>una aplicación concreta</strong>.</p>
+</div>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ZTNA_Broker<span class="w"> </span>iptables<span class="w"> </span>-P<span class="w"> </span>FORWARD<span class="w"> </span>DROP
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ZTNA_Broker<span class="w"> </span>iptables<span class="w"> </span>-A<span class="w"> </span>FORWARD<span class="w"> </span>-m<span class="w"> </span>state<span class="w"> </span>--state<span class="w"> </span>ESTABLISHED,RELATED<span class="w"> </span>-j<span class="w"> </span>ACCEPT
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ZTNA_Broker<span class="w"> </span>iptables<span class="w"> </span>-A<span class="w"> </span>FORWARD<span class="w"> </span>-s<span class="w"> </span><span class="m">10</span>.8.0.2<span class="w"> </span>-d<span class="w"> </span><span class="m">10</span>.0.0.10<span class="w"> </span>-p<span class="w"> </span>tcp<span class="w"> </span>--dport<span class="w"> </span><span class="m">8080</span><span class="w"> </span>-j<span class="w"> </span>ACCEPT
@@ -1199,10 +1235,19 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>EC2_Server<span class="w"> </span>nc<span class="w"> </span>-zv<span class="w"> </span>-w<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">10</span>.100.2.10<span class="w"> </span><span class="m">5432</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>AppServer<span class="w"> </span>nc<span class="w"> </span>-zv<span class="w"> </span>-w<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">10</span>.100.2.10<span class="w"> </span><span class="m">5432</span>
 </code></pre></div>
-<p><strong>Salida esperada:</strong> <code>succeeded</code> en las conexiones permitidas y expiración del tiempo de espera en las demás. Se verifica con conexiones TCP a puertos concretos (no con <code>ping</code>): las políticas son por aplicación y puerto.</p>
+<p><strong>Resultado esperado:</strong> <code>succeeded</code> en las conexiones permitidas y expiración del tiempo de espera en las demás. Se verifica con conexiones TCP a puertos concretos (no con <code>ping</code>): las políticas son por aplicación y puerto.</p>
 <h2 id="analisis">Análisis<a class="headerlink" href="#analisis" title="Permanent link">&para;</a></h2>
 <p><strong>Cloud Networking:</strong> VPC con subredes y conectividad híbrida (aquí, un enlace privado entre OnPremise y la VPC).</p>
-<p><strong>Zero Trust:</strong> verificación continua y mínimo privilegio: ningún usuario obtiene acceso a la red, solo a aplicaciones concretas.</p>
+<p><strong>Zero Trust</strong> (NIST SP 800-207) es un <strong>modelo</strong>, no un producto: la presencia de un broker y de una red de usuarios <strong>no constituye por sí misma Zero Trust</strong>. Se define por principios:</p>
+<ul>
+<li><strong>Verificación explícita</strong> de la identidad (usuario y, cuando procede, dispositivo y servicio).</li>
+<li><strong>Evaluación del contexto</strong> (estado del dispositivo, ubicación, riesgo, hora).</li>
+<li><strong>Autorización por recurso</strong>, no por pertenencia a una red.</li>
+<li><strong>Acceso de mínimo privilegio</strong>.</li>
+<li><strong>Reevaluación continua de la confianza</strong>: el acceso no se concede de una vez para siempre.</li>
+<li><strong>Protección de los recursos</strong>, no solo del perímetro.</li>
+</ul>
+<p><strong>En este laboratorio</strong> solo se ilustran el acceso por recurso (Paso 8), el mínimo privilegio y la microsegmentación (Paso 9). <strong>No</strong> hay verificación de identidad, evaluación de contexto ni reevaluación.</p>
 <p><strong>ZTNA:</strong> acceso remoto por aplicación a través de un broker (en el laboratorio, con una política estática; en producción, decidida por el proveedor de identidad y el estado del dispositivo).</p>
 <p><strong>SASE (conceptual):</strong> SD-WAN + SWG + CASB + ZTNA como servicio en la nube. No se construye en este laboratorio.</p>
 <p><strong>Microsegmentación:</strong> políticas granulares App→DB y EC2→RDS.</p>
@@ -1243,7 +1288,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 </tbody>
 </table>
 <h2 id="conclusiones">Conclusiones<a class="headerlink" href="#conclusiones" title="Permanent link">&para;</a></h2>
-<p>Las arquitecturas modernas combinan Cloud Networking, Zero Trust, ZTNA, SASE y microsegmentación para adaptarse a entornos híbridos con agilidad y seguridad. En este laboratorio se ha implementado la conectividad híbrida, el acceso mínimo por aplicación y la microsegmentación; la verificación de identidad y SASE quedan como conceptos explicados.</p>
+<p>Las arquitecturas modernas combinan Cloud Networking, Zero Trust, ZTNA, SASE y microsegmentación para adaptarse a entornos híbridos con agilidad y seguridad. En este laboratorio se ha <strong>representado</strong> la conectividad híbrida (con una abstracción de la nube), el acceso mínimo por aplicación y la microsegmentación; la verificación de identidad, la evaluación de contexto y SASE quedan como conceptos explicados, y el escenario <strong>no equivale a una plataforma ZTNA ni a AWS reales</strong>.</p>
 <hr />
 <p><strong>¡Laboratorio 12 completado!</strong></p>
               

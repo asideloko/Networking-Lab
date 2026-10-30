@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/labs/lab-09/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>09 · VPN y Tunelización - NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>09 · VPN y Tunelización - NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link href="../../assets/css/extra.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="../.." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -42,6 +42,8 @@
                 <li class="toctree-l1"><a class="reference internal" href="../..">Inicio</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../..#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../..#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../..#requisitos">Requisitos</a>
     </li>
@@ -126,7 +128,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -141,6 +143,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -350,6 +354,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-05/#observacion">Observación</a>
@@ -381,6 +387,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -669,6 +677,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../lab-11/">11 · Arquitectura de Red Empresarial</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#topologia">Topología</a>
     </li>
@@ -834,6 +846,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#ejercicios">Ejercicios</a>
@@ -870,7 +884,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -912,6 +926,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -924,7 +940,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href="../..">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -953,6 +969,10 @@
 <li><strong>Proteger las comunicaciones</strong> con cifrado.</li>
 <li>Entender por qué el enrutamiento dinámico sobre túneles (GRE + OSPF/BGP) se aborda más adelante (Laboratorio 15).</li>
 </ol>
+<div class="admonition warning">
+<p class="admonition-title">Túnel no es lo mismo que VPN</p>
+<p>Un <strong>túnel</strong> es la <strong>encapsulación</strong> de tráfico entre dos extremos. Una <strong>VPN</strong> es una conexión virtual <strong>protegida</strong> mediante mecanismos de seguridad (autenticación, integridad y, normalmente, cifrado). <strong>No todos los túneles son VPN seguras</strong>: GRE es un túnel, pero no cifra ni autentica criptográficamente el tráfico. Puede combinarse con IPsec para obtener protección criptográfica.</p>
+</div>
 <h2 id="problema-inicial">Problema inicial<a class="headerlink" href="#problema-inicial" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Las sucursales están conectadas con enlaces directos (sin cifrado).</li>
@@ -979,6 +999,10 @@
 </ul>
 <h2 id="topologia">Topología<a class="headerlink" href="#topologia" title="Permanent link">&para;</a></h2>
 <p>La topología extiende la del laboratorio 08 agregando túneles VPN.</p>
+<div class="admonition note">
+<p class="admonition-title">Son demostraciones alternativas, no una única arquitectura</p>
+<p>GRE, IPsec, OpenVPN y WireGuard se presentan como <strong>ejemplos didácticos separados</strong>; no se pretende que una empresa real los combine todos a la vez. En la práctica de este laboratorio <strong>coexisten</strong> en los mismos namespaces para ahorrar trabajo, con estas relaciones: GRE (R1–R2 y R2–R3) transporta el tráfico entre oficinas <strong>sin cifrar</strong>; IPsec (manual) protege <strong>solo</strong> el tráfico <code>10.0.0.0/24</code> ↔ <code>10.0.1.0/24</code>; OpenVPN y WireGuard son <strong>dos alternativas</strong> para el mismo cliente remoto (puedes probar una, la otra o las dos).</p>
+</div>
 <div class="mermaid">graph TB
     subgraph Sede_Central
         R1[Router 1 Sede 10.0.0.1]
@@ -996,11 +1020,11 @@
     subgraph Empleados_Remotos
         CLIENTE[Cliente VPN]
     end
-    R1 ---|GRE Tunnel| R2
-    R2 ---|GRE Tunnel| R3
-    VPN_GW ---|IPsec| R2
-    VPN_GW ---|OpenVPN| CLIENTE
-    VPN_GW ---|WireGuard| CLIENTE
+    R1 ---|"GRE (sin cifrado)"| R2
+    R2 ---|"GRE (sin cifrado)"| R3
+    R1 ---|"IPsec ESP (alternativa de protección R1-R2)"| R2
+    VPN_GW ---|"OpenVPN (alternativa A)"| CLIENTE
+    VPN_GW ---|"WireGuard (alternativa B)"| CLIENTE
     LAN1 --- R1
     LAN2 --- R2
     LAN3 --- R3</div>
@@ -1016,42 +1040,42 @@
 <tbody>
 <tr>
 <td>R1 (Sede)</td>
-<td>eth0 (LAN)</td>
+<td><code>br-lan</code> (LAN)</td>
 <td>10.0.0.1/24</td>
 </tr>
 <tr>
 <td>R1 (Sede)</td>
-<td>eth1 (R1-R2)</td>
+<td><code>veth-r1r2</code> (R1-R2)</td>
 <td>192.168.1.1/30</td>
 </tr>
 <tr>
-<td>R1 (Sede)</td>
-<td>WAN</td>
-<td>192.168.100.1/24</td>
+<td>Firewall</td>
+<td><code>veth-fw-wan</code> (WAN, laboratorio 08)</td>
+<td>192.168.100.1/24 (R1 ya no tiene WAN desde el laboratorio 08)</td>
 </tr>
 <tr>
 <td>R2 (Sucursal A)</td>
-<td>eth0 (LAN)</td>
+<td><code>veth-r2c</code> (LAN)</td>
 <td>10.0.1.1/24</td>
 </tr>
 <tr>
 <td>R2 (Sucursal A)</td>
-<td>eth1 (R1-R2)</td>
+<td><code>veth-r2r1</code> (R1-R2)</td>
 <td>192.168.1.2/30</td>
 </tr>
 <tr>
 <td>R2 (Sucursal A)</td>
-<td>eth2 (R2-R3)</td>
+<td><code>veth-r2r3</code> (R2-R3)</td>
 <td>192.168.2.1/30</td>
 </tr>
 <tr>
 <td>R3 (Sucursal B)</td>
-<td>eth0 (LAN)</td>
+<td><code>veth-r3c</code> (LAN)</td>
 <td>10.0.2.1/24</td>
 </tr>
 <tr>
 <td>R3 (Sucursal B)</td>
-<td>eth1 (R2-R3)</td>
+<td><code>veth-r3r2</code> (R2-R3)</td>
 <td>192.168.2.2/30</td>
 </tr>
 <tr>
@@ -1124,7 +1148,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>clienteVPN<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-cvpn<span class="w"> </span>up
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>clienteVPN<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>lo<span class="w"> </span>up
 </code></pre></div>
-<p>Reglas del firewall: publicar los puertos VPN (DNAT), permitir que el gateway y sus túneles lleguen a la LAN, y devolver el tráfico de retorno hacia los túneles:</p>
+<p>Reglas del firewall: publicar los puertos VPN (DNAT), permitir que el gateway y sus túneles lleguen a la LAN, y devolver el tráfico de retorno hacia los túneles. <strong>Qué se publica y qué se permite:</strong> solo <code>UDP 51820</code> (WireGuard) y <code>UDP 1194</code> (OpenVPN) hacia <strong>un único host</strong> de la DMZ (<code>10.0.99.20</code>); y, desde los túneles, el tráfico hacia la red interna <code>10.0.0.0/22</code>. La segunda regla es <strong>amplia a propósito para simplificar</strong> (todo origen del túnel hacia toda la LAN). En una red real se acotaría por usuario, recurso y puerto, con la misma lógica de mínimo privilegio del laboratorio 08:</p>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Publicar WireGuard (51820/udp) y OpenVPN (1194/udp) hacia el VPN Gateway</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>firewall<span class="w"> </span>iptables<span class="w"> </span>-t<span class="w"> </span>nat<span class="w"> </span>-A<span class="w"> </span>PREROUTING<span class="w"> </span>-i<span class="w"> </span>veth-fw-wan<span class="w"> </span>-p<span class="w"> </span>udp<span class="w"> </span>-m<span class="w"> </span>multiport<span class="w"> </span>--dports<span class="w"> </span><span class="m">51820</span>,1194<span class="w"> </span>-j<span class="w"> </span>DNAT<span class="w"> </span>--to-destination<span class="w"> </span><span class="m">10</span>.0.99.20
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>firewall<span class="w"> </span>iptables<span class="w"> </span>-I<span class="w"> </span>FORWARD<span class="w"> </span><span class="m">1</span><span class="w"> </span>-i<span class="w"> </span>veth-fw-wan<span class="w"> </span>-o<span class="w"> </span>br-dmz<span class="w"> </span>-p<span class="w"> </span>udp<span class="w"> </span>-d<span class="w"> </span><span class="m">10</span>.0.99.20<span class="w"> </span>-m<span class="w"> </span>multiport<span class="w"> </span>--dports<span class="w"> </span><span class="m">51820</span>,1194<span class="w"> </span>-j<span class="w"> </span>ACCEPT
@@ -1144,7 +1168,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 cat<span class="w"> </span>/tmp/lab09_dnat.txt
 </code></pre></div>
 <h3 id="paso-3-configurar-tunel-gre-entre-r1-y-r2">Paso 3: Configurar túnel GRE entre R1 y R2<a class="headerlink" href="#paso-3-configurar-tunel-gre-entre-r1-y-r2" title="Permanent link">&para;</a></h3>
-<p>GRE encapsula paquetes IP dentro de otros paquetes IP, sin cifrarlos.</p>
+<p>GRE encapsula paquetes IP dentro de otros paquetes IP, <strong>sin cifrarlos ni autenticarlos criptográficamente</strong>: cualquiera que capture el enlace verá el contenido original.</p>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># En R1 (Sede)</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>ip<span class="w"> </span>tunnel<span class="w"> </span>add<span class="w"> </span>gre1<span class="w"> </span>mode<span class="w"> </span>gre<span class="w"> </span>remote<span class="w"> </span><span class="m">192</span>.168.1.2<span class="w"> </span><span class="nb">local</span><span class="w"> </span><span class="m">192</span>.168.1.1<span class="w"> </span>ttl<span class="w"> </span><span class="m">255</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">10</span>.10.0.1/30<span class="w"> </span>dev<span class="w"> </span>gre1
@@ -1186,13 +1210,22 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>clienteSede<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.2.10
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>get<span class="w"> </span><span class="m">10</span>.0.2.10
 </code></pre></div>
-<p>La segunda orden debe mostrar <code>dev gre1</code>. Para ver la encapsulación, captura en la interfaz física mientras haces ping: verás paquetes con protocolo GRE (47) que contienen el ICMP original.</p>
+<p>La segunda orden debe mostrar <code>dev gre1</code>. Para ver la encapsulación, captura en la interfaz física mientras haces ping: verás paquetes con protocolo GRE (47) que contienen el ICMP original <strong>en claro</strong>. Esto demuestra que GRE es un túnel, no una VPN segura.</p>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>veth-r1r2<span class="w"> </span>-n<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span>proto<span class="w"> </span>gre
 </code></pre></div>
 <h2 id="implementacion-de-ipsec">Implementación de IPsec<a class="headerlink" href="#implementacion-de-ipsec" title="Permanent link">&para;</a></h2>
 <h3 id="paso-7-cifrar-el-trafico-sede-sucursal-a-con-ipsec-esp-en-modo-tunel">Paso 7: Cifrar el tráfico Sede ↔ Sucursal A con IPsec (ESP en modo túnel)<a class="headerlink" href="#paso-7-cifrar-el-trafico-sede-sucursal-a-con-ipsec-esp-en-modo-tunel" title="Permanent link">&para;</a></h3>
+<p>Conviene distinguir los elementos de IPsec:</p>
+<ul>
+<li><strong>ESP</strong> (Encapsulating Security Payload): el protocolo que, en el plano de datos, aporta cifrado, autenticación e integridad al tráfico.</li>
+<li><strong>Asociaciones de seguridad (SA)</strong>: acuerdos unidireccionales que definen algoritmos, claves y SPI. Hace falta una por sentido.</li>
+<li><strong>Negociación de parámetros (IKE)</strong>: el protocolo que normalmente acuerda las SA y renueva las claves. <strong>Aquí no existe</strong>: las claves se fijan a mano.</li>
+<li><strong>Políticas y estados XFRM</strong>: en Linux, las <em>políticas</em> (<code>ip xfrm policy</code>) dicen <strong>qué tráfico</strong> se protege y los <em>estados</em> (<code>ip xfrm state</code>) contienen las SA con sus claves.</li>
+</ul>
+<p>La presencia de comandos <code>xfrm</code> <strong>no demuestra por sí sola que exista una VPN funcional</strong>: hay que comprobar que el tráfico selecciona la política, sale como ESP y los contadores de la SA aumentan (Paso 8).</p>
 <p>Una VPN IPsec de producción usa un demonio IKE (por ejemplo strongSwan) que negocia las claves. Los demonios guardan su configuración y sus <em>sockets</em> en rutas del sistema compartidas, así que <strong>dos routers no pueden ejecutar uno cada uno dentro de namespaces sin trabajo adicional</strong>. Para entender IPsec sin ese problema configuramos el kernel directamente (<em>manual keying</em>): definimos las <strong>asociaciones de seguridad</strong> (SA, con sus claves) y las <strong>políticas</strong> que dicen qué tráfico se cifra.</p>
-<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Claves de prueba (las mismas en ambos extremos)</span>
+<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Claves de prueba (las mismas en ambos extremos y en ambos sentidos: solo para demostración;</span>
+<span class="c1"># en producción, IKE genera claves distintas por sentido y las renueva)</span>
 <span class="nv">KEY_ENC</span><span class="o">=</span>0x<span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">32</span><span class="k">)</span><span class="w">     </span><span class="c1"># AES-256</span>
 <span class="nv">KEY_AUTH</span><span class="o">=</span>0x<span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">32</span><span class="k">)</span><span class="w">    </span><span class="c1"># HMAC-SHA256</span>
 
@@ -1231,10 +1264,12 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>ip<span class="w"> </span>-s<span class="w"> </span>xfrm<span class="w"> </span>state
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>ip<span class="w"> </span>xfrm<span class="w"> </span>policy
 </code></pre></div>
-<p><strong>Salida esperada:</strong> el <em>ping</em> responde, <code>tcpdump</code> solo muestra paquetes ESP (el contenido ICMP no es visible) y los contadores de la SA aumentan.</p>
+<p><strong>Resultado esperado:</strong> el <em>ping</em> responde, <code>tcpdump</code> solo muestra paquetes ESP (el contenido ICMP no es visible) y los contadores de la SA aumentan.</p>
+<p>El selector de las políticas es <code>10.0.0.0/24</code> ↔ <code>10.0.1.0/24</code>: <strong>solo ese tráfico</strong> se cifra. El que va por los túneles GRE (por ejemplo Sede ↔ Sucursal B) sigue sin cifrar. Además, con manual keying no hay autenticación de los extremos ni reemplazo de claves: es una demostración del plano de datos, no una VPN lista para producción.</p>
 <h2 id="implementacion-de-openvpn">Implementación de OpenVPN<a class="headerlink" href="#implementacion-de-openvpn" title="Permanent link">&para;</a></h2>
 <h3 id="paso-9-openvpn-entre-el-cliente-remoto-y-el-vpn-gateway">Paso 9: OpenVPN entre el cliente remoto y el VPN Gateway<a class="headerlink" href="#paso-9-openvpn-entre-el-cliente-remoto-y-el-vpn-gateway" title="Permanent link">&para;</a></h3>
-<p>Un servidor OpenVPN de acceso remoto "real" necesita una PKI (CA, certificado de servidor y de cada cliente, parámetros DH) y no se genera en unos pocos comandos. Aquí usamos el modo de <strong>clave estática compartida</strong>, suficiente para ver el túnel <code>tun</code> y su sobrecarga sin PKI.</p>
+<p><strong>OpenVPN</strong> es una solución VPN <strong>basada en TLS</strong>: en su modo normal, cliente y servidor se autentican con certificados (PKI), negocian claves por un canal TLS y transportan el tráfico por UDP o TCP, con sus propios mecanismos de autenticación y cifrado. <strong>No es IPsec ni una variante de GRE.</strong></p>
+<p>Un servidor OpenVPN de acceso remoto "real" necesita esa PKI (CA, certificado de servidor y de cada cliente) y no se genera en unos pocos comandos. Aquí usamos el modo de <strong>clave estática compartida</strong>, que <strong>no usa TLS</strong>, no ofrece secreto perfecto hacia adelante y está en desuso; es suficiente para ver el túnel <code>tun</code> y su sobrecarga, pero <strong>no representa una configuración segura de producción</strong>.</p>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>openvpn
 mkdir<span class="w"> </span>-p<span class="w"> </span>/tmp/lab09
 
@@ -1263,7 +1298,7 @@ tail<span class="w"> </span>-3<span class="w"> </span>/tmp/lab09/ovpn-cli.log
 </code></pre></div>
 <h2 id="implementacion-de-wireguard">Implementación de WireGuard<a class="headerlink" href="#implementacion-de-wireguard" title="Permanent link">&para;</a></h2>
 <h3 id="paso-11-generar-las-claves">Paso 11: Generar las claves<a class="headerlink" href="#paso-11-generar-las-claves" title="Permanent link">&para;</a></h3>
-<p>WireGuard autentica a cada extremo con un par de claves. Cada lado conserva su clave privada y entrega solo la pública al otro:</p>
+<p><strong>WireGuard</strong> funciona con un modelo de <strong>pares</strong> (<em>peers</em>): cada extremo tiene un par de claves, conserva su clave privada y entrega solo la <strong>pública</strong> al otro; cada par declara qué direcciones acepta mediante <code>allowed-ips</code>, que actúa a la vez como <strong>tabla de enrutamiento criptográfico</strong> y como filtro de origen. Los datos viajan encapsulados en <strong>UDP</strong>.</p>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>wireguard-tools
 mkdir<span class="w"> </span>-p<span class="w"> </span>/tmp/lab09<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>/tmp/lab09
 <span class="nb">umask</span><span class="w"> </span><span class="m">077</span>
@@ -1296,6 +1331,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <span class="c1"># Acceso a la red interna a través del túnel</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>clienteVPN<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.0.10
 </code></pre></div>
+<p>Configurar un dispositivo WireGuard <strong>no significa que haya conectividad completa</strong> entre las redes detrás de los pares: además hacen falta las <strong>rutas</strong> (aquí, <code>route add 10.0.0.0/22 dev wg0</code> en el cliente, y la ruta de retorno en el firewall) y las <strong>políticas de acceso</strong> (reglas de <code>FORWARD</code>). Si falta alguna, el <em>handshake</em> puede existir y aun así no llegar al destino.</p>
 <h2 id="analisis-y-comparacion">Análisis y comparación<a class="headerlink" href="#analisis-y-comparacion" title="Permanent link">&para;</a></h2>
 <h3 id="paso-14-comparar-tecnologias-vpn">Paso 14: Comparar tecnologías VPN<a class="headerlink" href="#paso-14-comparar-tecnologias-vpn" title="Permanent link">&para;</a></h3>
 <table>
@@ -1310,27 +1346,27 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <tbody>
 <tr>
 <td>GRE</td>
-<td>3</td>
+<td>3 (encapsulación)</td>
 <td>Sencillo, soporta multicast</td>
-<td>Sin cifrado</td>
+<td>Sin cifrado ni autenticación: no es una VPN por sí solo</td>
 </tr>
 <tr>
 <td>IPsec</td>
 <td>3</td>
-<td>Seguro, estándar</td>
-<td>Complejo, NAT issues</td>
+<td>Estándar, cifra y autentica; ESP</td>
+<td>Complejo (IKE, políticas); problemas con NAT (NAT-T)</td>
 </tr>
 <tr>
 <td>OpenVPN</td>
-<td>3-4</td>
-<td>Flexible, SSL/TLS</td>
-<td>Mayor overhead</td>
+<td>3 (<code>tun</code>) o 2 (<code>tap</code>), sobre UDP/TCP</td>
+<td>Basado en TLS; flexible</td>
+<td>Mayor overhead; configuración de PKI</td>
 </tr>
 <tr>
 <td>WireGuard</td>
-<td>3</td>
-<td>Ligero, moderno</td>
-<td>Menos funciones</td>
+<td>3, sobre UDP</td>
+<td>Ligero, moderno, modelo de pares simple</td>
+<td>Menos funciones (sin asignación dinámica de direcciones integrada)</td>
 </tr>
 </tbody>
 </table>
@@ -1342,10 +1378,14 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>veth-r1r2<span class="w"> </span>-n<span class="w"> </span>-v<span class="w"> </span>esp<span class="w">   </span><span class="c1"># (visto en el Paso 8)</span>
 </code></pre></div>
 <p><strong>Interpretación:</strong>
-- GRE añade 4 bytes de overhead.
-- IPsec añade ~50-70 bytes de overhead.
-- OpenVPN añade ~60-80 bytes de overhead.
-- WireGuard añade ~40-50 bytes de overhead.</p>
+Órdenes de magnitud por paquete en IPv4 (varían con el cifrado, el relleno y las opciones):</p>
+<ul>
+<li>GRE añade <strong>24 bytes</strong> (20 de la nueva cabecera IP + 4 de GRE), sin cifrado.</li>
+<li>IPsec ESP en modo túnel (AES-CBC + HMAC-SHA256, como aquí) añade del orden de <strong>55-75 bytes</strong> (IP exterior, ESP, IV, relleno, <em>trailer</em> e ICV).</li>
+<li>OpenVPN sobre UDP añade del orden de <strong>40-70 bytes</strong>, según cifrado y modo.</li>
+<li>WireGuard añade <strong>60 bytes</strong> sobre IPv4 (20 IP + 8 UDP + 16 de cabecera WireGuard + 16 de etiqueta de autenticación).</li>
+</ul>
+<p>Este <em>overhead</em> reduce la MTU efectiva del túnel (véase el laboratorio 15 para MTU y MSS).</p>
 <h2 id="ejercicios-practicos">Ejercicios prácticos<a class="headerlink" href="#ejercicios-practicos" title="Permanent link">&para;</a></h2>
 <h3 id="ejercicio-1-agregar-un-nuevo-tunel-gre">Ejercicio 1: Agregar un nuevo túnel GRE<a class="headerlink" href="#ejercicio-1-agregar-un-nuevo-tunel-gre" title="Permanent link">&para;</a></h3>
 <p>Configura un túnel GRE entre R1 y R3 sobre el enlace directo <code>192.168.3.0/30</code> que se creó en el Paso 6 del laboratorio 06 (debe seguir activo) para tener redundancia.</p>
@@ -1413,19 +1453,19 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 </tr>
 <tr>
 <td>IPsec</td>
-<td>Cifrado entre sedes</td>
+<td>Protección criptográfica (ESP, SA, políticas) entre sedes</td>
 </tr>
 <tr>
 <td>OpenVPN</td>
-<td>Acceso remoto de empleados</td>
+<td>Acceso remoto basado en TLS (aquí, clave estática simplificada)</td>
 </tr>
 <tr>
 <td>WireGuard</td>
-<td>VPN ligera y moderna</td>
+<td>VPN ligera de pares con claves públicas</td>
 </tr>
 <tr>
 <td>Tunelización</td>
-<td>Encapsulación de tráfico</td>
+<td>Encapsulación de tráfico (no equivale a cifrado)</td>
 </tr>
 </tbody>
 </table>
@@ -1438,7 +1478,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <li>Implementado <strong>WireGuard</strong> como alternativa moderna y ligera.</li>
 <li>Comparado las diferentes tecnologías VPN y sus características.</li>
 </ol>
-<p>Las VPN son esenciales para conectar sedes y proporcionar acceso remoto seguro. GRE ofrece encapsulación simple y soporte para multicast, IPsec proporciona seguridad robusta y es el estándar empresarial, OpenVPN ofrece flexibilidad y amplia compatibilidad, y WireGuard destaca por su simplicidad, rendimiento y criptografía moderna.</p>
+<p>Las VPN son esenciales para conectar sedes y proporcionar acceso remoto seguro. GRE ofrece encapsulación simple y soporte para multicast, pero <strong>no protege</strong> el tráfico; IPsec proporciona seguridad robusta y es un estándar empresarial; OpenVPN, basado en TLS, ofrece flexibilidad y amplia compatibilidad; y WireGuard destaca por su simplicidad, rendimiento y criptografía moderna. En todos los casos, la VPN transporta el tráfico: <strong>las rutas y las políticas del firewall</strong> deciden qué se alcanza a través de ella.</p>
 <h2 id="preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio<a class="headerlink" href="#preparacion-para-el-siguiente-laboratorio" title="Permanent link">&para;</a></h2>
 <p>Hemos dejado la red con túneles GRE, IPsec (claves manuales), OpenVPN (clave estática) y WireGuard. En el <strong>Laboratorio 10</strong> exploraremos <strong>Infraestructura WAN y Core</strong>, montando una red troncal WAN con routers PE y P y rutas estáticas con redundancia (el enrutamiento dinámico llega en el Laboratorio 15).</p>
 <hr />

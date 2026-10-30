@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/labs/lab-03/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>03 · Componentes de Red y Conmutación - NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>03 · Componentes de Red y Conmutación - NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link href="../../assets/css/extra.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="../.." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -42,6 +42,8 @@
                 <li class="toctree-l1"><a class="reference internal" href="../..">Inicio</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../..#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../..#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../..#requisitos">Requisitos</a>
     </li>
@@ -126,7 +128,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -141,6 +143,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -350,6 +354,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-05/#observacion">Observación</a>
@@ -381,6 +387,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -669,6 +677,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../lab-11/">11 · Arquitectura de Red Empresarial</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#topologia">Topología</a>
     </li>
@@ -834,6 +846,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#ejercicios">Ejercicios</a>
@@ -870,7 +884,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -912,6 +926,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -924,7 +940,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href="../..">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -981,15 +997,16 @@
     C2[Cliente 2 10.0.1.3/24]
     C3[Cliente 3 10.0.1.4/24]
     C4[Cliente 4 10.0.1.5/24]
-    SW[Switch Bridge]
-    R[Router 10.0.1.1/24]
+    SW["Switch (namespace switch): bridge br0, capa 2"]
+    R["Router (namespace router): veth-rs 10.0.1.1/24, capa 3"]
     ISP[Proveedor Internet]
     C1 --- SW
     C2 --- SW
     C3 --- SW
     C4 --- SW
-    SW --- R
+    SW -- "enlace virtual veth-sr / veth-rs" --- R
     R --- ISP</div>
+<p>El <strong>switch</strong> (namespace <code>switch</code>) y el <strong>router</strong> (namespace <code>router</code>) son ahora dos equipos lógicos distintos. El bridge <code>br0</code> pertenece solo al switch; la dirección IP <code>10.0.1.1</code> pertenece a la interfaz <code>veth-rs</code> del router, que está conectada al bridge mediante un enlace virtual. Así se separa la función de capa 2 (conmutar tramas) de la de capa 3 (<em>gateway</em> hacia otras redes).</p>
 <p><strong>Direccionamiento:</strong></p>
 <table>
 <thead>
@@ -1022,12 +1039,12 @@
 </tr>
 <tr>
 <td>Switch</td>
-<td>br0</td>
-<td>- (capa 2)</td>
+<td>br0 (puertos <code>veth-s1</code>…<code>veth-s4</code> y <code>veth-sr</code>)</td>
+<td>- (capa 2, sin IP)</td>
 </tr>
 <tr>
 <td>Router (LAN)</td>
-<td>br0</td>
+<td>veth-rs</td>
 <td>10.0.1.1/24</td>
 </tr>
 <tr>
@@ -1053,6 +1070,10 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>router<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>delete<span class="w"> </span>veth-r1
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>router<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>delete<span class="w"> </span>veth-r2
 </code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Las reglas del laboratorio 02 mencionaban <code>br0</code></p>
+<p>Las reglas de <code>FORWARD</code> del router creadas en el laboratorio 02 usan <code>-i br0</code>. Al borrar el bridge del router esas reglas dejan de aplicarse. Con la política por defecto (<code>ACCEPT</code>) la salida a Internet seguirá funcionando, pero conviene mantener la coherencia: tras el Paso 9 sustituye <code>br0</code> por <code>veth-rs</code> en ellas (<code>iptables -D FORWARD -i br0 …</code> y <code>iptables -A FORWARD -i veth-rs …</code>, ejecutadas con <code>ip netns exec router</code>). La regla de <code>MASQUERADE</code> usa <code>-o veth-wan</code> y no se ve afectada.</p>
+</div>
 <h3 id="paso-3-crear-el-namespace-del-switch">Paso 3: Crear el namespace del switch<a class="headerlink" href="#paso-3-crear-el-namespace-del-switch" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code>ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </span>switch
 </code></pre></div>
@@ -1147,7 +1168,7 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 <span class="c1"># Cliente 3 al router</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente3<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.1.1
 </code></pre></div>
-<p><strong>Salida esperada:</strong> Todas las pruebas con 0% de pérdida.</p>
+<p><strong>Resultado esperado:</strong> Todas las pruebas con 0% de pérdida.</p>
 <h3 id="paso-11-verificar-conectividad-a-internet">Paso 11: Verificar conectividad a Internet<a class="headerlink" href="#paso-11-verificar-conectividad-a-internet" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente3<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">8</span>.8.8.8
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente4<span class="w"> </span>curl<span class="w"> </span>-I<span class="w"> </span>http://google.com
@@ -1158,14 +1179,15 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Ver tabla MAC del bridge</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>switch<span class="w"> </span>bridge<span class="w"> </span>fdb<span class="w"> </span>show<span class="w"> </span>br<span class="w"> </span>br0
 </code></pre></div>
-<p><strong>Salida esperada</strong> (las direcciones MAC serán distintas en tu equipo, pues Linux las genera al azar; para poder seguirlas, anótalas con <code>ip netns exec cliente1 ip link show veth-c1</code>):</p>
+<p><strong>Ejemplo de salida</strong> (representativo; las direcciones MAC serán distintas en tu equipo, pues Linux las genera al azar; para poder seguirlas, anótalas con <code>ip netns exec cliente1 ip link show veth-c1</code>):</p>
 <div class="language-text highlight"><pre><span></span><code>5e:1c:9a:03:77:b1 dev veth-s1 master br0
 c2:4d:08:6f:12:e4 dev veth-s2 master br0
 ...
 </code></pre></div>
-<p>Cada dirección MAC está asociada a un puerto específico. Solo aparecen las MAC de los equipos que ya han enviado tráfico: si la tabla está vacía, ejecuta antes los pings del Paso 10.</p>
+<p><strong>Qué significa cada entrada:</strong> <code>5e:1c:9a:03:77:b1 dev veth-s1 master br0</code> quiere decir «la MAC <code>5e:1c:…</code> se ha visto como <strong>origen</strong> de una trama recibida por el puerto <code>veth-s1</code>; por tanto, las tramas cuyo destino sea esa MAC deben salir por <code>veth-s1</code>». El switch <strong>aprende</strong> leyendo la MAC de origen de cada trama entrante y <strong>consulta</strong> la tabla usando la MAC de destino. Solo aparecen las MAC de los equipos que ya han enviado tráfico: si la tabla está vacía, ejecuta antes los pings del Paso 10. Si la MAC de destino no está en la tabla (o es <em>broadcast</em>), el switch inunda la trama por todos los puertos excepto el de entrada. Las entradas caducan tras un tiempo de envejecimiento (por defecto, 300 s en Linux).</p>
+<p>También verás entradas con <code>permanent</code> o <code>self</code>: corresponden a las MAC de las propias interfaces del bridge y no a equipos aprendidos.</p>
 <h3 id="paso-13-capturar-trafico-en-el-switch">Paso 13: Capturar tráfico en el switch<a class="headerlink" href="#paso-13-capturar-trafico-en-el-switch" title="Permanent link">&para;</a></h3>
-<p>Para observar cómo el switch reenvía tramas, capturamos en todas las interfaces:</p>
+<p>Para observar cómo el switch reenvía tramas, capturamos en el bridge. Ten en cuenta que <code>br0</code> ve el tráfico que <strong>entra o sale por el propio bridge</strong>, no distingue por sí solo por qué puerto físico salió cada trama; para comprobar que el reenvío es selectivo, captura además en un puerto concreto (por ejemplo <code>-i veth-s4</code>, que <strong>no</strong> debería ver el ping entre Cliente 1 y Cliente 3 una vez aprendidas las MAC):</p>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Capturar en el switch (interfaz br0)</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>switch<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>br0<span class="w"> </span>-n<span class="w"> </span>-e<span class="w"> </span>icmp
 </code></pre></div>
@@ -1180,32 +1202,70 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 <li>El switch reenvía la trama <strong>solo por <code>veth-s3</code></strong> (no por los demás puertos).</li>
 <li>Cliente 3 recibe la trama y responde.</li>
 </ol>
-<p><strong>Esto demuestra la conmutación en capa 2:</strong> el switch aprende y reenvía solo al puerto correcto, reduciendo el tráfico innecesario.</p>
+<p><strong>Esto demuestra la conmutación en capa 2:</strong> el switch aprende y reenvía solo al puerto correcto, reduciendo el tráfico innecesario. (La primera trama de la conversación puede inundarse si la MAC de destino aún no se conoce, y ARP se envía por <em>broadcast</em>.)</p>
+<div class="admonition info">
+<p class="admonition-title">Bridge Linux frente a switch físico</p>
+<p>La equivalencia funcional es una herramienta didáctica. Un bridge Linux no reproduce necesariamente funciones propias de un switch empresarial: STP configurado y gestionado por defecto, administración avanzada (SNMP, CLI de proveedor), QoS por hardware, PoE, apilado o rendimiento por ASIC.</p>
+</div>
 <h2 id="analisis-de-mtu">Análisis de MTU<a class="headerlink" href="#analisis-de-mtu" title="Permanent link">&para;</a></h2>
+<p>Conviene distinguir cinco magnitudes que suelen confundirse:</p>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Qué es</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>MTU de una interfaz</strong></td>
+<td>Tamaño máximo del <strong>paquete IP</strong> (cabecera IP + datos) que la interfaz puede transmitir. Con 1500, un paquete IP de hasta 1500 bytes.</td>
+</tr>
+<tr>
+<td><strong>Carga útil (payload)</strong></td>
+<td>Los datos que van dentro del paquete (en IPv4 sin opciones, 1500 − 20 de cabecera IP = 1480 para TCP/UDP/ICMP).</td>
+</tr>
+<tr>
+<td><strong>Tamaño total de la trama Ethernet</strong></td>
+<td>Paquete IP <strong>más</strong> la cabecera Ethernet (14 bytes) y el FCS (4): hasta 1518 bytes con MTU 1500 (1522 con etiqueta 802.1Q). La cabecera Ethernet se añade <em>fuera</em> del MTU.</td>
+</tr>
+<tr>
+<td><strong>Fragmentación IPv4</strong></td>
+<td>División de un paquete mayor que la MTU en fragmentos, si el bit DF no lo prohíbe.</td>
+</tr>
+<tr>
+<td><strong>Path MTU Discovery (PMTUD)</strong></td>
+<td>Mecanismo con el que el origen descubre la MTU más pequeña del camino, enviando paquetes con DF y atendiendo los mensajes ICMP «fragmentation needed».</td>
+</tr>
+</tbody>
+</table>
 <h3 id="paso-14-verificar-la-mtu-actual">Paso 14: Verificar la MTU actual<a class="headerlink" href="#paso-14-verificar-la-mtu-actual" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Ver MTU de las interfaces</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>show<span class="w"> </span>veth-c1
 </code></pre></div>
-<p><strong>Salida esperada:</strong> <code>mtu 1500</code></p>
+<p><strong>Resultado esperado:</strong> <code>mtu 1500</code></p>
 <h3 id="paso-15-probar-mtu-con-ping">Paso 15: Probar MTU con ping<a class="headerlink" href="#paso-15-probar-mtu-con-ping" title="Permanent link">&para;</a></h3>
-<p>Enviamos un ping con tamaño mayor a 1500 bytes (con fragmentación):</p>
-<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Ping con 2000 bytes (se fragmentará)</span>
+<p>Enviamos un ping con una carga mayor que la MTU. <strong>Recuerda:</strong> la opción <code>-s</code> de <code>ping</code> indica el tamaño de los <strong>datos ICMP</strong>; el paquete IP resultante mide <code>-s</code> + 8 (cabecera ICMP) + 20 (cabecera IP). Con <code>-s 2000</code> el paquete IP mide 2028 bytes:</p>
+<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Ping con 2000 bytes de datos (paquete IP de 2028 bytes: se fragmentará)</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span>-M<span class="w"> </span><span class="k">do</span><span class="w"> </span>-s<span class="w"> </span><span class="m">2000</span><span class="w"> </span><span class="m">10</span>.0.1.4
 </code></pre></div>
-<p><strong>Salida esperada:</strong> con <code>-M do</code> (prohibir fragmentación) y MTU 1500, el propio <code>ping</code> rechaza el envío antes de transmitirlo:</p>
+<p><strong>Resultado esperado:</strong> con <code>-M do</code> (prohibir fragmentación) y MTU 1500, el propio <code>ping</code> rechaza el envío antes de transmitirlo:</p>
 <div class="language-text highlight"><pre><span></span><code>ping: local error: message too long, mtu=1500
 </code></pre></div>
 <p>Si en cambio permites la fragmentación (<code>-M dont</code>, el valor por defecto en Linux), el paquete se divide en fragmentos de hasta 1500 bytes, el destino los reensambla y el ping responde con normalidad:</p>
 <div class="language-bash highlight"><pre><span></span><code>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span>-M<span class="w"> </span>dont<span class="w"> </span>-s<span class="w"> </span><span class="m">2000</span><span class="w"> </span><span class="m">10</span>.0.1.4
 </code></pre></div>
-<p>Esto demuestra la importancia de la MTU: los paquetes que exceden el tamaño máximo deben fragmentarse o, si está prohibido, no pueden enviarse.</p>
+<p>Esto demuestra la importancia de la MTU: los paquetes que exceden el tamaño máximo deben fragmentarse o, si está prohibido, no pueden enviarse. En el tamaño máximo sin fragmentar, <code>-s 1472</code> (1472 + 8 + 20 = 1500) funciona con <code>-M do</code> y <code>-s 1473</code> no.</p>
+<p>Este experimento es <strong>local</strong>: el error lo genera el propio origen. En un camino real con varios saltos, PMTUD depende de que los routers intermedios devuelvan ICMP «fragmentation needed» y de que ningún filtro lo bloquee.</p>
 <h3 id="paso-16-cambiar-mtu-opcional">Paso 16: Cambiar MTU (opcional)<a class="headerlink" href="#paso-16-cambiar-mtu-opcional" title="Permanent link">&para;</a></h3>
-<p>Podemos cambiar la MTU para soportar jumboframes:</p>
+<p>Podemos cambiar la MTU para soportar jumboframes entre Cliente 1 y Cliente 3. La MTU debe subirse en <strong>todos los extremos del camino</strong>: ambos clientes y los puertos del switch por los que pasa la trama (y el bridge, que adopta la menor MTU de sus puertos):</p>
 <div class="language-bash highlight"><pre><span></span><code>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-c1<span class="w"> </span>mtu<span class="w"> </span><span class="m">9000</span>
+ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente3<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-c3<span class="w"> </span>mtu<span class="w"> </span><span class="m">9000</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>switch<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-s1<span class="w"> </span>mtu<span class="w"> </span><span class="m">9000</span>
+ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>switch<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-s3<span class="w"> </span>mtu<span class="w"> </span><span class="m">9000</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>switch<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>br0<span class="w"> </span>mtu<span class="w"> </span><span class="m">9000</span>
 </code></pre></div>
-<p>Ahora el ping con 9000 bytes debería funcionar (si todos los enlaces soportan jumboframes).</p>
+<p>Ahora un ping con <code>-s 8972</code> (8972 + 8 + 20 = 9000) y <code>-M do</code> entre Cliente 1 y Cliente 3 debería funcionar. Un ping con <code>-s 9000</code> no cabría: sumaría 28 bytes de cabeceras. Los otros puertos del bridge (<code>veth-s2</code>, <code>veth-s4</code>, <code>veth-sr</code>) conservan 1500, de modo que el tráfico hacia ellos sigue limitado por esa MTU.</p>
 <h2 id="ejercicios-practicos">Ejercicios prácticos<a class="headerlink" href="#ejercicios-practicos" title="Permanent link">&para;</a></h2>
 <h3 id="ejercicio-1-observar-el-aprendizaje-de-mac">Ejercicio 1: Observar el aprendizaje de MAC<a class="headerlink" href="#ejercicio-1-observar-el-aprendizaje-de-mac" title="Permanent link">&para;</a></h3>
 <ol>
@@ -1240,7 +1300,7 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 </code></pre></div>
 </li>
 <li>
-<p>Cambiar la MTU a 9000 en todos los enlaces y repetir la medición.</p>
+<p>Cambiar la MTU a 9000 en todos los enlaces del camino (<code>veth-c1</code>, <code>veth-s1</code>, <code>br0</code>, <code>veth-sr</code>, <code>veth-rs</code>) y repetir la medición.</p>
 </li>
 <li><strong>Pregunta:</strong> ¿Mejora el throughput con jumboframes? ¿Por qué?</li>
 </ol>
@@ -1289,13 +1349,13 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 <p>El switch es un componente fundamental en las redes modernas. Su capacidad para aprender direcciones MAC y reenviar tráfico solo por el puerto correcto permite:</p>
 <ul>
 <li>Mayor eficiencia en el uso del ancho de banda.</li>
-<li>Reducción de colisiones (en redes conmutadas punto a punto).</li>
+<li>Dominios de colisión separados por puerto (en redes conmutadas dúplex, las colisiones prácticamente desaparecen).</li>
 <li>Escalabilidad para conectar cientos o miles de dispositivos.</li>
 <li>Base para implementar VLANs y otras tecnologías de segmentación.</li>
 </ul>
 <p>La MTU, por su parte, es un parámetro crítico que debe ser configurado correctamente para evitar fragmentación y pérdida de rendimiento.</p>
 <h2 id="preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio<a class="headerlink" href="#preparacion-para-el-siguiente-laboratorio" title="Permanent link">&para;</a></h2>
-<p>Hemos dejado la red con 4 clientes conectados a un switch, y el switch conectado al router con salida a Internet. En el <strong>Laboratorio 04</strong> comenzaremos a trabajar con <strong>direccionamiento IP y subredes</strong>, segmentando la red en diferentes subredes y configurando el enrutamiento entre ellas.</p>
+<p>Hemos dejado la red con 4 clientes conectados a un switch, y el switch conectado al router con salida a Internet. En el <strong>Laboratorio 04</strong> comenzaremos a trabajar con <strong>direccionamiento IP y subredes</strong>, segmentando la red en diferentes subredes y y preparando el enrutamiento entre ellas.</p>
 <hr />
 <p><strong>¡Laboratorio 03 completado!</strong> Ahora tenemos una red conmutada escalable y hemos analizado el funcionamiento de los componentes de red. Continúa con el <strong>Laboratorio 04</strong>.</p>
               

@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/labs/lab-01/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>01 · Fundamentos de Redes y Encapsulación - NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>01 · Fundamentos de Redes y Encapsulación - NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link href="../../assets/css/extra.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="../.." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -42,6 +42,8 @@
                 <li class="toctree-l1"><a class="reference internal" href="../..">Inicio</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../..#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../..#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../..#requisitos">Requisitos</a>
     </li>
@@ -126,7 +128,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -141,6 +143,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -350,6 +354,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-05/#observacion">Observación</a>
@@ -381,6 +387,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -669,6 +677,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../lab-11/">11 · Arquitectura de Red Empresarial</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#topologia">Topología</a>
     </li>
@@ -834,6 +846,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#ejercicios">Ejercicios</a>
@@ -870,7 +884,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -912,6 +926,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -924,7 +940,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href="../..">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -945,11 +961,15 @@
 
 <h1 id="fundamentos-de-redes-y-encapsulacion">Fundamentos de Redes y Encapsulación<a class="headerlink" href="#fundamentos-de-redes-y-encapsulacion" title="Permanent link">&para;</a></h1>
 <h2 id="contexto-empresarial">Contexto empresarial<a class="headerlink" href="#contexto-empresarial" title="Permanent link">&para;</a></h2>
-<p>La empresa <strong>Networking SecOps</strong> acaba de abrir una nueva oficina. Cuenta con dos empleados que necesitan compartir archivos y acceder a Internet. No hay infraestructura de red aún. Se te ha encargado <strong>diseñar e implementar la red local</strong> que permita la comunicación entre los equipos y el acceso a la web. Además, debes <strong>demostrar cómo viajan los datos</strong> desde un equipo hasta el router y cómo se encapsulan en cada capa.</p>
+<p>La empresa <strong>Networking SecOps</strong> acaba de abrir una nueva oficina. Cuenta con dos empleados que necesitan compartir archivos y acceder a Internet. No hay infraestructura de red aún. Se te ha encargado <strong>diseñar la red local</strong> que permita la comunicación entre los equipos y preparar el acceso a la web. Además, debes <strong>demostrar cómo viajan los datos</strong> entre dos equipos y cómo se encapsulan en cada capa.</p>
+<div class="admonition note">
+<p class="admonition-title">Alcance de este laboratorio</p>
+<p>En esta primera demostración el equipo intermedio (el namespace <code>router</code>) aloja un <strong>bridge Linux</strong> y su función efectiva es la <strong>conmutación Ethernet (capa 2)</strong>. El <strong>enrutamiento entre subredes</strong> todavía no se demuestra; llegará en los laboratorios 02 y 06.</p>
+</div>
 <h2 id="problema-inicial">Problema inicial<a class="headerlink" href="#problema-inicial" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Dos PCs (Cliente1 y Cliente2) deben comunicarse entre sí.</li>
-<li>Ambas necesitan salir a Internet a través de un router.</li>
+<li>Ambas necesitarán salir a Internet a través de un router (esa salida se prepara en el laboratorio 02).</li>
 <li>No se dispone de equipos físicos, pero se puede utilizar <strong>Linux</strong> con herramientas de virtualización de red (namespaces, veth, etc.) para simular la topología.</li>
 </ul>
 <h2 id="objetivos-del-laboratorio">Objetivos del laboratorio<a class="headerlink" href="#objetivos-del-laboratorio" title="Permanent link">&para;</a></h2>
@@ -970,11 +990,11 @@
 <div class="mermaid">graph TB
     C1[Cliente 1 10.0.1.2/24]
     C2[Cliente 2 10.0.1.3/24]
-    R[Router 10.0.1.1/24]
-    Internet((Internet))
+    R["Equipo «router»: bridge br0 (capa 2) 10.0.1.1/24"]
+    Internet((Internet: aún sin conectar))
     C1 --- R
     C2 --- R
-    R --- Internet</div>
+    R -. "lab 02" .- Internet</div>
 <p><strong>Direccionamiento:</strong></p>
 <table>
 <thead>
@@ -996,17 +1016,18 @@
 <td>10.0.1.3/24</td>
 </tr>
 <tr>
-<td>Router</td>
-<td>eth0</td>
+<td>Router (bridge)</td>
+<td>br0</td>
 <td>10.0.1.1/24</td>
 </tr>
 <tr>
 <td>(Internet)</td>
-<td>eth1</td>
-<td>(DHCP o fija)</td>
+<td>—</td>
+<td>No se configura en este laboratorio</td>
 </tr>
 </tbody>
 </table>
+<p>El namespace <code>router</code> es un equipo lógico que aloja el bridge <code>br0</code>. La dirección <code>10.0.1.1</code> pertenece a la interfaz IP del propio bridge: sirve para que el equipo sea alcanzable y para preparar su papel de <em>gateway</em> en el laboratorio 02. <strong>No interviene</strong> en la comunicación entre Cliente 1 y Cliente 2.</p>
 <h2 id="construccion-de-la-red">Construcción de la red<a class="headerlink" href="#construccion-de-la-red" title="Permanent link">&para;</a></h2>
 <p>Usaremos <strong>namespaces de red</strong> para aislar cada dispositivo en un entorno virtual dentro de la misma máquina Linux. Esto nos permite simular una red sin necesidad de hardware extra.</p>
 <h3 id="paso-1-verificar-el-entorno">Paso 1: Verificar el entorno<a class="headerlink" href="#paso-1-verificar-el-entorno" title="Permanent link">&para;</a></h3>
@@ -1022,7 +1043,7 @@ ip<span class="w"> </span>netns<span class="w"> </span>add<span class="w"> </spa
 <p>Verificamos que se hayan creado:</p>
 <div class="language-bash highlight"><pre><span></span><code>ip<span class="w"> </span>netns<span class="w"> </span>list
 </code></pre></div>
-<p><strong>Salida esperada</strong> (el orden puede variar y, según la versión de <code>iproute2</code>, cada nombre puede llevar un sufijo <code>(id: N)</code>):</p>
+<p><strong>Ejemplo de salida</strong> (representativo; el orden puede variar y, según la versión de <code>iproute2</code>, cada nombre puede llevar un sufijo <code>(id: N)</code>):</p>
 <div class="language-text highlight"><pre><span></span><code>router
 cliente1
 cliente2
@@ -1068,23 +1089,23 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>router<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-r2<span class="w"> </span>up
 </code></pre></div>
 <h3 id="paso-6-configurar-la-salida-a-internet-opcional">Paso 6: Configurar la salida a Internet (opcional)<a class="headerlink" href="#paso-6-configurar-la-salida-a-internet-opcional" title="Permanent link">&para;</a></h3>
-<p>Si queremos que los clientes accedan a Internet, necesitamos conectar el router a una interfaz externa (por ejemplo, <code>eth0</code> del host) y habilitar NAT. Esto lo haremos en el laboratorio 02 para no complicar ahora. Por ahora nos centramos en la comunicación local.</p>
+<p>El router todavía <strong>no dispone de una interfaz WAN funcional</strong>: para que los clientes accedan a Internet hará falta una interfaz externa, una ruta por defecto, reenvío IP y NAT. Todo ello se construye en el laboratorio 02. Por ahora nos centramos en la comunicación local.</p>
 <h3 id="paso-7-verificar-conectividad-entre-clientes">Paso 7: Verificar conectividad entre clientes<a class="headerlink" href="#paso-7-verificar-conectividad-entre-clientes" title="Permanent link">&para;</a></h3>
 <p>Desde Cliente 1, hacemos ping a Cliente 2:</p>
 <div class="language-bash highlight"><pre><span></span><code>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.1.3
 </code></pre></div>
-<p><strong>Salida esperada:</strong> 4 respuestas exitosas.</p>
+<p><strong>Resultado esperado:</strong> 4 respuestas exitosas.</p>
 <p>Desde Cliente 2 a Cliente 1:</p>
 <div class="language-bash highlight"><pre><span></span><code>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente2<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.1.2
 </code></pre></div>
-<p><strong>Salida esperada:</strong> 4 respuestas exitosas.</p>
+<p><strong>Resultado esperado:</strong> 4 respuestas exitosas.</p>
 <h3 id="paso-8-verificar-conectividad-con-el-router">Paso 8: Verificar conectividad con el router<a class="headerlink" href="#paso-8-verificar-conectividad-con-el-router" title="Permanent link">&para;</a></h3>
 <p>Desde Cliente 1 al router:</p>
 <div class="language-bash highlight"><pre><span></span><code>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.1.1
 </code></pre></div>
-<p><strong>Salida esperada:</strong> 4 respuestas exitosas.</p>
+<p><strong>Resultado esperado:</strong> 4 respuestas exitosas.</p>
 <h2 id="observacion-de-la-encapsulacion">Observación de la encapsulación<a class="headerlink" href="#observacion-de-la-encapsulacion" title="Permanent link">&para;</a></h2>
-<p>Vamos a capturar el tráfico en el router para ver cómo viaja un paquete ICMP (ping) desde Cliente 1 a Cliente 2.</p>
+<p>Vamos a capturar el tráfico en el bridge del equipo intermedio para ver cómo viaja un paquete ICMP (ping) desde Cliente 1 a Cliente 2.</p>
 <h3 id="paso-9-iniciar-captura-en-el-router">Paso 9: Iniciar captura en el router<a class="headerlink" href="#paso-9-iniciar-captura-en-el-router" title="Permanent link">&para;</a></h3>
 <p>Abrimos otra terminal (o usamos <code>tmux</code>) y ejecutamos:</p>
 <div class="language-bash highlight"><pre><span></span><code>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>router<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>br0<span class="w"> </span>-n<span class="w"> </span>-v<span class="w"> </span>icmp
@@ -1094,7 +1115,7 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 <div class="language-bash highlight"><pre><span></span><code>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>cliente1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">10</span>.0.1.3
 </code></pre></div>
 <h3 id="paso-11-analizar-la-captura">Paso 11: Analizar la captura<a class="headerlink" href="#paso-11-analizar-la-captura" title="Permanent link">&para;</a></h3>
-<p>Deberías ver una salida similar a:</p>
+<p>Ejemplo de salida (representativo; los identificadores, las horas y las MAC variarán):</p>
 <div class="language-text highlight"><pre><span></span><code>tcpdump: listening on br0, link-type EN10MB (Ethernet), capture size 262144 bytes
 14:23:45.678901 IP (tos 0x0, ttl 64, id 12345, offset 0, flags [DF], proto ICMP (1), length 84)
     10.0.1.2 &gt; 10.0.1.3: ICMP echo request, id 1, seq 1, length 64
@@ -1111,16 +1132,21 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 <p>Podemos ver más detalles si usamos <code>-e</code> para mostrar la cabecera Ethernet:</p>
 <div class="language-bash highlight"><pre><span></span><code>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>router<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>br0<span class="w"> </span>-n<span class="w"> </span>-e<span class="w"> </span>icmp
 </code></pre></div>
-<p>Aparecerán direcciones MAC de origen y destino, lo que confirma la encapsulación en la capa de enlace.</p>
+<p>Aparecerán direcciones MAC de origen y destino, lo que confirma la encapsulación en la capa de enlace. Observa que la MAC de destino de cada trama es la de <strong>Cliente 2</strong> (y la de Cliente 1 en la respuesta), no la del bridge.</p>
 <h2 id="analisis-del-flujo-de-datos">Análisis del flujo de datos<a class="headerlink" href="#analisis-del-flujo-de-datos" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>Cliente 1 genera el mensaje:</strong> La aplicación <code>ping</code> crea un mensaje ICMP Echo Request.</li>
 <li><strong>Capa de transporte:</strong> ICMP no usa puertos, pero se considera parte de la capa de red en el modelo TCP/IP. A efectos prácticos, el mensaje se entrega a la capa IP.</li>
 <li><strong>Capa de red (IP):</strong> Se añade el encabezado IP con origen 10.0.1.2 y destino 10.0.1.3.</li>
-<li><strong>Capa de enlace:</strong> Se añade la cabecera Ethernet con MAC origen (de veth-c1) y MAC destino (de veth-r1, que es la interfaz del router conectada a br0).</li>
-<li><strong>El router recibe la trama</strong>, la desencapsula (elimina cabecera Ethernet), consulta su tabla de reenvío y ve que el destino está en la misma red (br0). Entonces reenvía el paquete por la misma interfaz pero con nueva trama Ethernet (origen: MAC del router, destino: MAC de Cliente 2).</li>
+<li><strong>Resolución ARP:</strong> como 10.0.1.3 pertenece a la misma subred que el origen, Cliente 1 no necesita gateway: envía una solicitud ARP por <em>broadcast</em> preguntando «¿quién tiene 10.0.1.3?». Cliente 2 responde con su MAC. (Esos mensajes ARP no aparecen en la captura anterior porque el filtro es <code>icmp</code>; puedes verlos con <code>tcpdump -i br0 -n -e arp</code>.)</li>
+<li><strong>Capa de enlace:</strong> Se añade la cabecera Ethernet con MAC origen (de <code>veth-c1</code>) y MAC destino (la de <code>veth-c2</code>, obtenida por ARP).</li>
+<li><strong>El bridge conmuta la trama.</strong> No desencapsula el paquete IP ni consulta tablas de rutas. Aprende la MAC de origen de cada trama que recibe y la asocia al puerto de entrada; para decidir la salida busca la MAC de destino en su tabla. Si la conoce, reenvía la trama <strong>sin modificarla</strong> solo por ese puerto (<code>veth-r2</code>); si no la conoce, la inunda por todos los puertos excepto el de entrada. Puedes ver la tabla con <code>ip netns exec router bridge fdb show br br0</code>.</li>
 <li><strong>Cliente 2 recibe la trama</strong>, la desencapsula y entrega el mensaje ICMP a la aplicación, que genera la respuesta y repite el proceso inverso.</li>
 </ol>
+<div class="admonition info">
+<p class="admonition-title">Bridge frente a router</p>
+<p>Un <strong>bridge</strong> aprende direcciones MAC y reenvía <strong>tramas Ethernet</strong> dentro de una misma red. Un <strong>router</strong> consulta información de capa 3 y reenvía <strong>paquetes IP</strong> entre redes distintas, reescribiendo la cabecera Ethernet en cada salto. Cuando los dos clientes están en la misma subred, la comunicación es de capa 2 y el router no participa.</p>
+</div>
 <h2 id="conclusiones-tecnicas">Conclusiones técnicas<a class="headerlink" href="#conclusiones-tecnicas" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Hemos implementado una red funcional utilizando <strong>namespaces de red</strong>, que simulan dispositivos independientes.</li>
@@ -1129,7 +1155,7 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 <li>Datos → ICMP (mensaje) → IP (paquete) → Ethernet (trama).</li>
 </ul>
 </li>
-<li>El router ha actuado como conmutador (switch) dentro de la misma subred, ya que no ha necesitado enrutar.</li>
+<li>El equipo lógico denominado <code>router</code> contiene un <strong>bridge</strong> que realiza la <strong>conmutación de capa 2</strong> entre los dos clientes. <strong>No se ha demostrado todavía enrutamiento entre subredes</strong>.</li>
 <li>Este laboratorio sienta las bases para los siguientes, donde agregaremos más dispositivos, VLANs, enrutamiento y servicios.</li>
 </ul>
 <h2 id="errores-comunes-y-soluciones">Errores comunes y soluciones<a class="headerlink" href="#errores-comunes-y-soluciones" title="Permanent link">&para;</a></h2>
@@ -1165,9 +1191,9 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 </tbody>
 </table>
 <h2 id="preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio<a class="headerlink" href="#preparacion-para-el-siguiente-laboratorio" title="Permanent link">&para;</a></h2>
-<p>Hemos dejado la red con los dos clientes y el router (con bridge). En el <strong>Laboratorio 02</strong> agregaremos una conexión a Internet mediante NAT y configuraremos el enrutamiento para que los clientes puedan salir a la web.</p>
+<p>Hemos dejado la red con los dos clientes y el equipo <code>router</code> (con bridge). Este equipo <strong>aún no tiene salida a Internet</strong>. En el <strong>Laboratorio 02</strong> le añadiremos una interfaz externa, una ruta por defecto y NAT para que los clientes puedan salir a la web.</p>
 <hr />
-<p><strong>¡Laboratorio 01 completado!</strong> Has construido tu primera red virtual y has observado cómo se encapsulan los datos. Continúa con el <strong>Laboratorio 02</strong>.</p>
+<p><strong>¡Laboratorio 01 completado!</strong> Has construido tu primera red virtual y has observado cómo se encapsulan y conmutan los datos. Continúa con el <strong>Laboratorio 02</strong>.</p>
               
             </div>
           </div><footer>

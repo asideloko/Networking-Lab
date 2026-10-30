@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/labs/lab-08/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>08 · Seguridad en Redes - NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>08 · Seguridad en Redes - NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link href="../../assets/css/extra.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="../.." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -42,6 +42,8 @@
                 <li class="toctree-l1"><a class="reference internal" href="../..">Inicio</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../..#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../..#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../..#requisitos">Requisitos</a>
     </li>
@@ -126,7 +128,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -141,6 +143,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -350,6 +354,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-05/#observacion">Observación</a>
@@ -381,6 +387,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -669,6 +677,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../lab-11/">11 · Arquitectura de Red Empresarial</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#topologia">Topología</a>
     </li>
@@ -834,6 +846,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#ejercicios">Ejercicios</a>
@@ -870,7 +884,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -912,6 +926,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -924,7 +940,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href="../..">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -984,8 +1000,8 @@
     subgraph Internet
         EXT[Red Externa]
     end
+    FW["Firewall (punto de control entre zonas)"]
     subgraph DMZ
-        FW[Firewall]
         WEB[Servidor Web 10.0.99.10]
         DNS_PUB[Servidor DNS 10.0.99.5]
     end
@@ -1002,12 +1018,45 @@
     EXT --- FW
     FW --- WEB
     FW --- DNS_PUB
-    FW --- R1
+    FW ---|"LAN 10.0.0.254 (br-lan de R1)"| R1
     R1 --- LAN1
     LAN1 --- CLI
     LAN1 --- SRV
     R1 --- R2
     R2 --- R3</div>
+<p>El <strong>firewall es el punto de control entre las tres zonas</strong> (Externa, DMZ e Interna): todo el tráfico entre ellas debe atravesarlo, y no basta con dibujar una conexión. Qué puede alcanzar cada zona queda definido por las reglas del Paso 8:</p>
+<table>
+<thead>
+<tr>
+<th>Origen \ Destino</th>
+<th style="text-align: center;">Externa</th>
+<th style="text-align: center;">DMZ</th>
+<th style="text-align: center;">Interna</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Externa</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Solo servicios publicados (80/443 al web, 53/UDP al DNS)</td>
+<td style="text-align: center;">Denegado</td>
+</tr>
+<tr>
+<td><strong>DMZ</strong></td>
+<td style="text-align: center;">Denegado (no hay regla de salida)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Denegado</td>
+</tr>
+<tr>
+<td><strong>Interna</strong></td>
+<td style="text-align: center;">Permitido (con NAT)</td>
+<td style="text-align: center;">Limitado: ICMP, SSH y HTTPS</td>
+<td style="text-align: center;">—</td>
+</tr>
+</tbody>
+</table>
+<p>Las respuestas a conexiones ya establecidas se permiten por seguimiento de estado (<code>ESTABLISHED,RELATED</code>).</p>
+<p><strong>Cómo se conectan R1 y el firewall.</strong> Ambos están en el <strong>mismo segmento de capa 2</strong> de la sede: el firewall (<code>10.0.0.254</code>) se une al bridge <code>br-lan</code> de R1 (Paso 6). Los equipos internos (clientes y servidor interno) usan como <em>gateway</em> predeterminado a <strong>R1 (<code>10.0.0.1</code>)</strong>; R1 conoce las sucursales y envía al firewall (<code>10.0.0.254</code>) todo lo que no conoce (su ruta por defecto). El firewall, a su vez, devuelve a R1 el tráfico hacia las sucursales (<code>10.0.1.0/24</code> y <code>10.0.2.0/24</code>).</p>
 <p><strong>Direccionamiento:</strong></p>
 <table>
 <thead>
@@ -1039,25 +1088,25 @@
 </tr>
 <tr>
 <td>R1 (Sede)</td>
-<td>eth0 (LAN)</td>
+<td><code>br-lan</code> (LAN)</td>
 <td>10.0.0.1/24</td>
 <td>Interna</td>
 </tr>
 <tr>
 <td>R1 (Sede)</td>
-<td>eth1 (R1-R2)</td>
+<td><code>veth-r1r2</code> (R1-R2)</td>
 <td>192.168.1.1/30</td>
 <td>Interna</td>
 </tr>
 <tr>
 <td>R2 (Sucursal A)</td>
-<td>eth0 (LAN)</td>
+<td><code>veth-r2c</code> (LAN)</td>
 <td>10.0.1.1/24</td>
 <td>Interna</td>
 </tr>
 <tr>
 <td>R3 (Sucursal B)</td>
-<td>eth0 (LAN)</td>
+<td><code>veth-r3c</code> (LAN)</td>
 <td>10.0.2.1/24</td>
 <td>Interna</td>
 </tr>
@@ -1203,6 +1252,39 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <h3 id="paso-8-reglas-de-firewall-iptables">Paso 8: Reglas de firewall (iptables)<a class="headerlink" href="#paso-8-reglas-de-firewall-iptables" title="Permanent link">&para;</a></h3>
 <p>Definimos "red interna" como <code>10.0.0.0/22</code>, que agrupa la sede (<code>10.0.0.0/24</code>) y las sucursales (<code>10.0.1.0/24</code>, <code>10.0.2.0/24</code>).</p>
 <p><strong>Política por defecto: denegar todo</strong></p>
+<p>Una política de firewall se evalúa <strong>por cadena, dirección y zona</strong>, no solo por puerto. En Netfilter hay que distinguir:</p>
+<table>
+<thead>
+<tr>
+<th>Tipo de tráfico</th>
+<th>Cadena</th>
+<th>Ejemplo aquí</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entrante (destinado al propio firewall)</td>
+<td><code>INPUT</code></td>
+<td>SSH al firewall: denegado por la política</td>
+</tr>
+<tr>
+<td>Reenviado (atraviesa el firewall entre zonas)</td>
+<td><code>FORWARD</code></td>
+<td>Internet → DMZ, LAN → Internet</td>
+</tr>
+<tr>
+<td>Saliente (generado por el propio firewall)</td>
+<td><code>OUTPUT</code></td>
+<td>Aceptado por defecto</td>
+</tr>
+<tr>
+<td>Respuestas de conexiones establecidas</td>
+<td><code>INPUT</code>/<code>FORWARD</code> con <code>state</code></td>
+<td>Aceptadas por las reglas <code>ESTABLISHED,RELATED</code></td>
+</tr>
+</tbody>
+</table>
+<p>Casi todas las reglas de este laboratorio son de <code>FORWARD</code> porque el firewall controla tráfico que <strong>lo atraviesa</strong>; una regla de <code>INPUT</code> no afecta a ese tráfico.</p>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Establecer políticas por defecto</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>firewall<span class="w"> </span>iptables<span class="w"> </span>-P<span class="w"> </span>INPUT<span class="w"> </span>DROP
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>firewall<span class="w"> </span>iptables<span class="w"> </span>-P<span class="w"> </span>FORWARD<span class="w"> </span>DROP
@@ -1223,6 +1305,10 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <span class="c1"># Servidor DNS (puerto 53 UDP)</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>firewall<span class="w"> </span>iptables<span class="w"> </span>-A<span class="w"> </span>FORWARD<span class="w"> </span>-i<span class="w"> </span>veth-fw-wan<span class="w"> </span>-o<span class="w"> </span>br-dmz<span class="w"> </span>-p<span class="w"> </span>udp<span class="w"> </span>-d<span class="w"> </span><span class="m">10</span>.0.99.5<span class="w"> </span>--dport<span class="w"> </span><span class="m">53</span><span class="w"> </span>-j<span class="w"> </span>ACCEPT
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Permitir el reenvío no equivale a publicar el servicio</p>
+<p>Estas reglas permiten el reenvío <strong>si el paquete llega con ese destino</strong> por la interfaz externa. En una red real, los servidores de la DMZ tienen direcciones privadas y para publicarlos se necesita además una traducción de destino (<strong>DNAT</strong>) o direccionamiento público, junto con las rutas y políticas de seguridad. Aquí, para probar, el host añade una ruta directa hacia la DMZ (Paso 10).</p>
+</div>
 <p><strong>Reglas desde Internet hacia LAN Interna (denegado):</strong></p>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Denegar explícitamente (la política ya lo hace; esta regla permite contar los intentos)</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>firewall<span class="w"> </span>iptables<span class="w"> </span>-A<span class="w"> </span>FORWARD<span class="w"> </span>-i<span class="w"> </span>veth-fw-wan<span class="w"> </span>-o<span class="w"> </span>veth-fw-lan<span class="w"> </span>-j<span class="w"> </span>DROP
@@ -1242,6 +1328,11 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Principio de mínimo privilegio: una DMZ comprometida no debe alcanzar la LAN</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>firewall<span class="w"> </span>iptables<span class="w"> </span>-A<span class="w"> </span>FORWARD<span class="w"> </span>-i<span class="w"> </span>br-dmz<span class="w"> </span>-o<span class="w"> </span>veth-fw-lan<span class="w"> </span>-j<span class="w"> </span>DROP
 </code></pre></div>
+<p>Un servidor público <strong>no debe recibir acceso irrestricto a la red interna</strong>: la comunicación DMZ → LAN debe limitarse a políticas explícitas (por ejemplo, solo el puerto de base de datos de un servidor concreto, si la aplicación lo requiere). Aquí se deniega por completo. Observa también que el lado contrario (LAN → DMZ) está <strong>acotado</strong>: solo ICMP, SSH y HTTPS hacia hosts concretos, y no «todo».</p>
+<div class="admonition info">
+<p class="admonition-title">ACL frente a firewall con seguimiento de estado</p>
+<p>Una <strong>ACL</strong> es un mecanismo de control de tráfico (una lista ordenada de reglas permitir/denegar) que puede aplicarse en distintos puntos: un router, un switch, una interfaz. Una ACL clásica evalúa cada paquete de forma independiente. Un <strong>firewall con seguimiento de estado</strong> (como <code>iptables</code> con <code>conntrack</code> o <code>nftables</code>) además recuerda las conexiones y permite automáticamente las respuestas. En este laboratorio las reglas de <code>FORWARD</code> con <code>-m state</code> actúan como firewall con estado; las reglas que restringen orígenes y puertos (por ejemplo <code>-s 10.0.0.0/22</code>) se comportan como las ACL.</p>
+</div>
 <h3 id="paso-9-verificar-reglas-de-firewall">Paso 9: Verificar reglas de firewall<a class="headerlink" href="#paso-9-verificar-reglas-de-firewall" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Ver todas las reglas</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>firewall<span class="w"> </span>iptables<span class="w"> </span>-L<span class="w"> </span>-v<span class="w"> </span>-n
@@ -1276,6 +1367,10 @@ ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><s
 sudo<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>del<span class="w"> </span><span class="m">10</span>.0.0.0/22<span class="w"> </span>via<span class="w"> </span><span class="m">192</span>.168.100.1
 </code></pre></div>
 <h3 id="paso-11-configurar-ssh-para-acceso-seguro">Paso 11: Configurar SSH para acceso seguro<a class="headerlink" href="#paso-11-configurar-ssh-para-acceso-seguro" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">Habilitar SSH no equivale a asegurar el servicio</p>
+<p><strong>SSH protege el canal de administración</strong> (autenticación y cifrado), pero la seguridad del servicio depende además de la gestión de claves, la restricción de orígenes, la desactivación de contraseñas y root, la actualización del software y el registro de accesos. Aquí aplicamos solo una parte (clave en lugar de contraseña, acceso limitado por el firewall) con un <code>sshd</code> de demostración (<code>StrictModes no</code>, claves en <code>/tmp</code>); no es una configuración de producción.</p>
+</div>
 <p>Arrancamos un <code>sshd</code> <strong>dentro</strong> del namespace del servidor web (no con <code>systemctl</code>, que actuaría sobre el host), con una configuración propia: solo se permite autenticación por clave.</p>
 <div class="language-bash highlight"><pre><span></span><code>mkdir<span class="w"> </span>-p<span class="w"> </span>/tmp/lab08
 sudo<span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span>/run/sshd
@@ -1306,6 +1401,10 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <span class="c1"># Desde la sucursal B también se permite (red interna 10.0.0.0/22); desde la DMZ hacia la LAN no</span>
 </code></pre></div>
 <h3 id="paso-12-configurar-tls-para-el-servidor-web">Paso 12: Configurar TLS para el servidor web<a class="headerlink" href="#paso-12-configurar-tls-para-el-servidor-web" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">Generar un certificado no equivale a asegurar la comunicación</p>
+<p><strong>TLS protege las comunicaciones de aplicación</strong> mediante autenticación del servidor y cifrado, <strong>siempre que</strong> el cliente valide el certificado (cadena de confianza, nombre, caducidad) y se usen versiones y cifrados adecuados. Un certificado <strong>autofirmado</strong> como el de este paso cifra el canal, pero no demuestra la identidad del servidor a quien no lo haya aceptado previamente.</p>
+</div>
 <p>Generamos un certificado autofirmado y servimos HTTPS con <code>openssl s_server</code> dentro del namespace del servidor web (un servidor mínimo, suficiente para observar el cifrado; <code>-ign_eof</code> evita que se cierre al ejecutarse en segundo plano sin teclado):</p>
 <div class="language-bash highlight"><pre><span></span><code>openssl<span class="w"> </span>req<span class="w"> </span>-x509<span class="w"> </span>-newkey<span class="w"> </span>rsa:2048<span class="w"> </span>-nodes<span class="w"> </span>-days<span class="w"> </span><span class="m">365</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-keyout<span class="w"> </span>/tmp/lab08/key.pem<span class="w"> </span>-out<span class="w"> </span>/tmp/lab08/cert.pem<span class="w"> </span>-subj<span class="w"> </span><span class="s2">"/CN=servidorWeb"</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null
@@ -1376,27 +1475,27 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <tbody>
 <tr>
 <td>Tríada CIA</td>
-<td>Confidencialidad, Integridad, Disponibilidad</td>
+<td>Confidencialidad (TLS, SSH), Integridad (TLS, SSH), Disponibilidad (filtrado y política por defecto)</td>
 </tr>
 <tr>
 <td>Firewall</td>
-<td>Filtrado de tráfico con iptables</td>
+<td>Control entre zonas con seguimiento de estado (<code>iptables</code>)</td>
 </tr>
 <tr>
 <td>DMZ</td>
-<td>Segmentación de servidores públicos</td>
+<td>Segmentación de servidores públicos con acceso limitado a la LAN</td>
 </tr>
 <tr>
 <td>ACLs</td>
-<td>Control de acceso basado en reglas</td>
+<td>Reglas de control de tráfico (origen, destino, puerto); no equivalen a un firewall con estado</td>
 </tr>
 <tr>
 <td>SSH</td>
-<td>Acceso remoto seguro</td>
+<td>Canal de administración cifrado</td>
 </tr>
 <tr>
 <td>TLS</td>
-<td>Cifrado de comunicaciones web</td>
+<td>Autenticación y cifrado de la comunicación de aplicación</td>
 </tr>
 </tbody>
 </table>
@@ -1410,7 +1509,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <li>Probado <strong>TLS</strong> con un certificado autofirmado y un servidor HTTPS mínimo (<code>openssl s_server</code>); en producción se usaría un servidor web real y un certificado emitido por una CA.</li>
 <li>Aplicado los principios de la tríada <strong>CIA</strong> en la práctica.</li>
 </ol>
-<p>La seguridad en redes es un proceso continuo que combina múltiples capas de defensa. El firewall controla el tráfico, la DMZ aísla servidores expuestos, SSH protege el acceso administrativo y TLS cifra las comunicaciones. Ninguna medida es suficiente por sí sola; la combinación de todas ellas proporciona una postura de seguridad robusta.</p>
+<p>La seguridad en redes es un proceso continuo que combina múltiples capas de defensa. El firewall controla el tráfico entre zonas, la DMZ aísla servidores expuestos, SSH protege el acceso administrativo y TLS cifra las comunicaciones de aplicación. Ninguna medida es suficiente por sí sola, y cada una depende de una buena configuración y de su mantenimiento; la combinación de varias, bien configuradas, reduce la superficie de ataque.</p>
 <h2 id="preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio<a class="headerlink" href="#preparacion-para-el-siguiente-laboratorio" title="Permanent link">&para;</a></h2>
 <p>Hemos dejado la red con firewall, DMZ, SSH y un servidor TLS de pruebas funcionando. En el <strong>Laboratorio 09</strong> exploraremos <strong>VPN y Tunelización</strong>, implementando GRE, IPsec, OpenVPN y WireGuard para conectar de forma segura las oficinas y empleados remotos.</p>
 <hr />

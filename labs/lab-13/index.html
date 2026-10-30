@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/labs/lab-13/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>13 · Monitoreo y Diagnóstico de Redes - NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>13 · Monitoreo y Diagnóstico de Redes - NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link href="../../assets/css/extra.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="../.." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -42,6 +42,8 @@
                 <li class="toctree-l1"><a class="reference internal" href="../..">Inicio</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../..#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../..#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../..#requisitos">Requisitos</a>
     </li>
@@ -126,7 +128,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -141,6 +143,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -350,6 +354,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-05/#observacion">Observación</a>
@@ -381,6 +387,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -669,6 +677,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../lab-11/">11 · Arquitectura de Red Empresarial</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#topologia">Topología</a>
     </li>
@@ -834,6 +846,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#ejercicios">Ejercicios</a>
@@ -870,7 +884,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -912,6 +926,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -924,7 +940,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href="../..">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -950,8 +966,12 @@
 <p class="admonition-title">Dos precisiones técnicas</p>
 <ul>
 <li>Los namespaces aíslan la <strong>red</strong>, no el sistema de archivos: un <code>tcpdump -w /tmp/captura.pcap</code> o un <code>rsyslog</code> dentro de un namespace escriben en el <code>/tmp</code> y el <code>/etc</code> <strong>reales</strong> del equipo. Por eso las capturas y el SIEM de este laboratorio usan rutas propias en <code>/tmp/lab13/</code> y los servicios se arrancan a mano (<code>systemctl</code> actuaría sobre el host).</li>
-<li>El "SIEM" que se construye es un <strong>colector central de logs</strong> con <code>rsyslog</code>. Un SIEM real añade normalización, correlación de eventos, alertas y paneles.</li>
+<li>El "SIEM" que se construye es un <strong>colector central de logs</strong> con <code>rsyslog</code>. Un SIEM real añade normalización, correlación de eventos, alertas y paneles. <strong>No debe equipararse con un SIEM empresarial completo.</strong></li>
 </ul>
+</div>
+<div class="admonition note">
+<p class="admonition-title">NOC y SIEM: dos funciones distintas</p>
+<p>Un <strong>NOC</strong> (<em>Network Operations Center</em>) se ocupa de la <strong>disponibilidad, el rendimiento y la operación</strong> de la infraestructura (¿está caído el enlace? ¿qué latencia hay?). Un <strong>SIEM</strong> (<em>Security Information and Event Management</em>) se ocupa de <strong>recolectar, correlacionar y analizar eventos relevantes para la seguridad</strong> (¿hay un patrón de intentos de acceso anómalos?). En este laboratorio, el equipo <code>NOC</code> ejecuta herramientas de diagnóstico y el equipo <code>SIEM</code> hace de colector de registros; ambos comparten red, pero sirven a propósitos diferentes.</p>
 </div>
 <h2 id="topologia">Topología<a class="headerlink" href="#topologia" title="Permanent link">&para;</a></h2>
 <div class="mermaid">graph TB
@@ -1086,6 +1106,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>NOC<span class="w"> </span>mtr<span class="w"> </span>-n<span class="w"> </span>-r<span class="w"> </span>-c<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="m">10</span>.100.1.10
 </code></pre></div>
 <h3 id="paso-6-captura-de-trafico-con-tcpdump">Paso 6: Captura de tráfico con tcpdump<a class="headerlink" href="#paso-6-captura-de-trafico-con-tcpdump" title="Permanent link">&para;</a></h3>
+<p><strong>Qué se observa y qué no.</strong> <code>tcpdump -i veth-noc</code> captura en la interfaz <strong>del NOC</strong>, dentro de su namespace: solo ve el tráfico que <strong>entra o sale por esa interfaz</strong> (el del propio NOC, más los <em>broadcast</em> y <em>multicast</em> de la LAN). En una LAN conmutada, el tráfico <em>unicast</em> entre otros equipos (por ejemplo App ↔ DB) <strong>no pasa por el puerto del NOC</strong>, así que <strong>no se ve</strong>. Una captura en la interfaz del NOC <strong>no equivale a observar todo el tráfico de la infraestructura</strong>; para ver más habría que capturar en el bridge <code>br-lan</code> de <code>OnPremise</code> o en el puerto del equipo que interesa. Dentro de un namespace tampoco se ven las interfaces del host ni las de otros namespaces.</p>
 <p>Las capturas se guardan en <code>/tmp/lab13/</code> (el <code>/tmp</code> real: los namespaces no aíslan archivos).</p>
 <div class="language-bash highlight"><pre><span></span><code>mkdir<span class="w"> </span>-p<span class="w"> </span>/tmp/lab13
 
@@ -1110,6 +1131,11 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <span class="c1"># Detener el servidor al terminar</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>AppServer<span class="w"> </span>pkill<span class="w"> </span>iperf3
 </code></pre></div>
+<p><strong>Cómo interpretar los resultados.</strong></p>
+<ul>
+<li><strong>TCP</strong> mide el <em>throughput</em> que la conexión consigue sostener: TCP <strong>se adapta</strong> al camino (control de congestión), así que el resultado refleja la capacidad <strong>efectiva</strong> (y la CPU disponible, porque aquí el enlace es virtual).</li>
+<li><strong>UDP</strong> con <code>-b 100M</code> <strong>ofrece</strong> una tasa fija de 100 Mbps: es la tasa <strong>ofrecida a la prueba</strong>, <strong>no demuestra que la red la soporte</strong>. El informe debe leerse junto con la <strong>pérdida de datagramas</strong>, el <strong>jitter</strong>, la <strong>capacidad real del enlace</strong> y las <strong>condiciones de ejecución</strong> (carga de la máquina, otras pruebas simultáneas). Si la pérdida es 0 %, el camino aguantó esa tasa; si es alta, la tasa ofrecida superó lo que se pudo transportar.</li>
+</ul>
 <h3 id="paso-8-colector-central-de-logs-siem-basico-con-rsyslog">Paso 8: Colector central de logs (SIEM básico) con rsyslog<a class="headerlink" href="#paso-8-colector-central-de-logs-siem-basico-con-rsyslog" title="Permanent link">&para;</a></h3>
 <p>Arrancamos una instancia de <code>rsyslog</code> <strong>solo para el SIEM</strong>, con su propia configuración (no se toca el <code>rsyslog</code> del equipo):</p>
 <div class="language-bash highlight"><pre><span></span><code>cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/lab13/siem.conf<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
@@ -1132,6 +1158,8 @@ cat<span class="w"> </span>/tmp/lab13/remote.log
 <p>Una "alerta" rudimentaria es buscar patrones en el colector:</p>
 <div class="language-bash highlight"><pre><span></span><code>grep<span class="w"> </span>-i<span class="w"> </span><span class="s2">"error"</span><span class="w"> </span>/tmp/lab13/remote.log
 </code></pre></div>
+<p><strong>Qué demuestra esto y qué no.</strong> El envío de mensajes con <code>logger</code> demuestra el <strong>transporte de eventos</strong> hacia un punto central. Es un ejemplo básico de <strong>centralización y consulta de registros</strong>. <strong>No</strong> constituye correlación avanzada, detección automatizada ni respuesta ante incidentes: un SIEM real normaliza los eventos de muchas fuentes, los correlaciona (por ejemplo, «muchos fallos de acceso seguidos de un acceso correcto») y genera alertas.</p>
+<p><strong>Monitoreo y seguridad.</strong> Los datos de monitoreo y los registros permiten <strong>detectar anomalías</strong>, pero <strong>no sustituyen</strong> las medidas <strong>preventivas</strong> (firewall, segmentación, autenticación) ni los mecanismos de <strong>respuesta</strong> (procedimientos, aislamiento, recuperación).</p>
 <h2 id="ejercicios">Ejercicios<a class="headerlink" href="#ejercicios" title="Permanent link">&para;</a></h2>
 <h3 id="ejercicio-1-analizar-una-captura">Ejercicio 1: Analizar una captura<a class="headerlink" href="#ejercicio-1-analizar-una-captura" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>NOC<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>veth-noc<span class="w"> </span>-n<span class="w"> </span>-c<span class="w"> </span><span class="m">30</span><span class="w"> </span>-w<span class="w"> </span>/tmp/lab13/http.pcap<span class="w"> </span><span class="p">&amp;</span>
@@ -1147,7 +1175,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>AppServer<span class="w"> </span>pkill<span class="w"> </span>iperf3
 </code></pre></div>
 <h3 id="ejercicio-3-simular-un-fallo-de-mtu">Ejercicio 3: Simular un fallo de MTU<a class="headerlink" href="#ejercicio-3-simular-un-fallo-de-mtu" title="Permanent link">&para;</a></h3>
-<p>Bajamos la MTU <strong>solo en el servidor App</strong>. El router sigue enviando paquetes de 1500 bytes y el servidor, con MTU 1400, los descarta sin avisar (no se genera el mensaje ICMP "fragmentation needed"): un "agujero negro" de MTU.</p>
+<p>Bajamos la MTU <strong>solo en el servidor App</strong>. El NOC (que está en la misma LAN, sin pasar por el router) sigue enviando paquetes de hasta 1500 bytes y el servidor, con MTU 1400, normalmente descarta los que no caben sin avisar (no se genera el mensaje ICMP "fragmentation needed", porque en capa 2 no hay un router que lo emita): un "agujero negro" de MTU. El comportamiento exacto de recepción de tramas mayores que la MTU puede variar según el kernel.</p>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>AppServer<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-app<span class="w"> </span>mtu<span class="w"> </span><span class="m">1400</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>NOC<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span>-M<span class="w"> </span><span class="k">do</span><span class="w"> </span>-s<span class="w"> </span><span class="m">1200</span><span class="w"> </span><span class="m">10</span>.0.0.10<span class="w">     </span><span class="c1"># cabe: responde</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>NOC<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span>-W<span class="w"> </span><span class="m">1</span><span class="w"> </span>-M<span class="w"> </span><span class="k">do</span><span class="w"> </span>-s<span class="w"> </span><span class="m">1450</span><span class="w"> </span><span class="m">10</span>.0.0.10<span class="w">  </span><span class="c1"># no cabe: sin respuesta ni error</span>
@@ -1203,20 +1231,20 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 </tr>
 <tr>
 <td>tcpdump</td>
-<td>Captura de tráfico</td>
+<td>Captura de tráfico de <strong>una interfaz</strong> (no de toda la red)</td>
 </tr>
 <tr>
 <td>iperf3</td>
-<td>Medición de ancho de banda</td>
+<td>Medición de rendimiento (TCP efectivo; UDP con tasa ofrecida, pérdida y jitter)</td>
 </tr>
 <tr>
 <td>Colector de logs (SIEM básico)</td>
-<td>Centralización de eventos con rsyslog</td>
+<td>Centralización de eventos con rsyslog; no es correlación ni respuesta</td>
 </tr>
 </tbody>
 </table>
 <h2 id="conclusiones">Conclusiones<a class="headerlink" href="#conclusiones" title="Permanent link">&para;</a></h2>
-<p>Las herramientas de monitoreo y diagnóstico permiten detectar y resolver incidentes de red de manera rápida y estructurada. Un colector de logs es el primer paso hacia un SIEM; la correlación y las alertas avanzadas requieren herramientas específicas.</p>
+<p>Las herramientas de monitoreo y diagnóstico permiten detectar y resolver incidentes de red de manera rápida y estructurada. Un colector de logs es el primer paso hacia un SIEM; la correlación y las alertas avanzadas requieren herramientas específicas. El monitoreo detecta; la prevención y la respuesta son medidas aparte.</p>
 <hr />
 <p><strong>¡Laboratorio 13 completado!</strong> Continúa con el <strong>Laboratorio 14</strong>.</p>
               

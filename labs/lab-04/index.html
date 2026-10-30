@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/labs/lab-04/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>04 · Direccionamiento IP y Subredes - NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>04 · Direccionamiento IP y Subredes - NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link href="../../assets/css/extra.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="../.." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -42,6 +42,8 @@
                 <li class="toctree-l1"><a class="reference internal" href="../..">Inicio</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../..#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../..#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../..#requisitos">Requisitos</a>
     </li>
@@ -126,7 +128,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -141,6 +143,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -350,6 +354,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-05/#observacion">Observación</a>
@@ -381,6 +387,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -669,6 +677,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../lab-11/">11 · Arquitectura de Red Empresarial</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#topologia">Topología</a>
     </li>
@@ -834,6 +846,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#ejercicios">Ejercicios</a>
@@ -870,7 +884,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -912,6 +926,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="../lab-15/#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-15/#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -924,7 +940,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href="../..">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -952,11 +968,14 @@
 </ul>
 <p>La red actual (todos los clientes en una sola subred <code>10.0.1.0/24</code>) ya no es suficiente. Se necesita <strong>segmentar la red</strong> en subredes separadas para:</p>
 <ul>
-<li>Aislar el tráfico entre departamentos.</li>
-<li>Aplicar políticas de seguridad diferentes.</li>
-<li>Mejorar el rendimiento reduciendo dominios de broadcast.</li>
+<li>Separar lógicamente el direccionamiento de cada departamento (el tráfico entre ellos pasa a ser tráfico <strong>enrutado</strong>, sobre el que se pueden aplicar políticas).</li>
+<li>Preparar la aplicación de políticas de seguridad diferentes.</li>
 <li>Optimizar el uso del espacio de direcciones.</li>
 </ul>
+<div class="admonition warning">
+<p class="admonition-title">Subred IP no es lo mismo que VLAN</p>
+<p>Una <strong>subred IP</strong> es una división lógica de <strong>capa 3</strong>; una <strong>VLAN</strong> es una división lógica de <strong>capa 2</strong> (dominio de broadcast). Suelen asociarse una VLAN con una subred IP, pero no son conceptos equivalentes. En este laboratorio solo dividimos el direccionamiento (capa 3): todos los equipos siguen conectados al <strong>mismo bridge</strong>, es decir, al mismo dominio de broadcast. Reducir los dominios de broadcast exigirá VLAN (laboratorio 05).</p>
+</div>
 <h2 id="problema-inicial">Problema inicial<a class="headerlink" href="#problema-inicial" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Todos los clientes están en la misma subred <code>10.0.1.0/24</code>.</li>
@@ -969,7 +988,7 @@
 <li>Comprender la estructura de las direcciones IPv4 (32 bits).</li>
 <li>Aplicar <strong>subnetting</strong> para dividir una red en subredes más pequeñas.</li>
 <li>Implementar <strong>VLSM</strong> (Variable Length Subnet Mask) para optimizar direcciones.</li>
-<li>Configurar <strong>subinterfaces</strong> en el router para soportar múltiples subredes.</li>
+<li>Configurar <strong>varias direcciones IP (una por subred) en la interfaz del router</strong> para que actúe como <em>gateway</em> de cada subred. (Las subinterfaces con etiquetas VLAN se estudian en el laboratorio 05.)</li>
 <li>Verificar la comunicación entre subredes mediante enrutamiento.</li>
 <li>Analizar la relación Red-Subred-Host.</li>
 </ol>
@@ -980,11 +999,11 @@
 <li>Conocimientos de subnetting y notación CIDR.</li>
 </ul>
 <h2 id="diseno-de-subredes">Diseño de subredes<a class="headerlink" href="#diseno-de-subredes" title="Permanent link">&para;</a></h2>
-<p><strong>Red base:</strong> <code>10.0.0.0/24</code> (para simplificar, aunque en producción sería una red privada /24).</p>
+<p><strong>Red base:</strong> <code>10.0.0.0/24</code>. Las tres subredes se calculan <strong>dentro</strong> de este bloque. La asignación es un <strong>ejemplo de reparto de direcciones</strong>, no una arquitectura obligatoria para todas las empresas.</p>
 <p><strong>Requisitos:</strong>
 -   Subred 1: Ventas → 10 hosts (mínimo /28 → 14 hosts útiles).
 -   Subred 2: IT → 6 hosts (mínimo /29 → 6 hosts útiles).
--   Subred 3: Enlace router-switch → 2 hosts (mínimo /30 → 2 hosts útiles).</p>
+-   Subred 3: Enlace de gestión router-switch → 2 hosts (mínimo /30 → 2 hosts útiles).</p>
 <p><strong>Cálculo VLSM:</strong></p>
 <table>
 <thead>
@@ -1028,6 +1047,38 @@
 </tr>
 </tbody>
 </table>
+<p><strong>Quién usa cada dirección y por qué:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Subred</th>
+<th>Hosts (clientes)</th>
+<th>Gateway</th>
+<th>Motivo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ventas <code>10.0.0.0/28</code></td>
+<td><code>10.0.0.1</code> – <code>10.0.0.3</code> (los de la demostración; el rango admite hasta <code>.13</code>)</td>
+<td><code>10.0.0.14</code> (última útil)</td>
+<td>Convención de este laboratorio: se reserva la <strong>última</strong> dirección útil para el router y las primeras para los equipos.</td>
+</tr>
+<tr>
+<td>IT <code>10.0.0.16/29</code></td>
+<td><code>10.0.0.17</code> – <code>10.0.0.19</code> (admite hasta <code>.21</code>)</td>
+<td><code>10.0.0.22</code> (última útil)</td>
+<td>Misma convención.</td>
+</tr>
+<tr>
+<td>Enlace <code>10.0.0.24/30</code></td>
+<td>—</td>
+<td>Router <code>10.0.0.25</code>, switch <code>10.0.0.26</code></td>
+<td>Las dos únicas direcciones útiles identifican ambos extremos.</td>
+</tr>
+</tbody>
+</table>
+<p>La convención «primera dirección útil = gateway» es habitual, pero no obligatoria: lo importante es que sea una dirección fija, documentada y <strong>no asignada a un cliente</strong>.</p>
 <h2 id="topologia">Topología<a class="headerlink" href="#topologia" title="Permanent link">&para;</a></h2>
 <div class="mermaid">graph TB
     V1[Ventas 1 10.0.0.1/28]
@@ -1036,8 +1087,8 @@
     I1[IT 1 10.0.0.17/29]
     I2[IT 2 10.0.0.18/29]
     I3[IT 3 10.0.0.19/29]
-    R[Router 10.0.0.25/30]
-    SW[Switch 10.0.0.26/30]
+    R["Router veth-rs: 10.0.0.25/30 · gateway Ventas 10.0.0.14/28 · gateway IT 10.0.0.22/29"]
+    SW["Switch (bridge br0, gestión 10.0.0.26/30)"]
     Internet((Internet))
     V1 --- SW
     V2 --- SW
@@ -1047,7 +1098,11 @@
     I3 --- SW
     SW --- R
     R --- Internet</div>
-<p><strong>Nota sobre la topología:</strong> En esta implementación, el switch es un bridge en Linux que opera en capa 2. Los clientes en diferentes subredes están conectados al mismo switch físico (bridge), pero <strong>no pueden comunicarse directamente</strong> porque están en diferentes subredes. La comunicación entre subredes debe pasar por el router.</p>
+<p><strong>Nota sobre la topología (qué diseño se representa):</strong> el router se conecta al switch mediante <strong>un único enlace</strong> (<code>veth-rs</code>) que es un <strong>puerto de acceso sin etiquetas</strong> del bridge. <strong>No es un enlace troncal</strong> con VLAN y subinterfaces; ese diseño es distinto y se estudia en el laboratorio 05. Dos consecuencias:</p>
+<ul>
+<li>Todos los equipos (Ventas, IT, el switch y el router) comparten <strong>un único dominio de broadcast</strong>. Los clientes de subredes distintas <em>podrían</em> comunicarse directamente a nivel de enlace si se les configurara una dirección de la otra subred; lo que se les impide es hacerlo por IP, porque cada uno solo considera «local» su propia subred y manda lo demás al gateway.</li>
+<li>La subred <code>/30</code> <strong>no es un enlace de tránsito de capa 3</strong> entre dos redes: es el direccionamiento de <strong>gestión</strong> del switch (<code>10.0.0.26</code>) y de una de las direcciones del router (<code>10.0.0.25</code>), ambos sobre el mismo segmento de capa 2. Se incluye para practicar VLSM y para dar al switch una IP de administración.</li>
+</ul>
 <h2 id="construccion-de-la-red">Construcción de la red<a class="headerlink" href="#construccion-de-la-red" title="Permanent link">&para;</a></h2>
 <h3 id="paso-1-verificar-el-estado-actual">Paso 1: Verificar el estado actual<a class="headerlink" href="#paso-1-verificar-el-estado-actual" title="Permanent link">&para;</a></h3>
 <p>Asegurémonos de que los laboratorios anteriores están funcionando:</p>
@@ -1229,12 +1284,12 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 <span class="c1"># IT 1 a IT 2 (misma subred)</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>it1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.0.18
 </code></pre></div>
-<p><strong>Salida esperada:</strong> 0% de pérdida (comunicación directa a través del switch).</p>
+<p><strong>Resultado esperado:</strong> 0% de pérdida (comunicación directa a través del switch).</p>
 <h3 id="paso-10-verificar-conectividad-entre-subredes">Paso 10: Verificar conectividad entre subredes<a class="headerlink" href="#paso-10-verificar-conectividad-entre-subredes" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Ventas 1 a IT 1 (diferente subred)</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ventas1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">10</span>.0.0.17
 </code></pre></div>
-<p><strong>Salida esperada:</strong> 0% de pérdida (el tráfico pasa por el router).</p>
+<p><strong>Resultado esperado:</strong> 0% de pérdida (el tráfico pasa por el router).</p>
 <h3 id="paso-11-verificar-conectividad-a-internet">Paso 11: Verificar conectividad a Internet<a class="headerlink" href="#paso-11-verificar-conectividad-a-internet" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Ventas 1 a Internet</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ventas1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">8</span>.8.8.8
@@ -1242,7 +1297,7 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 <span class="c1"># IT 1 a Internet</span>
 ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>it1<span class="w"> </span>curl<span class="w"> </span>-I<span class="w"> </span>http://google.com
 </code></pre></div>
-<p><strong>Salida esperada:</strong> Respuestas exitosas (NAT funciona).</p>
+<p><strong>Resultado esperado:</strong> Respuestas exitosas (si el host tiene salida real a Internet).</p>
 <h2 id="observacion-y-analisis">Observación y análisis<a class="headerlink" href="#observacion-y-analisis" title="Permanent link">&para;</a></h2>
 <h3 id="paso-12-ver-las-tablas-de-enrutamiento">Paso 12: Ver las tablas de enrutamiento<a class="headerlink" href="#paso-12-ver-las-tablas-de-enrutamiento" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Ruta en Ventas 1</span>
@@ -1263,9 +1318,10 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 </code></pre></div>
 <p><strong>Interpretación:</strong>
 1.  El paquete sale de Ventas 1 con origen 10.0.0.1 y destino 10.0.0.17.
-2.  El switch lo recibe y, al ver que el destino no está en la misma subred, lo envía al router (gateway).
-3.  El router recibe el paquete, consulta su tabla de enrutamiento y lo reenvía por la misma interfaz hacia el switch.
-4.  El switch entrega el paquete a IT 1.</p>
+2.  <strong>Es Ventas 1 quien decide</strong> que 10.0.0.17 no está en su subred (<code>10.0.0.0/28</code>) y, por su ruta por defecto, envía la trama con IP destino 10.0.0.17 pero <strong>MAC destino = la del gateway</strong> (<code>10.0.0.14</code>, resuelta por ARP). El switch no examina direcciones IP: conmuta la trama por la MAC.
+3.  El router recibe el paquete, consulta su tabla de enrutamiento (10.0.0.17 pertenece a la red conectada <code>10.0.0.16/29</code>) y lo reenvía <strong>por la misma interfaz</strong> con una nueva trama (MAC origen: la del router; MAC destino: la de IT 1). Por entrar y salir por la misma interfaz, Linux puede enviar a Ventas 1 un <em>ICMP redirect</em>, aviso de que existe un camino directo; los clientes de este laboratorio no lo aplican porque no comparten subred IP.
+4.  El switch conmuta esa trama hacia el puerto de IT 1.</p>
+<p>En la captura verás cada ICMP <strong>dos veces</strong> (entrada y salida del router por <code>veth-rs</code>), con distintas MAC pero las mismas IP: es la huella de un router que reenvía por una sola interfaz (<em>router-on-a-stick</em> sin VLAN).</p>
 <h2 id="ejercicios-practicos">Ejercicios prácticos<a class="headerlink" href="#ejercicios-practicos" title="Permanent link">&para;</a></h2>
 <h3 id="ejercicio-1-calcular-subredes-adicionales">Ejercicio 1: Calcular subredes adicionales<a class="headerlink" href="#ejercicio-1-calcular-subredes-adicionales" title="Permanent link">&para;</a></h3>
 <p>Si necesitáramos una tercera subred para <strong>Administración</strong> con 4 hosts, ¿qué máscara usarías y qué rango de direcciones asignarías?</p>
@@ -1322,11 +1378,11 @@ ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</sp
 <ol>
 <li><strong>Aplicado subnetting</strong> para dividir una red en subredes más pequeñas.</li>
 <li><strong>Implementado VLSM</strong> para optimizar el uso de direcciones.</li>
-<li><strong>Comprobado</strong> que el router encamina entre las subredes porque las tiene directamente conectadas (no hacen falta rutas estáticas).</li>
+<li><strong>Comprobado</strong> que el router encamina entre las subredes porque las tiene directamente conectadas (no hacen falta rutas estáticas). Hemos visto además que dividir en subredes IP <strong>no</strong> separa los dominios de broadcast.</li>
 <li><strong>Verificado la comunicación entre subredes</strong> a través del router.</li>
 </ol>
 <h2 id="preparacion-para-el-siguiente-laboratorio">Preparación para el siguiente laboratorio<a class="headerlink" href="#preparacion-para-el-siguiente-laboratorio" title="Permanent link">&para;</a></h2>
-<p>Hemos dejado la red con dos subredes (Ventas e IT) y un enlace /30 al router. En el <strong>Laboratorio 05</strong> implementaremos <strong>VLANs</strong> para segmentar físicamente el tráfico.</p>
+<p>Hemos dejado la red con dos subredes (Ventas e IT) y un segmento /30 de gestión entre router y switch, todo en un mismo dominio de broadcast. En el <strong>Laboratorio 05</strong> implementaremos <strong>VLAN</strong> para separar también la capa 2. Cambiaremos el direccionamiento a redes <code>/24</code> independientes porque allí el objetivo es estudiar la segmentación, no el reparto VLSM: son escenarios distintos y <strong>no</strong> describen la misma infraestructura.</p>
 <hr />
 <p><strong>¡Laboratorio 04 completado!</strong> Continúa con el <strong>Laboratorio 05</strong>.</p>
               

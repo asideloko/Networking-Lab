@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Guillermo Castillo" /><link rel="canonical" href="https://asideloko.github.io/Networking-Lab/labs/lab-15/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>15 · Implementación Práctica Integral - NETWORKING Lab — Manual de Implementación Profesional</title>
+    <title>15 · Implementación Práctica Integral - NETWORKING Lab — Laboratorios de explicación y simulación de redes</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link href="../../assets/css/extra.css" rel="stylesheet" />
@@ -29,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> NETWORKING Lab — Manual de Implementación Profesional
+          <a href="../.." class="icon icon-home"> NETWORKING Lab — Laboratorios de explicación y simulación de redes
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
@@ -42,6 +42,8 @@
                 <li class="toctree-l1"><a class="reference internal" href="../..">Inicio</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../..#metodologia">Metodología</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="../..#como-leer-las-salidas-de-los-laboratorios">Cómo leer las salidas de los laboratorios</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../..#requisitos">Requisitos</a>
     </li>
@@ -126,7 +128,7 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-4-dar-al-router-una-ruta-por-defecto-hacia-el-host">Paso 4: Dar al router una ruta por defecto hacia el host</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-nat-en-el-router">Paso 5: Habilitar NAT en el router</a>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-5-habilitar-reenvio-y-nat-en-el-router">Paso 5: Habilitar reenvío y NAT en el router</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-6-configurar-ruta-por-defecto-en-los-clientes">Paso 6: Configurar ruta por defecto en los clientes</a>
     </li>
@@ -141,6 +143,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-9-capturar-el-flujo-de-datos-durante-una-solicitud-web">Paso 9: Capturar el flujo de datos durante una solicitud web</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-02/#paso-10-analizar-la-captura">Paso 10: Analizar la captura</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-02/#doble-nat-que-direccion-ve-cada-tramo">Doble NAT: qué dirección ve cada tramo</a>
     </li>
         </ul>
     </li>
@@ -350,6 +354,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-05/#paso-10-verificar-conectividad">Paso 10: Verificar conectividad</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-05/#seguridad-entre-vlan">Seguridad entre VLAN</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-05/#observacion">Observación</a>
@@ -381,6 +387,8 @@
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-4-habilitar-el-reenvio-y-configurar-rutas-estaticas">Paso 4: Habilitar el reenvío y configurar rutas estáticas</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-5-verificar-conectividad">Paso 5: Verificar conectividad</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-06/#ruta-por-defecto-frente-a-ruta-especifica">Ruta por defecto frente a ruta específica</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-06/#paso-6-agregar-un-enlace-directo-r1-r3-camino-preferido">Paso 6: Agregar un enlace directo R1-R3 (camino preferido)</a>
     </li>
@@ -669,6 +677,10 @@
                   <li class="toctree-l1"><a class="reference internal" href="../lab-11/">11 · Arquitectura de Red Empresarial</a>
     <ul>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#contexto-empresarial">Contexto empresarial</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-11/#funcion-de-cada-capa">Función de cada capa</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-11/#topologia">Topología</a>
     </li>
@@ -834,6 +846,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-7-diagnostico">Paso 7: Diagnóstico</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="../lab-14/#paso-8-limpieza-selectiva">Paso 8: Limpieza selectiva</a>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="../lab-14/#ejercicios">Ejercicios</a>
@@ -870,7 +884,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#152-subnetting-aplicado-vlsm">15.2 Subnetting aplicado (VLSM)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#153-vlan-variante">15.3 VLAN (variante)</a>
+    <li class="toctree-l2"><a class="reference internal" href="#153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#154-routing-entre-redes">15.4 Routing entre redes</a>
         <ul>
@@ -912,6 +926,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#conceptos-clave">Conceptos clave</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#conclusiones">Conclusiones</a>
     </li>
     </ul>
@@ -924,7 +940,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">NETWORKING Lab — Manual de Implementación Profesional</a>
+          <a href="../..">NETWORKING Lab — Laboratorios de explicación y simulación de redes</a>
         
       </nav>
       <div class="wy-nav-content">
@@ -950,6 +966,10 @@
 <p class="admonition-title">Mismo modelo que el resto de la serie</p>
 <p>Todo se construye con <strong>namespaces de red</strong>, igual que en los laboratorios anteriores (no se usan interfaces <code>eth0</code>-<code>eth4</code> reales del equipo, así que no se toca tu red). Es un laboratorio de integración con una topología nueva, por lo que empieza limpiando el entorno. Requiere instalar <code>frr</code> (OSPF), <code>keepalived</code> (VRRP) y <code>dnsmasq-base</code> (DHCP).</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Este es un escenario nuevo</p>
+<p>Los laboratorios 01–14 usaron topologías diferentes. Aquí <strong>se reutilizan los nombres <code>R1</code> y <code>R2</code> con otra función y otro direccionamiento</strong> (sede y respaldo/sucursal), y el escenario se construye desde cero. Cada apartado funciona por sí mismo, pero la coherencia global se comprueba en el apartado «Revisión de coherencia» al final: que cada bloque funcione aisladamente no garantiza que el conjunto sea coherente.</p>
+</div>
 <h2 id="topologia">Topología<a class="headerlink" href="#topologia" title="Permanent link">&para;</a></h2>
 <div class="mermaid">graph TB
     Internet((Internet host))
@@ -972,7 +992,18 @@
     R2 --- SUC</div>
 <h2 id="construccion">Construcción<a class="headerlink" href="#construccion" title="Permanent link">&para;</a></h2>
 <h3 id="paso-0-limpiar-y-preparar">Paso 0: Limpiar y preparar<a class="headerlink" href="#paso-0-limpiar-y-preparar" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>ns<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>ip<span class="w"> </span>netns<span class="w"> </span>list<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>del<span class="w"> </span><span class="nv">$ns</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
+<p>Elimina <strong>solo los namespaces de los laboratorios anteriores, por nombre</strong> (un bucle que borrara todos los de <code>ip netns list</code> afectaría también a otros entornos de tu equipo):</p>
+<div class="language-bash highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>ns<span class="w"> </span><span class="k">in</span><span class="w"> </span>cliente1<span class="w"> </span>cliente2<span class="w"> </span>cliente3<span class="w"> </span>cliente4<span class="w"> </span>router<span class="w"> </span>switch<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>ventas1<span class="w"> </span>ventas2<span class="w"> </span>ventas3<span class="w"> </span>it1<span class="w"> </span>it2<span class="w"> </span>it3<span class="w"> </span>admin1<span class="w"> </span>admin2<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>R1<span class="w"> </span>R2<span class="w"> </span>R3<span class="w"> </span>clienteSede<span class="w"> </span>clienteSucA<span class="w"> </span>clienteSucB<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>servidorDNS<span class="w"> </span>servidorDHCP<span class="w"> </span>clienteDHCP<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>firewall<span class="w"> </span>servidorWeb<span class="w"> </span>servidorDNS_PUB<span class="w"> </span>servidorInterno<span class="w"> </span>VPN_GW<span class="w"> </span>clienteVPN<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>PE1<span class="w"> </span>PE2<span class="w"> </span>PE3<span class="w"> </span>P1<span class="w"> </span>P2<span class="w"> </span>P3<span class="w"> </span>host1<span class="w"> </span>host2<span class="w"> </span>host3<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>Core1<span class="w"> </span>Core2<span class="w"> </span>Dist1<span class="w"> </span>Dist2<span class="w"> </span>Access1<span class="w"> </span>Firewall<span class="w"> </span>ServidorWeb<span class="w"> </span>ServidorDNS<span class="w"> </span>ventas<span class="w"> </span>it<span class="w"> </span>admin<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>OnPremise<span class="w"> </span>AppServer<span class="w"> </span>DBServer<span class="w"> </span>AWS_VPC<span class="w"> </span>EC2_Server<span class="w"> </span>RDS_Server<span class="w"> </span>ZTNA_Broker<span class="w"> </span>IDP<span class="w"> </span>User1<span class="w"> </span>User2<span class="w"> </span>NOC<span class="w"> </span>SIEM<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>Router<span class="w"> </span>Host1<span class="w"> </span>Host2<span class="w"> </span>ServidorDMZ<span class="w"> </span>SWsrv<span class="w"> </span>fin<span class="w"> </span>ven<span class="w"> </span>ges<span class="w"> </span>srv<span class="w"> </span>suc<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span>del<span class="w"> </span><span class="nv">$ns</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
+<span class="k">done</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>del<span class="w"> </span>br-wan<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
 sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>frr<span class="w"> </span>keepalived<span class="w"> </span>dnsmasq-base<span class="w"> </span>isc-dhcp-client<span class="w"> </span>nftables<span class="w"> </span>netcat-openbsd
 
@@ -1091,7 +1122,63 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 </tr>
 </tbody>
 </table>
-<p>Cada bloque se asigna de mayor a menor sin solaparse. Ahora creamos el resto de segmentos (Finanzas ya existe):</p>
+<p>Cada bloque se asigna de mayor a menor sin solaparse.</p>
+<p><strong>Correspondencia entre cada red y su interfaz.</strong> Cada gateway pertenece a la interfaz que representa ese segmento y no a otra; las redes departamentales se distinguen de los enlaces punto a punto:</p>
+<table>
+<thead>
+<tr>
+<th>Segmento</th>
+<th>Red</th>
+<th>Interfaz de R1 (o R2)</th>
+<th>Dirección del router</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Servidores</td>
+<td>10.0.0.0/24</td>
+<td><code>veth-r1srv</code> (R1), <code>veth-r2srv</code> (R2, apartado 15.7)</td>
+<td>10.0.0.1 (en 15.7 pasa a ser IP virtual; R1 = .2, R2 = .3)</td>
+</tr>
+<tr>
+<td>Finanzas</td>
+<td>10.0.1.0/25</td>
+<td><code>veth-r1fin</code></td>
+<td>10.0.1.1</td>
+</tr>
+<tr>
+<td>Ventas</td>
+<td>10.0.1.128/26</td>
+<td><code>veth-r1ven</code></td>
+<td>10.0.1.129</td>
+</tr>
+<tr>
+<td>Gestión</td>
+<td>10.0.1.192/28</td>
+<td><code>veth-r1ges</code></td>
+<td>10.0.1.193</td>
+</tr>
+<tr>
+<td>Enlace A (principal)</td>
+<td>10.0.1.208/30</td>
+<td><code>veth-r1r2a</code> (R1 .209) ↔ <code>veth-r2r1a</code> (R2 .210)</td>
+<td>— (punto a punto)</td>
+</tr>
+<tr>
+<td>Enlace B (respaldo)</td>
+<td>10.0.1.212/30</td>
+<td><code>veth-r1r2b</code> (R1 .213) ↔ <code>veth-r2r1b</code> (R2 .214)</td>
+<td>— (punto a punto)</td>
+</tr>
+<tr>
+<td>Sucursal</td>
+<td>10.0.2.0/24</td>
+<td><code>veth-r2suc</code> (R2)</td>
+<td>10.0.2.1</td>
+</tr>
+</tbody>
+</table>
+<p>Ahora creamos el resto de segmentos (Finanzas ya existe):</p>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Ventas y Gestión: una interfaz de R1 por segmento</span>
 enlace<span class="w"> </span>R1<span class="w"> </span>veth-r1ven<span class="w"> </span><span class="m">10</span>.0.1.129/26<span class="w"> </span>ven<span class="w"> </span>veth-ven<span class="w"> </span><span class="m">10</span>.0.1.130/26
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ven<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.0.1.129
@@ -1128,16 +1215,71 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>srv<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">10</span>.0.1.194<span class="w">     </span><span class="c1"># Servidores -&gt; Gestión</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">10</span>.0.1.210<span class="w">      </span><span class="c1"># R1 -&gt; R2 por el enlace A</span>
 </code></pre></div>
-<h2 id="153-vlan-variante">15.3 VLAN (variante)<a class="headerlink" href="#153-vlan-variante" title="Permanent link">&para;</a></h2>
-<p>En los pasos anteriores cada departamento tiene su propia interfaz. En una red real lo habitual es <strong>un único enlace <em>trunk</em></strong> que transporta varias VLAN. La configuración con un bridge Linux con filtrado de VLAN y <em>router-on-a-stick</em> es la del laboratorio 05 (requiere el módulo <code>8021q</code>); con Open vSwitch el equivalente es:</p>
+<h2 id="153-vlan-variante-conceptual">15.3 VLAN (variante conceptual)<a class="headerlink" href="#153-vlan-variante-conceptual" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Ejemplo conceptual, no integrable directamente</p>
+<p>En 15.2 cada departamento usa <strong>una interfaz independiente</strong> de R1. En una red real lo habitual es <strong>un único enlace <em>trunk</em></strong> que transporta varias VLAN. Esta variante se presenta como <strong>ejemplo conceptual</strong>: <strong>no es una configuración integral que pueda incorporarse directamente a la topología anterior</strong> (no coexisten con las mismas subredes), y no se ha encadenado con el resto del laboratorio. Este laboratorio sigue con segmentos separados para poder verificarlos en cualquier máquina.</p>
+</div>
+<p>La configuración con un bridge Linux con filtrado de VLAN y <em>router-on-a-stick</em> es la del laboratorio 05 (requiere el módulo <code>8021q</code>). Con Open vSwitch, los elementos que hay que definir son estos:</p>
+<table>
+<thead>
+<tr>
+<th>Elemento</th>
+<th>Qué es</th>
+<th>Dónde</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ovs-sw</code></td>
+<td>El switch (bridge OVS)</td>
+<td>host</td>
+</tr>
+<tr>
+<td><code>puerto-fin</code>, <code>puerto-ven</code>, <code>puerto-ges</code></td>
+<td>Puertos <strong>access</strong> de las VLAN 10, 20, 30; cada uno es un extremo de un <code>veth</code> cuyo otro extremo va al equipo final (<code>fin</code>, <code>ven</code>, <code>ges</code>)</td>
+<td>host (extremo del switch)</td>
+</tr>
+<tr>
+<td><code>trunk-r1</code> ↔ <code>trunk</code></td>
+<td>Enlace <strong>trunk</strong>: <code>trunk-r1</code> es el puerto del switch y <strong>recibe/envía las etiquetas 802.1Q</strong>; su otro extremo <code>trunk</code> va a R1</td>
+<td>host / R1</td>
+</tr>
+<tr>
+<td><code>trunk.10</code>, <code>trunk.20</code>, <code>trunk.30</code></td>
+<td><strong>Subinterfaces</strong> de R1 sobre <code>trunk</code>, una por VLAN, con la IP del <em>gateway</em> de cada VLAN</td>
+<td>R1</td>
+</tr>
+</tbody>
+</table>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>openvswitch-switch
 sudo<span class="w"> </span>ovs-vsctl<span class="w"> </span>add-br<span class="w"> </span>ovs-sw
-sudo<span class="w"> </span>ovs-vsctl<span class="w"> </span>add-port<span class="w"> </span>ovs-sw<span class="w"> </span>puerto-fin<span class="w"> </span><span class="nv">tag</span><span class="o">=</span><span class="m">10</span><span class="w">      </span><span class="c1"># puerto de acceso VLAN 10</span>
-sudo<span class="w"> </span>ovs-vsctl<span class="w"> </span>add-port<span class="w"> </span>ovs-sw<span class="w"> </span>puerto-ven<span class="w"> </span><span class="nv">tag</span><span class="o">=</span><span class="m">20</span><span class="w">      </span><span class="c1"># puerto de acceso VLAN 20</span>
-sudo<span class="w"> </span>ovs-vsctl<span class="w"> </span>add-port<span class="w"> </span>ovs-sw<span class="w"> </span>puerto-ges<span class="w"> </span><span class="nv">tag</span><span class="o">=</span><span class="m">30</span><span class="w">      </span><span class="c1"># puerto de acceso VLAN 30</span>
-sudo<span class="w"> </span>ovs-vsctl<span class="w"> </span>add-port<span class="w"> </span>ovs-sw<span class="w"> </span>trunk-r1<span class="w"> </span><span class="nv">trunks</span><span class="o">=</span><span class="m">10</span>,20,30<span class="w">   </span><span class="c1"># trunk hacia el router</span>
+
+<span class="c1"># Equipos finales: veth cuyo extremo "puerto-*" queda en el switch y el otro va a cada equipo</span>
+<span class="k">for</span><span class="w"> </span>h<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"fin 10"</span><span class="w"> </span><span class="s2">"ven 20"</span><span class="w"> </span><span class="s2">"ges 30"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="nb">set</span><span class="w"> </span>--<span class="w"> </span><span class="nv">$h</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>puerto-<span class="nv">$1</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-eq-<span class="nv">$1</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-eq-<span class="nv">$1</span><span class="w"> </span>netns<span class="w"> </span><span class="nv">$1</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>puerto-<span class="nv">$1</span><span class="w"> </span>up
+<span class="w">  </span>sudo<span class="w"> </span>ovs-vsctl<span class="w"> </span>add-port<span class="w"> </span>ovs-sw<span class="w"> </span>puerto-<span class="nv">$1</span><span class="w"> </span><span class="nv">tag</span><span class="o">=</span><span class="nv">$2</span><span class="w">      </span><span class="c1"># puerto de acceso (sin etiqueta hacia el equipo)</span>
+<span class="k">done</span>
+
+<span class="c1"># Trunk hacia R1: el switch etiqueta 10, 20 y 30</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>trunk-r1<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>trunk
+sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>trunk<span class="w"> </span>netns<span class="w"> </span>R1
+sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>trunk-r1<span class="w"> </span>up
+sudo<span class="w"> </span>ovs-vsctl<span class="w"> </span>add-port<span class="w"> </span>ovs-sw<span class="w"> </span>trunk-r1<span class="w"> </span><span class="nv">trunks</span><span class="o">=</span><span class="m">10</span>,20,30
+
+<span class="c1"># En R1, una subinterfaz por VLAN con el gateway de cada subred</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>trunk<span class="w"> </span>up
+<span class="k">for</span><span class="w"> </span>v<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="s2">"10 10.0.1.1/25"</span><span class="w"> </span><span class="s2">"20 10.0.1.129/26"</span><span class="w"> </span><span class="s2">"30 10.0.1.193/28"</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="nb">set</span><span class="w"> </span>--<span class="w"> </span><span class="nv">$v</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>link<span class="w"> </span>trunk<span class="w"> </span>name<span class="w"> </span>trunk.<span class="nv">$1</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span>vlan<span class="w"> </span>id<span class="w"> </span><span class="nv">$1</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="nv">$2</span><span class="w"> </span>dev<span class="w"> </span>trunk.<span class="nv">$1</span>
+<span class="w">  </span>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>trunk.<span class="nv">$1</span><span class="w"> </span>up
+<span class="k">done</span>
 </code></pre></div>
-<p>En el router, una subinterfaz por VLAN (<code>ip link add link &lt;trunk&gt; name &lt;trunk&gt;.10 type vlan id 10</code>) lleva la IP del <em>gateway</em> de cada subred (<code>10.0.1.1/25</code>, <code>10.0.1.129/26</code>, <code>10.0.1.193/28</code>), <strong>en lugar de</strong> las interfaces físicas del 15.2: no deben coexistir las dos formas con las mismas subredes. Este laboratorio sigue con segmentos separados para poder verificarlos en cualquier máquina.</p>
+<p>Los equipos finales (<code>fin</code>, <code>ven</code>, <code>ges</code>) tendrían su IP y su <em>gateway</em> como en 15.2, pero conectados al puerto de acceso de su VLAN. Estas subinterfaces llevan las IP de <em>gateway</em> <strong>en lugar de</strong> las interfaces <code>veth-r1fin</code>, <code>veth-r1ven</code> y <code>veth-r1ges</code> del 15.2: <strong>no deben coexistir las dos formas</strong> con las mismas subredes. Verifica en tu propio entorno antes de adoptarlo: este bloque ilustra el modelo trunk/access, no se encadena con el firewall, el DHCP ni el OSPF de los apartados siguientes (que usan los nombres de interfaz del 15.2).</p>
 <h2 id="154-routing-entre-redes">15.4 Routing entre redes<a class="headerlink" href="#154-routing-entre-redes" title="Permanent link">&para;</a></h2>
 <h3 id="rutas-estaticas">Rutas estáticas<a class="headerlink" href="#rutas-estaticas" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R2<span class="w"> </span>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span>default<span class="w"> </span>via<span class="w"> </span><span class="m">10</span>.0.1.209
@@ -1224,7 +1366,18 @@ sudo<span class="w"> </span>vtysh<span class="w"> </span>--vty_socket<span class
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>suc<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="m">10</span>.0.1.10
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>suc<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="m">192</span>.168.100.2
 </code></pre></div>
-<p><strong>Salida esperada:</strong> R1 y R2 son vecinos en estado <code>Full</code>; R2 aprende las redes de R1 y una ruta por defecto (<code>O&gt;* 0.0.0.0/0</code>), y R1 aprende <code>10.0.2.0/24</code>.</p>
+<p><strong>Resultado esperado:</strong> R1 y R2 son vecinos en estado <code>Full</code>; R2 aprende las redes de R1 y una ruta por defecto (<code>O&gt;* 0.0.0.0/0</code>), y R1 aprende <code>10.0.2.0/24</code>.</p>
+<p><strong>Qué hace OSPF (y qué no es).</strong> OSPF no es «un mecanismo que cambia de interfaz cuando se cae un enlace». El resultado que observas es la consecuencia de un proceso en varias etapas:</p>
+<ol>
+<li><strong>Adyacencia:</strong> R1 y R2 se descubren con paquetes <em>Hello</em> por cada enlace y establecen una relación de vecindad (<code>Full</code>). Hay una adyacencia <strong>por enlace</strong> (A y B).</li>
+<li><strong>Intercambio de estado de enlace:</strong> cada router describe en <strong>LSA</strong> sus interfaces, sus redes y su <strong>coste</strong>, y se los envía al vecino.</li>
+<li><strong>Base de datos de estado de enlace (LSDB):</strong> cada router acumula los LSA y construye una <strong>vista idéntica de la topología</strong>.</li>
+<li><strong>Cálculo SPF:</strong> cada router ejecuta el algoritmo de Dijkstra sobre esa base de datos y obtiene el <strong>camino de menor coste acumulado</strong> hacia cada red. El coste de un camino es la <strong>suma</strong> de los costes de los enlaces que atraviesa.</li>
+<li><strong>Selección de ruta:</strong> de entre los caminos calculados (aquí, por el enlace A con coste 10 o por el B con coste 20), se instala en la tabla de rutas el de menor coste. El B queda <strong>preparado</strong> en la base de datos pero no se usa mientras A sea mejor. Si dos caminos tuvieran el mismo coste, se instalarían los dos (ECMP).</li>
+<li><strong>Reconvergencia:</strong> cuando un enlace cae, el router lo <strong>detecta</strong> (por pérdida de la interfaz o por vencer el tiempo de <em>dead</em>), <strong>genera un LSA nuevo</strong>, lo propaga, los routers <strong>actualizan su LSDB y recalculan SPF</strong> y se instalan las nuevas rutas.</li>
+</ol>
+<p>Por eso la reconvergencia del apartado siguiente es rápida <strong>aquí</strong>: la interfaz cae y se detecta al instante; si el fallo fuera más allá de la interfaz (un fallo remoto), el vecino se declararía caído al vencer el <em>dead interval</em> (40 s por defecto), y la reconvergencia sería más lenta salvo con temporizadores ajustados o BFD.</p>
+<p><strong>La ruta por defecto: <code>default-information originate always</code>.</strong> Con esta orden R1 <strong>anuncia a los demás routers una ruta por defecto</strong>. La palabra <code>always</code> hace que la anuncie <strong>incluso si R1 no dispone de una ruta por defecto válida</strong> en su tabla. En este escenario R1 sí tiene una salida configurada hacia el host (<code>default via 192.168.100.2</code>), pero conviene saber qué significa: sin <code>always</code>, R1 solo anunciaría la ruta mientras tuviera una propia. <strong>Que se anuncie una ruta no garantiza que el acceso exterior funcione</strong>: si la WAN de R1 cayera, R2 seguiría recibiendo la ruta por defecto (con <code>always</code>) y enviando allí el tráfico. Quitar <code>always</code> hace que el anuncio dependa de la ruta real de R1.</p>
 <h3 id="reconvergencia-ante-un-fallo">Reconvergencia ante un fallo<a class="headerlink" href="#reconvergencia-ante-un-fallo" title="Permanent link">&para;</a></h3>
 <p>Tiramos el enlace principal (A) por ambos extremos y observamos cómo OSPF mueve el tráfico al respaldo sin intervención:</p>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>veth-r1r2a<span class="w"> </span>down
@@ -1245,6 +1398,7 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <span class="s">        ct state established,related accept</span>
 <span class="s">        ip protocol icmp limit rate 10/second accept</span>
 <span class="s">        ip protocol ospf accept</span>
+<span class="s">        ip protocol vrrp accept</span>
 <span class="s">        iifname { "veth-r1fin", "veth-r1ven" } udp dport 67 accept</span>
 <span class="s">        iifname { "veth-r1fin", "veth-r1ven", "veth-r1ges" } tcp dport 22 accept</span>
 <span class="s">    }</span>
@@ -1254,7 +1408,9 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 <span class="s">        iifname { "veth-r1fin", "veth-r1ven", "veth-r1ges", "veth-r1r2a", "veth-r1r2b" } oifname "veth-r1-wan" accept</span>
 <span class="s">        iifname { "veth-r1fin", "veth-r1ven", "veth-r1ges", "veth-r1r2a", "veth-r1r2b" } oifname "veth-r1srv" accept</span>
 <span class="s">        iifname "veth-r1-wan" oifname "veth-r1srv" tcp dport { 80, 443, 25 } accept</span>
-<span class="s">        iifname { "veth-r1fin", "veth-r1ven", "veth-r1ges" } oifname { "veth-r1fin", "veth-r1ven", "veth-r1ges" } accept</span>
+<span class="s">        # Entre LAN departamentales: por defecto NADA; solo Gestión puede administrar Finanzas y Ventas</span>
+<span class="s">        iifname "veth-r1ges" oifname { "veth-r1fin", "veth-r1ven" } icmp type echo-request accept</span>
+<span class="s">        iifname "veth-r1ges" oifname { "veth-r1fin", "veth-r1ven" } tcp dport 22 accept</span>
 <span class="s">    }</span>
 <span class="s">}</span>
 <span class="s">EOF</span>
@@ -1262,16 +1418,90 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>nft<span class="w"> </span>-f<span class="w"> </span>/tmp/lab15/fw.nft
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>nft<span class="w"> </span>list<span class="w"> </span>ruleset
 </code></pre></div>
-<p>El protocolo OSPF (número 89) debe aceptarse en <code>input</code>, o R1 dejaría de ver a sus vecinos; y el puerto UDP 67 de las LAN de Finanzas y Ventas, o R1 no podría repartir direcciones DHCP (apartado 15.6). La política de <code>forward</code> es "denegar" y solo se abre lo necesario: las LAN salen a Internet y a los servidores; desde Internet solo entran HTTP, HTTPS y SMTP hacia la zona de servidores.</p>
+<p>El protocolo OSPF (número 89) debe aceptarse en <code>input</code>, o R1 dejaría de ver a sus vecinos; igual que VRRP (número 112, apartado 15.7); y el puerto UDP 67 de las LAN de Finanzas y Ventas, o R1 no podría repartir direcciones DHCP (apartado 15.6). La política de <code>forward</code> es "denegar" y solo se abre lo necesario.</p>
+<p><strong>Política de comunicación que implementan estas reglas</strong> (segmentación no equivale a aislamiento absoluto: las reglas deben responder a una política definida):</p>
+<table>
+<thead>
+<tr>
+<th>Origen → Destino</th>
+<th>Política</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LAN (Finanzas, Ventas, Gestión) y enlaces a R2 → Internet</td>
+<td>Permitido</td>
+</tr>
+<tr>
+<td>LAN y sucursal → Servidores</td>
+<td>Permitido</td>
+</tr>
+<tr>
+<td>Finanzas ↔ Ventas, y Servidores → LAN</td>
+<td><strong>Denegado</strong></td>
+</tr>
+<tr>
+<td>Gestión → Finanzas / Ventas</td>
+<td>Solo ICMP y SSH (administración)</td>
+</tr>
+<tr>
+<td>Internet → Servidores</td>
+<td>Solo TCP 80, 443 y 25 (si el servicio se publica; véase abajo)</td>
+</tr>
+</tbody>
+</table>
+<p>Una versión anterior permitía el tráfico sin restricción entre las LAN departamentales; eso contradecía la idea de segmentación y se ha sustituido por la política anterior.</p>
+<div class="admonition note">
+<p class="admonition-title">Permitir el reenvío no equivale a publicar el servicio</p>
+<p>La regla «Internet → Servidores en 80, 443 y 25» <strong>solo permite el reenvío</strong> si el paquete llega con un destino interno por la interfaz WAN. <strong>No crea por sí sola la traducción de destino ni la accesibilidad exterior.</strong> Para publicar un servicio privado hace falta normalmente <strong>DNAT</strong> (o direccionamiento público, o una arquitectura equivalente), además de rutas y políticas de seguridad. Ejemplo para publicar el puerto 80 del servidor <code>10.0.0.10</code> en la dirección WAN de R1:</p>
+<div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>iptables<span class="w"> </span>-t<span class="w"> </span>nat<span class="w"> </span>-A<span class="w"> </span>PREROUTING<span class="w"> </span>-i<span class="w"> </span>veth-r1-wan<span class="w"> </span>-p<span class="w"> </span>tcp<span class="w"> </span>--dport<span class="w"> </span><span class="m">80</span><span class="w"> </span>-j<span class="w"> </span>DNAT<span class="w"> </span>--to-destination<span class="w"> </span><span class="m">10</span>.0.0.10:80
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>srv<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">'nc -l -p 80 &gt;/dev/null 2&gt;&amp;1 &lt;/dev/null &amp;'</span>
+nc<span class="w"> </span>-zv<span class="w"> </span>-w<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">192</span>.168.100.1<span class="w"> </span><span class="m">80</span><span class="w">        </span><span class="c1"># desde el host («Internet»)</span>
+</code></pre></div>
+<p>Sin la regla de <code>PREROUTING</code>, el host no alcanzaría el servidor aunque la política de <code>forward</code> lo permitiera.</p>
+</div>
 <h3 id="verificar_1">Verificar<a class="headerlink" href="#verificar_1" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code>sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>fin<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">192</span>.168.100.2<span class="w">     </span><span class="c1"># salida a "Internet": permitida</span>
-sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>fin<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">10</span>.0.1.130<span class="w">        </span><span class="c1"># Finanzas -&gt; Ventas: permitido (regla entre LAN)</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>fin<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span>-W<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">10</span>.0.1.130<span class="w">   </span><span class="c1"># Finanzas -&gt; Ventas: BLOQUEADO (sin regla entre LAN)</span>
+sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ges<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">10</span>.0.1.10<span class="w">         </span><span class="c1"># Gestión -&gt; Finanzas: permitido (administración)</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>srv<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span>-W<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">10</span>.0.1.10<span class="w">    </span><span class="c1"># Servidores -&gt; Finanzas: bloqueado</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R1<span class="w"> </span>nft<span class="w"> </span>list<span class="w"> </span>ruleset<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-A1<span class="w"> </span>counter
 </code></pre></div>
 <p>(La NAT hacia Internet sigue siendo la regla <code>iptables</code> de R1 del apartado 15.1.)</p>
 <h2 id="156-servicios-dhcp-con-dnsmasq">15.6 Servicios: DHCP con dnsmasq<a class="headerlink" href="#156-servicios-dhcp-con-dnsmasq" title="Permanent link">&para;</a></h2>
-<p>R1 reparte direcciones en Finanzas y Ventas, con un rango por subred y su propio <em>gateway</em>:</p>
+<p>R1 reparte direcciones en Finanzas y Ventas, con un rango por subred y su propio <em>gateway</em>. Antes de leer la configuración, fija la correspondencia:</p>
+<table>
+<thead>
+<tr>
+<th>Interfaz de R1</th>
+<th>Segmento</th>
+<th>Rango DHCP</th>
+<th>Máscara</th>
+<th>Gateway entregado</th>
+<th>Etiqueta de dnsmasq</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>veth-r1fin</code></td>
+<td>Finanzas (10.0.1.0/25)</td>
+<td>10.0.1.20 – 10.0.1.120</td>
+<td>255.255.255.128</td>
+<td>10.0.1.1</td>
+<td><code>fin</code></td>
+</tr>
+<tr>
+<td><code>veth-r1ven</code></td>
+<td>Ventas (10.0.1.128/26)</td>
+<td>10.0.1.140 – 10.0.1.190</td>
+<td>255.255.255.192</td>
+<td>10.0.1.129</td>
+<td><code>ven</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cómo se asocian las etiquetas con los rangos.</strong> <code>dhcp-range=set:fin,…</code> <strong>crea la etiqueta <code>fin</code> para los clientes que reciban una dirección de ese rango</strong>; <code>dhcp-option=tag:fin,option:router,…</code> aplica la opción de <em>gateway</em> <strong>solo</strong> a los clientes con esa etiqueta. Así, cada cliente recibe el <em>gateway</em> de su subred. Dnsmasq decide el rango por la interfaz por la que llega la petición.</p>
+<p><strong>Qué parámetros recibe cada cliente:</strong> dirección IP, máscara, puerta de enlace (<code>router</code>), servidor DNS y duración de la concesión (24 h). <strong>Papel del servidor DNS anunciado:</strong> <code>dhcp-option=option:dns-server,8.8.8.8</code> indica a los clientes a quién preguntar por nombres. <code>8.8.8.8</code> es un <strong>DNS público de ejemplo</strong>, <strong>no un servidor DNS interno de la empresa</strong>; en una red real se anunciaría el DNS corporativo (laboratorio 07). Recuerda que DHCP y DNS son servicios independientes: recibir una IP no garantiza que la resolución funcione.</p>
 <div class="language-bash highlight"><pre><span></span><code>cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/lab15/dhcp.conf<span class="w"> </span><span class="s">&lt;&lt; 'EOF'</span>
 <span class="s">port=0</span>
 <span class="s">bind-interfaces</span>
@@ -1313,6 +1543,45 @@ sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </sp
 </code></pre></div>
 <h2 id="157-red-empresarial-completa-vrrp-redundancia-de-gateway">15.7 Red empresarial completa: VRRP (redundancia de <em>gateway</em>)<a class="headerlink" href="#157-red-empresarial-completa-vrrp-redundancia-de-gateway" title="Permanent link">&para;</a></h2>
 <p>Los servidores usan <code>10.0.0.1</code> como <em>gateway</em>. Si R1 falla, quedarían aislados. Con <strong>VRRP</strong> (aquí con <code>keepalived</code>) R1 y R2 comparten una <strong>IP virtual</strong> <code>10.0.0.1</code>: la tiene el router de mayor prioridad y, si cae, la toma el otro.</p>
+<p><strong>Los elementos de VRRP:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Elemento</th>
+<th>En este laboratorio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dirección física de R1</td>
+<td><code>10.0.0.2</code> (en <code>veth-r1srv</code>)</td>
+</tr>
+<tr>
+<td>Dirección física de R2</td>
+<td><code>10.0.0.3</code> (en <code>veth-r2srv</code>)</td>
+</tr>
+<tr>
+<td>Dirección virtual compartida</td>
+<td><code>10.0.0.1</code> (el <em>gateway</em> de los servidores)</td>
+</tr>
+<tr>
+<td>Router activo (<em>master</em>)</td>
+<td>R1, prioridad 100</td>
+</tr>
+<tr>
+<td>Router de respaldo (<em>backup</em>)</td>
+<td>R2, prioridad 90</td>
+</tr>
+<tr>
+<td>Anuncios VRRP</td>
+<td>El <em>master</em> envía un anuncio cada segundo (<code>advert_int 1</code>) por multicast (224.0.0.18, protocolo IP 112)</td>
+</tr>
+<tr>
+<td>Cambio de estado</td>
+<td>Si el respaldo deja de recibir anuncios durante unos tres intervalos, <strong>se declara <em>master</em></strong> y <strong>adquiere la dirección virtual</strong> (y avisa con ARP gratuito)</td>
+</tr>
+</tbody>
+</table>
 <p>R2 se une al switch de servidores y R1 pasa a usar una IP propia distinta (<code>10.0.0.2</code>), dejando <code>10.0.0.1</code> para la IP virtual (no puede estar configurada a la vez como IP normal):</p>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># R2 en el segmento de servidores</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>veth-r2srv<span class="w"> </span><span class="nb">type</span><span class="w"> </span>veth<span class="w"> </span>peer<span class="w"> </span>name<span class="w"> </span>veth-sw-r2
@@ -1360,15 +1629,64 @@ sleep<span class="w"> </span><span class="m">5</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>R2<span class="w"> </span>ip<span class="w"> </span>-4<span class="w"> </span>addr<span class="w"> </span>show<span class="w"> </span>dev<span class="w"> </span>veth-r2srv<span class="w">     </span><span class="c1"># ahora R2 tiene 10.0.0.1</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>netns<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>srv<span class="w"> </span>ping<span class="w"> </span>-c<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="m">10</span>.0.0.1<span class="w">                </span><span class="c1"># el gateway sigue respondiendo</span>
 </code></pre></div>
+<p><strong>Alcance de VRRP.</strong> VRRP proporciona <strong>redundancia del <em>gateway</em></strong>, <strong>no redundancia integral de toda la infraestructura</strong>. Si R1 pierde <strong>solo su conectividad WAN</strong> pero <strong>su interfaz LAN sigue funcionando</strong>, R1 sigue enviando anuncios y conservando la IP virtual: <strong>la configuración mostrada no provoca una transferencia automática</strong>, y los servidores seguirían enviando su tráfico a un <em>gateway</em> sin salida. Para cubrir esa condición hace falta <strong>seguimiento del estado de interfaces o rutas</strong> y una <strong>política de prioridad</strong> que lo acompañe. Con <code>keepalived</code>:</p>
+<div class="language-text highlight"><pre><span></span><code>vrrp_instance SERVIDORES {
+    ...
+    track_interface {
+        veth-r1-wan weight -20     # si la WAN cae, la prioridad de R1 baja de 100 a 80 (&lt; 90 de R2)
+    }
+}
+</code></pre></div>
+<p>(Ilustrativo: en <strong>esta</strong> topología R2 sale a Internet a través de R1, así que transferir el <em>gateway</em> a R2 no restablecería la salida; el seguimiento solo sirve cuando el respaldo tiene un camino alternativo.) La clave <code>PASS</code> no es una protección criptográfica: ya se advirtió arriba que es débil, y esa advertencia se mantiene.</p>
 <h2 id="158-troubleshooting-real">15.8 Troubleshooting real<a class="headerlink" href="#158-troubleshooting-real" title="Permanent link">&para;</a></h2>
-<p>Casos de diagnóstico habituales. Los ejemplos de direcciones (<code>10.10.1.100</code>) son ilustrativos: no corresponden a un equipo de esta topología.</p>
+<p>Casos de diagnóstico habituales. Los ejemplos de direcciones (<code>10.10.1.100</code>) son <strong>ilustrativos</strong>: no corresponden a un equipo de esta topología. Los comandos siguientes sirven para <strong>representar un diagnóstico de paquetes que atraviesan un túnel</strong>; <strong>no</strong> verifican el túnel construido en apartados anteriores (en este laboratorio no hay ningún túnel GRE ni IPsec).</p>
 <h3 id="caso-degradacion-por-mtu-en-un-tunel-ipsecgre">Caso: degradación por MTU en un túnel (IPsec/GRE)<a class="headerlink" href="#caso-degradacion-por-mtu-en-un-tunel-ipsecgre" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Sondear la MTU efectiva con DF activado: el primer tamaño supera 1500 y debe fallar</span>
+<p><strong>No uses MTU y MSS indistintamente:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Qué es</th>
+<th>Ejemplo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>MTU del enlace</strong></td>
+<td>Tamaño máximo del paquete IP en ese enlace</td>
+<td>1500</td>
+</tr>
+<tr>
+<td><strong>MTU efectiva del túnel</strong></td>
+<td>La MTU del enlace <strong>menos el <em>overhead</em> de la encapsulación</strong></td>
+<td>p. ej. ~1400 con IPsec</td>
+</tr>
+<tr>
+<td><strong>MSS anunciado por TCP</strong></td>
+<td>Máximo de <strong>datos TCP</strong> por segmento que un extremo anuncia (MTU − 20 IP − 20 TCP)</td>
+<td>1460 con MTU 1500; 1360 con MTU 1400</td>
+</tr>
+<tr>
+<td><strong>Ajuste de MSS</strong> (<em>MSS clamping</em>)</td>
+<td>El router reescribe el MSS de los SYN para que los segmentos quepan en el túnel</td>
+<td><code>TCPMSS --set-mss 1360</code></td>
+</tr>
+<tr>
+<td><strong>Fragmentación y PMTUD</strong></td>
+<td>Si un paquete excede la MTU: se fragmenta (si no tiene DF) o se descarta y se avisa por ICMP «fragmentation needed» (PMTUD); si ese ICMP se filtra, la conexión <strong>se bloquea</strong></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="language-bash highlight"><pre><span></span><code><span class="c1"># Sondear la MTU efectiva con DF activado.</span>
+<span class="c1"># -s es el tamaño de los DATOS ICMP: 1472 + 28 = 1500, el tamaño máximo con MTU 1500.</span>
+<span class="c1"># Si falla, la MTU del camino es menor que 1500 (por ejemplo, por la encapsulación de un túnel).</span>
 ping<span class="w"> </span>-M<span class="w"> </span><span class="k">do</span><span class="w"> </span>-s<span class="w"> </span><span class="m">1472</span><span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">10</span>.10.1.100
 ping<span class="w"> </span>-M<span class="w"> </span><span class="k">do</span><span class="w"> </span>-s<span class="w"> </span><span class="m">1410</span><span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">10</span>.10.1.100
 sudo<span class="w"> </span>tcpdump<span class="w"> </span>-i<span class="w"> </span>eth0<span class="w"> </span>host<span class="w"> </span><span class="m">10</span>.10.1.100<span class="w"> </span>and<span class="w"> </span>port<span class="w"> </span><span class="m">445</span><span class="w"> </span>-w<span class="w"> </span>captura.pcap
 
-<span class="c1"># Limitar el MSS de las conexiones que atraviesan el router (se aplica habitualmente en la tabla mangle)</span>
+<span class="c1"># Limitar el MSS de las conexiones que atraviesan el router (se aplica habitualmente en la tabla mangle).</span>
+<span class="c1"># 1360 = 1400 (MTU efectiva del túnel) - 20 (IP) - 20 (TCP).</span>
 sudo<span class="w"> </span>iptables<span class="w"> </span>-t<span class="w"> </span>mangle<span class="w"> </span>-A<span class="w"> </span>FORWARD<span class="w"> </span>-p<span class="w"> </span>tcp<span class="w"> </span>--tcp-flags<span class="w"> </span>SYN,RST<span class="w"> </span>SYN<span class="w"> </span>-j<span class="w"> </span>TCPMSS<span class="w"> </span>--set-mss<span class="w"> </span><span class="m">1360</span>
 <span class="c1"># (o, sin fijar el valor: -j TCPMSS --clamp-mss-to-pmtu)</span>
 </code></pre></div>
@@ -1413,30 +1731,39 @@ sudo<span class="w"> </span>chmod<span class="w"> </span>+x<span class="w"> </sp
 </tr>
 <tr>
 <td>VLAN</td>
-<td>Segmentación lógica (variante con trunk)</td>
+<td>Segmentación lógica (variante <strong>conceptual</strong> con trunk)</td>
 </tr>
 <tr>
 <td>Routing</td>
-<td>Rutas estáticas y OSPF con reconvergencia</td>
+<td>Rutas estáticas y OSPF (adyacencia, LSDB, SPF, reconvergencia)</td>
 </tr>
 <tr>
 <td>Firewall</td>
-<td>nftables con política "denegar"</td>
+<td>nftables con política "denegar" y una política de comunicación explícita (el reenvío no publica servicios sin DNAT)</td>
 </tr>
 <tr>
 <td>DHCP</td>
-<td>Un rango y un gateway por subred</td>
+<td>Un rango y un gateway por subred; DNS público de ejemplo</td>
 </tr>
 <tr>
 <td>VRRP</td>
-<td>IP virtual de <em>gateway</em> con failover</td>
+<td>IP virtual de <em>gateway</em> con failover; no redunda toda la infraestructura</td>
 </tr>
 <tr>
 <td>Troubleshooting</td>
-<td>MTU/MSS y tabla ARP</td>
+<td>MTU frente a MSS, y tabla ARP</td>
 </tr>
 </tbody>
 </table>
+<h2 id="revision-de-coherencia-del-escenario-global">Revisión de coherencia del escenario global<a class="headerlink" href="#revision-de-coherencia-del-escenario-global" title="Permanent link">&para;</a></h2>
+<p>Cada apartado funciona por sí mismo, pero conviene comprobar que <strong>el conjunto es coherente</strong>:</p>
+<ul>
+<li><strong>Direccionamiento:</strong> el mapa red ↔ interfaz del apartado 15.2 es la referencia única; no hay dos interfaces con la misma dirección. En 15.7 la IP de R1 en servidores cambia de <code>10.0.0.1</code> a <code>10.0.0.2</code> (y la <code>10.0.0.1</code> pasa a ser virtual); OSPF sigue anunciando <code>10.0.0.0/24</code>.</li>
+<li><strong>Firewall frente a protocolos de control:</strong> <code>input</code> acepta OSPF, VRRP y DHCP; si falta alguno, ese servicio se rompe de forma silenciosa.</li>
+<li><strong>NAT y firewall:</strong> la NAT de salida sigue siendo <code>iptables</code> y la política de reenvío es de <code>nftables</code>; conviven en el mismo namespace.</li>
+<li><strong>VLAN:</strong> el apartado 15.3 es una variante; no se mezcla con los demás.</li>
+<li><strong>Alcance de las pruebas:</strong> las comprobaciones de cada apartado demuestran lo que se afirma en él; no demuestran, por ejemplo, que una caída de la WAN se gestione sola (véase VRRP).</li>
+</ul>
 <h2 id="conclusiones">Conclusiones<a class="headerlink" href="#conclusiones" title="Permanent link">&para;</a></h2>
 <p>Este laboratorio integra los conceptos de la serie: direccionamiento IP, enrutamiento dinámico, firewall, servicios y alta disponibilidad de <em>gateway</em>, y cierra con técnicas de diagnóstico. La implementación práctica de una red empresarial completa requiere planificación, documentación y verificación continua.</p>
 <hr />
