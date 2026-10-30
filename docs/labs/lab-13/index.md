@@ -8,7 +8,10 @@ La empresa **Networking SecOps** ha implementado su infraestructura de red compl
 
 !!! info "Dos precisiones técnicas"
     - Los namespaces aíslan la **red**, no el sistema de archivos: un `tcpdump -w /tmp/captura.pcap` o un `rsyslog` dentro de un namespace escriben en el `/tmp` y el `/etc` **reales** del equipo. Por eso las capturas y el SIEM de este laboratorio usan rutas propias en `/tmp/lab13/` y los servicios se arrancan a mano (`systemctl` actuaría sobre el host).
-    - El "SIEM" que se construye es un **colector central de logs** con `rsyslog`. Un SIEM real añade normalización, correlación de eventos, alertas y paneles.
+    - El "SIEM" que se construye es un **colector central de logs** con `rsyslog`. Un SIEM real añade normalización, correlación de eventos, alertas y paneles. **No debe equipararse con un SIEM empresarial completo.**
+
+!!! note "NOC y SIEM: dos funciones distintas"
+    Un **NOC** (*Network Operations Center*) se ocupa de la **disponibilidad, el rendimiento y la operación** de la infraestructura (¿está caído el enlace? ¿qué latencia hay?). Un **SIEM** (*Security Information and Event Management*) se ocupa de **recolectar, correlacionar y analizar eventos relevantes para la seguridad** (¿hay un patrón de intentos de acceso anómalos?). En este laboratorio, el equipo `NOC` ejecuta herramientas de diagnóstico y el equipo `SIEM` hace de colector de registros; ambos comparten red, pero sirven a propósitos diferentes.
 
 ## Topología
 
@@ -135,6 +138,8 @@ sudo ip netns exec NOC mtr -n -r -c 10 10.100.1.10
 
 ### Paso 6: Captura de tráfico con tcpdump
 
+**Qué se observa y qué no.** `tcpdump -i veth-noc` captura en la interfaz **del NOC**, dentro de su namespace: solo ve el tráfico que **entra o sale por esa interfaz** (el del propio NOC, más los *broadcast* y *multicast* de la LAN). En una LAN conmutada, el tráfico *unicast* entre otros equipos (por ejemplo App ↔ DB) **no pasa por el puerto del NOC**, así que **no se ve**. Una captura en la interfaz del NOC **no equivale a observar todo el tráfico de la infraestructura**; para ver más habría que capturar en el bridge `br-lan` de `OnPremise` o en el puerto del equipo que interesa. Dentro de un namespace tampoco se ven las interfaces del host ni las de otros namespaces.
+
 Las capturas se guardan en `/tmp/lab13/` (el `/tmp` real: los namespaces no aíslan archivos).
 
 ```bash
@@ -164,6 +169,11 @@ sudo ip netns exec NOC iperf3 -c 10.0.0.10 -u -b 100M -t 5
 # Detener el servidor al terminar
 sudo ip netns exec AppServer pkill iperf3
 ```
+
+**Cómo interpretar los resultados.**
+
+-   **TCP** mide el *throughput* que la conexión consigue sostener: TCP **se adapta** al camino (control de congestión), así que el resultado refleja la capacidad **efectiva** (y la CPU disponible, porque aquí el enlace es virtual).
+-   **UDP** con `-b 100M` **ofrece** una tasa fija de 100 Mbps: es la tasa **ofrecida a la prueba**, **no demuestra que la red la soporte**. El informe debe leerse junto con la **pérdida de datagramas**, el **jitter**, la **capacidad real del enlace** y las **condiciones de ejecución** (carga de la máquina, otras pruebas simultáneas). Si la pérdida es 0 %, el camino aguantó esa tasa; si es alta, la tasa ofrecida superó lo que se pudo transportar.
 
 ### Paso 8: Colector central de logs (SIEM básico) con rsyslog
 
@@ -197,6 +207,10 @@ Una "alerta" rudimentaria es buscar patrones en el colector:
 grep -i "error" /tmp/lab13/remote.log
 ```
 
+**Qué demuestra esto y qué no.** El envío de mensajes con `logger` demuestra el **transporte de eventos** hacia un punto central. Es un ejemplo básico de **centralización y consulta de registros**. **No** constituye correlación avanzada, detección automatizada ni respuesta ante incidentes: un SIEM real normaliza los eventos de muchas fuentes, los correlaciona (por ejemplo, «muchos fallos de acceso seguidos de un acceso correcto») y genera alertas.
+
+**Monitoreo y seguridad.** Los datos de monitoreo y los registros permiten **detectar anomalías**, pero **no sustituyen** las medidas **preventivas** (firewall, segmentación, autenticación) ni los mecanismos de **respuesta** (procedimientos, aislamiento, recuperación).
+
 ## Ejercicios
 
 ### Ejercicio 1: Analizar una captura
@@ -221,7 +235,7 @@ sudo ip netns exec AppServer pkill iperf3
 
 ### Ejercicio 3: Simular un fallo de MTU
 
-Bajamos la MTU **solo en el servidor App**. El router sigue enviando paquetes de 1500 bytes y el servidor, con MTU 1400, los descarta sin avisar (no se genera el mensaje ICMP "fragmentation needed"): un "agujero negro" de MTU.
+Bajamos la MTU **solo en el servidor App**. El NOC (que está en la misma LAN, sin pasar por el router) sigue enviando paquetes de hasta 1500 bytes y el servidor, con MTU 1400, normalmente descarta los que no caben sin avisar (no se genera el mensaje ICMP "fragmentation needed", porque en capa 2 no hay un router que lo emita): un "agujero negro" de MTU. El comportamiento exacto de recepción de tramas mayores que la MTU puede variar según el kernel.
 
 ```bash
 sudo ip netns exec AppServer ip link set veth-app mtu 1400
@@ -246,13 +260,13 @@ sudo ip netns exec AppServer ip link set veth-app mtu 1500     # restaurar
 | Ping | Conectividad básica |
 | Traceroute | Identificar saltos |
 | MTR | Análisis continuo por salto |
-| tcpdump | Captura de tráfico |
-| iperf3 | Medición de ancho de banda |
-| Colector de logs (SIEM básico) | Centralización de eventos con rsyslog |
+| tcpdump | Captura de tráfico de **una interfaz** (no de toda la red) |
+| iperf3 | Medición de rendimiento (TCP efectivo; UDP con tasa ofrecida, pérdida y jitter) |
+| Colector de logs (SIEM básico) | Centralización de eventos con rsyslog; no es correlación ni respuesta |
 
 ## Conclusiones
 
-Las herramientas de monitoreo y diagnóstico permiten detectar y resolver incidentes de red de manera rápida y estructurada. Un colector de logs es el primer paso hacia un SIEM; la correlación y las alertas avanzadas requieren herramientas específicas.
+Las herramientas de monitoreo y diagnóstico permiten detectar y resolver incidentes de red de manera rápida y estructurada. Un colector de logs es el primer paso hacia un SIEM; la correlación y las alertas avanzadas requieren herramientas específicas. El monitoreo detecta; la prevención y la respuesta son medidas aparte.
 
 ---
 

@@ -6,8 +6,24 @@
 
 La empresa **Networking SecOps** ha implementado su infraestructura WAN (Laboratorio 10). Ahora necesita diseñar la arquitectura de red completa para su sede central, con el modelo jerárquico **Core - Distribución - Acceso**, redundancia en el núcleo y una DMZ.
 
+### Función de cada capa
+
+| Capa | Función | En este laboratorio |
+|------|---------|---------------------|
+| **Core** | Transporte de **alto rendimiento** entre los bloques de la arquitectura; debe ser simple y rápido, sin aplicar políticas complejas. | `Core1`, `Core2` |
+| **Distribución** | **Agregación** de los switches de acceso, **políticas** y **enrutamiento entre segmentos** (aquí, entre VLAN). | `Dist1` (gateway de las VLAN), `Dist2` |
+| **Acceso** | **Conexión de los dispositivos finales** y segmentación en VLAN. | `Access1` (switch con VLAN) |
+
+El **firewall perimetral** controla el tráfico entre el interior, la DMZ e Internet. No basta con dibujar los tres niveles: cada uno tiene una función distinta.
+
+!!! note "Relación con el laboratorio 05"
+    En el laboratorio 05 estudiamos **de forma aislada** los mecanismos de segmentación (VLAN, trunk 802.1Q, router-on-a-stick). Aquí esos mismos mecanismos se incorporan **dentro de una arquitectura empresarial jerárquica**. No son el mismo escenario: cambian los dispositivos, los nombres y el direccionamiento (aquí `10.0.10–30.0/24` y enlaces `10.255.x.x`).
+
 !!! info "Alcance"
     Se construye **una** capa de acceso completa (`Access1`, con las tres VLAN) y la redundancia se logra con **rutas estáticas con métrica**. La alta disponibilidad de *gateway* con VRRP y la reconvergencia dinámica con OSPF se practican en el Laboratorio 15.
+
+!!! warning "Tener dos Core y dos Distribution no demuestra alta disponibilidad"
+    La redundancia **física** solo se convierte en **disponibilidad** si existen mecanismos que (1) eviten bucles, (2) detecten el fallo y (3) muevan el tráfico (y los *gateways*) al camino alternativo. En esta práctica: el **núcleo** tolera la caída de `Core1` (mediante rutas de respaldo y fallo **local**), pero las VLAN dependen de **un único *gateway***, `Dist1`, porque `Access1` solo se conecta a él. Si `Dist1` falla, las VLAN pierden conectividad aunque `Dist2` esté sana. Resolverlo requiere un segundo trunk, un protocolo contra bucles de capa 2 (STP/RSTP) y redundancia de *gateway* (VRRP): ejercicios y Laboratorio 15.
 
 ## Topología
 
@@ -65,8 +81,18 @@ graph TB
 
 ### Paso 0: Limpiar laboratorios anteriores
 
+Este laboratorio es un **escenario nuevo**: reutiliza nombres como `Firewall` o `ServidorWeb` con otra función y otro direccionamiento. Elimina **solo los namespaces de los laboratorios anteriores, por nombre** (no todos los namespaces del equipo):
+
 ```bash
-for ns in $(ip netns list | awk '{print $1}'); do sudo ip netns del $ns; done
+for ns in cliente1 cliente2 cliente3 cliente4 router switch \
+          ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 \
+          R1 R2 R3 clienteSede clienteSucA clienteSucB \
+          servidorDNS servidorDHCP clienteDHCP \
+          firewall servidorWeb servidorDNS_PUB servidorInterno VPN_GW clienteVPN \
+          PE1 PE2 PE3 P1 P2 P3 host1 host2 host3 \
+          Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin; do
+  sudo ip netns del $ns 2>/dev/null || true
+done
 sudo ip link del br-wan 2>/dev/null || true
 ```
 
@@ -145,6 +171,9 @@ done
 
 Cada router tiene un camino **principal** (métrica 10) y uno de **respaldo** (métrica 20). Dos rutas al mismo destino con la misma métrica no pueden coexistir.
 
+!!! warning "Una métrica mayor no garantiza *failover*"
+    La ruta de respaldo (métrica 20) solo se **usa** cuando la principal desaparece de la tabla, y con rutas estáticas eso ocurre únicamente si **la interfaz del propio router** cae. Si la interfaz sigue activa pero existe una falla **más allá** (el siguiente salto no responde, el enlace remoto está cortado), la ruta estática ordinaria **no lo detecta** y el tráfico se pierde. Para cubrir ese caso harían falta un protocolo dinámico (OSPF), detección de fallos (BFD) o rutas condicionadas a la accesibilidad del siguiente salto.
+
 ```bash
 # Distribución: salida por defecto hacia el core (principal Core1 en Dist1, Core2 en Dist2)
 sudo ip netns exec Dist1 ip route add default via 10.255.1.1  metric 10
@@ -167,6 +196,8 @@ done
 ```
 
 ### Paso 5: Política del firewall y NAT
+
+**Por qué la DMZ usa una red distinta de las VLAN internas** (`10.0.99.0/24` frente a `10.0.10–30.0/24`): son **zonas de confianza diferentes**. La DMZ aloja servidores expuestos a Internet y, si se compromete, no debe dar acceso a la LAN. Al estar en una subred y un segmento propios, **toda comunicación entre ellas pasa por el firewall**, que decide qué se permite (aquí solo desde el interior hacia la DMZ y nunca al revés).
 
 Las VLAN (`10.0.10-30.0/24`) están dentro de `10.0.0.0/18`; la DMZ (`10.0.99.0/24`) queda fuera.
 
@@ -218,6 +249,8 @@ for h in "ventas 10 veth-ven veth-a1ven" "it 20 veth-it veth-a1it" "admin 30 vet
 done
 ```
 
+**Quién es el *gateway* de cada VLAN.** `Dist1` mediante las subinterfaces `veth-d1a1.10/.20/.30` (direcciones `.1`); `Dist2` **no** es gateway de ninguna VLAN. Si `Dist1` falla, no hay otro equipo que asuma esas direcciones: la continuidad del *gateway* requeriría VRRP.
+
 ### Paso 7: Verificar
 
 ```bash
@@ -250,7 +283,9 @@ sudo ip netns exec ventas ping -c 4 10.0.99.10
 sudo ip netns exec ventas traceroute -n -I 10.0.99.10
 ```
 
-**Salida esperada:** 0% de pérdida y un camino distinto (`10.255.1.9`, que es Core2).
+**Resultado esperado:** 0% de pérdida y un camino distinto (`10.255.1.9`, que es Core2).
+
+Este resultado demuestra la tolerancia a la caída de **un Core** con rutas estáticas y fallo local. **No** demuestra tolerancia a la caída de `Dist1` ni a fallos remotos.
 
 Para recuperar Core1, sube de nuevo esas interfaces (`up`) y vuelve a añadir las rutas de métrica 10 que se retiraron al bajar los enlaces (Paso 4).
 
@@ -283,14 +318,14 @@ Crea `Access2` y `Access3` siguiendo el Paso 6 y comprueba que los equipos de la
 | Concepto | Aplicación |
 |----------|------------|
 | Modelo jerárquico | Core - Distribución - Acceso |
-| Alta disponibilidad | Camino principal y de respaldo (métricas) en el núcleo |
-| Redundancia | Doble enlace Dist-Core y Core-Firewall |
+| Redundancia en el núcleo | Camino principal y de respaldo (métricas); limitada a fallos locales |
+| Redundancia física | Doble enlace Dist-Core y Core-Firewall (no equivale por sí sola a alta disponibilidad) |
 | Segmentación | VLAN 10, 20, 30 en el acceso |
 | DMZ | Servidores aislados tras el firewall |
 
 ## Conclusiones
 
-La arquitectura jerárquica proporciona escalabilidad, disponibilidad y facilidad de administración. La redundancia elimina puntos únicos de fallo en el núcleo; con rutas estáticas la conmutación es posible pero limitada a fallos de enlaces propios, y los protocolos dinámicos (OSPF) y de *gateway* (VRRP) completan la solución.
+La arquitectura jerárquica proporciona escalabilidad y facilidad de administración, y permite diseñar para la disponibilidad. La redundancia elimina puntos únicos de fallo en el núcleo **si** hay mecanismos que detecten fallos y muevan el tráfico: con rutas estáticas la conmutación es posible pero limitada a fallos de enlaces propios. Las VLAN siguen dependiendo de un único *gateway* (`Dist1`). Los protocolos dinámicos (OSPF), los protocolos contra bucles (STP/RSTP) y de *gateway* (VRRP) completan la solución.
 
 ---
 

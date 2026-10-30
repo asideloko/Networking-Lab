@@ -48,13 +48,21 @@ graph TB
         R3[Router 3 Sucursal B]
         LAN3[Red Sucursal B 10.0.2.0/24]
     end
-    R1 --- R2
-    R2 --- R3
+    R1 ---|"192.168.1.0/30"| R2
+    R2 ---|"192.168.2.0/30"| R3
     LAN1 --- R1
-    R1 --- R3
+    R1 ---|"192.168.3.0/30 (Paso 6)"| R3
     LAN2 --- R2
     LAN3 --- R3
 ```
+
+**Redes de tránsito.** Existen tres redes punto a punto distintas, una por enlace entre routers:
+
+-   `192.168.1.0/30`: R1–R2.
+-   `192.168.2.0/30`: R2–R3.
+-   `192.168.3.0/30`: R1–R3 (se añade en el Paso 6).
+
+Además, cada router tiene conectada su propia LAN (`10.0.0.0/24`, `10.0.1.0/24`, `10.0.2.0/24`).
 
 **Direccionamiento:**
 
@@ -186,6 +194,8 @@ sudo ip netns exec clienteSucB ip link set lo up
 
 ### Paso 4: Habilitar el reenvío y configurar rutas estáticas
 
+**Cómo decide un router el siguiente salto.** Para cada paquete, el router busca en su tabla la ruta con el prefijo **más específico** que contenga la dirección de destino (*longest prefix match*). Esa ruta indica el siguiente salto (`via`) o la interfaz de salida (`dev`). Un router solo conoce automáticamente las redes **directamente conectadas**; las LAN que están *detrás* de otro router no las conoce hasta que se le indica (ruta estática) o las aprende (protocolo dinámico). Por eso R1 necesita una ruta hacia `10.0.1.0/24` y `10.0.2.0/24`, y cada router otra hacia las LAN remotas.
+
 Un router solo reenvía paquetes entre interfaces si `ip_forward` vale 1. En un namespace nuevo vale 0, así que hay que activarlo **en cada router**:
 
 ```bash
@@ -238,7 +248,15 @@ sudo ip netns exec clienteSucA ping -c 4 10.0.2.10
 sudo ip netns exec R1 ip route show
 ```
 
-**Salida esperada:** 0% de pérdida en todos los pings.
+**Resultado esperado:** 0% de pérdida en todos los pings.
+
+### Ruta por defecto frente a ruta específica
+
+Hasta ahora todas las rutas entre oficinas son **específicas** (un prefijo concreto, como `10.0.1.0/24`). Una **ruta por defecto** (`default`, es decir, `0.0.0.0/0`) es la que se usa **solo cuando no existe una coincidencia más específica** en la tabla. Los clientes de este laboratorio la usan: no saben dónde está cada red remota, así que envían todo lo que no es local a su router. Una ruta por defecto en un router de sucursal serviría, por ejemplo, para enviar a la sede todo lo que no sea su LAN; en este laboratorio no la configuramos en los routers porque queremos ver el *longest prefix match* con rutas específicas. Puedes comprobar cuál se elige con:
+
+```bash
+sudo ip netns exec R1 ip route get 10.0.2.10
+```
 
 ### Paso 6: Agregar un enlace directo R1-R3 (camino preferido)
 
@@ -280,7 +298,10 @@ sudo ip netns exec clienteSede ping -c 4 10.0.2.10
 sudo ip netns exec clienteSede traceroute -n 10.0.2.10
 ```
 
-**Salida esperada:** 0% de pérdida y un salto adicional (R2, `192.168.1.2`) en el `traceroute`.
+**Resultado esperado:** 0% de pérdida y un salto adicional (R2, `192.168.1.2`) en el `traceroute`.
+
+!!! info "Enlaces redundantes no son convergencia automática"
+    Tener un camino alternativo **configurado** no equivale a tener un mecanismo de **convergencia**. Aquí la conmutación al respaldo funciona porque el fallo es **local** (el propio router ve su interfaz caer y el kernel retira la ruta). Ante un fallo remoto, o con la interfaz activa pero un camino roto más allá, la ruta estática seguiría instalada y el tráfico se perdería. Un protocolo dinámico (OSPF) intercambia información de topología y recalcula por sí mismo.
 
 !!! warning "Limitación de las rutas estáticas"
     Si en cambio cae el enlace R2-R3 (un fallo **remoto** para R1), R1 seguiría enviando tráfico por R2 y se perdería: las rutas estáticas no detectan fallos que no son de su propio enlace. Para eso existen los protocolos dinámicos (Laboratorio 15).
@@ -296,7 +317,14 @@ sudo ip netns exec R3 ip route replace 10.0.0.0/24 via 192.168.3.1 metric 50
 
 ### Paso 8: Configurar túnel GRE
 
-Los túneles GRE permiten conectar redes no contiguas a través de Internet. Necesitan el módulo `ip_gre` del kernel (`sudo modprobe ip_gre`). El túnel se monta sobre el enlace directo R1-R3 del Paso 6, que debe estar activo.
+**GRE** (Generic Routing Encapsulation) **encapsula paquetes de una red dentro de otros paquetes IP** (protocolo IP 47), de modo que dos extremos pueden comportarse como si tuvieran un enlace punto a punto entre ellos. Cuatro precisiones:
+
+-   Los **extremos del túnel deben ser alcanzables** entre sí por IP (aquí, `192.168.3.1` y `192.168.3.2` sobre el enlace directo del Paso 6).
+-   **Crear el túnel no crea rutas** hacia las redes remotas: solo existe la red del propio túnel (`10.100.0.0/30`). Hay que añadir rutas que usen `gre1` como salida.
+-   **GRE no cifra ni autentica** el tráfico. Para protegerlo se combina con IPsec (laboratorio 09).
+-   El encabezado adicional reduce la MTU efectiva del túnel (en Linux, `gre1` suele quedar en 1476).
+
+Necesitan el módulo `ip_gre` del kernel (`sudo modprobe ip_gre`). El túnel se monta sobre el enlace directo R1-R3 del Paso 6, que debe estar activo. En un caso real los extremos estarían a través de Internet; aquí es un enlace virtual.
 
 ```bash
 # En R1
@@ -313,6 +341,21 @@ sudo ip netns exec R3 ip link set gre1 up
 sudo ip netns exec R1 ping -c 4 10.100.0.2
 ```
 
+Para que el túnel transporte tráfico entre las LAN hay que dirigir hacia él las rutas correspondientes. Ejemplo (con métrica menor que las rutas anteriores, y deshaciéndolo después):
+
+```bash
+sudo ip netns exec R1 ip route add 10.0.2.0/24 via 10.100.0.2 metric 20
+sudo ip netns exec R3 ip route add 10.0.0.0/24 via 10.100.0.1 metric 20
+sudo ip netns exec R1 ip route get 10.0.2.10     # sale por gre1
+sudo ip netns exec clienteSede ping -c 2 10.0.2.10
+
+# Deshacer
+sudo ip netns exec R1 ip route del 10.0.2.0/24 via 10.100.0.2 metric 20
+sudo ip netns exec R3 ip route del 10.0.0.0/24 via 10.100.0.1 metric 20
+```
+
+Fíjate en que `traceroute` ahora ve el túnel como **un solo salto** (`10.100.0.2`).
+
 ## Análisis de la tabla de enrutamiento
 
 ```bash
@@ -320,9 +363,10 @@ sudo ip netns exec R1 ip route show
 ```
 
 **Interpretación de la salida:**
-- Las rutas conectadas directamente (directas) aparecen con `dev`.
-- Las rutas estáticas aparecen con `via`.
-- La ruta por defecto (si existe) es `0.0.0.0/0`.
+- Las rutas conectadas directamente (directas) aparecen con `dev` y `scope link`.
+- Las rutas estáticas aparecen con `via` (el siguiente salto) y, si se indicó, `metric`.
+- La ruta por defecto (si existe) aparece como `default via …` (equivale a `0.0.0.0/0`); en R1 no hay ninguna.
+- Para ver qué ruta se **elegiría** para un destino concreto, usa `ip route get`.
 
 ## Ejercicios prácticos
 
@@ -356,7 +400,7 @@ Baja el enlace R2-R3 por **ambos extremos** (`veth-r2r3` en R2 y `veth-r3r2` en 
 |----------|------------------------------|
 | Enrutamiento | Conexión entre redes diferentes |
 | Ruta estática | Configuración manual de rutas |
-| Ruta por defecto | Gateway para tráfico desconocido |
+| Ruta por defecto | Gateway para el tráfico sin coincidencia más específica (la usan los clientes) |
 | Tabla de enrutamiento | `ip route show` en cada router |
 | Longest prefix match | Selección de ruta más específica |
 | Túnel GRE | Conexión de redes no contiguas |
@@ -368,10 +412,10 @@ En este laboratorio hemos:
 1.  Implementado una topología con tres routers interconectados.
 2.  Configurado **rutas estáticas** para interconectar las oficinas.
 3.  Analizado la **tabla de enrutamiento** y el proceso de selección.
-4.  Agregado **redundancia** con un enlace alternativo.
-5.  Configurado un **túnel GRE** para conectar redes no contiguas.
+4.  Agregado **enlaces redundantes** con rutas de respaldo (útiles ante fallos locales, no un mecanismo de convergencia).
+5.  Configurado un **túnel GRE** para conectar redes no contiguas (encapsula, pero no cifra).
 
-El enrutamiento es el corazón de la comunicación entre redes. Las rutas estáticas son simples pero no escalan ni reaccionan a fallos remotos; los protocolos dinámicos como OSPF ofrecen convergencia automática y se implementan en el Laboratorio 15. Los túneles GRE permiten extender redes a través de infraestructuras IP.
+El enrutamiento es el corazón de la comunicación entre redes. Las rutas estáticas son simples pero no escalan ni reaccionan a fallos remotos. Los protocolos dinámicos como OSPF funcionan de otro modo: los routers establecen adyacencias, intercambian el estado de sus enlaces, construyen una base de datos de topología común y calculan los caminos más cortos (SPF), reconvergiendo cuando algo cambia. Se implementa de forma real en el Laboratorio 15. Los túneles GRE permiten extender redes a través de infraestructuras IP.
 
 ## Preparación para el siguiente laboratorio
 

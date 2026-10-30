@@ -9,7 +9,7 @@
 
 El libro aborda los fundamentos, protocolos, arquitecturas y tecnologías que hacen posible la comunicación entre sistemas y redes. Este laboratorio amplía ese recorrido mediante ejercicios que permiten explorar, configurar, implementar y verificar los conceptos estudiados.
 
-Los laboratorios presentan escenarios de red, topologías, direccionamiento y configuración de tecnologías, además de actividades para comprobar resultados y relacionar los principios técnicos con su aplicación práctica.
+Los laboratorios presentan escenarios ilustrativos de red, topologías, direccionamiento y configuración de tecnologías, además de actividades para comprobar resultados y relacionar los principios técnicos con su aplicación práctica.
 
 ## Acceder a los laboratorios
 

@@ -13,9 +13,12 @@ La empresa **Networking SecOps** ya tiene su infraestructura de red funcionando 
 
 El equipo de TI ha decidido implementar estos servicios en la sede central y documentar su funcionamiento para futuras expansiones.
 
+!!! info "Servicios independientes"
+    **DHCP** entrega parámetros de configuración de red (dirección, máscara, gateway, servidor DNS). **DNS** resuelve nombres a registros de recursos (direcciones, entre otros). Son servicios **independientes**: recibir una IP por DHCP no garantiza que la resolución DNS funcione (por ejemplo, si el servidor DNS anunciado no responde), y un DNS operativo no sirve de nada a un cliente sin dirección. Aquí los alojamos en equipos distintos y los verificamos por separado.
+
 ## Problema inicial
 
-- Los clientes tienen direcciones IP configuradas manualmente (administración tediosa).
+- Los clientes tienen direcciones IP configuradas manualmente (administración tediosa). En este laboratorio automatizamos solo la **LAN de la sede**; las sucursales mantienen direccionamiento fijo (véase «Alcance de DHCP»).
 - No hay un servidor DNS interno que resuelva nombres locales.
 - Los clientes de la sede y sucursales no pueden acceder a Internet.
 - Se necesita implementar NAT para salida a Internet.
@@ -25,8 +28,8 @@ El equipo de TI ha decidido implementar estos servicios en la sede central y doc
 1.  Comprender la diferencia entre **TCP y UDP** y sus casos de uso.
 2.  Implementar un servidor **DNS** con `dnsmasq`.
 3.  Configurar un servidor **DHCP** para asignación automática de IPs.
-4.  Implementar **NAT/PAT** para salida a Internet.
-5.  Analizar el **MSS** (Maximum Segment Size) en TCP.
+4.  Implementar **NAT/PAT** para salida a Internet y distinguir la traducción de direcciones de la traducción de puertos.
+5.  Analizar el **MSS** (Maximum Segment Size) en TCP y no confundirlo con la MTU.
 6.  Verificar los servicios con herramientas de diagnóstico.
 
 ## Herramientas necesarias
@@ -59,9 +62,9 @@ graph TB
     end
     R1 --- R2
     R2 --- R3
-    LAN1 --- R1
-    DNS --- R1
-    DHCP --- R1
+    LAN1 ---|"br-lan"| R1
+    DNS --- LAN1
+    DHCP --- LAN1
     NAT --- R1
     LAN2 --- R2
     LAN3 --- R3
@@ -72,10 +75,11 @@ graph TB
 
 | Dispositivo | Interfaz | Dirección IP |
 |-------------|----------|--------------|
-| R1 (Sede) | eth0 (LAN) | 10.0.0.1/24 |
-| R1 (Sede) | eth1 (R1-R2) | 192.168.1.1/30 |
+| R1 (Sede) | `br-lan` (interfaz IP de la LAN; el bridge hace de switch) | 10.0.0.1/24 |
+| R1 (Sede) | `veth-r1c`, `veth-r1dns`, `veth-r1dhcp`, `veth-r1dhcpcl` (miembros de `br-lan`) | sin IP propia |
+| R1 (Sede) | `veth-r1r2` (R1-R2) | 192.168.1.1/30 |
+| R1 (Sede) | `veth-r1r3` (R1-R3, laboratorio 06) | 192.168.3.1/30 |
 | R1 (Sede) | WAN (`veth-wan`) | 192.168.100.1/24 (host: 192.168.100.2/24) |
-| R1 (Sede) | br-lan (switch de la LAN) | 10.0.0.1/24 |
 | R2 (Sucursal A) | eth0 (LAN) | 10.0.1.1/24 |
 | R2 (Sucursal A) | eth1 (R1-R2) | 192.168.1.2/30 |
 | R3 (Sucursal B) | eth0 (LAN) | 10.0.2.1/24 |
@@ -85,6 +89,8 @@ graph TB
 | Cliente DHCP (`clienteDHCP`) | - | 10.0.0.100-200/24 (por DHCP) |
 | Cliente Sucursal A | - | 10.0.1.10/24 |
 | Cliente Sucursal B | - | 10.0.2.10/24 |
+
+Cuando una interfaz es **miembro de un bridge** (`veth-r1c`…), no mantiene una configuración IP propia: la dirección pertenece a la interfaz del bridge (`br-lan`). Por eso el Paso 3 retira `10.0.0.1/24` de `veth-r1c` y la asigna a `br-lan`: no hay dos interfaces con la misma dirección.
 
 ## Construcción de la red
 
@@ -209,6 +215,8 @@ sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>
   sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE
 ```
 
+Conviene distinguir dos términos: **NAT** (traducción de direcciones) cambia la IP de origen o destino; **PAT** (traducción de direcciones y puertos, lo que Linux llama *masquerade* cuando enmascara muchas IP privadas tras una sola) permite que **múltiples conexiones privadas compartan una dirección de salida** (`192.168.100.1`), diferenciándolas por la información de transporte (puerto de origen TCP/UDP o identificador ICMP). La tabla `conntrack` recuerda qué conexión corresponde a cada traducción.
+
 La regla de R1 no filtra por origen (`-o veth-wan`): traduce **todo** lo que sale por la WAN, ya venga de la sede o de las sucursales. Lo que sí hacía falta eran las **rutas por defecto** de R2 y R3. Como R1 enmascara el tráfico con `192.168.100.1`, el host solo conoce la red `192.168.100.0/24` y no necesita rutas de retorno hacia `10.0.0.0/8`.
 
 Comprueba la salida desde cada oficina (el host responde en `192.168.100.2` aunque no tengas Internet):
@@ -221,7 +229,7 @@ sudo ip netns exec clienteSucB ping -c 2 192.168.100.2
 
 ### Paso 6: Servidor DNS (solo DNS)
 
-Un servidor DNS no debe repartir direcciones: ese es el trabajo del servidor DHCP. Configuramos `dnsmasq` únicamente con la función DNS, con un dominio interno y reenvío a DNS públicos:
+Un servidor DNS no debe repartir direcciones: ese es el trabajo del servidor DHCP. Configuramos `dnsmasq` únicamente con la función DNS, con un dominio interno y reenvío a DNS públicos. `8.8.8.8` y `8.8.4.4` son **DNS públicos de ejemplo** (reenviadores externos), no servidores internos de la empresa: el servidor interno es `10.0.0.5`, que consulta a los externos solo para nombres que no conoce:
 
 ```bash
 mkdir -p /tmp/lab07
@@ -278,7 +286,14 @@ sudo ip netns exec clienteDHCP ip route show
 sudo ip netns exec clienteDHCP cat /etc/resolv.conf
 ```
 
-**Salida esperada:** una dirección en `10.0.0.100-200`, una ruta por defecto vía `10.0.0.1` y `nameserver 10.0.0.5`.
+**Resultado esperado:** una dirección en `10.0.0.100-200`, una ruta por defecto vía `10.0.0.1` y `nameserver 10.0.0.5`.
+
+!!! warning "Alcance de DHCP: quién recibe concesión directa y quién necesitaría relay"
+    DHCPv4 comienza con un `DHCPDISCOVER` enviado por **broadcast** de capa 2, y los broadcasts **no atraviesan routers** de forma ordinaria. Por eso:
+
+    -   Los clientes de la **LAN de la sede** (mismo dominio de broadcast que `servidorDHCP`, a través de `br-lan`) reciben concesión **directamente**. Es el caso de `clienteDHCP`.
+    -   Los clientes de la **Sucursal A y B** estarían en otro dominio de broadcast: para que el servidor de la sede les diera concesiones haría falta un **agente DHCP relay** en R2 y R3 (por ejemplo `dhcrelay` o `dhcp-helper`), que retransmite las solicitudes como unicast hacia `10.0.0.6`, y un `dhcp-range` en el servidor para sus subredes.
+    -   Que exista **conectividad IP** entre sede y sucursal **no basta**: el DISCOVER inicial no usa IP enrutable. En este laboratorio los clientes de sucursal mantienen IP fija y el relay se deja como concepto.
 
 ### Paso 9: Verificar conectividad y servicios
 
@@ -296,7 +311,7 @@ sudo ip netns exec clienteDHCP ping -c 4 8.8.8.8
 sudo ip netns exec clienteDHCP nslookup google.com
 ```
 
-**Salida esperada:** 0% de pérdida; `nslookup` devuelve `10.0.0.20` para el nombre interno y una IP pública para `google.com` (esto último solo si tu equipo tiene Internet).
+**Resultado esperado:** 0% de pérdida; `nslookup` devuelve `10.0.0.20` para el nombre interno y una IP pública para `google.com` (esto último solo si tu equipo tiene Internet).
 
 ## Análisis de TCP y UDP
 
@@ -342,7 +357,7 @@ sudo ip netns exec R1 tcpdump -i br-lan -n -c 2 'tcp[tcpflags] & tcp-syn != 0'
 
 En otra terminal repite la conexión del Paso 10 (`nc -l` en el servidor y `nc` en el cliente).
 
-**Interpretación:** en las opciones del SYN aparece `mss 1460`: MTU 1500 − 20 bytes (IP) − 20 bytes (TCP). Cada extremo anuncia el MSS máximo que acepta recibir.
+**Interpretación:** en las opciones del SYN aparece `mss 1460`. El **MSS** es el tamaño máximo de **datos TCP** que un extremo anuncia que puede recibir en un segmento, **sin contar las cabeceras TCP e IP**. Se deduce de la MTU de la interfaz: 1500 (MTU) − 20 (IP) − 20 (TCP) = 1460. No debe confundirse con la **MTU**, que es el tamaño máximo del **paquete IP** completo en un enlace. Cada extremo anuncia su propio MSS y el emisor no enviará segmentos mayores que el MSS del otro. (Los 40 bytes de cabeceras se restan suponiendo IPv4 sin opciones; si hay opciones TCP, como marcas de tiempo, los datos por segmento son algo menos.)
 
 ## Ejercicios prácticos
 
@@ -382,16 +397,16 @@ Haz un `ping -c 2 192.168.100.2` desde `clienteSucB` y observa en `conntrack -L`
 |----------|------------------------------|
 | TCP | Transferencia HTTP, conexión orientada |
 | UDP | Consultas DNS, no orientado a conexión |
-| MSS | Tamaño máximo de segmento TCP (1460 bytes) |
+| MSS | Máximo de datos TCP por segmento, sin cabeceras (1460 bytes con MTU 1500); no es la MTU |
 | DNS | Resolución de nombres con dnsmasq |
 | DHCP | Asignación automática de IPs |
-| NAT/PAT | Traducción de direcciones para salida a Internet |
+| NAT/PAT | Traducción de direcciones (y puertos) para salida a Internet |
 
 ## Conclusiones técnicas
 
 En este laboratorio hemos:
 
-1.  Implementado **servicios DNS y DHCP** en la red.
+1.  Implementado **servicios DNS y DHCP** independientes en la LAN de la sede (las sucursales necesitarían un relay DHCP).
 2.  Configurado **NAT/PAT** para salida a Internet.
 3.  Analizado la diferencia entre **TCP y UDP** mediante capturas.
 4.  Verificado el **MSS** en conexiones TCP.

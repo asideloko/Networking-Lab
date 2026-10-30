@@ -10,6 +10,9 @@ La empresa **Networking SecOps** ha implementado su arquitectura empresarial tra
     - **Real y ejecutable:** conectividad híbrida OnPremise ↔ VPC, acceso remoto con *política por aplicación* en un broker (modelo ZTNA simplificado con `iptables`) y **microsegmentación** entre servidores.
     - **Simulado / conceptual:** el *Identity Provider* (solo se representa como un nodo alcanzable, no autentica a nadie) y **SASE** (SWG, CASB, SD-WAN en un PoP): se explica en el análisis, pero no se construye. Un ZTNA real verifica identidad, dispositivo y contexto en cada conexión; aquí solo se emula la parte de *acceso mínimo por aplicación*.
 
+!!! info "Nube: abstracción didáctica, no la arquitectura real de AWS"
+    La VPC se representa como un router Linux y EC2/RDS como *namespaces*. Es una **abstracción válida para enseñar**, pero no reproduce AWS: una **VPC** es una **red virtual definida en la infraestructura del proveedor** (con tablas de rutas, gateways, grupos de seguridad y ACL propios); una **instancia EC2** es un **recurso de cómputo**; **RDS** es un **servicio administrado de bases de datos** (no un host al que se accede por SSH); y la conectividad y la seguridad de AWS usan componentes específicos. **No debe equipararse un *namespace* Linux con una instancia administrada en la nube.**
+
 ## Topología
 
 ```mermaid
@@ -43,7 +46,7 @@ graph TB
 | OnPremise (router) | br-lan | 10.0.0.1/24 | OnPremise |
 | Servidor App | - | 10.0.0.10/24 | OnPremise |
 | Servidor DB | - | 10.0.0.20/24 | OnPremise |
-| OnPremise ↔ VPC | enlace híbrido | 172.16.255.0/30 (OnPremise .1, VPC .2) | Conexión privada |
+| OnPremise ↔ VPC | enlace híbrido (un `veth`) | 172.16.255.0/30 (OnPremise .1, VPC .2) | Conexión privada |
 | VPC (router) | subred de aplicaciones | 10.100.1.1/24 | AWS (VPC 10.100.0.0/16) |
 | EC2 Server | - | 10.100.1.10/24 | AWS |
 | VPC (router) | subred de datos | 10.100.2.1/24 | AWS |
@@ -54,12 +57,24 @@ graph TB
 | ZTNA Broker (usuarios) | br-users | 10.8.0.1/24 | Broker |
 | Usuario 1 / Usuario 2 | - | 10.8.0.2/24 y 10.8.0.3/24 | Remoto |
 
+La red `10.8.0.0/24` es una **red virtual de acceso de los usuarios del escenario**. Que exista no prueba que haya un sistema ZTNA real: el control lo ejerce la política del Paso 8.
+
 ## Construcción
 
 ### Paso 0: Limpiar laboratorios anteriores
 
+Este laboratorio es un **escenario nuevo** (otros equipos y direccionamiento). Elimina **solo los namespaces de los laboratorios anteriores, por nombre**:
+
 ```bash
-for ns in $(ip netns list | awk '{print $1}'); do sudo ip netns del $ns; done
+for ns in cliente1 cliente2 cliente3 cliente4 router switch \
+          ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 \
+          R1 R2 R3 clienteSede clienteSucA clienteSucB \
+          servidorDNS servidorDHCP clienteDHCP \
+          firewall servidorWeb servidorDNS_PUB servidorInterno VPN_GW clienteVPN \
+          PE1 PE2 PE3 P1 P2 P3 host1 host2 host3 \
+          Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin; do
+  sudo ip netns del $ns 2>/dev/null || true
+done
 sudo ip link del br-wan 2>/dev/null || true
 ```
 
@@ -124,6 +139,8 @@ sudo ip netns exec RDS_Server ip link set lo up
 
 ### Paso 4: Conectar OnPremise con la nube (conectividad híbrida)
 
+Un `veth` representa una conexión virtual entre dos extremos, **pero no reproduce por sí mismo una VPN, AWS Direct Connect ni una interconexión privada empresarial**: no hay cifrado, negociación, ni medio contratado con el proveedor. Aquí solo sirve para ilustrar que ambos entornos están enlazados.
+
 ```bash
 enlace OnPremise veth-op-vpc 172.16.255.1/30 AWS_VPC veth-vpc-op 172.16.255.2/30
 sudo ip netns exec OnPremise ip route add 10.100.0.0/16 via 172.16.255.2
@@ -133,6 +150,8 @@ sudo ip netns exec AWS_VPC ip route add 10.0.0.0/24 via 172.16.255.1
 ### Paso 5: Broker de acceso (ZTNA) e identidad
 
 El broker es el **único** punto de entrada de los usuarios remotos. Se conecta a OnPremise y a la nube mediante "conectores" y a un proveedor de identidad (simulado).
+
+**IDP y broker no son el mismo componente.** El **proveedor de identidad (IDP)** participa en la **autenticación** y en la emisión o validación de la identidad (y, normalmente, de sus atributos). El **broker** (punto de aplicación de políticas) **aplica o coordina** las políticas de acceso según la arquitectura, consultando lo que el IDP afirma. En el laboratorio el IDP es solo un nodo alcanzable que **no autentica a nadie**.
 
 ```bash
 enlace ZTNA_Broker veth-bk-op 172.16.254.2/30 OnPremise veth-op-bk 172.16.254.1/30
@@ -184,6 +203,9 @@ sudo ip netns exec RDS_Server sh -c 'nc -lk -p 5432 >/dev/null 2>&1 </dev/null &
 
 Por defecto **nada** pasa a través del broker. Se abre solo lo necesario para cada usuario: el Usuario 1 accede a la aplicación on-premise y el Usuario 2 a la aplicación en la nube.
 
+!!! warning "Una IP de origen no es una identidad"
+    Las reglas identifican al usuario por su dirección (`-s 10.8.0.2`), que es un **sustituto** de la identidad. En un ZTNA real la decisión se basa en la identidad verificada del usuario, el estado del dispositivo y el contexto, **no** en la dirección de red. Lo que sí ilustra bien este paso es el **acceso por recurso y puerto**: el usuario no recibe acceso a la red interna ni a la subred de datos, solo a **una aplicación concreta**.
+
 ```bash
 sudo ip netns exec ZTNA_Broker iptables -P FORWARD DROP
 sudo ip netns exec ZTNA_Broker iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
@@ -228,13 +250,22 @@ sudo ip netns exec EC2_Server nc -zv -w 2 10.100.2.10 5432
 sudo ip netns exec AppServer nc -zv -w 2 10.100.2.10 5432
 ```
 
-**Salida esperada:** `succeeded` en las conexiones permitidas y expiración del tiempo de espera en las demás. Se verifica con conexiones TCP a puertos concretos (no con `ping`): las políticas son por aplicación y puerto.
+**Resultado esperado:** `succeeded` en las conexiones permitidas y expiración del tiempo de espera en las demás. Se verifica con conexiones TCP a puertos concretos (no con `ping`): las políticas son por aplicación y puerto.
 
 ## Análisis
 
 **Cloud Networking:** VPC con subredes y conectividad híbrida (aquí, un enlace privado entre OnPremise y la VPC).
 
-**Zero Trust:** verificación continua y mínimo privilegio: ningún usuario obtiene acceso a la red, solo a aplicaciones concretas.
+**Zero Trust** (NIST SP 800-207) es un **modelo**, no un producto: la presencia de un broker y de una red de usuarios **no constituye por sí misma Zero Trust**. Se define por principios:
+
+-   **Verificación explícita** de la identidad (usuario y, cuando procede, dispositivo y servicio).
+-   **Evaluación del contexto** (estado del dispositivo, ubicación, riesgo, hora).
+-   **Autorización por recurso**, no por pertenencia a una red.
+-   **Acceso de mínimo privilegio**.
+-   **Reevaluación continua de la confianza**: el acceso no se concede de una vez para siempre.
+-   **Protección de los recursos**, no solo del perímetro.
+
+**En este laboratorio** solo se ilustran el acceso por recurso (Paso 8), el mínimo privilegio y la microsegmentación (Paso 9). **No** hay verificación de identidad, evaluación de contexto ni reevaluación.
 
 **ZTNA:** acceso remoto por aplicación a través de un broker (en el laboratorio, con una política estática; en producción, decidida por el proveedor de identidad y el estado del dispositivo).
 
@@ -264,7 +295,7 @@ Redacta (sin implementarlas) las políticas que un SASE aplicaría al tráfico d
 
 ## Conclusiones
 
-Las arquitecturas modernas combinan Cloud Networking, Zero Trust, ZTNA, SASE y microsegmentación para adaptarse a entornos híbridos con agilidad y seguridad. En este laboratorio se ha implementado la conectividad híbrida, el acceso mínimo por aplicación y la microsegmentación; la verificación de identidad y SASE quedan como conceptos explicados.
+Las arquitecturas modernas combinan Cloud Networking, Zero Trust, ZTNA, SASE y microsegmentación para adaptarse a entornos híbridos con agilidad y seguridad. En este laboratorio se ha **representado** la conectividad híbrida (con una abstracción de la nube), el acceso mínimo por aplicación y la microsegmentación; la verificación de identidad, la evaluación de contexto y SASE quedan como conceptos explicados, y el escenario **no equivale a una plataforma ZTNA ni a AWS reales**.
 
 ---
 
