@@ -29,13 +29,16 @@ Los laboratorios abarcan distintas áreas del networking, entre ellas:
 
 El sitio utiliza [MkDocs](https://www.mkdocs.org/) para generar y presentar la documentación.
 
+# Obtener el Libro 
+https://leanpub.com/networking-fundamentos
+
 ## Licencia y uso
 
 Consulta los archivos y avisos de licencia de este repositorio para conocer las condiciones aplicables al uso y la distribución de los materiales.
 
 ## Obra de referencia
 
-*NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico*
+**NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico**
 
 **Autor:** Guillermo Castillo · SecOpsMX  
 **Edición:** 2026
