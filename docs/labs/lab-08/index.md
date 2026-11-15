@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 08</p>
+---
+title: "Laboratorio 08 · Seguridad en Redes"
+description: "Laboratorio 08 de NETWORKING Lab — Seguridad en Redes."
+---
+
+<p class="tema-eyebrow">LABORATORIO 08</p>
 
 # Seguridad en Redes
+
+<p class="tema-meta"><span>11 secciones</span><span>1 diagrama</span><span>5 tablas</span></p>
 
 ## Contexto empresarial
 

@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 14</p>
+---
+title: "Laboratorio 14 · Herramientas Linux Avanzadas"
+description: "Laboratorio 14 de NETWORKING Lab — Herramientas Linux Avanzadas."
+---
+
+<p class="tema-eyebrow">LABORATORIO 14</p>
 
 # Herramientas Linux Avanzadas
+
+<p class="tema-meta"><span>6 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
 ## Contexto empresarial
 

@@ -1,0 +1,148 @@
+# =============================================================================
+# ZENSICAL.TOML — NETWORKING Lab · Laboratorios de explicación y simulación de redes
+# Misma base, tema, paleta y estilos que el sitio del libro (Networking-Fundamentos); cambian identidad y navegación.
+# =============================================================================
+
+[project]
+site_name        = "NETWORKING LAB"
+# site_url: déjalo sin definir. Con una ruta (p. ej. /networking/) el servidor local redirige «/» a esa ruta y la portada no carga.
+# Al publicar en GitHub Pages los enlaces son relativos y funcionan sin site_url.
+site_description = "Laboratorios de explicación y simulación de redes, complementarios del libro NETWORKING · Guillermo Castillo · SecOpsMX"
+site_author      = "Guillermo Castillo · SecOpsMX"
+copyright        = "Material complementario gratuito del libro NETWORKING · Uso educativo; no se autoriza su redistribución con fines comerciales."
+
+docs_dir = "docs"
+site_dir = "site"
+use_directory_urls = false   # el sitio se publica como archivos .html (coincide con los enlaces de la portada y la galería)
+
+extra_css        = ["stylesheets/extra.css"]
+extra_javascript = ["javascripts/mermaid.min.js", "javascripts/custom.js"]
+dev_addr = "localhost:8000"
+
+nav = [
+  { "INICIO" = "index.md" },
+  { "LIBRO" = "https://leanpub.com/networking-fundamentos" },
+  { "LABORATORIOS 1–5" = [
+    { "01 · FUNDAMENTOS DE REDES Y ENCAPSULACIÓN" = "labs/lab-01/index.md" },
+    { "02 · TRANSMISIÓN DE DATOS Y CAPA FÍSICA" = "labs/lab-02/index.md" },
+    { "03 · COMPONENTES DE RED Y CONMUTACIÓN" = "labs/lab-03/index.md" },
+    { "04 · DIRECCIONAMIENTO IP Y SUBREDES" = "labs/lab-04/index.md" },
+    { "05 · CONMUTACIÓN Y SEGMENTACIÓN DE RED" = "labs/lab-05/index.md" },
+  ] },
+  { "LABORATORIOS 6–10" = [
+    { "06 · ENRUTAMIENTO Y CONECTIVIDAD ENTRE REDES" = "labs/lab-06/index.md" },
+    { "07 · PROTOCOLOS Y SERVICIOS DE RED" = "labs/lab-07/index.md" },
+    { "08 · SEGURIDAD EN REDES" = "labs/lab-08/index.md" },
+    { "09 · VPN Y TUNELIZACIÓN" = "labs/lab-09/index.md" },
+    { "10 · INFRAESTRUCTURA WAN Y CORE" = "labs/lab-10/index.md" },
+  ] },
+  { "LABORATORIOS 11–15" = [
+    { "11 · ARQUITECTURA DE RED EMPRESARIAL" = "labs/lab-11/index.md" },
+    { "12 · ARQUITECTURAS MODERNAS DE RED" = "labs/lab-12/index.md" },
+    { "13 · MONITOREO Y DIAGNÓSTICO DE REDES" = "labs/lab-13/index.md" },
+    { "14 · HERRAMIENTAS LINUX AVANZADAS" = "labs/lab-14/index.md" },
+    { "15 · IMPLEMENTACIÓN PRÁCTICA INTEGRAL" = "labs/lab-15/index.md" },
+  ] },
+]
+
+[project.extra]
+social = [
+  { icon = "fontawesome/solid/book", link = "https://leanpub.com/networking-fundamentos", name = "Libro NETWORKING" },
+  { icon = "fontawesome/brands/github", link = "https://github.com/asideloko/Networking-Lab", name = "Repositorio · asideloko/Networking-Lab" },
+]
+
+# =============================================================================
+# TEMA: APARIENCIA Y COMPORTAMIENTO
+# =============================================================================
+[project.theme]
+language   = "es"
+logo       = "assets/logo.png"
+favicon    = "assets/favicon.png"
+custom_dir = "overrides"
+# Tipografía: Chakra Petch se sirve desde docs/assets/fonts (ver stylesheets/extra.css);
+# se desactiva Google Fonts para que el sitio funcione sin conexión.
+font = false
+
+features = [
+  "announce.dismiss",
+  "header.autohide",
+  "content.code.annotate",
+  "content.code.copy",
+  "content.code.select",
+  "content.footnote.tooltips",
+  "content.tooltips",
+  "content.tabs.link",
+  "navigation.footer",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "navigation.instant.progress",
+  "navigation.path",
+  "navigation.sections",
+  "navigation.expand",
+  "navigation.top",
+  "search.share",
+  "navigation.tracking",
+  "search.highlight",
+  "search.suggest",
+  "toc.follow",
+]
+
+# Selector de tema de tres posiciones: automático (según el sistema) · claro · oscuro
+[[project.theme.palette]]
+media  = "(prefers-color-scheme)"
+toggle.icon = "material/brightness-auto"
+toggle.name = "Tema automático (sistema)"
+
+[[project.theme.palette]]
+scheme = "default"
+media  = "(prefers-color-scheme: light)"
+toggle.icon = "material/brightness-7"
+toggle.name = "Tema claro"
+
+[[project.theme.palette]]
+scheme = "slate"
+media  = "(prefers-color-scheme: dark)"
+toggle.icon = "material/brightness-4"
+toggle.name = "Tema oscuro"
+
+# =============================================================================
+# EXTENSIONES DE MARKDOWN
+# =============================================================================
+[project.markdown_extensions]
+abbr       = {}
+admonition = {}
+attr_list  = {}
+def_list   = {}
+footnotes  = {}
+md_in_html = {}
+toc        = { permalink = true, toc_depth = 3 }
+
+pymdownx.highlight = { anchor_linenums = true, line_spans = "__span", pygments_lang_class = true }
+pymdownx.inlinehilite = {}
+pymdownx.snippets     = {}
+pymdownx.superfences  = { custom_fences = [{ name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_div_format" }] }
+pymdownx.tabbed = { alternate_style = true }
+pymdownx.details = {}
+pymdownx.caret = {}
+pymdownx.tilde = {}
+pymdownx.mark  = {}
+pymdownx.keys  = {}
+pymdownx.arithmatex = { generic = true }
+
+# Configuración de emojis e iconos (formato de tabla anidada)
+pymdownx.emoji.emoji_generator = "zensical.extensions.emoji.to_svg"
+pymdownx.emoji.emoji_index     = "zensical.extensions.emoji.twemoji"
+pymdownx.emoji.options.custom_icons = ["overrides/.icons"]
+
+# =============================================================================
+# PLUGINS (solo los que usa el sitio de laboratorios)
+# =============================================================================
+[project.plugins.search]
+enabled = true
+lang    = "es"
+
+[project.plugins.minify]
+enabled     = true
+minify_html = false   # el HTML minificado colapsa los saltos de línea de los diagramas Mermaid
+minify_css  = true
+minify_js   = false   # mermaid.min.js ya viene minificado

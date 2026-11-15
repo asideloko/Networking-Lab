@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 12</p>
+---
+title: "Laboratorio 12 · Arquitecturas Modernas de Red"
+description: "Laboratorio 12 de NETWORKING Lab — Arquitecturas Modernas de Red."
+---
+
+<p class="tema-eyebrow">LABORATORIO 12</p>
 
 # Arquitecturas Modernas de Red
+
+<p class="tema-meta"><span>7 secciones</span><span>1 diagrama</span><span>2 tablas</span></p>
 
 ## Contexto empresarial
 

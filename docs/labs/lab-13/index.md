@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 13</p>
+---
+title: "Laboratorio 13 · Monitoreo y Diagnóstico de Redes"
+description: "Laboratorio 13 de NETWORKING Lab — Monitoreo y Diagnóstico de Redes."
+---
+
+<p class="tema-eyebrow">LABORATORIO 13</p>
 
 # Monitoreo y Diagnóstico de Redes
+
+<p class="tema-meta"><span>7 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
 ## Contexto empresarial
 

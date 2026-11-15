@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 10</p>
+---
+title: "Laboratorio 10 · Infraestructura WAN y Core"
+description: "Laboratorio 10 de NETWORKING Lab — Infraestructura WAN y Core."
+---
+
+<p class="tema-eyebrow">LABORATORIO 10</p>
 
 # Infraestructura WAN y Core
+
+<p class="tema-meta"><span>9 secciones</span><span>1 diagrama</span><span>4 tablas</span></p>
 
 ## Contexto empresarial
 

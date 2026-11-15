@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 11</p>
+---
+title: "Laboratorio 11 · Arquitectura de Red Empresarial"
+description: "Laboratorio 11 de NETWORKING Lab — Arquitectura de Red Empresarial."
+---
+
+<p class="tema-eyebrow">LABORATORIO 11</p>
 
 # Arquitectura de Red Empresarial
+
+<p class="tema-meta"><span>8 secciones</span><span>1 diagrama</span><span>5 tablas</span></p>
 
 ## Contexto empresarial
 

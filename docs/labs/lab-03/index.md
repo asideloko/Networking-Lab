@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 03</p>
+---
+title: "Laboratorio 03 · Componentes de Red y Conmutación"
+description: "Laboratorio 03 de NETWORKING Lab — Componentes de Red y Conmutación."
+---
+
+<p class="tema-eyebrow">LABORATORIO 03</p>
 
 # Componentes de Red y Conmutación
+
+<p class="tema-meta"><span>12 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
 ## Contexto empresarial
 

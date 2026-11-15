@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 02</p>
+---
+title: "Laboratorio 02 · Transmisión de Datos y Capa Física"
+description: "Laboratorio 02 de NETWORKING Lab — Transmisión de Datos y Capa Física."
+---
+
+<p class="tema-eyebrow">LABORATORIO 02</p>
 
 # Transmisión de Datos y Capa Física
+
+<p class="tema-meta"><span>12 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
 ## Contexto empresarial
 

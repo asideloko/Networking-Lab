@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 05</p>
+---
+title: "Laboratorio 05 · Conmutación y Segmentación de Red"
+description: "Laboratorio 05 de NETWORKING Lab — Conmutación y Segmentación de Red."
+---
+
+<p class="tema-eyebrow">LABORATORIO 05</p>
 
 # Conmutación y Segmentación de Red
+
+<p class="tema-meta"><span>9 secciones</span><span>1 diagrama</span><span>1 tabla</span></p>
 
 ## Contexto empresarial
 

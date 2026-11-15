@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 06</p>
+---
+title: "Laboratorio 06 · Enrutamiento y Conectividad entre Redes"
+description: "Laboratorio 06 de NETWORKING Lab — Enrutamiento y Conectividad entre Redes."
+---
+
+<p class="tema-eyebrow">LABORATORIO 06</p>
 
 # Enrutamiento y Conectividad entre Redes
+
+<p class="tema-meta"><span>11 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
 ## Contexto empresarial
 

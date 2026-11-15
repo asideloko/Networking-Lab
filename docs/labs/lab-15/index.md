@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 15</p>
+---
+title: "Laboratorio 15 · Implementación Práctica Integral"
+description: "Laboratorio 15 de NETWORKING Lab — Implementación Práctica Integral."
+---
+
+<p class="tema-eyebrow">LABORATORIO 15</p>
 
 # Implementación Práctica Integral
+
+<p class="tema-meta"><span>14 secciones</span><span>1 diagrama</span><span>8 tablas</span></p>
 
 ## Contexto empresarial
 

@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 09</p>
+---
+title: "Laboratorio 09 · VPN y Tunelización"
+description: "Laboratorio 09 de NETWORKING Lab — VPN y Tunelización."
+---
+
+<p class="tema-eyebrow">LABORATORIO 09</p>
 
 # VPN y Tunelización
+
+<p class="tema-meta"><span>15 secciones</span><span>1 diagrama</span><span>4 tablas</span></p>
 
 ## Contexto empresarial
 

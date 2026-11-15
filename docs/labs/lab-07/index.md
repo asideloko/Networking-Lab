@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 07</p>
+---
+title: "Laboratorio 07 · Protocolos y Servicios de Red"
+description: "Laboratorio 07 de NETWORKING Lab — Protocolos y Servicios de Red."
+---
+
+<p class="tema-eyebrow">LABORATORIO 07</p>
 
 # Protocolos y Servicios de Red
+
+<p class="tema-meta"><span>12 secciones</span><span>1 diagrama</span><span>2 tablas</span></p>
 
 ## Contexto empresarial
 

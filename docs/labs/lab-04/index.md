@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 04</p>
+---
+title: "Laboratorio 04 · Direccionamiento IP y Subredes"
+description: "Laboratorio 04 de NETWORKING Lab — Direccionamiento IP y Subredes."
+---
+
+<p class="tema-eyebrow">LABORATORIO 04</p>
 
 # Direccionamiento IP y Subredes
+
+<p class="tema-meta"><span>12 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
 ## Contexto empresarial
 

@@ -1,6 +1,13 @@
-<p class="tema-num">LABORATORIO 01</p>
+---
+title: "Laboratorio 01 · Fundamentos de Redes y Encapsulación"
+description: "Laboratorio 01 de NETWORKING Lab — Fundamentos de Redes y Encapsulación."
+---
+
+<p class="tema-eyebrow">LABORATORIO 01</p>
 
 # Fundamentos de Redes y Encapsulación
+
+<p class="tema-meta"><span>11 secciones</span><span>1 diagrama</span><span>2 tablas</span></p>
 
 ## Contexto empresarial
 
