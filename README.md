@@ -32,6 +32,9 @@ El sitio utiliza [Zensical](https://zensical.org/) para generar y presentar la d
 # Obtener el Libro 
 https://leanpub.com/networking-fundamentos
 
+# Obtener el Libro 
+https://leanpub.com/networking-fundamentos
+
 ## Licencia y uso
 
 Consulta los archivos y avisos de licencia de este repositorio para conocer las condiciones aplicables al uso y la distribución de los materiales.
