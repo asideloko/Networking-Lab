@@ -1,11 +1,11 @@
 ---
-title: "Laboratorio 04 · Direccionamiento IP y Subredes"
+title: "LABORATORIO 04 · DIRECCIONAMIENTO IP Y SUBREDES"
 description: "Laboratorio 04 de NETWORKING Lab — Direccionamiento IP y Subredes."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 04</p>
 
-# Direccionamiento IP y Subredes
+# DIRECCIONAMIENTO IP Y SUBREDES
 
 <p class="tema-meta"><span>12 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
@@ -14,7 +14,7 @@ description: "Laboratorio 04 de NETWORKING Lab — Direccionamiento IP y Subrede
 La empresa **Networking SecOps** ha seguido creciendo. Ahora cuenta con **dos departamentos** con necesidades de red independientes:
 
 -   **Ventas**: 10 empleados que necesitan acceso a Internet y a un servidor interno.
--   **IT/Sistemas**: 6 empleados que administran servidores y necesitan acceso restringido.
+-   **IT/Sistemas**: 5 empleados que administran servidores y necesitan acceso restringido.
 
 La red actual (todos los clientes en una sola subred `10.0.1.0/24`) ya no es suficiente. Se necesita **segmentar la red** en subredes separadas para:
 
@@ -52,16 +52,18 @@ La red actual (todos los clientes en una sola subred `10.0.1.0/24`) ya no es suf
 **Red base:** `10.0.0.0/24`. Las tres subredes se calculan **dentro** de este bloque. La asignación es un **ejemplo de reparto de direcciones**, no una arquitectura obligatoria para todas las empresas.
 
 **Requisitos:**
--   Subred 1: Ventas → 10 hosts (mínimo /28 → 14 hosts útiles).
--   Subred 2: IT → 6 hosts (mínimo /29 → 6 hosts útiles).
--   Subred 3: Enlace de gestión router-switch → 2 hosts (mínimo /30 → 2 hosts útiles).
+-   Subred 1: Ventas → 10 hosts + 1 *gateway* = 11 direcciones (mínimo /28 → 14 hosts útiles).
+-   Subred 2: IT → 5 hosts + 1 *gateway* = 6 direcciones (mínimo /29 → 6 hosts útiles).
+-   Subred 3: Enlace de gestión router-switch → 2 direcciones, router y switch (mínimo /30 → 2 hosts útiles).
+
+**Recuerda:** el *gateway* y cualquier equipo de infraestructura también consumen una dirección útil. Al dimensionar una subred, cuéntalos junto con los clientes.
 
 **Cálculo VLSM:**
 
 | Subred | Hosts Necesarios | Máscara | Tamaño del Bloque | Dirección de Red | Rango de Hosts | Broadcast |
 |--------|------------------|---------|-------------------|------------------|----------------|-----------|
-| Ventas | 10 | /28 | 16 | 10.0.0.0/28 | 10.0.0.1 - 10.0.0.14 | 10.0.0.15 |
-| IT | 6 | /29 | 8 | 10.0.0.16/29 | 10.0.0.17 - 10.0.0.22 | 10.0.0.23 |
+| Ventas | 10 (+1 gateway) | /28 | 16 | 10.0.0.0/28 | 10.0.0.1 - 10.0.0.14 | 10.0.0.15 |
+| IT | 5 (+1 gateway) | /29 | 8 | 10.0.0.16/29 | 10.0.0.17 - 10.0.0.22 | 10.0.0.23 |
 | Enlace Router-Switch | 2 | /30 | 4 | 10.0.0.24/30 | 10.0.0.25 - 10.0.0.26 | 10.0.0.27 |
 
 **Quién usa cada dirección y por qué:**
@@ -334,6 +336,8 @@ ip netns exec ventas1 ping -c 4 8.8.8.8
 ip netns exec it1 curl -I http://google.com
 ```
 
+Si `curl` no resuelve el nombre, consulta la nota «DNS dentro de un namespace» del laboratorio 02.
+
 **Resultado esperado:** Respuestas exitosas (si el host tiene salida real a Internet).
 
 ## Observación y análisis
@@ -380,8 +384,8 @@ En la captura verás cada ICMP **dos veces** (entrada y salida del router por `v
 Si necesitáramos una tercera subred para **Administración** con 4 hosts, ¿qué máscara usarías y qué rango de direcciones asignarías?
 
 **Solución:**
-- 4 hosts → /29 (8 direcciones, 6 hosts útiles).
-- Rango disponible: 10.0.0.28/29.
+- 4 hosts + 1 *gateway* = 5 direcciones → /29 (8 direcciones, 6 hosts útiles).
+- Las direcciones `10.0.0.0`–`10.0.0.27` ya están asignadas. Un /29 debe empezar en un múltiplo de 8, y `10.0.0.28` no lo es (a partir de ahí solo cabe un /30). El siguiente bloque /29 libre es `10.0.0.32/29` (hosts `.33`–`.38`, broadcast `.39`).
 
 ### Ejercicio 2: Verificar la tabla ARP
 

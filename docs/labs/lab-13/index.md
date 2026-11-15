@@ -1,11 +1,11 @@
 ---
-title: "Laboratorio 13 · Monitoreo y Diagnóstico de Redes"
+title: "LABORATORIO 13 · MONITOREO Y DIAGNÓSTICO DE REDES"
 description: "Laboratorio 13 de NETWORKING Lab — Monitoreo y Diagnóstico de Redes."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 13</p>
 
-# Monitoreo y Diagnóstico de Redes
+# MONITOREO Y DIAGNÓSTICO DE REDES
 
 <p class="tema-meta"><span>7 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
@@ -159,7 +159,8 @@ sudo ip netns exec NOC tcpdump -i veth-noc -c 10 -n
 sudo ip netns exec NOC tcpdump -i veth-noc -n -c 5 'host 10.0.0.10 and port 8080'
 
 # Guardar en un archivo .pcap y leerlo después
-sudo ip netns exec NOC tcpdump -i veth-noc -n -c 20 -w /tmp/lab13/captura.pcap
+# -Z root: en Debian/Ubuntu tcpdump baja privilegios al usuario «tcpdump» y podría no poder escribir en /tmp/lab13
+sudo ip netns exec NOC tcpdump -i veth-noc -n -c 20 -Z root -w /tmp/lab13/captura.pcap
 sudo tcpdump -r /tmp/lab13/captura.pcap -n
 ```
 
@@ -173,7 +174,7 @@ sudo ip netns exec AppServer iperf3 -s -D
 sudo ip netns exec NOC iperf3 -c 10.0.0.10 -t 5
 sudo ip netns exec NOC iperf3 -c 10.0.0.10 -u -b 100M -t 5
 
-# Detener el servidor al terminar
+# Detener el servidor al terminar (ojo: pkill actúa sobre todo el sistema, los namespaces no aíslan los procesos)
 sudo ip netns exec AppServer pkill iperf3
 ```
 
@@ -223,11 +224,12 @@ grep -i "error" /tmp/lab13/remote.log
 ### Ejercicio 1: Analizar una captura
 
 ```bash
-sudo ip netns exec NOC tcpdump -i veth-noc -n -c 30 -w /tmp/lab13/http.pcap &
+# timeout 5: la captura termina sola a los 5 s (con -c N esperaría N paquetes que quizá nunca lleguen)
+sudo ip netns exec NOC timeout 5 tcpdump -i veth-noc -n -Z root -w /tmp/lab13/nc8080.pcap &
 sleep 1
 sudo ip netns exec NOC nc -zv 10.0.0.10 8080
 wait
-tcpdump -r /tmp/lab13/http.pcap -n
+tcpdump -r /tmp/lab13/nc8080.pcap -n
 ```
 
 Puedes abrir el `.pcap` con Wireshark o `tshark` para un análisis más detallado.

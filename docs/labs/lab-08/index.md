@@ -1,11 +1,11 @@
 ---
-title: "Laboratorio 08 · Seguridad en Redes"
+title: "LABORATORIO 08 · SEGURIDAD EN REDES"
 description: "Laboratorio 08 de NETWORKING Lab — Seguridad en Redes."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 08</p>
 
-# Seguridad en Redes
+# SEGURIDAD EN REDES
 
 <p class="tema-meta"><span>11 secciones</span><span>1 diagrama</span><span>5 tablas</span></p>
 
@@ -33,7 +33,7 @@ El CISO (Chief Information Security Officer) ha solicitado implementar las sigui
 
 1.  Comprender los principios de la tríada **CIA** (Confidencialidad, Integridad, Disponibilidad).
 2.  Implementar un **firewall** con `iptables` para filtrar tráfico.
-3.  Configurar **ACLs** en el router para restringir accesos.
+3.  Configurar **ACLs** en el firewall para restringir accesos.
 4.  Diseñar una **DMZ** para aislar servidores públicos.
 5.  Configurar **SSH** para acceso seguro.
 6.  Implementar **TLS** para cifrar comunicaciones web.
@@ -123,7 +123,7 @@ sudo ip netns exec clienteDHCP ip -4 addr show dev veth-dhcpcl
 sudo ip netns exec clienteDHCP ping -c 2 10.0.1.10
 ```
 
-Si el cliente perdió su concesión DHCP, renuévala con `sudo ip netns exec clienteDHCP dhclient veth-dhcpcl`. Instala las herramientas de este laboratorio (en el host):
+Si el cliente perdió su concesión DHCP, renuévala con `sudo ip netns exec clienteDHCP dhclient -pf /tmp/lab07/dhclient.pid -lf /tmp/lab07/dhclient.leases veth-dhcpcl`. Instala las herramientas de este laboratorio (en el host):
 
 ```bash
 sudo apt-get install -y openssh-server openssh-client openssl conntrack
@@ -331,7 +331,7 @@ sudo ip netns exec firewall iptables -A FORWARD -i br-dmz -o veth-fw-lan -j DROP
 Un servidor público **no debe recibir acceso irrestricto a la red interna**: la comunicación DMZ → LAN debe limitarse a políticas explícitas (por ejemplo, solo el puerto de base de datos de un servidor concreto, si la aplicación lo requiere). Aquí se deniega por completo. Observa también que el lado contrario (LAN → DMZ) está **acotado**: solo ICMP, SSH y HTTPS hacia hosts concretos, y no «todo».
 
 !!! info "ACL frente a firewall con seguimiento de estado"
-    Una **ACL** es un mecanismo de control de tráfico (una lista ordenada de reglas permitir/denegar) que puede aplicarse en distintos puntos: un router, un switch, una interfaz. Una ACL clásica evalúa cada paquete de forma independiente. Un **firewall con seguimiento de estado** (como `iptables` con `conntrack` o `nftables`) además recuerda las conexiones y permite automáticamente las respuestas. En este laboratorio las reglas de `FORWARD` con `-m state` actúan como firewall con estado; las reglas que restringen orígenes y puertos (por ejemplo `-s 10.0.0.0/22`) se comportan como las ACL.
+    Una **ACL** es un mecanismo de control de tráfico (una lista ordenada de reglas permitir/denegar) que puede aplicarse en distintos puntos: un router, un switch, una interfaz. Una ACL clásica evalúa cada paquete de forma independiente. Un **firewall con seguimiento de estado** (como `iptables` con `conntrack` o `nftables`) además recuerda las conexiones y permite automáticamente las respuestas. En este laboratorio las reglas de `FORWARD` con `-m state` actúan como firewall con estado; las reglas que restringen orígenes y puertos (por ejemplo `-s 10.0.0.0/22`) se comportan como las ACL. (Nota: `-m state` es la sintaxis histórica; hoy se recomienda `-m conntrack --ctstate`, equivalente en estos ejemplos.)
 
 ### Paso 9: Verificar reglas de firewall
 
@@ -446,7 +446,7 @@ Para comprobar que el tráfico **va cifrado**, captura mientras haces la conexi�
 
 ### Ejercicio 1: Permitir SSH solo desde la red de administración
 
-Sustituye la regla de SSH hacia el servidor web por una que solo acepte el origen `10.0.0.10` (`clienteSede`) y comprueba que `clienteSucA` ya no puede conectar.
+Sustituye la regla de SSH hacia el servidor web por una que solo acepte el origen `10.0.0.10` (`clienteSede`) y comprueba que `clienteSucA` ya no puede conectar. (Esa regla comparte `multiport 22,443`: sepárala en dos para no perder el acceso HTTPS.)
 
 ### Ejercicio 2: Bloquear ICMP
 
@@ -472,7 +472,7 @@ sudo ip netns exec firewall conntrack -L
 | No se puede acceder a Internet | NAT no configurado. | Verificar reglas de iptables y `ip_forward=1`. |
 | Cliente no puede acceder a DMZ | Regla de forward bloquea. | Verificar reglas de iptables. |
 | SSH no funciona | Puerto bloqueado o `sshd` no arrancado dentro del namespace. | Verificar la regla del puerto 22 y `sudo ip netns exec servidorWeb ss -tlnp`. |
-| Certificado TLS inválido | Certificado autofirmado. | Aceptar manualmente en el navegador. |
+| Certificado TLS inválido | Certificado autofirmado: ninguna CA lo avala. | Indicar al cliente en qué certificado concreto confiar (`openssl s_client -CAfile cert.pem`, `curl --cacert cert.pem`). En producción, un certificado emitido por una CA. |
 
 ## Conceptos clave del Tema 8 aplicados
 

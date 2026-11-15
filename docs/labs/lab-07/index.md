@@ -1,11 +1,11 @@
 ---
-title: "Laboratorio 07 · Protocolos y Servicios de Red"
+title: "LABORATORIO 07 · PROTOCOLOS Y SERVICIOS DE RED"
 description: "Laboratorio 07 de NETWORKING Lab — Protocolos y Servicios de Red."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 07</p>
 
-# Protocolos y Servicios de Red
+# PROTOCOLOS Y SERVICIOS DE RED
 
 <p class="tema-meta"><span>12 secciones</span><span>1 diagrama</span><span>2 tablas</span></p>
 
@@ -87,10 +87,12 @@ graph TB
 | R1 (Sede) | `veth-r1r2` (R1-R2) | 192.168.1.1/30 |
 | R1 (Sede) | `veth-r1r3` (R1-R3, laboratorio 06) | 192.168.3.1/30 |
 | R1 (Sede) | WAN (`veth-wan`) | 192.168.100.1/24 (host: 192.168.100.2/24) |
-| R2 (Sucursal A) | eth0 (LAN) | 10.0.1.1/24 |
-| R2 (Sucursal A) | eth1 (R1-R2) | 192.168.1.2/30 |
-| R3 (Sucursal B) | eth0 (LAN) | 10.0.2.1/24 |
-| R3 (Sucursal B) | eth1 (R2-R3) | 192.168.2.2/30 |
+| R2 (Sucursal A) | `veth-r2c` (LAN) | 10.0.1.1/24 |
+| R2 (Sucursal A) | `veth-r2r1` (R1-R2) | 192.168.1.2/30 |
+| R2 (Sucursal A) | `veth-r2r3` (R2-R3) | 192.168.2.1/30 |
+| R3 (Sucursal B) | `veth-r3c` (LAN) | 10.0.2.1/24 |
+| R3 (Sucursal B) | `veth-r3r2` (R2-R3) | 192.168.2.2/30 |
+| R3 (Sucursal B) | `veth-r3r1` (R1-R3) | 192.168.3.2/30 |
 | Servidor DNS | - | 10.0.0.5/24 |
 | Servidor DHCP | - | 10.0.0.6/24 |
 | Cliente DHCP (`clienteDHCP`) | - | 10.0.0.100-200/24 (por DHCP) |
@@ -222,7 +224,7 @@ sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>
   sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE
 ```
 
-Conviene distinguir dos términos: **NAT** (traducción de direcciones) cambia la IP de origen o destino; **PAT** (traducción de direcciones y puertos, lo que Linux llama *masquerade* cuando enmascara muchas IP privadas tras una sola) permite que **múltiples conexiones privadas compartan una dirección de salida** (`192.168.100.1`), diferenciándolas por la información de transporte (puerto de origen TCP/UDP o identificador ICMP). La tabla `conntrack` recuerda qué conexión corresponde a cada traducción.
+Conviene distinguir dos términos: **NAT** (traducción de direcciones) cambia la IP de origen o destino; **PAT** (traducción de direcciones y puertos; en Linux se logra con `MASQUERADE` o `SNAT`, que reasignan el puerto de origen cuando hay colisión) permite que **múltiples conexiones privadas compartan una dirección de salida** (`192.168.100.1`), diferenciándolas por la información de transporte (puerto de origen TCP/UDP o identificador ICMP). La tabla `conntrack` recuerda qué conexión corresponde a cada traducción.
 
 La regla de R1 no filtra por origen (`-o veth-wan`): traduce **todo** lo que sale por la WAN, ya venga de la sede o de las sucursales. Lo que sí hacía falta eran las **rutas por defecto** de R2 y R3. Como R1 enmascara el tráfico con `192.168.100.1`, el host solo conoce la red `192.168.100.0/24` y no necesita rutas de retorno hacia `10.0.0.0/8`.
 
@@ -287,7 +289,8 @@ sudo mkdir -p /etc/netns/clienteDHCP
 sudo touch /etc/netns/clienteDHCP/resolv.conf
 
 # Obtener IP por DHCP
-sudo ip netns exec clienteDHCP dhclient -v veth-dhcpcl
+# -pf / -lf: pid y concesiones propios, para no interferir con el dhclient del host
+sudo ip netns exec clienteDHCP dhclient -v -pf /tmp/lab07/dhclient.pid -lf /tmp/lab07/dhclient.leases veth-dhcpcl
 sudo ip netns exec clienteDHCP ip addr show dev veth-dhcpcl
 sudo ip netns exec clienteDHCP ip route show
 sudo ip netns exec clienteDHCP cat /etc/resolv.conf
@@ -336,7 +339,7 @@ sudo ip netns exec servidorDNS sh -c 'nc -l -p 8000 > /dev/null &'
 sudo ip netns exec clienteDHCP sh -c 'echo hola | nc -w 2 10.0.0.5 8000'
 ```
 
-**Interpretación:** se observa el *handshake* TCP (SYN, SYN-ACK, ACK), la transferencia y el cierre (FIN). Con Internet disponible puedes repetirlo con `curl -s http://google.com > /dev/null` y filtrar `tcp port 80`.
+**Interpretación:** se observa el *handshake* TCP (SYN, SYN-ACK, ACK), la transferencia y el cierre (FIN). Con Internet disponible puedes repetirlo con `curl -s http://google.com > /dev/null` y filtrar `tcp port 80`. (Si tu versión de `nc` no admite `-l -p`, usa la forma portable `nc -l 8000`.)
 
 ### Paso 11: Capturar tráfico UDP (DNS y DHCP)
 
@@ -350,7 +353,7 @@ En otra terminal:
 sudo ip netns exec clienteDHCP nslookup -type=A servidor-interno.secops.local
 ```
 
-**Interpretación:** se observan paquetes UDP sin *handshake* previo: una consulta y una respuesta. Para ver el intercambio DHCP completo (DISCOVER, OFFER, REQUEST, ACK) libera y renueva la concesión con `sudo ip netns exec clienteDHCP dhclient -r veth-dhcpcl` y luego `sudo ip netns exec clienteDHCP dhclient veth-dhcpcl`.
+**Interpretación:** se observan paquetes UDP sin *handshake* previo: una consulta y una respuesta. Para ver el intercambio DHCP completo (DISCOVER, OFFER, REQUEST, ACK) libera y renueva la concesión con `sudo ip netns exec clienteDHCP dhclient -r -pf /tmp/lab07/dhclient.pid -lf /tmp/lab07/dhclient.leases veth-dhcpcl` y luego `sudo ip netns exec clienteDHCP dhclient -pf /tmp/lab07/dhclient.pid -lf /tmp/lab07/dhclient.leases veth-dhcpcl`.
 
 ## Análisis de MSS
 

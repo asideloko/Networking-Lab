@@ -1,11 +1,11 @@
 ---
-title: "Laboratorio 03 · Componentes de Red y Conmutación"
+title: "LABORATORIO 03 · COMPONENTES DE RED Y CONMUTACIÓN"
 description: "Laboratorio 03 de NETWORKING Lab — Componentes de Red y Conmutación."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 03</p>
 
-# Componentes de Red y Conmutación
+# COMPONENTES DE RED Y CONMUTACIÓN
 
 <p class="tema-meta"><span>12 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
@@ -68,10 +68,10 @@ El **switch** (namespace `switch`) y el **router** (namespace `router`) son ahor
 
 | Dispositivo | Interfaz | Dirección IP       |
 |-------------|----------|--------------------|
-| Cliente 1   | veth0    | 10.0.1.2/24        |
-| Cliente 2   | veth0    | 10.0.1.3/24        |
-| Cliente 3   | veth0    | 10.0.1.4/24        |
-| Cliente 4   | veth0    | 10.0.1.5/24        |
+| Cliente 1   | veth-c1  | 10.0.1.2/24        |
+| Cliente 2   | veth-c2  | 10.0.1.3/24        |
+| Cliente 3   | veth-c3  | 10.0.1.4/24        |
+| Cliente 4   | veth-c4  | 10.0.1.5/24        |
 | Switch      | br0 (puertos `veth-s1`…`veth-s4` y `veth-sr`) | - (capa 2, sin IP) |
 | Router (LAN)| veth-rs  | 10.0.1.1/24        |
 | Router (WAN)| veth-wan | 192.168.1.2/24    |
@@ -103,7 +103,16 @@ ip netns exec router ip link delete veth-r2
 ```
 
 !!! warning "Las reglas del laboratorio 02 mencionaban `br0`"
-    Las reglas de `FORWARD` del router creadas en el laboratorio 02 usan `-i br0`. Al borrar el bridge del router esas reglas dejan de aplicarse. Con la política por defecto (`ACCEPT`) la salida a Internet seguirá funcionando, pero conviene mantener la coherencia: tras el Paso 9 sustituye `br0` por `veth-rs` en ellas (`iptables -D FORWARD -i br0 …` y `iptables -A FORWARD -i veth-rs …`, ejecutadas con `ip netns exec router`). La regla de `MASQUERADE` usa `-o veth-wan` y no se ve afectada.
+    Las reglas de `FORWARD` del router creadas en el laboratorio 02 mencionan `br0` (la de ida con `-i br0`, la de retorno con `-o br0`). Al borrar el bridge del router esas reglas dejan de aplicarse. Con la política por defecto (`ACCEPT`) la salida a Internet seguirá funcionando, pero conviene mantener la coherencia: tras el Paso 9 sustitúyelas por sus equivalentes con `veth-rs`:
+
+    ```bash
+    ip netns exec router iptables -D FORWARD -i br0 -o veth-wan -j ACCEPT
+    ip netns exec router iptables -D FORWARD -i veth-wan -o br0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+    ip netns exec router iptables -A FORWARD -i veth-rs -o veth-wan -j ACCEPT
+    ip netns exec router iptables -A FORWARD -i veth-wan -o veth-rs -m state --state RELATED,ESTABLISHED -j ACCEPT
+    ```
+
+    La regla de `MASQUERADE` usa `-o veth-wan` y no se ve afectada.
 
 ### Paso 3: Crear el namespace del switch
 
@@ -233,6 +242,8 @@ ip netns exec cliente3 ping -c 4 8.8.8.8
 ip netns exec cliente4 curl -I http://google.com
 ```
 
+Si `curl` no resuelve el nombre, consulta la nota «DNS dentro de un namespace» del laboratorio 02: cada namespace necesita su propio `/etc/netns/<ns>/resolv.conf`.
+
 ## Observación del funcionamiento del switch
 
 ### Paso 12: Ver la tabla de direcciones MAC del switch
@@ -320,7 +331,7 @@ ip netns exec cliente1 ping -c 2 -M do -s 2000 10.0.1.4
 ping: local error: message too long, mtu=1500
 ```
 
-Si en cambio permites la fragmentación (`-M dont`, el valor por defecto en Linux), el paquete se divide en fragmentos de hasta 1500 bytes, el destino los reensambla y el ping responde con normalidad:
+Si en cambio permites la fragmentación (`-M dont` no activa el bit DF; el valor por defecto, `want`, lo activa pero fragmenta localmente cuando el paquete no cabe), el paquete se divide en fragmentos de hasta 1500 bytes, el destino los reensambla y el ping responde con normalidad:
 
 ```bash
 ip netns exec cliente1 ping -c 2 -M dont -s 2000 10.0.1.4
@@ -332,7 +343,7 @@ Este experimento es **local**: el error lo genera el propio origen. En un camino
 
 ### Paso 16: Cambiar MTU (opcional)
 
-Podemos cambiar la MTU para soportar jumboframes entre Cliente 1 y Cliente 3. La MTU debe subirse en **todos los extremos del camino**: ambos clientes y los puertos del switch por los que pasa la trama (y el bridge, que adopta la menor MTU de sus puertos):
+Podemos cambiar la MTU para soportar jumboframes entre Cliente 1 y Cliente 3. La MTU debe subirse en **todos los extremos del camino**: ambos clientes y los puertos del switch por los que pasa la trama (el bridge adopta por defecto la menor MTU de sus puertos, por eso también se sube a mano; la MTU de `br0` solo afecta a la interfaz del propio bridge, y es la de cada puerto la que limita lo que se transmite):
 
 ```bash
 ip netns exec cliente1 ip link set veth-c1 mtu 9000
@@ -413,7 +424,7 @@ La MTU, por su parte, es un parámetro crítico que debe ser configurado correct
 
 ## Preparación para el siguiente laboratorio
 
-Hemos dejado la red con 4 clientes conectados a un switch, y el switch conectado al router con salida a Internet. En el **Laboratorio 04** comenzaremos a trabajar con **direccionamiento IP y subredes**, segmentando la red en diferentes subredes y y preparando el enrutamiento entre ellas.
+Hemos dejado la red con 4 clientes conectados a un switch, y el switch conectado al router con salida a Internet. En el **Laboratorio 04** comenzaremos a trabajar con **direccionamiento IP y subredes**, segmentando la red en diferentes subredes y preparando el enrutamiento entre ellas.
 
 ---
 

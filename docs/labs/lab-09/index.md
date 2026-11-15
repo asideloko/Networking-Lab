@@ -1,11 +1,11 @@
 ---
-title: "Laboratorio 09 · VPN y Tunelización"
+title: "LABORATORIO 09 · VPN Y TUNELIZACIÓN"
 description: "Laboratorio 09 de NETWORKING Lab — VPN y Tunelización."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 09</p>
 
-# VPN y Tunelización
+# VPN Y TUNELIZACIÓN
 
 <p class="tema-meta"><span>15 secciones</span><span>1 diagrama</span><span>4 tablas</span></p>
 
@@ -18,7 +18,7 @@ El equipo de redes ha identificado los siguientes requisitos:
 1. **Conectar sucursales** de forma segura a la sede central.
 2. **Permitir teletrabajo** para empleados desde sus casas.
 3. **Proteger las comunicaciones** con cifrado.
-4. Entender por qué el enrutamiento dinámico sobre túneles (GRE + OSPF/BGP) se aborda más adelante (Laboratorio 15).
+4. Entender por qué las rutas estáticas sobre túneles no escalan y por qué el enrutamiento dinámico (OSPF, Laboratorio 15) es el paso siguiente; este laboratorio no construye enrutamiento dinámico sobre los túneles.
 
 !!! warning "Túnel no es lo mismo que VPN"
     Un **túnel** es la **encapsulación** de tráfico entre dos extremos. Una **VPN** es una conexión virtual **protegida** mediante mecanismos de seguridad (autenticación, integridad y, normalmente, cifrado). **No todos los túneles son VPN seguras**: GRE es un túnel, pero no cifra ni autentica criptográficamente el tráfico. Puede combinarse con IPsec para obtener protección criptográfica.
@@ -52,14 +52,16 @@ El equipo de redes ha identificado los siguientes requisitos:
 La topología extiende la del laboratorio 08 agregando túneles VPN.
 
 !!! note "Son demostraciones alternativas, no una única arquitectura"
-    GRE, IPsec, OpenVPN y WireGuard se presentan como **ejemplos didácticos separados**; no se pretende que una empresa real los combine todos a la vez. En la práctica de este laboratorio **coexisten** en los mismos namespaces para ahorrar trabajo, con estas relaciones: GRE (R1–R2 y R2–R3) transporta el tráfico entre oficinas **sin cifrar**; IPsec (manual) protege **solo** el tráfico `10.0.0.0/24` ↔ `10.0.1.0/24`; OpenVPN y WireGuard son **dos alternativas** para el mismo cliente remoto (puedes probar una, la otra o las dos).
+    GRE, IPsec, OpenVPN y WireGuard se presentan como **ejemplos didácticos separados**; no se pretende que una empresa real los combine todos a la vez. En la práctica de este laboratorio **coexisten** en los mismos namespaces para ahorrar trabajo, con estas relaciones: GRE (R1–R2 y R2–R3) transporta el tráfico entre oficinas **sin cifrar**; IPsec (manual) protege **solo** el tráfico `10.0.0.0/24` ↔ `10.0.1.0/24`; OpenVPN y WireGuard son **dos alternativas** para el mismo cliente remoto (prueba una a la vez: las dos instalan la ruta `10.0.0.0/22` en el cliente y chocarían).
 
 ```mermaid
 graph TB
     subgraph Sede_Central
         R1[Router 1 Sede 10.0.0.1]
         LAN1[Red Interna 10.0.0.0/24]
-        VPN_GW[VPN Gateway]
+    end
+    subgraph DMZ
+        VPN_GW[VPN Gateway 10.0.99.20]
     end
     subgraph Sucursal_A
         R2[Router 2 Sucursal A 10.0.1.1]
@@ -113,7 +115,7 @@ sudo ip netns exec clienteSede ping -c 2 10.0.1.10
 sudo ip netns exec clienteSede ping -c 2 192.168.100.2
 ```
 
-Los túneles necesitan módulos del kernel; en una VM Linux estándar se cargan solos, o con `sudo modprobe ip_gre wireguard esp4 xfrm_user tun`.
+Los túneles necesitan módulos del kernel; en una VM Linux estándar se cargan solos, o con `sudo modprobe ip_gre wireguard esp4 xfrm_user tun`. Si quedó algún túnel `gre1` del laboratorio 06, elimínalo antes (`sudo ip netns exec R1 ip tunnel del gre1`): el Paso 3 reutiliza ese nombre.
 
 !!! info "Rutas y archivos"
     Un `cat > /etc/...` dentro de un `ip netns exec` escribiría en el `/etc` real del host, y dos routers no pueden compartir el mismo `ipsec.conf`. Por eso los secretos y configuraciones de este laboratorio van en `/tmp/lab09/` y la configuración se hace con comandos (`ip`, `wg`) que **sí** son específicos de cada namespace.
@@ -168,7 +170,8 @@ Comprueba que el puerto publicado llega al gateway (DNAT), sin ninguna VPN todav
 
 ```bash
 sudo ip netns exec clienteVPN ping -c 2 192.168.100.1
-sudo ip netns exec VPN_GW sh -c 'nc -u -l -p 51820 > /tmp/lab09_dnat.txt &'
+# -w 3: el listener termina solo tras 3 s de inactividad, para no dejar ocupado el puerto 51820 que usará WireGuard
+sudo ip netns exec VPN_GW sh -c 'nc -u -l -w 3 -p 51820 > /tmp/lab09_dnat.txt &'
 sudo ip netns exec clienteVPN sh -c 'echo prueba | nc -u -w 1 192.168.100.1 51820'
 cat /tmp/lab09_dnat.txt
 ```
@@ -330,7 +333,7 @@ sudo ip netns exec clienteVPN openvpn --daemon --writepid /tmp/lab09/ovpn-cli.pi
 ```
 
 !!! note "Versión de OpenVPN"
-    `--allow-deprecated-insecure-static-crypto` es obligatorio desde OpenVPN 2.6; en 2.5 o anteriores no existe y debe quitarse (y `--genkey secret` se escribe `--genkey --secret`). En producción usa certificados.
+    `--allow-deprecated-insecure-static-crypto` es obligatorio desde OpenVPN 2.7 (y el modo de clave estática desaparecerá en 2.8); en 2.6 o anteriores la opción no existe y debe quitarse (y `--genkey secret` se escribe `--genkey --secret` antes de 2.5). Comprueba tu versión con `openvpn --version`. En producción usa TLS (certificados o `peer-fingerprint`).
 
 ### Paso 10: Verificar OpenVPN
 
@@ -349,9 +352,10 @@ tail -3 /tmp/lab09/ovpn-cli.log
 ```bash
 sudo apt-get install -y wireguard-tools
 mkdir -p /tmp/lab09 && cd /tmp/lab09
-umask 077
-wg genkey | tee gw.key  | wg pubkey > gw.pub
-wg genkey | tee cli.key | wg pubkey > cli.pub
+# Entre paréntesis (subshell) para que el umask restrictivo no persista en tu sesión
+( umask 077
+  wg genkey | tee gw.key  | wg pubkey > gw.pub
+  wg genkey | tee cli.key | wg pubkey > cli.pub )
 ```
 
 ### Paso 12: Configurar el servidor (VPN Gateway) y el cliente

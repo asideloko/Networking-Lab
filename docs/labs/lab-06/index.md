@@ -1,11 +1,11 @@
 ---
-title: "Laboratorio 06 · Enrutamiento y Conectividad entre Redes"
+title: "LABORATORIO 06 · ENRUTAMIENTO Y CONECTIVIDAD ENTRE REDES"
 description: "Laboratorio 06 de NETWORKING Lab — Enrutamiento y Conectividad entre Redes."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 06</p>
 
-# Enrutamiento y Conectividad entre Redes
+# ENRUTAMIENTO Y CONECTIVIDAD ENTRE REDES
 
 <p class="tema-meta"><span>11 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
@@ -75,15 +75,15 @@ Además, cada router tiene conectada su propia LAN (`10.0.0.0/24`, `10.0.1.0/24`
 
 | Dispositivo | Interfaz | Dirección IP |
 |-------------|----------|--------------|
-| R1 (Sede) | eth0 (LAN) | 10.0.0.1/24 |
-| R1 (Sede) | eth1 (R1-R2) | 192.168.1.1/30 |
-| R1 (Sede) | eth2 (R1-R3, Paso 6) | 192.168.3.1/30 |
-| R2 (Sucursal A) | eth0 (LAN) | 10.0.1.1/24 |
-| R2 (Sucursal A) | eth1 (R1-R2) | 192.168.1.2/30 |
-| R2 (Sucursal A) | eth2 (R2-R3) | 192.168.2.1/30 |
-| R3 (Sucursal B) | eth0 (LAN) | 10.0.2.1/24 |
-| R3 (Sucursal B) | eth1 (R2-R3) | 192.168.2.2/30 |
-| R3 (Sucursal B) | eth2 (R1-R3, Paso 6) | 192.168.3.2/30 |
+| R1 (Sede) | `veth-r1c` (LAN) | 10.0.0.1/24 |
+| R1 (Sede) | `veth-r1r2` (R1-R2) | 192.168.1.1/30 |
+| R1 (Sede) | `veth-r1r3` (R1-R3, Paso 6) | 192.168.3.1/30 |
+| R2 (Sucursal A) | `veth-r2c` (LAN) | 10.0.1.1/24 |
+| R2 (Sucursal A) | `veth-r2r1` (R1-R2) | 192.168.1.2/30 |
+| R2 (Sucursal A) | `veth-r2r3` (R2-R3) | 192.168.2.1/30 |
+| R3 (Sucursal B) | `veth-r3c` (LAN) | 10.0.2.1/24 |
+| R3 (Sucursal B) | `veth-r3r2` (R2-R3) | 192.168.2.2/30 |
+| R3 (Sucursal B) | `veth-r3r1` (R1-R3, Paso 6) | 192.168.3.2/30 |
 | Cliente Sede | - | 10.0.0.10/24 |
 | Cliente Sucursal A | - | 10.0.1.10/24 |
 | Cliente Sucursal B | - | 10.0.2.10/24 |
@@ -291,6 +291,8 @@ sudo ip netns exec R1 ip route show 10.0.2.0/24
 sudo ip netns exec clienteSede traceroute -n 10.0.2.10
 ```
 
+(Si `traceroute` no está instalado: `sudo apt install traceroute`.)
+
 ### Paso 7: Simular un fallo y verificar la redundancia
 
 Tiramos el **enlace preferido** (R1-R3) por **sus dos extremos**. Con rutas estáticas, un router solo "sabe" que un enlace cayó si es uno de sus propios enlaces: por eso el fallo debe afectar a ambos routers del enlace.
@@ -355,10 +357,14 @@ sudo ip netns exec R1 ip route add 10.0.2.0/24 via 10.100.0.2 metric 20
 sudo ip netns exec R3 ip route add 10.0.0.0/24 via 10.100.0.1 metric 20
 sudo ip netns exec R1 ip route get 10.0.2.10     # sale por gre1
 sudo ip netns exec clienteSede ping -c 2 10.0.2.10
+sudo ip netns exec clienteSede traceroute -n 10.0.2.10   # el túnel cuenta como un solo salto
 
 # Deshacer
 sudo ip netns exec R1 ip route del 10.0.2.0/24 via 10.100.0.2 metric 20
 sudo ip netns exec R3 ip route del 10.0.0.0/24 via 10.100.0.1 metric 20
+# ... y el propio túnel, para dejar libre el nombre gre1 (el laboratorio 09 lo reutiliza)
+sudo ip netns exec R1 ip tunnel del gre1
+sudo ip netns exec R3 ip tunnel del gre1
 ```
 
 Fíjate en que `traceroute` ahora ve el túnel como **un solo salto** (`10.100.0.2`).

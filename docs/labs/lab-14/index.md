@@ -1,11 +1,11 @@
 ---
-title: "Laboratorio 14 · Herramientas Linux Avanzadas"
+title: "LABORATORIO 14 · HERRAMIENTAS LINUX AVANZADAS"
 description: "Laboratorio 14 de NETWORKING Lab — Herramientas Linux Avanzadas."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 14</p>
 
-# Herramientas Linux Avanzadas
+# HERRAMIENTAS LINUX AVANZADAS
 
 <p class="tema-meta"><span>6 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
@@ -187,13 +187,13 @@ sudo ip netns exec Host1 ip link set dum0 up
 
 sudo ip netns exec Router ip route add 10.0.2.0/24 via 10.0.0.10
 sudo ip netns exec Router ip route get 10.0.2.1       # muestra via 10.0.0.10
-sudo ip netns exec Router ping -c 2 10.0.2.1          # llega: Host1 es el siguiente salto
+sudo ip netns exec Router ping -c 2 10.0.2.1          # responde (ojo: 10.0.2.1 es del propio Host1; véase abajo)
 
 sudo ip netns exec Router ip route del 10.0.2.0/24
 sudo ip netns exec Host1 ip link del dum0
 ```
 
-Sin el `ip_forward` y la red detrás de Host1, la ruta se instalaría igualmente (`ip route get` la mostraría), pero un paquete dirigido a otro equipo de `10.0.2.0/24` no tendría adónde ir.
+El `ping` a `10.0.2.1` demuestra que la ruta y el siguiente salto funcionan, pero **no** prueba el reenvío: esa dirección pertenece al propio Host1, que la contestaría aunque `ip_forward` valiera 0. Sin una red real detrás de Host1, la ruta se instalaría igualmente (`ip route get` la mostraría), pero un paquete dirigido a otro equipo de `10.0.2.0/24` no tendría adónde ir (véase el Ejercicio 3).
 
 ### Paso 5: ss (sockets)
 
@@ -202,7 +202,7 @@ Arrancamos dos servicios de prueba en Host1 y establecemos una conexión desde H
 ```bash
 sudo ip netns exec Host1 sh -c 'nc -lk -p 9000 >/dev/null 2>&1 </dev/null &'
 sudo ip netns exec Host1 sh -c 'nc -lk -p 8443 >/dev/null 2>&1 </dev/null &'
-sudo ip netns exec Host2 sh -c 'sleep 30 | nc 10.0.0.10 9000 >/dev/null 2>&1 &'
+sudo ip netns exec Host2 sh -c 'sleep 300 | nc 10.0.0.10 9000 >/dev/null 2>&1 &'
 
 sudo ip netns exec Host1 ss -tln                    # puertos TCP a la escucha
 sudo ip netns exec Host1 ss -tlnp                   # ... con el proceso dueño
@@ -269,6 +269,8 @@ Con Internet disponible en tu equipo: `sudo ip netns exec Router traceroute -n 8
 Al terminar, elimina **solo** lo creado por este laboratorio:
 
 ```bash
+# Detén primero los procesos: un namespace con procesos dentro no desaparece del todo
+sudo pkill -f 'nc -lk -p (9000|8443)' 2>/dev/null || true
 for ns in Router Host1 Host2 ServidorDMZ; do sudo ip netns del $ns 2>/dev/null || true; done
 sudo ip link del veth-wan-r 2>/dev/null || true
 sudo iptables -t nat -D POSTROUTING -s 203.0.113.0/30 -o eth0 -j MASQUERADE 2>/dev/null || true   # solo si lo añadiste (ajusta eth0)
@@ -297,7 +299,11 @@ sudo ip netns exec Host1 ss -tn state established
 sudo ip netns exec Host2 ss -tn state established
 ```
 
-Comprueba que la conexión de Paso 5 aparece en **ambos** extremos (Host1 y Host2) pero no en el router.
+Comprueba que la conexión de Paso 5 aparece en **ambos** extremos (Host1 y Host2) pero no en el router. (Esa conexión dura 300 s; si ya expiró, repite el comando del Paso 5.)
+
+### Ejercicio 3: Comprobar el reenvío de verdad
+
+Sustituye la interfaz ficticia `dum0` por un namespace `Detras` unido a Host1 con un `veth` (Host1 `10.0.2.1/24`, Detras `10.0.2.50/24`, con ruta por defecto hacia `10.0.2.1`). Mantén la ruta del Router hacia `10.0.2.0/24 via 10.0.0.10` y haz `ping` a `10.0.2.50` con `ip_forward` en 1 y luego en 0 en Host1. ¿Qué cambia y por qué? (Pista: ahora el paquete no termina en Host1, **pasa por él**.)
 
 ## Conceptos clave
 
@@ -311,7 +317,7 @@ Comprueba que la conexión de Paso 5 aparece en **ambos** extremos (Host1 y Host
 
 ## Conclusiones
 
-Las herramientas avanzadas de Linux (`ip`, `ss`, `nft`) permiten administrar y diagnosticar redes de manera eficiente y han sustituido en la práctica a las tradicionales (`ifconfig`, `netstat`, `iptables`), que siguen existiendo en muchos sistemas. Entender **dónde engancha cada regla** (`input`, `forward`, `output`) es clave para comprender un firewall.
+Las herramientas avanzadas de Linux (`ip`, `ss`, `nft`) permiten administrar y diagnosticar redes de manera eficiente y han sustituido en gran medida a las tradicionales (`ifconfig`, `netstat`), y `nft` va reemplazando a `iptables` en las distribuciones recientes; las clásicas siguen existiendo en muchos sistemas. Entender **dónde engancha cada regla** (`input`, `forward`, `output`) es clave para comprender un firewall.
 
 ---
 

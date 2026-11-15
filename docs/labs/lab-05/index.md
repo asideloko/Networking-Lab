@@ -1,11 +1,11 @@
 ---
-title: "Laboratorio 05 · Conmutación y Segmentación de Red"
+title: "LABORATORIO 05 · CONMUTACIÓN Y SEGMENTACIÓN DE RED"
 description: "Laboratorio 05 de NETWORKING Lab — Conmutación y Segmentación de Red."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 05</p>
 
-# Conmutación y Segmentación de Red
+# CONMUTACIÓN Y SEGMENTACIÓN DE RED
 
 <p class="tema-meta"><span>9 secciones</span><span>1 diagrama</span><span>1 tabla</span></p>
 
@@ -55,7 +55,7 @@ Se necesita **segmentar la red lógicamente en capa 2** usando **VLANs** para:
 ## Herramientas necesarias
 
 -   Linux con privilegios de superusuario.
--   Comandos: `ip`, `ping`, `tcpdump`, `bridge`, `vlan`.
+-   Comandos: `ip` (incluido `ip link … type vlan` para las subinterfaces), `ping`, `tcpdump`, `bridge`.
 
 ## Diseño de VLANs y direccionamiento
 
@@ -349,7 +349,7 @@ ip netns exec switch bridge vlan show
 ip netns exec switch tcpdump -i veth-sr -n -e -v
 ```
 
-En `bridge vlan show` verás `veth-sv1` con `10 PVID Egress Untagged` (acceso VLAN 10) y `veth-sr` con las VLAN 10, 20, 30 y 99 **sin** PVID ni *Untagged* (trunk etiquetado). En la captura del trunk, `tcpdump -e` mostrará `vlan 10, p 0` (o 20, 30) en cada trama: es la etiqueta 802.1Q. Si no la ves, añade `-Q` o captura en `veth-rs` del lado del router; algunas versiones ocultan la etiqueta cuando el kernel la extrae como metadato.
+En `bridge vlan show` verás `veth-sv1` con `10 PVID Egress Untagged` (acceso VLAN 10) y `veth-sr` con las VLAN 10, 20, 30 y 99 **sin** PVID ni *Untagged* (trunk etiquetado). En la captura del trunk, `tcpdump -e` mostrará `vlan 10, p 0` (o 20, 30) en cada trama: es la etiqueta 802.1Q. Si no la ves, captura en `veth-rs` del lado del router; algunas versiones ocultan la etiqueta cuando el kernel la extrae como metadato.
 
 ## Conclusiones técnicas
 

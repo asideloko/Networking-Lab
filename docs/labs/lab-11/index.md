@@ -1,11 +1,11 @@
 ---
-title: "Laboratorio 11 · Arquitectura de Red Empresarial"
+title: "LABORATORIO 11 · ARQUITECTURA DE RED EMPRESARIAL"
 description: "Laboratorio 11 de NETWORKING Lab — Arquitectura de Red Empresarial."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 11</p>
 
-# Arquitectura de Red Empresarial
+# ARQUITECTURA DE RED EMPRESARIAL
 
 <p class="tema-meta"><span>8 secciones</span><span>1 diagrama</span><span>5 tablas</span></p>
 
@@ -294,7 +294,25 @@ sudo ip netns exec ventas traceroute -n -I 10.0.99.10
 
 Este resultado demuestra la tolerancia a la caída de **un Core** con rutas estáticas y fallo local. **No** demuestra tolerancia a la caída de `Dist1` ni a fallos remotos.
 
-Para recuperar Core1, sube de nuevo esas interfaces (`up`) y vuelve a añadir las rutas de métrica 10 que se retiraron al bajar los enlaces (Paso 4).
+Para recuperar Core1, sube de nuevo esas interfaces y vuelve a añadir las rutas que el kernel retiró al bajarlas (las estáticas no regresan solas):
+
+```bash
+for par in "Core1 veth-c1c2" "Core2 veth-c2c1" "Core1 veth-c1d1" "Dist1 veth-d1c1" \
+           "Core1 veth-c1d2" "Dist2 veth-d2c1" "Core1 veth-c1fw" "Firewall veth-fwc1"; do
+  set -- $par
+  sudo ip netns exec $1 ip link set $2 up
+done
+
+sudo ip netns exec Dist1 ip route add default via 10.255.1.1 metric 10
+sudo ip netns exec Dist2 ip route add default via 10.255.1.5 metric 20
+sudo ip netns exec Core1 ip route add default via 10.255.2.2 metric 10
+sudo ip netns exec Core1 ip route add default via 10.255.0.2 metric 20
+sudo ip netns exec Core2 ip route add default via 10.255.0.1 metric 20
+for v in 10 20 30; do
+  sudo ip netns exec Core1 ip route add 10.0.$v.0/24 via 10.255.1.2
+  sudo ip netns exec Firewall ip route add 10.0.$v.0/24 via 10.255.2.1 metric 10
+done
+```
 
 ## Segmentación VLAN
 

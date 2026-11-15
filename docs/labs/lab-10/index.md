@@ -1,11 +1,11 @@
 ---
-title: "Laboratorio 10 · Infraestructura WAN y Core"
+title: "LABORATORIO 10 · INFRAESTRUCTURA WAN Y CORE"
 description: "Laboratorio 10 de NETWORKING Lab — Infraestructura WAN y Core."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 10</p>
 
-# Infraestructura WAN y Core
+# INFRAESTRUCTURA WAN Y CORE
 
 <p class="tema-meta"><span>9 secciones</span><span>1 diagrama</span><span>4 tablas</span></p>
 
@@ -53,24 +53,24 @@ graph TB
 
 | Dispositivo | Interfaz | Dirección IP | Rol |
 |-------------|----------|--------------|-----|
-| PE1 | eth0 (LAN) | 10.0.0.1/24 | Provider Edge |
+| PE1 | `veth-pe1lan` (LAN) | 10.0.0.1/24 | Provider Edge |
 | host1 | - | 10.0.0.10/24 | Equipo de la LAN 1 |
-| PE1 | eth1 (P1) | 192.168.1.1/30 | MPLS Core |
-| PE2 | eth0 (LAN) | 10.1.0.1/24 | Provider Edge |
+| PE1 | `veth-pe1p1` (P1) | 192.168.1.1/30 | Core (PE–P) |
+| PE2 | `veth-pe2lan` (LAN) | 10.1.0.1/24 | Provider Edge |
 | host2 | - | 10.1.0.10/24 | Equipo de la LAN 2 |
-| PE2 | eth1 (P2) | 192.168.1.5/30 | MPLS Core |
-| PE3 | eth0 (LAN) | 10.2.0.1/24 | Provider Edge |
+| PE2 | `veth-pe2p2` (P2) | 192.168.1.5/30 | Core (PE–P) |
+| PE3 | `veth-pe3lan` (LAN) | 10.2.0.1/24 | Provider Edge |
 | host3 | - | 10.2.0.10/24 | Equipo de la LAN 3 |
-| PE3 | eth1 (P3) | 192.168.1.9/30 | MPLS Core |
-| P1 | eth0 (R1) | 192.168.1.2/30 | P Router |
-| P1 | eth1 (P2) | 192.168.1.13/30 | P Router |
-| P1 | eth2 (P3) | 192.168.1.17/30 | P Router |
-| P2 | eth0 (R2) | 192.168.1.6/30 | P Router |
-| P2 | eth1 (P1) | 192.168.1.14/30 | P Router |
-| P2 | eth2 (P3) | 192.168.1.21/30 | P Router |
-| P3 | eth0 (R3) | 192.168.1.10/30 | P Router |
-| P3 | eth1 (P1) | 192.168.1.18/30 | P Router |
-| P3 | eth2 (P2) | 192.168.1.22/30 | P Router |
+| PE3 | `veth-pe3p3` (P3) | 192.168.1.9/30 | Core (PE–P) |
+| P1 | `veth-p1pe1` (R1) | 192.168.1.2/30 | P Router |
+| P1 | `veth-p1p2` (P2) | 192.168.1.13/30 | P Router |
+| P1 | `veth-p1p3` (P3) | 192.168.1.17/30 | P Router |
+| P2 | `veth-p2pe2` (R2) | 192.168.1.6/30 | P Router |
+| P2 | `veth-p2p1` (P1) | 192.168.1.14/30 | P Router |
+| P2 | `veth-p2p3` (P3) | 192.168.1.21/30 | P Router |
+| P3 | `veth-p3pe3` (R3) | 192.168.1.10/30 | P Router |
+| P3 | `veth-p3p1` (P1) | 192.168.1.18/30 | P Router |
+| P3 | `veth-p3p2` (P2) | 192.168.1.22/30 | P Router |
 
 ## Construcción de la red
 
@@ -295,14 +295,23 @@ sudo ip netns exec host1 ping -c 4 10.2.0.10
 sudo ip netns exec host1 traceroute -n 10.2.0.10
 ```
 
-**Resultado esperado:** 0% de pérdida y un salto más (P2, `192.168.1.14`). Restablece después el enlace (`up` en ambos extremos) y vuelve a añadir las rutas de métrica 0 que se retiraron al bajar la interfaz.
+**Resultado esperado:** 0% de pérdida y un salto más (P2, `192.168.1.14`). Restablece después el enlace (`up` en ambos extremos) y vuelve a añadir las rutas que se retiraron al bajar la interfaz:
+
+```bash
+sudo ip netns exec P1 ip link set veth-p1p3 up
+sudo ip netns exec P3 ip link set veth-p3p1 up
+sudo ip netns exec P1 ip route add 192.168.1.8/30 via 192.168.1.18
+sudo ip netns exec P1 ip route add 10.2.0.0/24 via 192.168.1.18
+sudo ip netns exec P3 ip route add 192.168.1.0/30 via 192.168.1.17
+sudo ip netns exec P3 ip route add 10.0.0.0/24 via 192.168.1.17
+```
 
 !!! warning "Sin reconvergencia automática"
     Si en lugar del enlace P1-P3 cae el P2-P3, P1 **no se entera** y sigue usando una ruta estática que ya no sirve. Detectar fallos remotos es tarea de OSPF/BGP (Laboratorio 15).
 
 ### Ejercicio 2: Balanceo ECMP
 
-**ECMP** (*Equal-Cost Multi-Path*) reparte el tráfico entre varios caminos de **igual coste**: es **balanceo de carga**, distinto del *failover*, que es la **selección de una ruta alternativa** cuando falla la principal (Ejercicio 1). ECMP **no equivale a alta disponibilidad completa**: si un camino cae, los flujos que lo usaban se interrumpen hasta que se detecta el fallo y se reasignan, y las aplicaciones pueden notarlo. Se define con **una sola ruta de varios saltos** (`nexthop`), no con dos `ip route add` (el segundo daría `File exists`). Por defecto el reparto se calcula solo con las IP de origen y destino; con la política 1 también se usan los puertos y se ven los dos caminos:
+**ECMP** (*Equal-Cost Multi-Path*) reparte el tráfico entre varios caminos de **igual coste**: es **balanceo de carga**, distinto del *failover*, que es la **selección de una ruta alternativa** cuando falla la principal (Ejercicio 1). ECMP **no equivale a alta disponibilidad completa**: si un camino cae, los flujos que lo usaban se interrumpen hasta que se detecta el fallo y se reasignan, y las aplicaciones pueden notarlo. Se define con **una sola ruta de varios saltos** (`nexthop`), no con dos `ip route add` (el segundo daría `File exists`). Por defecto el reparto se calcula solo con las IP de origen y destino; con la política 1 también se usan los puertos y se ven los dos caminos. (Aquí los dos caminos tienen distinta longitud: Linux no lo exige en rutas estáticas, pero protocolos como OSPF solo reparten entre caminos de **igual coste**.) Comprueba el reparto:
 
 ```bash
 sudo ip netns exec P1 sysctl -w net.ipv4.fib_multipath_hash_policy=1

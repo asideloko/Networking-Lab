@@ -1,11 +1,11 @@
 ---
-title: "Laboratorio 12 · Arquitecturas Modernas de Red"
+title: "LABORATORIO 12 · ARQUITECTURAS MODERNAS DE RED"
 description: "Laboratorio 12 de NETWORKING Lab — Arquitecturas Modernas de Red."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 12</p>
 
-# Arquitecturas Modernas de Red
+# ARQUITECTURAS MODERNAS DE RED
 
 <p class="tema-meta"><span>7 secciones</span><span>1 diagrama</span><span>2 tablas</span></p>
 
@@ -306,4 +306,4 @@ Las arquitecturas modernas combinan Cloud Networking, Zero Trust, ZTNA, SASE y m
 
 ---
 
-**¡Laboratorio 12 completado!**
+**¡Laboratorio 12 completado!** Continúa con el **Laboratorio 13**.

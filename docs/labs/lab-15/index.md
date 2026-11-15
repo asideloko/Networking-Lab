@@ -1,13 +1,13 @@
 ---
-title: "Laboratorio 15 · Implementación Práctica Integral"
+title: "LABORATORIO 15 · IMPLEMENTACIÓN PRÁCTICA INTEGRAL"
 description: "Laboratorio 15 de NETWORKING Lab — Implementación Práctica Integral."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 15</p>
 
-# Implementación Práctica Integral
+# IMPLEMENTACIÓN PRÁCTICA INTEGRAL
 
-<p class="tema-meta"><span>14 secciones</span><span>1 diagrama</span><span>8 tablas</span></p>
+<p class="tema-meta"><span>15 secciones</span><span>1 diagrama</span><span>8 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -131,7 +131,7 @@ sudo ip netns exec fin ping -c 3 192.168.100.2
 | Enlace B R1-R2 | 2 | 10.0.1.212/30 | /30 | 10.0.1.213 - 10.0.1.214 | - |
 | Sucursal (R2) | 200 | 10.0.2.0/24 | /24 | 10.0.2.1 - 10.0.2.254 | 10.0.2.1 |
 
-Cada bloque se asigna de mayor a menor sin solaparse.
+Cada bloque se asigna de mayor a menor sin solaparse (la sucursal, del mismo tamaño que Servidores, se reserva aparte en `10.0.2.0/24`).
 
 **Correspondencia entre cada red y su interfaz.** Cada gateway pertenece a la interfaz que representa ese segmento y no a otra; las redes departamentales se distinguen de los enlaces punto a punto:
 
@@ -229,6 +229,9 @@ for v in "10 10.0.1.1/25" "20 10.0.1.129/26" "30 10.0.1.193/28"; do
   sudo ip netns exec R1 ip addr add $2 dev trunk.$1
   sudo ip netns exec R1 ip link set trunk.$1 up
 done
+
+# Limpieza (el bridge OVS persiste incluso tras reiniciar):
+# sudo ovs-vsctl --if-exists del-br ovs-sw
 ```
 
 Los equipos finales (`fin`, `ven`, `ges`) tendrían su IP y su *gateway* como en 15.2, pero conectados al puerto de acceso de su VLAN. Estas subinterfaces llevan las IP de *gateway* **en lugar de** las interfaces `veth-r1fin`, `veth-r1ven` y `veth-r1ges` del 15.2: **no deben coexistir las dos formas** con las mismas subredes. Verifica en tu propio entorno antes de adoptarlo: este bloque ilustra el modelo trunk/access, no se encadena con el firewall, el DHCP ni el OSPF de los apartados siguientes (que usan los nombres de interfaz del 15.2).
@@ -309,8 +312,8 @@ router ospf
 EOF
 
 # Los demonios se ejecutan como el usuario frr: necesita acceder a los archivos
-sudo chown -R frr:frr /tmp/lab15
-sudo chmod 755 /tmp /tmp/lab15
+sudo chown -R frr:frr /tmp/lab15/r1 /tmp/lab15/r2   # solo los directorios de los demonios
+sudo chmod 755 /tmp/lab15                            # ¡no cambies los permisos de /tmp!
 
 # Arrancar los demonios en cada namespace
 for r in r1 r2; do
@@ -389,6 +392,7 @@ table inet firewall {
         # Entre LAN departamentales: por defecto NADA; solo Gestión puede administrar Finanzas y Ventas
         iifname "veth-r1ges" oifname { "veth-r1fin", "veth-r1ven" } icmp type echo-request accept
         iifname "veth-r1ges" oifname { "veth-r1fin", "veth-r1ven" } tcp dport 22 accept
+        counter    # cuenta lo que llega al final de la cadena: lo que descartará la política
     }
 }
 EOF
@@ -409,8 +413,6 @@ El protocolo OSPF (número 89) debe aceptarse en `input`, o R1 dejaría de ver a
 | Gestión → Finanzas / Ventas | Solo ICMP y SSH (administración) |
 | Internet → Servidores | Solo TCP 80, 443 y 25 (si el servicio se publica; véase abajo) |
 
-Una versión anterior permitía el tráfico sin restricción entre las LAN departamentales; eso contradecía la idea de segmentación y se ha sustituido por la política anterior.
-
 !!! note "Permitir el reenvío no equivale a publicar el servicio"
     La regla «Internet → Servidores en 80, 443 y 25» **solo permite el reenvío** si el paquete llega con un destino interno por la interfaz WAN. **No crea por sí sola la traducción de destino ni la accesibilidad exterior.** Para publicar un servicio privado hace falta normalmente **DNAT** (o direccionamiento público, o una arquitectura equivalente), además de rutas y políticas de seguridad. Ejemplo para publicar el puerto 80 del servidor `10.0.0.10` en la dirección WAN de R1:
 
@@ -429,7 +431,7 @@ sudo ip netns exec fin ping -c 2 192.168.100.2     # salida a "Internet": permit
 sudo ip netns exec fin ping -c 2 -W 1 10.0.1.130   # Finanzas -> Ventas: BLOQUEADO (sin regla entre LAN)
 sudo ip netns exec ges ping -c 2 10.0.1.10         # Gestión -> Finanzas: permitido (administración)
 sudo ip netns exec srv ping -c 2 -W 1 10.0.1.10    # Servidores -> Finanzas: bloqueado
-sudo ip netns exec R1 nft list ruleset | grep -A1 counter
+sudo ip netns exec R1 nft list chain inet firewall forward | grep counter   # paquetes descartados por la política
 ```
 
 (La NAT hacia Internet sigue siendo la regla `iptables` de R1 del apartado 15.1.)
@@ -475,13 +477,13 @@ done
 
 # Finanzas: quitar la IP fija y pedirla por DHCP
 sudo ip netns exec fin ip addr flush dev veth-fin
-sudo ip netns exec fin dhclient -v veth-fin
+sudo ip netns exec fin dhclient -v -pf /tmp/lab15/dhclient-fin.pid -lf /tmp/lab15/dhclient-fin.leases veth-fin
 sudo ip netns exec fin ip -4 addr show dev veth-fin
 sudo ip netns exec fin ip route show
 
 # Ventas
 sudo ip netns exec ven ip addr flush dev veth-ven
-sudo ip netns exec ven dhclient -v veth-ven
+sudo ip netns exec ven dhclient -v -pf /tmp/lab15/dhclient-ven.pid -lf /tmp/lab15/dhclient-ven.leases veth-ven
 sudo ip netns exec ven ip -4 addr show dev veth-ven
 ```
 
@@ -611,6 +613,8 @@ sudo iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --se
 
 ### Caso: agotamiento de la tabla ARP
 
+A diferencia del resto del libro, estas órdenes actúan sobre el **host** (`sysctl` y `/etc/sysctl.d`), no sobre un namespace: es un caso de ejemplo para entender el diagnóstico, no una receta para ejecutar tal cual en un equipo de producción.
+
 ```bash
 dmesg | grep -i neighbour
 ip neigh show | wc -l
@@ -636,6 +640,22 @@ fi
 EOF
 sudo chmod +x /usr/local/bin/check_arp.sh
 ```
+
+## Limpieza del laboratorio
+
+Al terminar, detén los demonios y elimina solo lo creado aquí. Un namespace **no desaparece del todo mientras tenga procesos dentro**, así que primero se detienen los procesos (todos usan archivos de `/tmp/lab15`):
+
+```bash
+sudo pkill -f '[/]tmp/lab15'    # zebra, ospfd, dnsmasq, keepalived y dhclient de este laboratorio
+for ns in R1 R2 SWsrv fin ven ges srv suc; do sudo ip netns del $ns 2>/dev/null || true; done
+sudo ip link del veth-wan-r1 2>/dev/null || true
+sudo rm -rf /etc/netns/fin /etc/netns/ven /tmp/lab15
+sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true   # ajusta eth0
+# Solo si ejecutaste el bloque conceptual de Open vSwitch:
+sudo ovs-vsctl --if-exists del-br ovs-sw
+```
+
+El reenvío del host (`net.ipv4.ip_forward`) se revierte aparte si lo activaste solo para estas prácticas.
 
 ## Conceptos clave
 

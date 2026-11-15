@@ -1,11 +1,11 @@
 ---
-title: "Laboratorio 02 · Transmisión de Datos y Capa Física"
+title: "LABORATORIO 02 · TRANSMISIÓN DE DATOS Y CAPA FÍSICA"
 description: "Laboratorio 02 de NETWORKING Lab — Transmisión de Datos y Capa Física."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 02</p>
 
-# Transmisión de Datos y Capa Física
+# TRANSMISIÓN DE DATOS Y CAPA FÍSICA
 
 <p class="tema-meta"><span>12 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
@@ -33,7 +33,7 @@ El CTO ha solicitado que, además de implementar la salida a Internet, se **docu
 ## Herramientas necesarias
 
 -   Linux con privilegios de superusuario.
--   Comandos: `ip`, `ping`, `tcpdump`, `curl`, `iwconfig` (si se usa WiFi).
+-   Comandos: `ip`, `ping`, `tcpdump`, `curl`, `iw` (si se usa WiFi).
 -   Herramientas de medición: `ping`, `traceroute`, `iperf3` (opcional).
 
 ## Topología
@@ -55,8 +55,8 @@ graph TB
 
 | Dispositivo | Interfaz | Dirección IP       |
 |-------------|----------|--------------------|
-| Cliente 1   | veth0    | 10.0.1.2/24        |
-| Cliente 2   | veth0    | 10.0.1.3/24        |
+| Cliente 1   | veth-c1  | 10.0.1.2/24        |
+| Cliente 2   | veth-c2  | 10.0.1.3/24        |
 | Router (LAN)| br0      | 10.0.1.1/24        |
 | Router (WAN)| veth-wan | 192.168.1.2/24    |
 | Host (extremo del enlace virtual) | veth-host | 192.168.1.1/24 |
@@ -182,6 +182,16 @@ ip netns exec cliente1 curl -I http://google.com
 - `nslookup` devuelve una IP.
 - `curl` devuelve un código HTTP 301 o 200.
 
+!!! warning "DNS dentro de un namespace"
+    Un namespace aísla la **red**, no el sistema de archivos: dentro de él se ve el `/etc/resolv.conf` **del host**, que en muchas distribuciones apunta a `127.0.0.53` (*systemd-resolved*). Esa dirección no existe en el namespace (su `127.0.0.1` es otro), así que `nslookup` o `curl` por nombre pueden fallar aunque `ping 8.8.8.8` funcione. **No** escribas en `/etc/resolv.conf`: sería el del host. En su lugar, da a cada namespace su propio archivo; `ip netns exec` lo monta como `/etc/resolv.conf` solo dentro de ese namespace:
+
+    ```bash
+    sudo mkdir -p /etc/netns/cliente1 /etc/netns/cliente2
+    echo 'nameserver 8.8.8.8' | sudo tee /etc/netns/cliente1/resolv.conf /etc/netns/cliente2/resolv.conf
+    ```
+
+    Repite este paso con cada cliente que necesite resolver nombres en los laboratorios siguientes. (Alternativa rápida: `nslookup google.com 8.8.8.8`.)
+
 ## Observación de la transmisión de datos
 
 ### Paso 9: Capturar el flujo de datos durante una solicitud web
@@ -190,7 +200,7 @@ Vamos a observar cómo viajan los datos desde el cliente hasta Internet.
 
 ```bash
 # Iniciar captura en el router (interfaz br0 y veth-wan)
-ip netns exec router tcpdump -i any -n -c 10 'tcp port 80'
+ip netns exec router tcpdump -i any -n -c 20 'tcp port 80'
 ```
 
 En otra terminal, ejecutar:
@@ -332,7 +342,7 @@ ip netns exec cliente1 iperf3 -c 10.0.1.1
 |-------|-------|----------|
 | `ping: connect: Network is unreachable` | No hay ruta por defecto. | Ejecutar `ip route add default via 10.0.1.1` en el cliente. |
 | No sale a Internet | NAT no configurado. | Verificar reglas de iptables y que `ip_forward=1`. |
-| `curl: (6) Could not resolve host` | DNS no configurado. | Configurar DNS en el cliente: `echo 'nameserver 8.8.8.8' > /etc/resolv.conf` (dentro del namespace). |
+| `curl: (6) Could not resolve host` | El namespace no tiene un DNS utilizable (hereda el `resolv.conf` del host, que suele apuntar a `127.0.0.53`). | Crear `/etc/netns/cliente1/resolv.conf` (véase la nota «DNS dentro de un namespace» del Paso 8). **No** escribir en `/etc/resolv.conf`: es el del host. |
 | Los paquetes no llegan al host | Host no tiene ruta de retorno. | Agregar ruta en el host: `ip route add 10.0.1.0/24 via 192.168.1.2`. |
 
 ## Conclusiones técnicas

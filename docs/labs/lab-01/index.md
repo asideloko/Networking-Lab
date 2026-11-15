@@ -1,11 +1,11 @@
 ---
-title: "Laboratorio 01 · Fundamentos de Redes y Encapsulación"
+title: "LABORATORIO 01 · FUNDAMENTOS DE REDES Y ENCAPSULACIÓN"
 description: "Laboratorio 01 de NETWORKING Lab — Fundamentos de Redes y Encapsulación."
 ---
 
 <p class="tema-eyebrow">LABORATORIO 01</p>
 
-# Fundamentos de Redes y Encapsulación
+# FUNDAMENTOS DE REDES Y ENCAPSULACIÓN
 
 <p class="tema-meta"><span>11 secciones</span><span>1 diagrama</span><span>2 tablas</span></p>
 
@@ -33,7 +33,8 @@ La empresa **Networking SecOps** acaba de abrir una nueva oficina. Cuenta con do
 ## Herramientas necesarias
 
 -   Linux (Debian/Ubuntu recomendado) con privilegios de superusuario.
--   Comandos: `ip`, `ping`, `tcpdump`, `nslookup`, `curl`.
+-   Comandos: `ip`, `ping`, `tcpdump` (`nslookup` y `curl` se usarán a partir del laboratorio 02).
+-   Paquetes que se usan a lo largo de la serie (instálalos una vez): `sudo apt install tcpdump traceroute iperf3 dnsutils curl`.
 -   Editor de texto para scripts (opcional).
 
 ## Topología
@@ -46,15 +47,15 @@ graph TB
     Internet((Internet: aún sin conectar))
     C1 --- R
     C2 --- R
-    R -. "lab 02" .- Internet
+    R -. "lab 01" .- Internet
 ```
 
 **Direccionamiento:**
 
 | Dispositivo | Interfaz | Dirección IP       |
 |-------------|----------|--------------------|
-| Cliente 1   | veth0    | 10.0.1.2/24        |
-| Cliente 2   | veth0    | 10.0.1.3/24        |
+| Cliente 1   | veth-c1  | 10.0.1.2/24        |
+| Cliente 2   | veth-c2  | 10.0.1.3/24        |
 | Router (bridge) | br0  | 10.0.1.1/24        |
 | (Internet)  | —        | No se configura en este laboratorio |
 
@@ -71,6 +72,8 @@ Asegúrate de tener permisos de root:
 ```bash
 sudo -i
 ```
+
+En los laboratorios 01 a 05 los comandos se muestran sin `sudo` porque se asume esta sesión de root; desde el laboratorio 06 aparece `sudo` explícito. Si trabajas con un usuario normal, antepón `sudo` a cada orden en todos los laboratorios.
 
 ### Paso 2: Crear los namespaces
 
@@ -153,7 +156,7 @@ ip netns exec router ip link set veth-r1 up
 ip netns exec router ip link set veth-r2 up
 ```
 
-### Paso 6: Configurar la salida a Internet (opcional)
+### Paso 6: La salida a Internet (todavía no)
 
 El router todavía **no dispone de una interfaz WAN funcional**: para que los clientes accedan a Internet hará falta una interfaz externa, una ruta por defecto, reenvío IP y NAT. Todo ello se construye en el laboratorio 02. Por ahora nos centramos en la comunicación local.
 
@@ -235,7 +238,7 @@ Aparecerán direcciones MAC de origen y destino, lo que confirma la encapsulaci�
 ## Análisis del flujo de datos
 
 1.  **Cliente 1 genera el mensaje:** La aplicación `ping` crea un mensaje ICMP Echo Request.
-2.  **Capa de transporte:** ICMP no usa puertos, pero se considera parte de la capa de red en el modelo TCP/IP. A efectos prácticos, el mensaje se entrega a la capa IP.
+2.  **Sin capa de transporte:** ICMP no es un protocolo de transporte: es un protocolo de la capa de red que se encapsula directamente en IP, sin puertos TCP/UDP. El mensaje se entrega a la capa IP.
 3.  **Capa de red (IP):** Se añade el encabezado IP con origen 10.0.1.2 y destino 10.0.1.3.
 4.  **Resolución ARP:** como 10.0.1.3 pertenece a la misma subred que el origen, Cliente 1 no necesita gateway: envía una solicitud ARP por *broadcast* preguntando «¿quién tiene 10.0.1.3?». Cliente 2 responde con su MAC. (Esos mensajes ARP no aparecen en la captura anterior porque el filtro es `icmp`; puedes verlos con `tcpdump -i br0 -n -e arp`.)
 5.  **Capa de enlace:** Se añade la cabecera Ethernet con MAC origen (de `veth-c1`) y MAC destino (la de `veth-c2`, obtenida por ARP).
