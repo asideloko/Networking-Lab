@@ -7,7 +7,7 @@ description: "Laboratorio 04 de NETWORKING Lab — Direccionamiento IP y Subrede
 
 # DIRECCIONAMIENTO IP Y SUBREDES
 
-<p class="tema-meta"><span>13 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>14 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -279,6 +279,8 @@ ip netns exec router sysctl -w net.ipv4.ip_forward=1
 # Las subredes de Ventas, IT y el enlace /30 ya son redes conectadas al router
 # (por las IP de veth-rs): no necesitan rutas estáticas.
 
+# ⚠ CAMBIO EN EL HOST (no en un namespace): veth-host, ruta, ip_forward y NAT.
+#   Anota antes `sysctl net.ipv4.ip_forward`; reversión en «Revertir los cambios del host».
 # Configurar NAT (asumiendo que el host tiene una interfaz con Internet)
 # En este laboratorio, simulamos Internet con el host
 ip link add veth-host type veth peer name veth-wan
@@ -450,6 +452,28 @@ Ventas tiene **25** equipos y prevé crecer un **50 %** en dos años. ¿Qué má
 | Clientes en diferentes subredes no pueden hacer ping | El router no tiene una IP de *gateway* en cada subred, o `ip_forward` vale 0. | Verificar `ip addr show dev veth-rs` en el router y `sysctl net.ipv4.ip_forward`. |
 | `ping: connect: Network is unreachable` | Máscara de subred incorrecta. | Verificar `ip addr show` en el cliente. |
 | No sale a Internet | NAT no configurado. | Verificar reglas de iptables y `ip_forward=1`. |
+
+## Revertir los cambios del host
+
+Los *namespaces* aíslan la red, pero la salida a Internet de este laboratorio modificó el **equipo real**. Deshaz solo lo que hiciste aquí:
+
+```bash
+# 1. Regla NAT y ruta del host (ajusta eth0 a tu interfaz de salida)
+iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
+ip route del 10.0.0.0/24 via 192.168.1.2 2>/dev/null || true
+
+# 2. Reenvío: vuelve al valor que anotaste (normalmente 0). Si ya era 1 antes, no lo cambies.
+sysctl -w net.ipv4.ip_forward=0
+
+# 3. Enlace virtual del host y namespaces del laboratorio
+ip link del veth-host 2>/dev/null || true
+for ns in router switch ventas1 ventas2 ventas3 ventas4 it1 it2 it3; do
+  ip netns pids $ns 2>/dev/null | xargs -r kill     # solo procesos DENTRO de ese namespace
+  ip netns del $ns 2>/dev/null || true
+done
+```
+
+Comprueba el resultado: `ip netns list`, `ip link show veth-host`, `sysctl net.ipv4.ip_forward` e `iptables -t nat -S POSTROUTING`.
 
 ## Preguntas de reflexión
 

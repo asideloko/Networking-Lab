@@ -1,6 +1,6 @@
 ---
 title: "COMPETENCIAS Y CASOS INTEGRADORES"
-description: "Competencias que desarrolla NETWORKING Lab y casos integradores por bloque."
+description: "Competencias que desarrolla NETWORKING Lab y casos integradores para repasar la serie."
 ---
 
 <p class="tema-eyebrow">REFERENCIA</p>
@@ -44,4 +44,3 @@ Explica:
 4.  **Cómo se supervisan** los servicios (NOC, registros, métricas, alertas).
 5.  **Qué sucede ante distintos fallos** (usa la [matriz de disponibilidad](arquitectura-integral.md)).
 6.  **Qué herramientas diagnostican cada situación** (usa el [método de diagnóstico](diagnostico.md)).
-

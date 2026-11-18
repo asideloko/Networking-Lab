@@ -7,7 +7,7 @@ description: "Laboratorio 08 de NETWORKING Lab — Seguridad en Redes."
 
 # SEGURIDAD EN REDES
 
-<p class="tema-meta"><span>12 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
+<p class="tema-meta"><span>13 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -135,7 +135,8 @@ Hasta ahora R1 tenía su propia salida a Internet. Con un firewall perimetral, *
 
 ```bash
 sudo ip netns exec R1 ip link del veth-wan
-sudo ip netns exec R1 iptables -t nat -F POSTROUTING
+# Elimina solo la regla MASQUERADE que R1 recibió en el laboratorio 07 (no vacía toda la cadena)
+sudo ip netns exec R1 iptables -t nat -D POSTROUTING -o veth-wan -j MASQUERADE
 ```
 
 ### Paso 3: Crear namespaces para firewall y DMZ
@@ -157,6 +158,8 @@ sudo ip netns add servidorInterno
 El host hace de "Internet". Su lado de la WAN será un bridge (`br-wan`) para poder conectar más equipos "externos" en el Laboratorio 09:
 
 ```bash
+# ⚠ CAMBIOS EN EL HOST (no en un namespace): bridge, IP, ip_forward y NAT.
+#   Anota antes `sysctl net.ipv4.ip_forward`; reversión al final del laboratorio.
 # Bridge del lado Internet (en el host)
 sudo ip link add br-wan type bridge
 sudo ip link set br-wan up
@@ -588,6 +591,34 @@ sudo ip netns exec firewall conntrack -L
 | ACLs | Reglas de control de tráfico (origen, destino, puerto); no equivalen a un firewall con estado |
 | SSH | Canal de administración cifrado |
 | TLS | Autenticación y cifrado de la comunicación de aplicación |
+
+## Revertir los cambios del host
+
+```bash
+# 1. Rutas temporales del host (si quedó alguna)
+sudo ip route del 10.0.99.0/24 via 192.168.100.1 2>/dev/null || true
+sudo ip route del 10.0.0.0/22 via 192.168.100.1 2>/dev/null || true
+
+# 2. NAT y reenvío del host (ajusta eth0)
+sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
+sudo sysctl -w net.ipv4.ip_forward=0        # solo si estaba en 0 antes de empezar
+
+# 3. Bridge y enlace del host
+sudo ip link del veth-wan-fw 2>/dev/null || true
+sudo ip link del br-wan 2>/dev/null || true
+
+# 4. Servicios (DNS público, sshd) y namespaces de este laboratorio
+for ns in servidorDNS_PUB servidorWeb servidorInterno firewall; do
+  sudo ip netns pids $ns 2>/dev/null | xargs -r sudo kill     # solo procesos DENTRO de ese namespace
+  sudo ip netns del $ns 2>/dev/null || true
+done
+
+# 5. Archivos temporales y directorio de sshd
+sudo rm -rf /tmp/lab08
+sudo rmdir /run/sshd 2>/dev/null || true    # solo se borra si está vacío
+```
+
+`ip netns pids` limita la parada a procesos que viven **dentro** de cada namespace, sin tocar el `sshd` del equipo.
 
 ## Preguntas de reflexión
 

@@ -7,7 +7,7 @@ description: "Laboratorio 15 de NETWORKING Lab — Implementación Práctica Int
 
 # IMPLEMENTACIÓN PRÁCTICA INTEGRAL
 
-<p class="tema-meta"><span>16 secciones</span><span>3 diagramas</span><span>13 tablas</span></p>
+<p class="tema-meta"><span>17 secciones</span><span>3 diagramas</span><span>13 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -17,7 +17,7 @@ La empresa **Networking SecOps** ha completado todos los laboratorios anteriores
     Todo se construye con **namespaces de red**, igual que en los laboratorios anteriores (las interfaces de la práctica son virtuales). **Algunos pasos sí modifican el host**: el reenvío IPv4, una regla NAT y, en un caso de diagnóstico, un archivo persistente en `/etc/sysctl.d`. Están marcados como «Cambio en el host» y se revierten en la sección «Limpieza del laboratorio». Es un laboratorio de integración con una topología nueva, por lo que empieza limpiando el entorno. Requiere instalar `frr` (OSPF), `keepalived` (VRRP) y `dnsmasq-base` (DHCP).
 
 !!! note "Este es un escenario nuevo"
-    Los laboratorios 01–14 usaron topologías diferentes. Aquí **se reutilizan los nombres `R1` y `R2` con otra función y otro direccionamiento** (sede y respaldo/sucursal), y el escenario se construye desde cero. Los apartados desarrollan esta topología de forma progresiva; sigue el orden indicado para que las interfaces, rutas y servicios estén disponibles en las etapas posteriores.
+    Los laboratorios 01–14 usaron topologías diferentes. Aquí **se reutilizan los nombres `R1` y `R2` con otra función y otro direccionamiento** (sede y respaldo/sucursal), y el escenario se construye desde cero. Cada apartado funciona por sí mismo, pero la coherencia global se comprueba en el apartado «Revisión de coherencia» al final: que cada bloque funcione aisladamente no garantiza que el conjunto sea coherente.
 
 ## Topología
 
@@ -783,7 +783,9 @@ Al terminar, detén los demonios y elimina solo lo creado aquí. Un namespace **
 sudo pkill -f '[/]tmp/lab15'    # zebra, ospfd, dnsmasq, keepalived y dhclient de este laboratorio
 for ns in R1 R2 SWsrv fin ven ges srv suc; do sudo ip netns del $ns 2>/dev/null || true; done
 sudo ip link del veth-wan-r1 2>/dev/null || true
-sudo rm -rf /etc/netns/fin /etc/netns/ven /tmp/lab15
+# /etc/netns/fin y /etc/netns/ven los creó este laboratorio: bórralos solo si NO existían antes (`ls /etc/netns/`)
+sudo rm -rf /etc/netns/fin /etc/netns/ven
+sudo rm -rf /tmp/lab15
 sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true   # ajusta eth0
 # Solo si ejecutaste el bloque conceptual de Open vSwitch:
 sudo ovs-vsctl --if-exists del-br ovs-sw
@@ -815,6 +817,15 @@ Comprueba al final: `sysctl net.ipv4.ip_forward`, `iptables -t nat -S POSTROUTIN
 | VRRP | IP virtual de *gateway* con failover; no redunda toda la infraestructura |
 | Troubleshooting | MTU frente a MSS, y tabla ARP |
 
+## Revisión de coherencia del escenario global
+
+Cada apartado funciona por sí mismo, pero conviene comprobar que **el conjunto es coherente**:
+
+-   **Direccionamiento:** el mapa red ↔ interfaz del apartado 15.2 es la referencia única; no hay dos interfaces con la misma dirección. En 15.7 la IP de R1 en servidores cambia de `10.0.0.1` a `10.0.0.2` (y la `10.0.0.1` pasa a ser virtual); OSPF sigue anunciando `10.0.0.0/24`.
+-   **Firewall frente a protocolos de control:** `input` acepta OSPF, VRRP y DHCP; si falta alguno, ese servicio se rompe de forma silenciosa.
+-   **NAT y firewall:** la NAT de salida sigue siendo `iptables` y la política de reenvío es de `nftables`; conviven en el mismo namespace.
+-   **VLAN:** el apartado 15.3 es una variante; no se mezcla con los demás.
+-   **Alcance de las pruebas:** las comprobaciones de cada apartado demuestran lo que se afirma en él; no demuestran, por ejemplo, que una caída de la WAN se gestione sola (véase VRRP).
 
 ## Preguntas de reflexión
 
@@ -831,4 +842,4 @@ Este laboratorio integra los conceptos de la serie: direccionamiento IP, enrutam
 
 ---
 
-**¡Laboratorio 15 completado!** Has completado un escenario de laboratorio que integra direccionamiento, enrutamiento, seguridad, servicios y disponibilidad.
+**¡Laboratorio 15 completado!** Has construido una red empresarial funcional.
