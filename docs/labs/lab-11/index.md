@@ -7,7 +7,7 @@ description: "Laboratorio 11 de NETWORKING Lab — Arquitectura de Red Empresari
 
 # ARQUITECTURA DE RED EMPRESARIAL
 
-<p class="tema-meta"><span>9 secciones</span><span>4 diagramas</span><span>7 tablas</span></p>
+<p class="tema-meta"><span>10 secciones</span><span>4 diagramas</span><span>7 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -426,7 +426,7 @@ Crea `Access2` y `Access3` siguiendo el Paso 6 y comprueba que los equipos de la
 | Segmentación | VLAN 10, 20, 30 en el acceso |
 | DMZ | Servidores aislados tras el firewall |
 
-### Revertir los cambios del host
+## Revertir los cambios del host
 
 ```bash
 sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true   # ajusta eth0
