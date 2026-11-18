@@ -7,7 +7,7 @@ hide:
 
 <div class="sx-hero"><p><img alt="SecOpsMX" class="sx-hero__logo off-glb" src="assets/logo.png"/></p><h1 id="networking-lab">NETWORKING Lab</h1><p class="sx-hero__sub">Laboratorios de explicación<br/>y simulación de redes.</p><p class="sx-hero__lead">Material práctico complementario del libro NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico.</p><p class="sx-hero__cta"><a class="md-button md-button--primary" href="labs/lab-01/index.html">Comenzar por el laboratorio 01</a><a class="md-button" href="https://leanpub.com/networking-fundamentos">Obtener el libro</a></p><p class="sx-hero__meta">Material complementario · Guillermo Castillo · SecOpsMX</p></div>
 
-<div class="sx-stats"><div><b>15</b><span>laboratorios</span></div><div><b>15</b><span>diagramas</span></div><div><b>252</b><span>bloques de comandos</span></div></div>
+<div class="sx-stats"><div><b>15</b><span>laboratorios</span></div><div><b>41</b><span>diagramas</span></div><div><b>258</b><span>bloques de comandos</span></div></div>
 
 Cada laboratorio presenta **escenarios ilustrativos** para comprender protocolos, tecnologías, arquitecturas y procesos de comunicación, y lleva la teoría a la terminal mediante comandos de demostración.
 
@@ -71,3 +71,17 @@ Realízalos en orden: **comienza por el laboratorio 01**. No todos usan la misma
 <div class="sx-cards"><a class="sx-card" href="labs/lab-11/index.html"><span class="sx-card__n">11</span><span class="sx-card__t">ARQUITECTURA DE RED EMPRESARIAL</span><span class="sx-card__m">Tema 11 del libro</span></a><a class="sx-card" href="labs/lab-12/index.html"><span class="sx-card__n">12</span><span class="sx-card__t">ARQUITECTURAS MODERNAS DE RED</span><span class="sx-card__m">Tema 12 del libro</span></a><a class="sx-card" href="labs/lab-13/index.html"><span class="sx-card__n">13</span><span class="sx-card__t">MONITOREO Y DIAGNÓSTICO DE REDES</span><span class="sx-card__m">Tema 13 del libro</span></a><a class="sx-card" href="labs/lab-14/index.html"><span class="sx-card__n">14</span><span class="sx-card__t">HERRAMIENTAS LINUX AVANZADAS</span><span class="sx-card__m">Tema 14 del libro</span></a><a class="sx-card" href="labs/lab-15/index.html"><span class="sx-card__n">15</span><span class="sx-card__t">IMPLEMENTACIÓN PRÁCTICA INTEGRAL</span><span class="sx-card__m">Tema 15 del libro</span></a></div>
 
 <figure class="portada-libro" markdown="span"><img alt="Portada y contraportada del libro NETWORKING" src="assets/portada-libro.jpg"/></figure>
+
+
+## Material de referencia
+
+Además de los laboratorios, el sitio incluye páginas de síntesis para consultar mientras practicas:
+
+-   [Servicios, protocolos y puertos](referencia/servicios-puertos.md): matriz común de la serie.
+-   [Comparaciones conceptuales](referencia/comparaciones.md): bridge/router, MAC/IP, subred/VLAN, GRE/IPsec y más.
+-   [Método de diagnóstico](referencia/diagnostico.md): del síntoma a la causa.
+-   [Arquitectura integral](referencia/arquitectura-integral.md): mapas de síntesis y matriz de disponibilidad.
+-   [Glosario](referencia/glosario.md).
+-   [Competencias y casos integradores](referencia/competencias.md): qué se espera al terminar y criterios de ampliación.
+
+Cada laboratorio termina ahora con **preguntas de reflexión**: qué mecanismo se demuestra, qué pasa si se elimina un componente, qué limitaciones tiene y dónde se usaría en una empresa.

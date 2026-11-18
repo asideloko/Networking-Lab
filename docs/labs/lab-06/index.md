@@ -7,7 +7,7 @@ description: "Laboratorio 06 de NETWORKING Lab — Enrutamiento y Conectividad e
 
 # ENRUTAMIENTO Y CONECTIVIDAD ENTRE REDES
 
-<p class="tema-meta"><span>11 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>12 secciones</span><span>4 diagramas</span><span>7 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -265,6 +265,48 @@ Hasta ahora todas las rutas entre oficinas son **específicas** (un prefijo conc
 sudo ip netns exec R1 ip route get 10.0.2.10
 ```
 
+### Tipos de ruta en la tabla
+
+| Tipo | Cómo aparece en `ip route` | Quién la crea | Cuándo se usa |
+|------|----------------------------|---------------|---------------|
+| **Conectada** | `10.0.0.0/24 dev … scope link` | El kernel, al asignar IP a una interfaz | Destino en una red directamente conectada |
+| **Estática** | `10.0.2.0/24 via 192.168.1.2` | El administrador | Destino en una red remota conocida |
+| **Por defecto** | `default via …` | El administrador (o DHCP) | Solo si **ninguna** ruta más específica coincide |
+
+### Cómo se elige la ruta: *longest prefix match*
+
+El router compara la IP de destino con **todas** las rutas y elige la de **prefijo más largo** (máscara más específica); la métrica solo desempata entre rutas del **mismo** prefijo.
+
+```mermaid
+flowchart TD
+    P["Paquete a 10.0.2.10"] --> T{"Rutas que coinciden"}
+    T --> A["default 0.0.0.0/0 (prefijo /0)"]
+    T --> B["10.0.0.0/16 (prefijo /16)"]
+    T --> C["10.0.2.0/24 (prefijo /24)"]
+    A --> W{"¿Cuál es la más específica?"}
+    B --> W
+    C --> W
+    W --> R["Gana 10.0.2.0/24: el prefijo más largo"]
+```
+
+### Recorrido de un paquete entre sucursales
+
+`clienteSucA → clienteSucB` (`10.0.1.10 → 10.0.2.10`) atraviesa dos routers. La **IP** de origen y de destino no cambian; en cada salto se **reescribe la cabecera Ethernet** y el **TTL baja en 1**.
+
+```mermaid
+sequenceDiagram
+    participant CA as clienteSucA 10.0.1.10
+    participant R2 as R2
+    participant R3 as R3
+    participant CB as clienteSucB 10.0.2.10
+    CA->>R2: IP 10.0.1.10 a 10.0.2.10, TTL 64 (gateway por defecto)
+    R2->>R3: mismo IP, TTL 63 (siguiente salto 192.168.2.2)
+    R3->>CB: mismo IP, TTL 62 (red conectada)
+    CB-->>CA: respuesta por el camino de retorno
+```
+
+El **TTL** evita bucles infinitos: cada router lo decrementa y, si llega a 0, descarta el paquete y envía un ICMP *Time Exceeded*. `traceroute` lo aprovecha: manda paquetes con TTL 1, 2, 3… y registra quién responde en cada salto.
+
 ### Paso 6: Agregar un enlace directo R1-R3 (camino preferido)
 
 Un enlace directo es un camino más corto. Lo agregamos y le damos una **métrica menor (50)**: Linux elige siempre la ruta de menor métrica, y deja la ruta por R2 (métrica 100) como respaldo.
@@ -308,6 +350,20 @@ sudo ip netns exec clienteSede traceroute -n 10.0.2.10
 ```
 
 **Resultado esperado:** 0% de pérdida y un salto adicional (R2, `192.168.1.2`) en el `traceroute`.
+
+**Los dos caminos entre R1 y R3.** Con ambos enlaces activos decide la métrica; al caer el directo, solo queda el alternativo:
+
+```mermaid
+graph LR
+    R1((R1)) ==>|"directo, métrica 50 (preferido)"| R3((R3))
+    R1 -->|"métrica 100"| R2((R2))
+    R2 -->|"192.168.2.0/30"| R3
+```
+
+| Momento | `ip route show 10.0.2.0/24` en R1 | `traceroute` a `10.0.2.10` |
+|---------|-----------------------------------|-----------------------------|
+| Enlace directo activo | `via 192.168.3.2 metric 50` (la de métrica 100 queda en reserva) | 2 saltos: R1, R3 |
+| Enlace directo caído | solo `via 192.168.1.2 metric 100` | 3 saltos: R1, R2, R3 |
 
 !!! info "Enlaces redundantes no son convergencia automática"
     Tener un camino alternativo **configurado** no equivale a tener un mecanismo de **convergencia**. Aquí la conmutación al respaldo funciona porque el fallo es **local** (el propio router ve su interfaz caer y el kernel retira la ruta). Ante un fallo remoto, o con la interfaz activa pero un camino roto más allá, la ruta estática seguiría instalada y el tráfico se perdería. Un protocolo dinámico (OSPF) intercambia información de topología y recalcula por sí mismo.
@@ -369,6 +425,26 @@ sudo ip netns exec R3 ip tunnel del gre1
 
 Fíjate en que `traceroute` ahora ve el túnel como **un solo salto** (`10.100.0.2`).
 
+### Redundancia frente a convergencia
+
+| Concepto | Qué es | En este laboratorio |
+|----------|--------|---------------------|
+| **Redundancia** | Existen caminos alternativos **configurados**. | La ruta de métrica 100 por R2. |
+| **Convergencia** | Los routers **detectan** el cambio y recalculan por sí mismos. | **No existe**: solo hay detección local (caída de la propia interfaz). |
+
+Un fallo **remoto** sigue rompiendo la comunicación con rutas estáticas; resolverlo exige un protocolo dinámico (OSPF en el laboratorio 15).
+
+### GRE frente a IPsec (adelanto del laboratorio 09)
+
+| Aspecto | GRE | IPsec (ESP, modo túnel) |
+|---------|-----|--------------------------|
+| Función | **Encapsular** (crea un enlace virtual punto a punto) | **Proteger** (cifrar, autenticar, verificar integridad) |
+| Cifrado | No | Sí |
+| Multicast / protocolos de enrutamiento | Los admite | Limitado (suele combinarse con GRE) |
+| Uso habitual | Interconectar redes no contiguas | Proteger tráfico entre sedes |
+
+Se complementan: un diseño habitual es **GRE sobre IPsec**.
+
 ## Análisis de la tabla de enrutamiento
 
 ```bash
@@ -417,6 +493,15 @@ Baja el enlace R2-R3 por **ambos extremos** (`veth-r2r3` en R2 y `veth-r3r2` en 
 | Tabla de enrutamiento | `ip route show` en cada router |
 | Longest prefix match | Selección de ruta más específica |
 | Túnel GRE | Conexión de redes no contiguas |
+
+## Preguntas de reflexión
+
+1.  ¿Qué mecanismo hace que R1 envíe `10.0.2.10` por el enlace directo y no por R2?
+2.  ¿Qué sucedería si se borra la ruta de métrica 100 y después cae el enlace directo?
+3.  ¿Qué diferencia hay entre un fallo local (cae mi interfaz) y uno remoto (cae un enlace más allá del vecino)?
+4.  ¿Qué limitaciones tiene el enrutamiento estático cuando la red crece a decenas de sucursales?
+5.  ¿En qué escenario empresarial usarías un túnel GRE, y qué le falta para ser seguro?
+6.  ¿Qué otro mecanismo podría resolver la conectividad entre sedes sin configurar rutas a mano?
 
 ## Conclusiones técnicas
 

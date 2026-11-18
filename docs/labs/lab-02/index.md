@@ -7,7 +7,7 @@ description: "Laboratorio 02 de NETWORKING Lab — Transmisión de Datos y Capa 
 
 # TRANSMISIÓN DE DATOS Y CAPA FÍSICA
 
-<p class="tema-meta"><span>12 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>13 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -344,6 +344,14 @@ ip netns exec cliente1 iperf3 -c 10.0.1.1
 | No sale a Internet | NAT no configurado. | Verificar reglas de iptables y que `ip_forward=1`. |
 | `curl: (6) Could not resolve host` | El namespace no tiene un DNS utilizable (hereda el `resolv.conf` del host, que suele apuntar a `127.0.0.53`). | Crear `/etc/netns/cliente1/resolv.conf` (véase la nota «DNS dentro de un namespace» del Paso 8). **No** escribir en `/etc/resolv.conf`: es el del host. |
 | Los paquetes no llegan al host | Host no tiene ruta de retorno. | Agregar ruta en el host: `ip route add 10.0.1.0/24 via 192.168.1.2`. |
+
+## Preguntas de reflexión
+
+1.  ¿Qué mecanismo permite que Cliente 1 llegue a una dirección fuera de `10.0.1.0/24`, y qué dirección MAC usa como destino de la trama?
+2.  ¿Qué sucedería si se elimina la regla de NAT pero se mantiene el reenvío (`ip_forward`)?
+3.  ¿Qué diferencia hay entre lo que muestra la captura en la interfaz interna y en la WAN del router?
+4.  ¿Qué limitaciones tiene simular Internet con el propio equipo anfitrión?
+5.  ¿En qué escenario real se usaría doble NAT, y qué problemas puede causar?
 
 ## Conclusiones técnicas
 

@@ -43,6 +43,14 @@ nav = [
     { "14 · HERRAMIENTAS LINUX AVANZADAS" = "labs/lab-14/index.md" },
     { "15 · IMPLEMENTACIÓN PRÁCTICA INTEGRAL" = "labs/lab-15/index.md" },
   ] },
+  { "REFERENCIA" = [
+    { "SERVICIOS, PROTOCOLOS Y PUERTOS" = "referencia/servicios-puertos.md" },
+    { "COMPARACIONES CONCEPTUALES" = "referencia/comparaciones.md" },
+    { "MÉTODO DE DIAGNÓSTICO" = "referencia/diagnostico.md" },
+    { "ARQUITECTURA INTEGRAL" = "referencia/arquitectura-integral.md" },
+    { "GLOSARIO" = "referencia/glosario.md" },
+    { "COMPETENCIAS Y CASOS INTEGRADORES" = "referencia/competencias.md" },
+  ] },
 ]
 
 [project.extra]

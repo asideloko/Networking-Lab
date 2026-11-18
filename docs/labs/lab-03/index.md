@@ -7,7 +7,7 @@ description: "Laboratorio 03 de NETWORKING Lab — Componentes de Red y Conmutac
 
 # COMPONENTES DE RED Y CONMUTACIÓN
 
-<p class="tema-meta"><span>12 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>13 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -401,6 +401,14 @@ Ahora un ping con `-s 8972` (8972 + 8 + 20 = 9000) y `-M do` entre Cliente 1 y C
 | `ping: local error: message too long` | El paquete excede la MTU y se pidió no fragmentar (`-M do`). | Reducir `-s`, aumentar la MTU en todos los enlaces o usar `-M dont`. |
 | El switch no aprende MAC | La interfaz está down. | Verificar `ip link set ... up`. |
 | No sale a Internet | El router no tiene ruta al switch. | Verificar IP en `veth-rs` y que el switch esté conectado al router. |
+
+## Preguntas de reflexión
+
+1.  ¿Qué mecanismo permite que el *switch* envíe una trama solo al puerto correcto tras aprender una MAC?
+2.  ¿Qué sucedería si se elimina una entrada de la tabla MAC y llega una trama a ese destino?
+3.  ¿Qué diferencia hay entre el comportamiento esperado de un *broadcast* y el de un *unicast* conocido?
+4.  ¿Qué limitaciones tiene un *bridge* Linux frente a un *switch* gestionable real?
+5.  ¿Qué otros mecanismos (VLAN, STP) complementarían este diseño en una oficina real?
 
 ## Conclusiones técnicas
 

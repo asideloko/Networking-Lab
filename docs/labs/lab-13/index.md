@@ -7,7 +7,7 @@ description: "Laboratorio 13 de NETWORKING Lab — Monitoreo y Diagnóstico de R
 
 # MONITOREO Y DIAGNÓSTICO DE REDES
 
-<p class="tema-meta"><span>7 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>8 secciones</span><span>2 diagramas</span><span>7 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -167,21 +167,39 @@ sudo tcpdump -r /tmp/lab13/captura.pcap -n
 ### Paso 7: Análisis de rendimiento con iperf3
 
 ```bash
-# Servidor en segundo plano en AppServer
-sudo ip netns exec AppServer iperf3 -s -D
+# Servidor en segundo plano en AppServer, guardando su PID para detenerlo con precisión
+mkdir -p /tmp/lab13
+sudo ip netns exec AppServer iperf3 -s -D -I /tmp/lab13/iperf3.pid
 
 # TCP y UDP desde el NOC
 sudo ip netns exec NOC iperf3 -c 10.0.0.10 -t 5
 sudo ip netns exec NOC iperf3 -c 10.0.0.10 -u -b 100M -t 5
 
-# Detener el servidor al terminar (ojo: pkill actúa sobre todo el sistema, los namespaces no aíslan los procesos)
-sudo ip netns exec AppServer pkill iperf3
+# Detener SOLO ese servidor: el PID guardado, no `pkill iperf3`
+# (pkill actúa sobre todo el sistema: los namespaces aíslan la red, no los procesos)
+sudo kill $(cat /tmp/lab13/iperf3.pid)
 ```
 
 **Cómo interpretar los resultados.**
 
 -   **TCP** mide el *throughput* que la conexión consigue sostener: TCP **se adapta** al camino (control de congestión), así que el resultado refleja la capacidad **efectiva** (y la CPU disponible, porque aquí el enlace es virtual).
 -   **UDP** con `-b 100M` **ofrece** una tasa fija de 100 Mbps: es la tasa **ofrecida a la prueba**, **no demuestra que la red la soporte**. El informe debe leerse junto con la **pérdida de datagramas**, el **jitter**, la **capacidad real del enlace** y las **condiciones de ejecución** (carga de la máquina, otras pruebas simultáneas). Si la pérdida es 0 %, el camino aguantó esa tasa; si es alta, la tasa ofrecida superó lo que se pudo transportar.
+
+**Ejemplo de interpretación** (salida representativa de la prueba TCP; tus cifras serán distintas):
+
+```
+[ ID] Interval        Transfer     Bitrate         Retr
+[  5]   0.00-5.00 sec  9.80 GBytes  16.8 Gbits/sec    0   sender
+[  5]   0.00-5.00 sec  9.80 GBytes  16.8 Gbits/sec        receiver
+```
+
+| Campo | Qué dice | Qué conclusión permite |
+|-------|----------|-------------------------|
+| `Bitrate` | Rendimiento TCP **sostenido** | La capacidad efectiva del camino virtual (aquí limitada por la CPU, no por un cable) |
+| `Retr` | Retransmisiones TCP | **0** → sin pérdidas; valores altos sugieren pérdida o congestión |
+| `sender` / `receiver` | Los dos extremos de la medición | Si difieren mucho, algo se perdió o se acumuló en el camino |
+
+En la prueba **UDP**, mira además `Lost/Total` y `Jitter`: una pérdida de 0 % con 100 Mbps ofrecidos indica que el camino los soportó; una pérdida alta indica que la tasa ofrecida superó lo transportable. Un número aislado no prueba nada: se compara **antes y después** de un cambio (por ejemplo, de MTU) o frente a una línea base.
 
 ### Paso 8: Colector central de logs (SIEM básico) con rsyslog
 
@@ -219,6 +237,55 @@ grep -i "error" /tmp/lab13/remote.log
 
 **Monitoreo y seguridad.** Los datos de monitoreo y los registros permiten **detectar anomalías**, pero **no sustituyen** las medidas **preventivas** (firewall, segmentación, autenticación) ni los mecanismos de **respuesta** (procedimientos, aislamiento, recuperación).
 
+### Del síntoma a la causa: método de diagnóstico
+
+Los comandos de este laboratorio cobran sentido cuando se usan **en un orden**: de lo más simple a lo más específico, descartando capas.
+
+```mermaid
+flowchart TD
+    S["Síntoma: el usuario no accede al servicio"] --> A{"¿Hay conectividad IP? ping a la IP"}
+    A -- No --> R{"¿Hay ruta y gateway? ip route, traceroute"}
+    A -- Sí --> N{"¿Resuelve el nombre? dig"}
+    N -- No --> DNS["Problema de DNS"]
+    N -- Sí --> P{"¿El puerto responde? nc -zv, ss"}
+    P -- No --> FW["Firewall o servicio caído"]
+    P -- Sí --> Q{"¿Va lento? iperf3, mtr"}
+    Q -- Sí --> PERF["Rendimiento: pérdida, MTU, congestión"]
+    R --> LNK["Enlace, ruta o gateway"]
+```
+
+| Síntoma | Capa o mecanismo | Herramientas | Causas posibles |
+|---------|------------------|--------------|-----------------|
+| No responde a `ping` a la IP | Conectividad / ruta | `ip route get`, `traceroute`, `mtr` | Falta ruta o *gateway*, enlace caído, ICMP filtrado |
+| Responde a IP pero no a nombre | DNS | `dig`, `resolv.conf` del *namespace* | DNS caído, nombre inexistente, servidor mal anunciado |
+| Resuelve pero el puerto no abre | Firewall o servicio | `nc -zv`, `ss -tlnp`, `tcpdump` | Regla `DROP`, servicio detenido, escucha en otra IP |
+| Conecta pero va lento | Rendimiento | `iperf3`, `mtr`, `ping -s` | Pérdida de paquetes, MTU/fragmentación, enlace saturado |
+| Funciona a veces | Intermitencia | `mtr`, capturas, logs | Rutas alternantes, pérdida en un salto, caídas breves |
+
+### NOC, SIEM y observabilidad
+
+| | NOC | SIEM | Observabilidad |
+|--|-----|------|-----------------|
+| Pregunta | ¿Está disponible y rinde? | ¿Hay eventos relevantes para la **seguridad**? | ¿Puedo entender **por qué** pasa algo a partir de lo que el sistema emite? |
+| Datos | Estado, latencia, tráfico | Registros de muchas fuentes, correlacionados | Métricas, registros y trazas |
+| En este laboratorio | `NOC` con `ping`, `mtr`, `iperf3` | `SIEM` como colector con `rsyslog` | Lo que se obtiene al combinar ambos |
+
+### Métricas, umbrales y alertas
+
+Un diagnóstico puntual responde a un problema que **ya ocurrió**; la supervisión continua intenta **verlo venir**:
+
+| Elemento | Qué es | Ejemplo |
+|----------|--------|---------|
+| **Métrica** | Valor medido periódicamente | Latencia a `AppServer`, pérdida, uso del enlace |
+| **Umbral** | Límite que define lo anómalo | Latencia > 50 ms o pérdida > 1 % |
+| **Alerta** | Aviso al superarlo (durante un tiempo) | Notificar al NOC si ocurre 3 minutos seguidos |
+
+Un umbral sin línea base genera ruido: primero se mide lo normal.
+
+### Correlación de eventos: lo que un SIEM aporta más allá de guardar logs
+
+Guardar registros no es correlacionarlos. Ejemplo conceptual: un solo intento de SSH fallido es normal; **veinte fallos desde una misma IP en un minuto, seguidos de un acceso correcto**, es un patrón. Un colector con `rsyslog` reúne los eventos; un SIEM los **normaliza, relaciona entre fuentes y alerta**. Aquí solo se construye la primera parte.
+
 ## Ejercicios
 
 ### Ejercicio 1: Analizar una captura
@@ -237,9 +304,10 @@ Puedes abrir el `.pcap` con Wireshark o `tshark` para un análisis más detallad
 ### Ejercicio 2: Monitoreo bidireccional
 
 ```bash
-sudo ip netns exec AppServer iperf3 -s -D
+mkdir -p /tmp/lab13
+sudo ip netns exec AppServer iperf3 -s -D -I /tmp/lab13/iperf3.pid
 sudo ip netns exec NOC iperf3 -c 10.0.0.10 --bidir -t 5
-sudo ip netns exec AppServer pkill iperf3
+sudo kill $(cat /tmp/lab13/iperf3.pid)
 ```
 
 ### Ejercicio 3: Simular un fallo de MTU
@@ -272,6 +340,15 @@ sudo ip netns exec AppServer ip link set veth-app mtu 1500     # restaurar
 | tcpdump | Captura de tráfico de **una interfaz** (no de toda la red) |
 | iperf3 | Medición de rendimiento (TCP efectivo; UDP con tasa ofrecida, pérdida y jitter) |
 | Colector de logs (SIEM básico) | Centralización de eventos con rsyslog; no es correlación ni respuesta |
+
+## Preguntas de reflexión
+
+1.  ¿Qué mecanismo permite al NOC decidir si un problema es de ruta, de DNS, de servicio o de rendimiento?
+2.  ¿Qué sucedería si el NOC captura tráfico entre otros dos hosts de una LAN conmutada? ¿Qué vería realmente?
+3.  ¿Qué diferencia hay entre el rendimiento TCP medido y la tasa UDP ofrecida?
+4.  ¿Qué limitaciones tiene un colector `rsyslog` frente a un SIEM empresarial?
+5.  ¿En qué escenario empresarial una alerta por umbral habría evitado una incidencia?
+6.  ¿Qué otras herramientas aportarían métricas continuas? (SNMP, telemetría; extensión futura de la serie.)
 
 ## Conclusiones
 

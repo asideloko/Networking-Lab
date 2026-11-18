@@ -7,7 +7,7 @@ description: "Laboratorio 10 de NETWORKING Lab — Infraestructura WAN y Core."
 
 # INFRAESTRUCTURA WAN Y CORE
 
-<p class="tema-meta"><span>9 secciones</span><span>1 diagrama</span><span>4 tablas</span></p>
+<p class="tema-meta"><span>11 secciones</span><span>4 diagramas</span><span>8 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -239,6 +239,66 @@ sudo ip netns exec host1 traceroute -n 10.2.0.10
 sudo ip netns exec PE1 ping -c 4 192.168.1.5
 ```
 
+### Red de proveedor: roles PE y P
+
+**PE** y **P** son **funciones** dentro de una arquitectura de proveedor, no tipos de equipo definidos por el nombre ni por el hardware: el mismo modelo de router puede ser PE en un punto y P en otro. La clasificación depende del **papel** que desempeña cada equipo.
+
+```mermaid
+graph LR
+    H1[Cliente A] --- CE1[CE]
+    CE1 --- PE1["PE (frontera)"]
+    PE1 --- P1["P (núcleo)"]
+    PE1 --- P2["P (núcleo)"]
+    P1 --- P2
+    P1 --- PE2["PE (frontera)"]
+    P2 --- PE2
+    PE2 --- CE2[CE]
+    CE2 --- H2[Cliente B]
+```
+
+| Rol | Dónde está | Qué hace |
+|-----|------------|----------|
+| **CE** (*Customer Edge*) | Sede del cliente | Entrega el tráfico al proveedor |
+| **PE** (*Provider Edge*) | Frontera del proveedor | Conecta con el cliente; clasifica y aplica servicios |
+| **P** (*Provider*) | Núcleo | Reenvía tráfico con rapidez; no conoce las redes del cliente |
+
+### Enrutamiento IP frente a MPLS en el núcleo
+
+| Aspecto | Enrutamiento IP (esta simulación) | MPLS |
+|---------|------------------------------------|------|
+| Qué consulta cada router | La **dirección IP de destino** en la tabla de rutas | La **etiqueta** en la LFIB |
+| Dónde se decide el camino | En **cada** salto (*longest prefix match*) | En el PE de entrada (clasifica en una FEC) |
+| Qué necesita | Rutas (estáticas o un IGP) | IGP + protocolo de etiquetas (LDP) + LFIB |
+| Qué permite | Conectividad | L3VPN, ingeniería de tráfico, QoS |
+
+### Push, swap y pop
+
+```mermaid
+graph LR
+    A["host1"] --> PE1["PE1: PUSH etiqueta 100"]
+    PE1 --> P1["P1: SWAP 100 a 200"]
+    P1 --> P3["P3: POP (penúltimo salto)"]
+    P3 --> PE3["PE3: reenvío IP"]
+    PE3 --> B["host3"]
+```
+
+(Las etiquetas son inventadas; el recorrido corresponde a la tabla del ejemplo anterior.)
+
+### Servicios que ofrece un proveedor WAN
+
+| Servicio | Qué ofrece | Relación con este laboratorio |
+|----------|------------|-------------------------------|
+| **L3VPN** | Enrutamiento privado entre sedes (MPLS) | Es lo que justifica los roles PE/P |
+| **L2VPN / Ethernet WAN** | Extiende un dominio de capa 2 entre sedes | No se simula |
+| **Internet dedicado** | Salida a Internet con SLA | Puede ser un transporte de una SD-WAN |
+| **Circuitos con SLA** | Latencia y disponibilidad contratadas | Base de la comparación MPLS/SD-WAN |
+
+### IGP, LDP y BGP (introducción conceptual)
+
+-   **IGP** (OSPF, IS-IS): da a los routers del proveedor la topología interna.
+-   **LDP**: reparte etiquetas MPLS asociadas a los prefijos que conoce el IGP.
+-   **BGP**: intercambia rutas entre **sistemas autónomos** y transporta las rutas de los clientes entre PE.
+
 ## Análisis MPLS (conceptual)
 
 !!! warning "Lo que ejecutamos arriba no es MPLS"
@@ -324,6 +384,29 @@ for sp in 40001 40002 40003 40004 40005 40006; do
 done
 ```
 
+### Failover frente a ECMP
+
+| | *Failover* | ECMP |
+|--|-----------|------|
+| Idea | Usar un camino **de respaldo** cuando falla el principal | **Repartir** tráfico entre varios caminos de **igual coste** |
+| Caminos en uso | Uno (el otro espera) | Varios a la vez |
+| Qué aporta | Disponibilidad | Capacidad (y disponibilidad parcial) |
+| Cómo se configura aquí | Dos rutas con **distinta** métrica | Dos rutas con **la misma** métrica (`nexthop` múltiple) |
+
+```mermaid
+graph LR
+    subgraph Failover
+        F1[PE1] ==>|"métrica 50, activo"| F2[PE3]
+        F1 -.->|"métrica 100, en reserva"| F2
+    end
+    subgraph ECMP
+        E1[PE1] ==>|"camino 1, mismo coste"| E2[PE3]
+        E1 ==>|"camino 2, mismo coste"| E2
+    end
+```
+
+El reparto de ECMP se hace **por flujo**, no por paquete: una sola conexión no usa dos caminos a la vez.
+
 ## Conceptos clave
 
 | Concepto | Aplicación |
@@ -333,9 +416,21 @@ done
 | Topología PE/P | Roles de proveedor con enrutamiento IP y rutas estáticas con respaldo |
 | ECMP | Reparto de carga entre caminos de igual coste (no es *failover* ni alta disponibilidad completa) |
 
+## Preguntas de reflexión
+
+1.  ¿Qué distingue a un router PE de uno P en una arquitectura de proveedor?
+2.  ¿Qué sucedería con el tráfico si caen a la vez los enlaces P1-P3 y P2-P3?
+3.  ¿Qué diferencia hay entre lo que esta simulación demuestra (rutas IP) y lo que haría MPLS real?
+4.  ¿Qué limitaciones tiene no disponer de un protocolo de enrutamiento dinámico en el núcleo?
+5.  ¿Cuándo preferiría una empresa SD-WAN a un servicio MPLS contratado?
+
 ## Conclusiones
 
 Hemos construido una **simulación de una topología WAN con roles PE/P** y rutas IP estáticas, y hemos explicado MPLS de forma conceptual: para que fuese un core MPLS faltarían la distribución de etiquetas (LDP) y las tablas de etiquetas. MPLS permite ingeniería de tráfico y QoS mediante el reenvío por etiquetas (la calidad no es automática: depende de cómo el proveedor la configure). SD-WAN es un enfoque de gestión por políticas que puede apoyarse en MPLS, banda ancha u otros transportes, y suele ofrecer flexibilidad y reducción de costos. Las arquitecturas híbridas combinan ambos.
+
+## Preparación para el siguiente laboratorio
+
+Hasta aquí cada laboratorio estudió **un mecanismo** (rutas, servicios, firewall, VPN, WAN). En el **Laboratorio 11** esos mecanismos se **organizan en una arquitectura empresarial**: capas Core, Distribución y Acceso, con firewall, DMZ y redundancia. Pasamos de configurar piezas a **diseñar un conjunto**.
 
 ---
 

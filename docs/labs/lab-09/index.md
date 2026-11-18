@@ -7,7 +7,7 @@ description: "Laboratorio 09 de NETWORKING Lab — VPN y Tunelización."
 
 # VPN Y TUNELIZACIÓN
 
-<p class="tema-meta"><span>15 secciones</span><span>1 diagrama</span><span>4 tablas</span></p>
+<p class="tema-meta"><span>16 secciones</span><span>4 diagramas</span><span>8 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -395,6 +395,59 @@ Configurar un dispositivo WireGuard **no significa que haya conectividad complet
 
 ## Análisis y comparación
 
+### Qué añade cada tecnología a un paquete
+
+```mermaid
+graph TB
+    subgraph GRE
+        G1["IP exterior"] --> G2["GRE"] --> G3["IP interior + datos (en claro)"]
+    end
+    subgraph IPsec_ESP_modo_tunel
+        E1["IP exterior"] --> E2["ESP"] --> E3["IP interior + datos (CIFRADOS) + ICV"]
+    end
+```
+
+GRE solo **encapsula**: cualquiera en el camino ve el paquete interior. ESP **cifra y autentica** el interior; por eso un paquete protegido muestra ESP en `tcpdump` y no se puede leer su contenido.
+
+### Establecimiento de un túnel
+
+```mermaid
+sequenceDiagram
+    participant A as Extremo A (Sede)
+    participant B as Extremo B (Sucursal)
+    A->>B: 1. Acuerdan parámetros y claves (IKE; aquí, claves manuales)
+    A->>B: 2. Tráfico 10.0.0.0/24 encapsulado hacia la IP del extremo B
+    B-->>A: 3. Tráfico de retorno por el mismo túnel
+    Note over A,B: Hacen falta rutas o políticas en ambos extremos para que el tráfico entre al túnel
+```
+
+### Cifrado, autenticación e integridad
+
+| Propiedad | Qué garantiza | Ejemplo |
+|-----------|---------------|---------|
+| **Cifrado** | Que nadie lea el contenido | AES en ESP |
+| **Autenticación** | Que el origen es quien dice ser | Claves compartidas, certificados, claves públicas de WireGuard |
+| **Integridad** | Que no se modificó en tránsito | HMAC-SHA256 en ESP, etiqueta de autenticación de WireGuard |
+
+### Sitio a sitio frente a acceso remoto
+
+| Aspecto | Sitio a sitio | Acceso remoto |
+|---------|---------------|----------------|
+| Une | Dos **redes** (sedes) | Un **usuario o equipo** con una red |
+| Quién inicia | Los *gateways* de ambas sedes | El cliente |
+| Aquí | GRE e IPsec entre R1 y R2 | OpenVPN y WireGuard con el cliente remoto |
+
+### NAT-T y AllowedIPs
+
+-   **NAT-T**: ESP no tiene puertos, así que un NAT intermedio puede romperlo. IPsec lo resuelve encapsulando ESP en **UDP 4500** cuando detecta NAT en el camino.
+-   **AllowedIPs (WireGuard)**: cada par declara qué redes se enrutan **hacia** él y de qué orígenes acepta tráfico. Funciona a la vez como tabla de rutas y como filtro:
+
+```mermaid
+graph LR
+    C["Cliente 10.9.0.2"] -- "AllowedIPs = 10.0.0.0/24" --> G["VPN Gateway"]
+    G -- "AllowedIPs = 10.9.0.2/32" --> C
+```
+
 ### Paso 14: Comparar tecnologías VPN
 
 | Tecnología | Capa | Ventajas | Desventajas |
@@ -423,6 +476,26 @@ sudo ip netns exec R1 tcpdump -i veth-r1r2 -n -v esp   # (visto en el Paso 8)
 - WireGuard añade **60 bytes** sobre IPv4 (20 IP + 8 UDP + 16 de cabecera WireGuard + 16 de etiqueta de autenticación).
 
 Este *overhead* reduce la MTU efectiva del túnel (véase el laboratorio 15 para MTU y MSS).
+
+### Tabla de overhead por tecnología
+
+| Tecnología | Overhead aproximado por paquete (IPv4) | Efecto en un enlace de MTU 1500 |
+|------------|-----------------------------------------|----------------------------------|
+| GRE | 24 bytes | MTU efectiva ≈ 1476 |
+| IPsec ESP (túnel) | ≈ 55–75 bytes | MTU efectiva ≈ 1425–1445 |
+| OpenVPN (UDP) | ≈ 40–70 bytes | Según cifrado y modo |
+| WireGuard | 60 bytes | MTU efectiva ≈ 1440 (la interfaz suele fijarse en 1420 por compatibilidad con IPv6) |
+
+### Ejercicio de laboratorio frente a despliegue habitual
+
+| Tecnología | En este laboratorio | Despliegue habitual |
+|------------|---------------------|----------------------|
+| OpenVPN | Clave estática compartida | TLS con certificados (PKI) |
+| IPsec | Claves **manuales** (XFRM) | Negociación con **IKE** |
+| GRE | Solo encapsulación | GRE protegido con IPsec si se requiere seguridad |
+| WireGuard | Par de claves por extremo | Pares de claves **y** políticas de acceso (AllowedIPs, firewall) |
+
+Estas simplificaciones **muestran el funcionamiento interno** y no deben tomarse como configuración empresarial.
 
 ## Ejercicios prácticos
 
@@ -473,6 +546,15 @@ Implementa WireGuard entre R2 y R3 como alternativa.
 | OpenVPN | Acceso remoto basado en TLS (aquí, clave estática simplificada) |
 | WireGuard | VPN ligera de pares con claves públicas |
 | Tunelización | Encapsulación de tráfico (no equivale a cifrado) |
+
+## Preguntas de reflexión
+
+1.  ¿Qué mecanismo hace que GRE no sea, por sí solo, una VPN?
+2.  ¿Qué sucedería si se crea el túnel pero no se añade la ruta de retorno en el otro extremo?
+3.  ¿Qué diferencia hay entre el tráfico GRE y el tráfico ESP en la captura?
+4.  ¿Qué limitaciones tiene OpenVPN con clave estática frente a un modo con TLS?
+5.  ¿Cuándo elegirías WireGuard frente a IPsec para conectar dos sedes?
+6.  ¿Qué otro mecanismo (ZTNA, laboratorio 12) podría sustituir una VPN de acceso remoto?
 
 ## Conclusiones técnicas
 

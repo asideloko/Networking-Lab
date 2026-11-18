@@ -17,8 +17,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-      - run: pip install zensical
+      - run: pip install "zensical==0.1.2"
       - run: zensical build
+      - name: Validar estructura (enlaces, bloques de código, front matter)
+        run: python3 scripts/validar.py
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

@@ -7,7 +7,7 @@ description: "Laboratorio 14 de NETWORKING Lab — Herramientas Linux Avanzadas.
 
 # HERRAMIENTAS LINUX AVANZADAS
 
-<p class="tema-meta"><span>6 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>8 secciones</span><span>2 diagramas</span><span>7 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -278,6 +278,89 @@ sudo iptables -t nat -D POSTROUTING -s 203.0.113.0/30 -o eth0 -j MASQUERADE 2>/d
 
 Eliminar un *namespace* borra también sus interfaces y sus reglas de `nft`/`iptables`; las órdenes que tocaron el **host** (`veth-wan-r`, la regla de `MASQUERADE` y `net.ipv4.ip_forward`) hay que revertirlas aparte.
 
+### Herramienta según el objetivo operativo
+
+| Objetivo | Comando | Qué responde |
+|----------|---------|--------------|
+| Ver interfaces y direcciones | `ip -br addr`, `ip link` | ¿Qué IP y estado tiene cada interfaz? |
+| Ver rutas / qué ruta se usará | `ip route`, `ip route get <IP>` | ¿Por dónde saldrá un paquete a ese destino? |
+| Ver reglas de selección de tabla | `ip rule` | ¿Qué tabla de rutas se consulta y en qué orden? |
+| Ver vecinos (ARP) | `ip neigh` | ¿Qué MAC conoce el equipo para cada IP local? |
+| Ver sockets locales | `ss -tulpn` | ¿Qué escucha o está conectado **en este namespace**? |
+| Ver conexiones que atraviesan el equipo | `conntrack -L` | ¿Qué conexiones reenvía o traduce el router? |
+| Filtrar tráfico | `nft list ruleset` | ¿Qué reglas se aplican y en qué cadena? |
+| Ver estadísticas y errores de interfaz | `ip -s link`, `ethtool -S` | ¿Hay errores, descartes o colisiones? |
+| Probar un puerto | `nc -zv <IP> <puerto>` | ¿Acepta conexiones ese servicio? |
+
+### Recorrido de un paquete: input, forward y output
+
+La cadena de `nftables` depende de **qué le pasa al paquete en este equipo**:
+
+```mermaid
+flowchart LR
+    E["Llega por una interfaz"] --> R{"¿Para este equipo?"}
+    R -- Sí --> I["input"] --> L["Proceso local (servicio)"]
+    R -- No --> F["forward"] --> S["Sale por otra interfaz"]
+    L --> O["output (tráfico generado aquí)"] --> S
+```
+
+Si una regla `drop` en `input` no detiene el tráfico que **atraviesa** el router, no es un fallo: ese tráfico va por `forward`.
+
+### `ss` frente a `conntrack`
+
+| | `ss` | `conntrack` |
+|--|------|-------------|
+| Muestra | Sockets **del propio equipo** (los que termina una aplicación local) | Conexiones **seguidas por el kernel**, incluidas las que solo **pasan** por el router y las traducidas por NAT |
+| Ejemplo | `Host1` escuchando en el puerto 9000 | Una conexión de `Host1` al `ServidorDMZ` (`10.0.1.10`), que el Router **enruta** |
+| Pregunta | ¿Qué servicios tengo? | ¿Qué conexiones atraviesan o traduce mi router? |
+
+Por eso la conexión del Paso 5 aparece en `ss` de Host1 y Host2 y **no** en el del Router. Matiz: Host1 y Host2 comparten el bridge `br-lan`, así que el Router solo **conmuta** esa conexión (capa 2) y `conntrack` tampoco la sigue; una conexión de Host1 al `ServidorDMZ` sí la **enruta** y aparecería en `conntrack -L` (requiere el paquete `conntrack`).
+
+### Interpretar `ip route get` e `ip rule`
+
+```bash
+sudo ip netns exec Router ip route get 10.0.2.1     # con la ruta estática del Paso 4
+sudo ip netns exec Router ip rule show
+```
+
+Ejemplo de salida (representativo):
+
+```
+10.0.2.1 via 10.0.0.10 dev br-lan src 10.0.0.1 uid 0
+0:      from all lookup local
+32766:  from all lookup main
+32767:  from all lookup default
+```
+
+-   `via 10.0.0.10`: el **siguiente salto** elegido; `dev`, la interfaz de salida; `src`, la IP de origen que usaría.
+-   `ip rule` se evalúa **por prioridad** (número menor primero): `local` (direcciones propias), luego `main` (la tabla de `ip route`) y por último `default`. Con reglas adicionales se puede enrutar por origen (política de enrutamiento).
+
+### iptables y nftables
+
+| Aspecto | `iptables` (laboratorios 08 y 09) | `nftables` (este laboratorio y el 15) |
+|---------|-----------------------------------|----------------------------------------|
+| Estado | Clásica; muchas distribuciones la ofrecen como compatibilidad sobre `nft` | Herramienta actual del *netfilter* |
+| Tablas y cadenas | Predefinidas (`filter`, `nat`…) | Las defines tú (`table inet filtro`) |
+| IPv4/IPv6 | Comandos separados | Familia `inet` para ambos |
+| Reglas | Una por invocación | Conjuntos, mapas y reglas atómicas |
+
+### Estadísticas de interfaz y errores
+
+```bash
+sudo ip netns exec Router ip -s link show veth-r-lan2
+sudo ip netns exec Router ethtool -S veth-r-lan2
+```
+
+Mira `errors` y `dropped` (y `carrier`/`collsns` en TX): un contador de **errores** que crece indica un problema de la interfaz o del medio (en `veth` casi siempre es 0); los **descartes** que crecen apuntan a saturación o a reglas. El diagnóstico llega más allá de «hay IP y responde `ping`».
+
+### Mini-situaciones de diagnóstico
+
+| Situación | Qué observas | Conclusión razonable |
+|-----------|--------------|----------------------|
+| `ping` a una dirección detrás de Host1 deja de funcionar | `ip route get` sigue mostrando la ruta; `ip_forward` = 0 en Host1 | Falta reenvío en el equipo intermedio (Ejercicio 3) |
+| Un servicio no recibe conexiones | `ss -tlnp` no lo muestra escuchando | El servicio no está activo o escucha en otra IP |
+| El Router ya no responde a `ping` pero Host1 sigue saliendo a Internet | `nft list ruleset`: regla `icmp drop` en la cadena `input` | Afecta al tráfico **destinado al Router**, no al que lo atraviesa (Ejercicio 1) |
+
 ## Ejercicios
 
 ### Ejercicio 1: Bloquear ICMP con nftables
@@ -315,9 +398,21 @@ Sustituye la interfaz ficticia `dum0` por un namespace `Detras` unido a Host1 co
 | ethtool | Diagnóstico físico |
 | Netcat | Pruebas de conectividad |
 
+## Preguntas de reflexión
+
+1.  ¿Qué mecanismo decide por qué interfaz sale un paquete, y con qué comando lo compruebas?
+2.  ¿Qué sucedería si pones `policy drop` en la cadena `input` y no permites el tráfico establecido?
+3.  ¿Qué diferencia hay entre lo que ves con `ss` y lo que ves con `conntrack`?
+4.  ¿Qué limitaciones tiene diagnosticar solo con `ping`?
+5.  ¿Qué comando elegirías primero para cada síntoma de la tabla de objetivos operativos?
+
 ## Conclusiones
 
 Las herramientas avanzadas de Linux (`ip`, `ss`, `nft`) permiten administrar y diagnosticar redes de manera eficiente y han sustituido en gran medida a las tradicionales (`ifconfig`, `netstat`), y `nft` va reemplazando a `iptables` en las distribuciones recientes; las clásicas siguen existiendo en muchos sistemas. Entender **dónde engancha cada regla** (`input`, `forward`, `output`) es clave para comprender un firewall.
+
+## Preparación para el siguiente laboratorio
+
+Este laboratorio enseñó a **manejar las herramientas** de administración y diagnóstico con una topología independiente. En el **Laboratorio 15** se aplican **juntas** sobre una infraestructura integral: direccionamiento, OSPF, firewall, DHCP y VRRP, con casos de *troubleshooting* que exigen elegir bien qué herramienta usar y qué evidencia buscar.
 
 ---
 

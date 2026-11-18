@@ -7,7 +7,7 @@ description: "Laboratorio 04 de NETWORKING Lab — Direccionamiento IP y Subrede
 
 # DIRECCIONAMIENTO IP Y SUBREDES
 
-<p class="tema-meta"><span>12 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>13 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -419,6 +419,14 @@ ip netns exec ventas4 ping -c 4 10.0.0.1
 | Clientes en diferentes subredes no pueden hacer ping | El router no tiene una IP de *gateway* en cada subred, o `ip_forward` vale 0. | Verificar `ip addr show dev veth-rs` en el router y `sysctl net.ipv4.ip_forward`. |
 | `ping: connect: Network is unreachable` | Máscara de subred incorrecta. | Verificar `ip addr show` en el cliente. |
 | No sale a Internet | NAT no configurado. | Verificar reglas de iptables y `ip_forward=1`. |
+
+## Preguntas de reflexión
+
+1.  ¿Qué mecanismo decide si un paquete se entrega directamente o se envía al *gateway*?
+2.  ¿Qué sucedería si se asigna a un cliente una máscara más corta que la del resto de su subred?
+3.  ¿Qué diferencia hay entre el número de direcciones totales de una subred y el de direcciones asignables a hosts?
+4.  ¿Qué limitaciones tiene un esquema VLSM cuando la empresa crece más de lo previsto?
+5.  ¿Qué otro diseño de direccionamiento resolvería el mismo problema (por ejemplo, con subredes de tamaño fijo)?
 
 ## Conclusiones técnicas
 

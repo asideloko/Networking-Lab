@@ -7,7 +7,7 @@ description: "Laboratorio 08 de NETWORKING Lab — Seguridad en Redes."
 
 # SEGURIDAD EN REDES
 
-<p class="tema-meta"><span>11 secciones</span><span>1 diagrama</span><span>5 tablas</span></p>
+<p class="tema-meta"><span>12 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -333,6 +333,53 @@ Un servidor público **no debe recibir acceso irrestricto a la red interna**: la
 !!! info "ACL frente a firewall con seguimiento de estado"
     Una **ACL** es un mecanismo de control de tráfico (una lista ordenada de reglas permitir/denegar) que puede aplicarse en distintos puntos: un router, un switch, una interfaz. Una ACL clásica evalúa cada paquete de forma independiente. Un **firewall con seguimiento de estado** (como `iptables` con `conntrack` o `nftables`) además recuerda las conexiones y permite automáticamente las respuestas. En este laboratorio las reglas de `FORWARD` con `-m state` actúan como firewall con estado; las reglas que restringen orígenes y puertos (por ejemplo `-s 10.0.0.0/22`) se comportan como las ACL. (Nota: `-m state` es la sintaxis histórica; hoy se recomienda `-m conntrack --ctstate`, equivalente en estos ejemplos.)
 
+### Recorrido de un paquete por el firewall
+
+La cadena que se aplica depende de **de dónde viene y a dónde va** el paquete:
+
+```mermaid
+flowchart TD
+    IN["Paquete entra por una interfaz"] --> PRE["PREROUTING (DNAT, si existe)"]
+    PRE --> D{"¿Destino: el propio firewall?"}
+    D -- Sí --> I["Cadena INPUT"]
+    I --> L["Proceso local"]
+    D -- No --> F["Cadena FORWARD"]
+    F --> POST["POSTROUTING (SNAT/MASQUERADE)"]
+    L --> O["Cadena OUTPUT (tráfico generado por el firewall)"]
+    O --> POST
+    POST --> OUT["Sale por otra interfaz"]
+```
+
+### DNAT y SNAT
+
+| Traducción | Qué cambia | Para qué sirve | Aquí |
+|------------|------------|----------------|------|
+| **SNAT / MASQUERADE** | La IP de **origen** (en POSTROUTING) | Salida de redes privadas a Internet | `MASQUERADE` en `veth-fw-wan` |
+| **DNAT** | La IP de **destino** (en PREROUTING) | **Publicar** un servidor privado | No se usa (se añade una ruta en el host) |
+
+Para publicar de verdad el web de la DMZ habría que añadir, por ejemplo, `iptables -t nat -A PREROUTING -i veth-fw-wan -p tcp --dport 443 -j DNAT --to-destination 10.0.99.10`, además de la regla `FORWARD` que ya existe.
+
+### Los controles frente a la tríada CIA
+
+| Propiedad | Qué protege | Control de este laboratorio |
+|-----------|-------------|------------------------------|
+| **Confidencialidad** | Que solo quien debe vea la información | TLS (Paso 12), SSH con clave (Paso 11), DMZ sin acceso a la LAN |
+| **Integridad** | Que los datos no se alteren sin detección | TLS y SSH incluyen verificación de integridad |
+| **Disponibilidad** | Que el servicio siga accesible | Solo se expone lo necesario (no hay alta disponibilidad: véase el laboratorio 11) |
+
+### Comparaciones útiles
+
+| | ACL | Firewall con estado (*stateful*) |
+|--|-----|-----------------------------------|
+| Evalúa | Cada paquete por separado | El paquete **y** el estado de la conexión |
+| Respuestas | Hay que permitirlas con otra regla | Se permiten solas (`ESTABLISHED,RELATED`) |
+| Ejemplo | `-s 10.0.0.0/22 -p tcp --dport 443` | `-m conntrack --ctstate ESTABLISHED,RELATED` |
+
+| | Cifrado | Autenticación |
+|--|---------|----------------|
+| Pregunta que responde | ¿Alguien puede **leer** esto en tránsito? | ¿Estoy hablando con **quien creo**? |
+| Con certificado autofirmado | Sí, el canal queda cifrado | **No** demuestra la identidad si no se confía en él |
+
 ### Paso 9: Verificar reglas de firewall
 
 ```bash
@@ -377,6 +424,41 @@ Al terminar las pruebas elimina las rutas temporales:
 sudo ip route del 10.0.99.0/24 via 192.168.100.1
 sudo ip route del 10.0.0.0/22 via 192.168.100.1
 ```
+
+### Servidor DNS público en la DMZ
+
+La topología incluye un servidor DNS en la DMZ y el firewall permite UDP 53 hacia él, así que conviene que **exista de verdad** y no solo en el dibujo. Reutilizamos `dnsmasq` como en el laboratorio 07, esta vez solo con la función DNS y un dominio de demostración (`secops.example`):
+
+```bash
+mkdir -p /tmp/lab08
+cat > /tmp/lab08/dns-pub.conf << 'EOF'
+listen-address=10.0.99.5
+bind-interfaces
+no-resolv
+no-hosts
+local=/secops.example/
+address=/www.secops.example/10.0.99.10
+EOF
+
+sudo ip netns exec servidorDNS_PUB dnsmasq --conf-file=/tmp/lab08/dns-pub.conf --pid-file=/tmp/lab08/dns-pub.pid
+
+# Probar desde el host (que hace de Internet) con la ruta temporal del Paso 10
+sudo ip route add 10.0.99.0/24 via 192.168.100.1
+dig @10.0.99.5 www.secops.example +short          # debe devolver 10.0.99.10
+sudo ip route del 10.0.99.0/24 via 192.168.100.1
+```
+
+La consulta pasa porque la regla `FORWARD` de UDP/53 la permite. Desde la **LAN interna** la misma consulta se descarta: la política solo deja ICMP, SSH y HTTPS hacia la DMZ. Compruébalo con `sudo ip netns exec clienteSede dig @10.0.99.5 www.secops.example +time=2 +tries=1`. Al terminar: `sudo kill $(cat /tmp/lab08/dns-pub.pid)`.
+
+!!! note "Qué representa este DNS"
+    Es un servidor de **demostración** que responde para una zona local; no es un DNS autoritativo de producción (sin delegación, sin transferencias de zona, sin DNSSEC).
+
+!!! info "Sobre el puerto 80"
+    El firewall permite TCP 80 hacia el servidor web, pero en este laboratorio **solo se sirve HTTPS (443)**: el puerto 80 queda reservado para una futura redirección a HTTPS. Sin servicio escuchando, el servidor responde con un rechazo (RST). Si prefieres un diseño más estricto, elimina la regla:
+
+    ```bash
+    sudo ip netns exec firewall iptables -D FORWARD -i veth-fw-wan -o br-dmz -p tcp -d 10.0.99.10 --dport 80 -j ACCEPT
+    ```
 
 ### Paso 11: Configurar SSH para acceso seguro
 
@@ -442,6 +524,28 @@ sudo ip route del 10.0.99.0/24 via 192.168.100.1
 
 Para comprobar que el tráfico **va cifrado**, captura mientras haces la conexión: verás el *handshake* TLS y datos ilegibles en lugar de texto en claro (`sudo ip netns exec firewall tcpdump -i br-dmz -n -A port 443`).
 
+### Registro (*logs*) de firewall
+
+Un firewall que descarta sin dejar rastro es difícil de auditar. Añade una regla `LOG` **antes** del `DROP` final para registrar los intentos Internet → LAN:
+
+```bash
+sudo ip netns exec firewall iptables -I FORWARD 1 -i veth-fw-wan -o veth-fw-lan -m limit --limit 5/min -j LOG --log-prefix "FW-DENY-WAN-LAN: "
+sudo dmesg | grep FW-DENY | tail
+```
+
+`--limit` evita llenar el registro y el prefijo facilita filtrar. Si tu sistema no muestra el mensaje con `dmesg`, revisa `journalctl -k`. Los registros son la base de la **auditoría** y alimentan sistemas como el colector del laboratorio 13.
+
+### Las mismas reglas en nftables (comparación)
+
+```bash
+sudo ip netns exec firewall nft add table inet filtro
+sudo ip netns exec firewall nft 'add chain inet filtro forward { type filter hook forward priority 0; policy drop; }'
+sudo ip netns exec firewall nft add rule inet filtro forward ct state established,related accept
+sudo ip netns exec firewall nft add rule inet filtro forward iifname "veth-fw-wan" oifname "br-dmz" ip daddr 10.0.99.10 tcp dport 443 accept
+```
+
+Es la misma política «denegar por defecto» expresada con la herramienta moderna (se desarrolla en los laboratorios 14 y 15). Es **solo una comparación**: no la apliques a la vez que las reglas `iptables`, porque ambos conjuntos se evalúan en el mismo punto del recorrido y el paquete debe superar los dos. Para probarla, usa un firewall recién creado.
+
 ## Ejercicios prácticos
 
 ### Ejercicio 1: Permitir SSH solo desde la red de administración
@@ -484,6 +588,15 @@ sudo ip netns exec firewall conntrack -L
 | ACLs | Reglas de control de tráfico (origen, destino, puerto); no equivalen a un firewall con estado |
 | SSH | Canal de administración cifrado |
 | TLS | Autenticación y cifrado de la comunicación de aplicación |
+
+## Preguntas de reflexión
+
+1.  ¿Qué mecanismo impide que un servidor de la DMZ comprometido alcance la LAN interna?
+2.  ¿Qué sucedería si se elimina la regla `ESTABLISHED,RELATED` del `FORWARD`?
+3.  ¿Qué diferencia hay entre permitir el reenvío hacia la DMZ y publicar el servicio en Internet?
+4.  ¿Qué limitaciones tiene un certificado autofirmado y un `sshd` de demostración?
+5.  ¿En qué escenario empresarial pondrías un DNS público en la DMZ y no en la LAN?
+6.  ¿Qué otros mecanismos complementarían al firewall? (Detección de intrusiones, registros centralizados, segmentación interna.)
 
 ## Conclusiones técnicas
 

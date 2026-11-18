@@ -7,7 +7,7 @@ description: "Laboratorio 05 de NETWORKING Lab — Conmutación y Segmentación 
 
 # CONMUTACIÓN Y SEGMENTACIÓN DE RED
 
-<p class="tema-meta"><span>9 secciones</span><span>1 diagrama</span><span>1 tabla</span></p>
+<p class="tema-meta"><span>11 secciones</span><span>2 diagramas</span><span>2 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -339,6 +339,34 @@ ip netns exec router iptables -D FORWARD -i veth-rs.10 -o veth-rs.30 -j DROP   #
 
 Una política real debería partir de «denegar por defecto» y permitir solo los flujos necesarios; ese enfoque se desarrolla en los laboratorios 08 y 15.
 
+### Subred frente a VLAN
+
+Son conceptos distintos que suelen coincidir en la práctica (una VLAN ↔ una subred):
+
+| Aspecto | Subred | VLAN |
+|---------|--------|------|
+| Capa | 3 (direccionamiento IP) | 2 (conmutación) |
+| Qué define | Rango de direcciones y máscara | Dominio de *broadcast* |
+| Cómo se separa | Con rutas y máscaras | Con etiquetas 802.1Q y puertos |
+| Cómo se comunican dos | Un router o equipo de capa 3 | Un router (*Router-on-a-Stick*) o *switch* L3 |
+
+```mermaid
+graph LR
+    subgraph VLAN_10_Ventas
+        V1[Cliente 10.0.10.x]
+    end
+    subgraph VLAN_20_IT
+        V2[Cliente 10.0.20.x]
+    end
+    SW{{Switch 802.1Q}}
+    RT[Router subinterfaces .10 .20]
+    V1 --- SW
+    V2 --- SW
+    SW ===|trunk| RT
+```
+
+Dos VLAN no se ven entre sí en capa 2 aunque estén en el mismo *switch*; para comunicarlas hace falta enrutar. **Segmentar no es lo mismo que proteger**: el filtrado entre VLAN lo decide el router.
+
 ## Observación
 
 ```bash
@@ -351,6 +379,14 @@ ip netns exec switch tcpdump -i veth-sr -n -e -v
 
 En `bridge vlan show` verás `veth-sv1` con `10 PVID Egress Untagged` (acceso VLAN 10) y `veth-sr` con las VLAN 10, 20, 30 y 99 **sin** PVID ni *Untagged* (trunk etiquetado). En la captura del trunk, `tcpdump -e` mostrará `vlan 10, p 0` (o 20, 30) en cada trama: es la etiqueta 802.1Q. Si no la ves, captura en `veth-rs` del lado del router; algunas versiones ocultan la etiqueta cuando el kernel la extrae como metadato.
 
+## Preguntas de reflexión
+
+1.  ¿Qué mecanismo impide que un *broadcast* de la VLAN 10 llegue a la VLAN 20?
+2.  ¿Qué sucedería si el trunk no permitiera la VLAN 30?
+3.  ¿Qué diferencia hay entre el puerto de acceso (`Untagged`) y el trunk en la salida de `bridge vlan show`?
+4.  ¿Qué limitaciones tiene *Router-on-a-Stick* cuando el tráfico entre VLAN es elevado?
+5.  ¿Qué otro mecanismo podría enrutar entre VLAN? (Un *switch* de capa 3.)
+
 ## Conclusiones técnicas
 
 En este laboratorio hemos implementado VLANs, trunking (802.1Q) y Router-on-a-Stick para segmentar la red en dominios de broadcast independientes.
@@ -359,6 +395,10 @@ En este laboratorio hemos implementado VLANs, trunking (802.1Q) y Router-on-a-St
 -   El **enrutamiento entre VLAN** lo realiza el router (subinterfaces), no el switch de capa 2.
 -   El tráfico entre VLAN solo se restringe con **filtrado en el router**.
 -   La VLAN 99 representa el plano de **gestión** de los dispositivos de red.
+
+## Preparación para el siguiente laboratorio
+
+Con las VLAN, la sede tiene **dominios de broadcast separados** y un router que los comunica. Pero una empresa rara vez es una sola sede: las LAN segmentadas necesitan **mecanismos de enrutamiento** para conectarse con sucursales. En el **Laboratorio 06** pasamos de segmentar una red a **interconectar varias redes** con rutas estáticas, rutas alternativas y túneles GRE.
 
 ---
 

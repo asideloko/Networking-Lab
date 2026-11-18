@@ -7,7 +7,7 @@ description: "Laboratorio 01 de NETWORKING Lab — Fundamentos de Redes y Encaps
 
 # FUNDAMENTOS DE REDES Y ENCAPSULACIÓN
 
-<p class="tema-meta"><span>11 secciones</span><span>1 diagrama</span><span>2 tablas</span></p>
+<p class="tema-meta"><span>13 secciones</span><span>3 diagramas</span><span>5 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -15,6 +15,9 @@ La empresa **Networking SecOps** acaba de abrir una nueva oficina. Cuenta con do
 
 !!! note "Alcance de este laboratorio"
     En esta primera demostración el equipo intermedio (el namespace `router`) aloja un **bridge Linux** y su función efectiva es la **conmutación Ethernet (capa 2)**. El **enrutamiento entre subredes** todavía no se demuestra; llegará en los laboratorios 02 y 06.
+
+!!! note "Conectividad frente a servicios"
+    En este laboratorio se construye la **infraestructura de conectividad local**. Los servicios de compartición de archivos y el acceso a Internet se abordarán después con tecnologías y protocolos específicos (laboratorios 02 y 07). Tener conectividad no es lo mismo que tener servicios funcionando sobre ella.
 
 ## Problema inicial
 
@@ -29,6 +32,19 @@ La empresa **Networking SecOps** acaba de abrir una nueva oficina. Cuenta con do
 3.  Asignar direcciones IP y comprobar conectividad.
 4.  Observar el proceso de **encapsulación** mediante captura de paquetes con `tcpdump`.
 5.  Analizar el flujo de datos desde la generación hasta la transmisión.
+
+## Conceptos previos
+
+Antes de construir nada conviene fijar seis términos que se usan en todo el laboratorio:
+
+| Concepto | Qué es | Dónde aparece aquí |
+|----------|--------|--------------------|
+| **Host (dispositivo final)** | Equipo que origina o recibe datos de aplicación. | `cliente1` y `cliente2` |
+| **Interfaz de red** | Punto por el que un equipo se conecta a un enlace; tiene MAC y, normalmente, IP. | `veth-c1`, `veth-c2`, `br0` |
+| **Enlace** | Conexión que une dos interfaces. Aquí es un par `veth` (virtual), no un cable físico. | `veth-c1` ↔ `veth-r1` |
+| **Dirección MAC** | Identifica una interfaz **dentro del enlace local** (capa 2). | Se ve con `ip link` y `tcpdump -e` |
+| **Dirección IP** | Direccionamiento **lógico** que permite comunicar redes distintas (capa 3). | `10.0.1.0/24` |
+| **Dispositivo intermedio** | Equipo que conecta a otros y reenvía tráfico. | El namespace `router` (aquí, un bridge) |
 
 ## Herramientas necesarias
 
@@ -60,6 +76,32 @@ graph TB
 | (Internet)  | —        | No se configura en este laboratorio |
 
 El namespace `router` es un equipo lógico que aloja el bridge `br0`. La dirección `10.0.1.1` pertenece a la interfaz IP del propio bridge: sirve para que el equipo sea alcanzable y para preparar su papel de *gateway* en el laboratorio 02. **No interviene** en la comunicación entre Cliente 1 y Cliente 2.
+
+### Conexión lógica del escenario
+
+Cada **par `veth`** son los dos extremos de un enlace virtual: lo que entra por un extremo sale por el otro. No es un cable físico, sino una abstracción que el kernel implementa. El bridge `br0` agrupa los dos puertos del lado del equipo intermedio.
+
+```mermaid
+graph LR
+    subgraph cliente1
+        C1["veth-c1 10.0.1.2"]
+    end
+    subgraph router
+        R1["veth-r1 (puerto)"]
+        BR{{"br0 bridge 10.0.1.1"}}
+        R2["veth-r2 (puerto)"]
+    end
+    subgraph cliente2
+        C2["veth-c2 10.0.1.3"]
+    end
+    C1 === R1
+    R1 --- BR
+    BR --- R2
+    R2 === C2
+```
+
+!!! info "MAC frente a IP"
+    La **MAC** identifica la interfaz en el enlace y solo tiene sentido dentro de él: se reescribe en cada salto. La **IP** identifica el destino lógico y se conserva de extremo a extremo. Cuando dos equipos están en la misma subred, el emisor usa la **MAC del destino**; cuando no lo están, usa la **MAC del *gateway*** (se verá en el laboratorio 02). El subnetting en profundidad llega en el laboratorio 04.
 
 ## Construcción de la red
 
@@ -188,6 +230,16 @@ ip netns exec cliente1 ping -c 4 10.0.1.1
 
 **Resultado esperado:** 4 respuestas exitosas.
 
+### Qué demuestra cada prueba
+
+| Prueba | Qué permite comprobar |
+|--------|-----------------------|
+| Cliente 1 → Cliente 2 | Comunicación entre hosts de la misma subred a través del bridge. |
+| Cliente 2 → Cliente 1 | Que el camino funciona en **ambos sentidos** (no solo de ida). |
+| Cliente 1 → `10.0.1.1` | Que la interfaz IP del equipo intermedio es alcanzable. No implica que el equipo enrute. |
+
+Una respuesta ICMP exitosa (`bytes from … icmp_seq=1 ttl=64 time=0.1 ms`) confirma que la solicitud llegó y que la respuesta volvió. El valor `time` es la **latencia de ida y vuelta**: aquí es mínima porque todo ocurre en memoria del mismo equipo; en redes reales incluye serialización, distancia y colas.
+
 ## Observación de la encapsulación
 
 Vamos a capturar el tráfico en el bridge del equipo intermedio para ver cómo viaja un paquete ICMP (ping) desde Cliente 1 a Cliente 2.
@@ -235,18 +287,86 @@ ip netns exec router tcpdump -i br0 -n -e icmp
 
 Aparecerán direcciones MAC de origen y destino, lo que confirma la encapsulación en la capa de enlace. Observa que la MAC de destino de cada trama es la de **Cliente 2** (y la de Cliente 1 en la respuesta), no la del bridge.
 
+### Paso 12: Observar la resolución ARP
+
+En el Paso 7 ya hubo `ping` entre los clientes, así que sus cachés ARP probablemente están **pobladas** y una captura nueva no mostraría ninguna solicitud. Para ver el proceso completo hay que **vaciar la caché** antes de capturar:
+
+```bash
+# 1. Vaciar la caché de vecinos (ARP) de Cliente 1
+ip netns exec cliente1 ip neigh flush dev veth-c1
+ip netns exec cliente1 ip neigh show              # debe quedar vacía
+
+# 2. En otra terminal: capturar solo ARP en el bridge
+ip netns exec router tcpdump -i br0 -n -e arp
+
+# 3. En la terminal original: repetir el ping
+ip netns exec cliente1 ping -c 1 10.0.1.3
+```
+
+Ejemplo de salida (representativo; las MAC variarán):
+
+```
+ff:ff:ff:ff:ff:ff (broadcast) ... ARP, Request who-has 10.0.1.3 tell 10.0.1.2, length 28
+<MAC de Cliente 2> > <MAC de Cliente 1> ... ARP, Reply 10.0.1.3 is-at <MAC de Cliente 2>, length 28
+```
+
+La **solicitud** va por *broadcast* (MAC destino `ff:ff:ff:ff:ff:ff`) y llega a todos los puertos del bridge; la **respuesta** es *unicast* hacia Cliente 1. Tras ella, `ip neigh show` vuelve a mostrar la entrada de Cliente 2.
+
+### Esquema de encapsulación con campos
+
+Cada capa añade su cabecera alrededor de los datos de la capa superior. Esquema conceptual (simplificado; no son todos los campos):
+
+```mermaid
+graph LR
+    subgraph Trama_Ethernet
+        E["Cabecera Ethernet: MAC destino, MAC origen, EtherType 0x0800"]
+        subgraph Paquete_IP
+            I["Cabecera IPv4: IP origen, IP destino, TTL, protocolo 1 (ICMP)"]
+            subgraph Mensaje_ICMP
+                M["Echo Request o Reply: tipo, código, id, seq, datos"]
+            end
+        end
+    end
+    E --> I --> M
+```
+
+| Capa | Unidad | Campos que aparecen en la captura |
+|------|--------|-----------------------------------|
+| Enlace | Trama Ethernet | MAC origen y destino (`-e`) |
+| Red | Paquete IP | IP origen y destino, TTL, protocolo (`proto ICMP (1)`) |
+| Mensaje | ICMP | Tipo (*echo request/reply*), `id`, `seq` |
+
+!!! warning "Qué no muestra tcpdump"
+    `tcpdump` muestra cabeceras y datos de los protocolos capturados, pero **no la señal** eléctrica, óptica o radioeléctrica ni la transmisión física de bits. Esa parte se estudia en el laboratorio 02.
+
 ## Análisis del flujo de datos
 
 1.  **Cliente 1 genera el mensaje:** La aplicación `ping` crea un mensaje ICMP Echo Request.
 2.  **Sin capa de transporte:** ICMP no es un protocolo de transporte: es un protocolo de la capa de red que se encapsula directamente en IP, sin puertos TCP/UDP. El mensaje se entrega a la capa IP.
 3.  **Capa de red (IP):** Se añade el encabezado IP con origen 10.0.1.2 y destino 10.0.1.3.
-4.  **Resolución ARP:** como 10.0.1.3 pertenece a la misma subred que el origen, Cliente 1 no necesita gateway: envía una solicitud ARP por *broadcast* preguntando «¿quién tiene 10.0.1.3?». Cliente 2 responde con su MAC. (Esos mensajes ARP no aparecen en la captura anterior porque el filtro es `icmp`; puedes verlos con `tcpdump -i br0 -n -e arp`.)
+4.  **Resolución ARP:** como 10.0.1.3 pertenece a la misma subred que el origen, Cliente 1 no necesita gateway: envía una solicitud ARP por *broadcast* preguntando «¿quién tiene 10.0.1.3?». Cliente 2 responde con su MAC. (Esos mensajes ARP no aparecen en la captura anterior porque el filtro es `icmp`; se observan en el Paso 12, vaciando antes la caché ARP.)
 5.  **Capa de enlace:** Se añade la cabecera Ethernet con MAC origen (de `veth-c1`) y MAC destino (la de `veth-c2`, obtenida por ARP).
 6.  **El bridge conmuta la trama.** No desencapsula el paquete IP ni consulta tablas de rutas. Aprende la MAC de origen de cada trama que recibe y la asocia al puerto de entrada; para decidir la salida busca la MAC de destino en su tabla. Si la conoce, reenvía la trama **sin modificarla** solo por ese puerto (`veth-r2`); si no la conoce, la inunda por todos los puertos excepto el de entrada. Puedes ver la tabla con `ip netns exec router bridge fdb show br br0`.
 7.  **Cliente 2 recibe la trama**, la desencapsula y entrega el mensaje ICMP a la aplicación, que genera la respuesta y repite el proceso inverso.
 
 !!! info "Bridge frente a router"
     Un **bridge** aprende direcciones MAC y reenvía **tramas Ethernet** dentro de una misma red. Un **router** consulta información de capa 3 y reenvía **paquetes IP** entre redes distintas, reescribiendo la cabecera Ethernet en cada salto. Cuando los dos clientes están en la misma subred, la comunicación es de capa 2 y el router no participa.
+
+### Dominio de broadcast
+
+Todo lo que está conectado al mismo bridge pertenece al mismo **dominio de broadcast de capa 2**: la solicitud ARP del Paso 12 llega a todos los puertos. Este concepto prepara las VLAN del laboratorio 05, que permiten **dividir** ese dominio sin cambiar el hardware.
+
+!!! info "Matiz sobre el bridge"
+    En este escenario sencillo el bridge reenvía las tramas **sin modificar sus cabeceras**. No es una regla general de todos los modos de *bridging* (por ejemplo, con VLAN filtering puede añadir o quitar etiquetas, como se verá en el laboratorio 05).
+
+## Preguntas de reflexión
+
+1.  ¿Qué mecanismo se está demostrando cuando Cliente 1 y Cliente 2 se comunican sin pasar por una dirección de *gateway*?
+2.  ¿Qué sucedería con el `ping` si se elimina `br0` y se dejan solo los dos extremos `veth-r1` y `veth-r2` sin unir?
+3.  ¿Qué diferencia hay entre lo que `ping` demuestra (conectividad IP) y lo que `tcpdump -e` permite ver (tramas)?
+4.  ¿Qué limitaciones tiene esta red? (Piensa en tamaño, seguridad y salida a otras redes.)
+5.  ¿En qué escenario empresarial real se usaría una red local de capa 2 como esta?
+6.  ¿Qué otros mecanismos podrían conectar dos equipos de la misma subred? (Un *switch* físico, un cable cruzado…)
 
 ## Conclusiones técnicas
 

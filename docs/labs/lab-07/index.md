@@ -7,7 +7,7 @@ description: "Laboratorio 07 de NETWORKING Lab — Protocolos y Servicios de Red
 
 # PROTOCOLOS Y SERVICIOS DE RED
 
-<p class="tema-meta"><span>12 secciones</span><span>1 diagrama</span><span>2 tablas</span></p>
+<p class="tema-meta"><span>13 secciones</span><span>5 diagramas</span><span>5 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -260,6 +260,32 @@ EOF
 sudo ip netns exec servidorDNS dnsmasq --conf-file=/tmp/lab07/dns.conf --pid-file=/tmp/lab07/dns.pid
 ```
 
+### Cómo se relacionan los cuatro servicios
+
+Son piezas de una misma experiencia de conectividad, no temas aislados:
+
+```mermaid
+flowchart LR
+    A["DHCP: entrega dirección, máscara, gateway y DNS"] --> B["DNS: convierte nombres en direcciones"]
+    B --> C["TCP o UDP: transporta la comunicación"]
+    C --> D["NAT/PAT: permite la salida a redes externas"]
+```
+
+### Resolución DNS
+
+```mermaid
+sequenceDiagram
+    participant C as Cliente
+    participant D as Servidor DNS interno 10.0.0.5
+    participant E as DNS público (reenviador)
+    C->>D: Consulta A: servidor-interno.secops.local
+    D-->>C: Respuesta 10.0.0.20 (nombre local, sin reenviar)
+    C->>D: Consulta A: nombre externo
+    D->>E: Reenvía la consulta
+    E-->>D: Respuesta
+    D-->>C: Respuesta
+```
+
 ### Paso 7: Servidor DHCP (solo DHCP)
 
 El servidor DHCP anuncia a los clientes la puerta de enlace (R1) y el servidor DNS (`10.0.0.5`). Con `port=0` se desactiva su función DNS:
@@ -323,6 +349,32 @@ sudo ip netns exec clienteDHCP nslookup google.com
 
 **Resultado esperado:** 0% de pérdida; `nslookup` devuelve `10.0.0.20` para el nombre interno y una IP pública para `google.com` (esto último solo si tu equipo tiene Internet).
 
+### Proceso DHCP (DORA)
+
+```mermaid
+sequenceDiagram
+    participant C as Cliente (sin IP)
+    participant S as Servidor DHCP
+    C->>S: DISCOVER (broadcast): busco un servidor DHCP
+    S-->>C: OFFER: te ofrezco una dirección
+    C->>S: REQUEST (broadcast): acepto esa oferta
+    S-->>C: ACK: confirmada, con máscara, gateway, DNS y duración
+```
+
+Como el cliente aún no tiene IP, usa *broadcast* (`0.0.0.0 → 255.255.255.255`, UDP 68 → 67). Por eso las solicitudes **no cruzan routers** por sí solas: para dar servicio a una sucursal desde la sede haría falta un **agente DHCP relay** (ampliación opcional, fuera del escenario principal).
+
+### Puertos y protocolos habituales
+
+| Servicio | Transporte | Puerto | Laboratorio |
+|----------|------------|--------|-------------|
+| DNS | UDP (TCP para respuestas grandes y transferencias) | 53 | 07, 08 |
+| DHCP | UDP | 67 (servidor) / 68 (cliente) | 07, 15 |
+| HTTP | TCP | 80 | 08 |
+| HTTPS | TCP | 443 | 08 |
+| SSH | TCP | 22 | 08 |
+
+La matriz completa de la serie (incluye OSPF, VRRP, GRE, IPsec, OpenVPN y WireGuard) está en [Servicios, protocolos y puertos](../../referencia/servicios-puertos.md).
+
 ## Análisis de TCP y UDP
 
 ### Paso 10: Capturar tráfico TCP
@@ -354,6 +406,43 @@ sudo ip netns exec clienteDHCP nslookup -type=A servidor-interno.secops.local
 ```
 
 **Interpretación:** se observan paquetes UDP sin *handshake* previo: una consulta y una respuesta. Para ver el intercambio DHCP completo (DISCOVER, OFFER, REQUEST, ACK) libera y renueva la concesión con `sudo ip netns exec clienteDHCP dhclient -r -pf /tmp/lab07/dhclient.pid -lf /tmp/lab07/dhclient.leases veth-dhcpcl` y luego `sudo ip netns exec clienteDHCP dhclient -pf /tmp/lab07/dhclient.pid -lf /tmp/lab07/dhclient.leases veth-dhcpcl`.
+
+### TCP frente a UDP: casos de uso
+
+| Aspecto | TCP | UDP |
+|---------|-----|-----|
+| Conexión | Orientado a conexión (*handshake*) | Sin conexión |
+| Fiabilidad | Retransmite, ordena, controla flujo y congestión | No garantiza entrega ni orden |
+| Coste | Mayor (estado y cabecera) | Menor |
+| Ejemplos | Web, SSH, correo, transferencia de archivos | DNS, DHCP, VoIP, vídeo en tiempo real |
+| Criterio de elección | Importa que **todo llegue correcto** | Importa la **baja latencia**, o la aplicación gestiona la pérdida |
+
+### Establecimiento y cierre de una conexión TCP
+
+```mermaid
+sequenceDiagram
+    participant C as Cliente
+    participant S as Servidor
+    C->>S: SYN (propone abrir la conexión)
+    S-->>C: SYN-ACK (acepto)
+    C->>S: ACK (conexión establecida)
+    Note over C,S: Intercambio de datos
+    C->>S: FIN
+    S-->>C: ACK y FIN
+    C->>S: ACK (cierre)
+```
+
+### NAT/PAT y la tabla de conexiones
+
+R1 traduce el origen de cada conexión privada y lo recuerda en `conntrack`; así las respuestas vuelven al equipo correcto aunque varias conexiones compartan `192.168.100.1`:
+
+| Origen privado | Destino | Origen traducido (visible fuera) |
+|----------------|---------|-----------------------------------|
+| `10.0.0.10:40001` | `192.168.100.2:80` | `192.168.100.1:40001` |
+| `10.0.1.10:40001` | `192.168.100.2:80` | `192.168.100.1:` **otro puerto** (PAT evita la colisión) |
+| `10.0.2.10` (ICMP, id 7) | `192.168.100.2` | `192.168.100.1` (con el identificador ICMP) |
+
+(Valores ilustrativos: comprueba los reales con `conntrack -L`.)
 
 ## Análisis de MSS
 
@@ -411,6 +500,14 @@ Haz un `ping -c 2 192.168.100.2` desde `clienteSucB` y observa en `conntrack -L`
 | DNS | Resolución de nombres con dnsmasq |
 | DHCP | Asignación automática de IPs |
 | NAT/PAT | Traducción de direcciones (y puertos) para salida a Internet |
+
+## Preguntas de reflexión
+
+1.  ¿Qué mecanismo permite que un cliente sin IP encuentre un servidor DHCP?
+2.  ¿Qué sucedería si el DHCP anuncia un servidor DNS que no responde? ¿Qué parte sigue funcionando?
+3.  ¿Qué diferencia hay entre lo que muestra la captura TCP y la de UDP (DNS)?
+4.  ¿Qué limitaciones tiene que las sucursales conserven direccionamiento fijo?
+5.  ¿Qué otro mecanismo podría entregar configuración a las sucursales sin un servidor propio? (DHCP relay.)
 
 ## Conclusiones técnicas
 

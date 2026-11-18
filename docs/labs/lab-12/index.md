@@ -7,7 +7,7 @@ description: "Laboratorio 12 de NETWORKING Lab — Arquitecturas Modernas de Red
 
 # ARQUITECTURAS MODERNAS DE RED
 
-<p class="tema-meta"><span>7 secciones</span><span>1 diagrama</span><span>2 tablas</span></p>
+<p class="tema-meta"><span>8 secciones</span><span>3 diagramas</span><span>5 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -280,6 +280,85 @@ sudo ip netns exec AppServer nc -zv -w 2 10.100.2.10 5432
 
 **Microsegmentación:** políticas granulares App→DB y EC2→RDS.
 
+### Flujo Usuario → IdP → Broker → Aplicación
+
+El **proveedor de identidad (IdP)** responde a «¿quién eres y puedes acceder?»; el **broker** aplica la política: «¿puede *esta* identidad llegar a *esta* aplicación?». En el laboratorio el IdP es solo un nodo alcanzable, pero el flujo real es:
+
+```mermaid
+sequenceDiagram
+    participant U as Usuario remoto
+    participant B as Broker ZTNA
+    participant I as IdP (identidad)
+    participant A as Aplicación
+    U->>B: Solicita acceso a la aplicación
+    B->>I: ¿Quién es y cumple las condiciones?
+    I-->>B: Identidad verificada (y estado del dispositivo)
+    B->>B: Evalúa política: usuario, aplicación, puerto
+    B->>A: Abre solo esa conexión
+    A-->>U: Respuesta (por el broker)
+```
+
+### Matriz de acceso por usuario, aplicación y puerto
+
+Hace visible el **mínimo privilegio**: cada fila es un permiso explícito; todo lo que no aparece está denegado.
+
+| Origen | Destino | Puerto | Permitido |
+|--------|---------|--------|-----------|
+| Usuario 1 (`10.8.0.2`) | App on-premise (`10.0.0.10`) | TCP 8080 | **Sí** (Paso 8) |
+| Usuario 2 (`10.8.0.3`) | EC2 (`10.100.1.10`) | TCP 8080 | **Sí** (Paso 8) |
+| Usuario 1 | EC2 (nube) | 8080 | No |
+| Usuario 2 | App on-premise | 8080 | No |
+| Cualquier usuario | Bases de datos (`10.0.0.20`, `10.100.2.10`) | cualquiera | No |
+| App (`10.0.0.10`) | DB (`10.0.0.20`) | TCP 3306 | **Sí** (Paso 9) |
+| EC2 (`10.100.1.10`) | RDS (`10.100.2.10`) | TCP 5432 | **Sí** (Paso 9) |
+| App | RDS (nube) | 5432 | No |
+
+La política por defecto es **denegar**: lo que no aparece en la tabla no pasa. Mantener una matriz así permite revisar el mínimo privilegio sin leer reglas una por una.
+
+### Conectividad híbrida, VPN y conexión dedicada
+
+| | VPN sitio a sitio sobre Internet | Conexión privada dedicada (tipo *Direct Connect*) | Este laboratorio |
+|--|-----------------------------------|------------------------------------------------------|------------------|
+| Medio | Internet público | Circuito privado contratado | Un `veth` entre dos *namespaces* |
+| Cifrado | Sí (IPsec, WireGuard) | No por defecto (se añade si se requiere) | No |
+| Latencia y capacidad | Variables | Predecibles, contratadas | Las del kernel |
+| Coste y plazo | Bajo y rápido | Alto y lento | Ninguno |
+
+Una conexión `veth` **no** es una VPN ni una conexión dedicada: solo representa que existe un enlace privado.
+
+### VPC con subred pública y privada
+
+```mermaid
+graph TB
+    Internet((Internet)) --- IGW[Puerta de enlace a Internet]
+    subgraph VPC["VPC 10.100.0.0/16"]
+        subgraph Publica["Subred pública"]
+            WEB[Servidor expuesto]
+        end
+        subgraph Privada["Subred privada"]
+            DB[(Base de datos)]
+        end
+    end
+    IGW --- WEB
+    WEB --- DB
+```
+
+Aquí hay dos subredes (`10.100.1.0/24` aplicaciones y `10.100.2.0/24` datos), sin Internet: la diferencia pública/privada la define **qué ruta tiene cada subred** hacia la puerta de enlace.
+
+### Zero Trust, ZTNA y SASE
+
+| Término | Qué es | Nivel |
+|---------|--------|-------|
+| **Zero Trust** | **Modelo** de seguridad: no se confía por estar «dentro» de la red | Principios (NIST SP 800-207) |
+| **ZTNA** | **Tecnología** de acceso remoto por aplicación, bajo Zero Trust | Acceso |
+| **SASE** | **Servicio** en la nube que combina red (SD-WAN) y seguridad (SWG, CASB, ZTNA) | Arquitectura de servicio |
+
+No son sinónimos: ZTNA puede ser un componente de SASE, y ambos intentan aplicar Zero Trust.
+
+### Grupos de seguridad y ACL de nube
+
+La microsegmentación del Paso 9 equivale, en un proveedor de nube, a **grupos de seguridad** (reglas con estado, asociadas a recursos: «la base de datos solo acepta el puerto 5432 desde el grupo de la aplicación») y **ACL de subred** (reglas sin estado, a nivel de subred). Es la misma idea que `iptables` entre `App` y `DB`, con otra herramienta.
+
 ## Ejercicios
 
 ### Ejercicio 1: Agregar usuario remoto
@@ -299,6 +378,15 @@ Redacta (sin implementarlas) las políticas que un SASE aplicaría al tráfico d
 | ZTNA | Acceso remoto por aplicación (broker) |
 | SASE | SD-WAN + SWG + CASB (conceptual) |
 | Microsegmentación | Políticas granulares entre servidores |
+
+## Preguntas de reflexión
+
+1.  ¿Qué mecanismo distingue dar acceso a una **aplicación** de dar acceso a toda una **red**?
+2.  ¿Qué sucedería si el broker permitiera cualquier puerto hacia la base de datos?
+3.  ¿Qué diferencia hay entre lo que el IdP simulado hace aquí y lo que haría uno real?
+4.  ¿Qué limitaciones tiene representar una VPC con *namespaces* y routers Linux?
+5.  ¿En qué escenario empresarial sustituirías una VPN de acceso remoto por ZTNA?
+6.  ¿Qué otros mecanismos aportarían identidad y estado del dispositivo?
 
 ## Conclusiones
 

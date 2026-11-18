@@ -7,7 +7,7 @@ description: "Laboratorio 11 de NETWORKING Lab — Arquitectura de Red Empresari
 
 # ARQUITECTURA DE RED EMPRESARIAL
 
-<p class="tema-meta"><span>8 secciones</span><span>1 diagrama</span><span>5 tablas</span></p>
+<p class="tema-meta"><span>9 secciones</span><span>4 diagramas</span><span>7 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -31,6 +31,33 @@ El **firewall perimetral** controla el tráfico entre el interior, la DMZ e Inte
 
 !!! warning "Tener dos Core y dos Distribution no demuestra alta disponibilidad"
     La redundancia **física** solo se convierte en **disponibilidad** si existen mecanismos que (1) eviten bucles, (2) detecten el fallo y (3) muevan el tráfico (y los *gateways*) al camino alternativo. En esta práctica: el **núcleo** tolera la caída de `Core1` (mediante rutas de respaldo y fallo **local**), pero las VLAN dependen de **un único *gateway***, `Dist1`, porque `Access1` solo se conecta a él. Si `Dist1` falla, las VLAN pierden conectividad aunque `Dist2` esté sana. Resolverlo requiere un segundo trunk, un protocolo contra bucles de capa 2 (STP/RSTP) y redundancia de *gateway* (VRRP): ejercicios y Laboratorio 15.
+
+### Las capas son funciones, no niveles físicos
+
+Core, Distribución y Acceso describen **qué hace** cada equipo, no en qué rack está ni cuántos saltos tiene. En una sede pequeña un mismo equipo puede cumplir dos funciones (un *core* colapsado); lo importante es **no mezclar responsabilidades** sin saberlo.
+
+```mermaid
+graph TB
+    subgraph Core["CORE: transporte rápido, sin políticas complejas"]
+        C1[Core1]
+        C2[Core2]
+    end
+    subgraph Dist["DISTRIBUCIÓN: agregación, políticas y routing entre VLAN"]
+        D1[Dist1]
+        D2[Dist2]
+    end
+    subgraph Acc["ACCESO: dispositivos finales y VLAN"]
+        A1[Access1]
+    end
+    FW[Firewall perimetral]
+    C1 --- D1
+    C1 --- D2
+    C2 --- D1
+    C2 --- D2
+    D1 --- A1
+    C1 --- FW
+    C2 --- FW
+```
 
 ## Topología
 
@@ -272,6 +299,54 @@ sudo ip netns exec ventas ping -c 4 10.0.20.10
 sudo ip netns exec ventas traceroute -n -I 10.0.99.10
 ```
 
+### Matriz de disponibilidad y puntos únicos de fallo
+
+| Componente que falla | ¿La arquitectura lo tolera? | Por qué |
+|----------------------|------------------------------|---------|
+| Enlace Dist1–Core1 | Sí | Ruta de respaldo por Core2 (fallo local para Dist1) |
+| `Core1` completo | Sí, con el procedimiento de este laboratorio | Los vecinos retiran la ruta al caer sus enlaces |
+| `Core2` completo | Sí | Es el camino de respaldo; el principal sigue |
+| **`Dist1`** | **No** | Es el **único *gateway*** de las VLAN: **punto único de fallo** |
+| **`Access1`** | **No** | Un solo *switch* de acceso para los tres departamentos |
+| **Firewall** | **No** | Un solo punto de control perimetral |
+| Fallo remoto (más allá de un vecino) | No | Rutas estáticas: no hay detección ni convergencia |
+
+Una arquitectura es tan disponible como su **punto único de fallo más débil**: revisar esta tabla antes de añadir equipos evita invertir en redundancia que no cambia el resultado.
+
+### Rutas estáticas, OSPF y VRRP: problemas distintos
+
+| Mecanismo | Problema que resuelve | Lo que **no** resuelve | Dónde se practica |
+|-----------|-----------------------|-------------------------|-------------------|
+| **Rutas estáticas con métrica** | Camino de respaldo ante fallo **local** | Fallos remotos | Laboratorios 06, 10, 11 |
+| **OSPF** | Aprender topología y **reconverger** ante fallos | Qué *gateway* usan los hosts | Laboratorio 15 |
+| **VRRP** | Que los hosts conserven un **gateway** (IP virtual) si falla un router | Redundancia de la salida WAN o del resto de la red | Laboratorio 15 |
+
+### STP/RSTP: redundancia física sin bucles
+
+Dos caminos de capa 2 entre dos *switches* forman un **bucle**: una trama de *broadcast* circularía sin fin (en Ethernet no hay TTL). STP/RSTP elige un puente raíz y **bloquea** los puertos redundantes, dejando un árbol sin bucles; si el enlace activo falla, desbloquea el de respaldo.
+
+```mermaid
+graph LR
+    SA[Switch A raíz] ===|activo| SB[Switch B]
+    SA -.-|puerto bloqueado por STP| SB
+    SB --- H[Host]
+```
+
+(Esquema conceptual; el Ejercicio 2 permite observarlo con `bridge link show`.)
+
+### Ejemplo de crecimiento: Access2 y Access3
+
+Añadir `Access2` y `Access3` no cambia el diseño: cada nuevo *switch* se conecta con un trunk que transporta las VLAN 10, 20 y 30 y los hosts de la misma VLAN se alcanzan entre sí.
+
+```mermaid
+graph TB
+    D1[Dist1: gateway de las VLAN] --- A1[Access1]
+    D1 --- A2[Access2]
+    D1 --- A3[Access3]
+```
+
+Es la **escalabilidad** del modelo jerárquico: se crece por capas sin rediseñar el núcleo. El coste es que `Dist1` concentra cada vez más dependencia (otro motivo para duplicarlo con VRRP).
+
 ## Alta disponibilidad
 
 ### Simular el fallo de Core1
@@ -347,6 +422,15 @@ Crea `Access2` y `Access3` siguiendo el Paso 6 y comprueba que los equipos de la
 | Redundancia física | Doble enlace Dist-Core y Core-Firewall (no equivale por sí sola a alta disponibilidad) |
 | Segmentación | VLAN 10, 20, 30 en el acceso |
 | DMZ | Servidores aislados tras el firewall |
+
+## Preguntas de reflexión
+
+1.  ¿Qué mecanismo hace que el tráfico siga funcionando cuando cae `Core1`, y por qué ese mismo mecanismo no sirve si cae `Dist1`?
+2.  ¿Qué sucedería si se conecta `Access1` a `Dist2` con otro trunk sin activar STP?
+3.  ¿Qué diferencia hay entre «tener dos equipos» y «tener alta disponibilidad»?
+4.  ¿Qué limitaciones tiene un diseño con un único firewall?
+5.  ¿En qué escenario empresarial se justifica colapsar Core y Distribución en un solo equipo?
+6.  ¿Qué otros mecanismos podrían dar alta disponibilidad al *gateway* de las VLAN?
 
 ## Conclusiones
 

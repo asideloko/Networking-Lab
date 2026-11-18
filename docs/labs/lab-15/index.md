@@ -7,7 +7,7 @@ description: "Laboratorio 15 de NETWORKING Lab — Implementación Práctica Int
 
 # IMPLEMENTACIÓN PRÁCTICA INTEGRAL
 
-<p class="tema-meta"><span>15 secciones</span><span>1 diagrama</span><span>8 tablas</span></p>
+<p class="tema-meta"><span>17 secciones</span><span>3 diagramas</span><span>12 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -42,6 +42,33 @@ graph TB
     SW --- SRV
     R2 --- SUC
 ```
+
+### Mapa del escenario: redes, *gateways* y caminos
+
+El diagrama anterior muestra los equipos; este muestra **qué red cuelga de cada interfaz** y **por dónde puede viajar** el tráfico. Es la referencia visual para leer los apartados 15.1 a 15.8:
+
+```mermaid
+graph TB
+    NET((Internet: el host 192.168.100.2))
+    subgraph R1["R1 (sede)"]
+        W1["WAN veth-r1-wan 192.168.100.1"]
+        F1["Finanzas .1 (10.0.1.0/25)"]
+        V1["Ventas .129 (10.0.1.128/26)"]
+        G1["Gestión .193 (10.0.1.192/28)"]
+        S1["Servidores veth-r1srv (10.0.0.0/24)"]
+    end
+    subgraph R2["R2 (respaldo y sucursal)"]
+        S2["Servidores veth-r2srv"]
+        SU["Sucursal .1 (10.0.2.0/24)"]
+    end
+    NET --- W1
+    R1 ===|"Enlace A 10.0.1.208/30 (principal)"| R2
+    R1 -.-|"Enlace B 10.0.1.212/30 (respaldo)"| R2
+    S1 --- SW[Switch de servidores]
+    S2 --- SW
+```
+
+Tres ideas para leerlo: (1) la **única salida a Internet** es la WAN de R1 (R2 sale por R1); (2) hay **dos caminos** R1–R2 (A principal, B respaldo) y OSPF decide cuál usar; (3) el **segmento de servidores es compartido** por R1 y R2, y es ahí donde VRRP mueve la IP virtual del *gateway*.
 
 ## Construcción
 
@@ -366,6 +393,16 @@ sudo ip netns exec R1 ip link set veth-r1r2a up
 sudo ip netns exec R2 ip link set veth-r2r1a up
 ```
 
+**Las rutas antes y después de la caída del enlace A** (R1 hacia la sucursal `10.0.2.0/24`):
+
+| Momento | `ip route show 10.0.2.0/24` en R1 | Quién lo decide |
+|---------|-----------------------------------|-----------------|
+| Enlace A activo | `via 10.0.1.210 dev veth-r1r2a proto ospf` | OSPF elige el camino de menor coste |
+| Enlace A caído (tras ~5 s) | `via 10.0.1.214 dev veth-r1r2b proto ospf` | OSPF detecta la pérdida de la adyacencia y **recalcula** (SPF) |
+| Enlace A restablecido | Vuelve `via 10.0.1.210` | Se restablece la adyacencia y el camino de menor coste |
+
+Compárese con el laboratorio 06: allí el respaldo era una **segunda ruta estática** y solo valía para fallos locales; aquí el protocolo **descubre** el cambio por sí mismo, incluso si el fallo no fuera de la interfaz propia.
+
 ## 15.5 Firewall
 
 Reglas en **nftables** para R1, guardadas en un archivo y cargadas dentro de su namespace. Las interfaces son las reales de R1: la WAN es `veth-r1-wan` y la zona de servidores `veth-r1srv`.
@@ -581,6 +618,48 @@ vrrp_instance SERVIDORES {
 
 (Ilustrativo: en **esta** topología R2 sale a Internet a través de R1, así que transferir el *gateway* a R2 no restablecería la salida; el seguimiento solo sirve cuando el respaldo tiene un camino alternativo.) La clave `PASS` no es una protección criptográfica: ya se advirtió arriba que es débil, y esa advertencia se mantiene.
 
+### Cambio de *master* y *backup*
+
+```mermaid
+sequenceDiagram
+    participant S as srv (gateway 10.0.0.1)
+    participant R1 as R1 (prioridad 100)
+    participant R2 as R2 (prioridad 90)
+    R1->>R2: Anuncios VRRP cada 1 s (R1 es MASTER y tiene 10.0.0.1)
+    S->>R1: Tráfico hacia el gateway 10.0.0.1
+    Note over R1: Falla el servicio VRRP de R1
+    R2->>R2: Deja de oír anuncios y pasa a MASTER
+    R2->>S: ARP gratuito: 10.0.0.1 ahora está en R2
+    S->>R2: El mismo gateway 10.0.0.1, otro equipo detrás
+```
+
+### Dos casos que no deben confundirse
+
+**Caso A: falla el *servicio de gateway* de R1.** Es el que demuestra el apartado anterior: R2 asume la IP virtual y los servidores conservan su *gateway*. Lo que se demuestra es **disponibilidad del *gateway***.
+
+**Caso B: falla la conectividad **WAN** de R1, pero R1 sigue vivo.** Obsérvalo con VRRP funcionando y R1 como *master* (hazlo **antes** del *failover* anterior o reinicia primero el `keepalived` de R1):
+
+```bash
+sudo ip netns exec R1 ip link set veth-r1-wan down
+sudo ip netns exec srv ping -c 2 -W 1 10.0.0.1          # el gateway sigue respondiendo
+sudo ip netns exec srv ping -c 2 -W 1 192.168.100.2     # pero ya no hay salida a «Internet»
+
+# Restablecer: al bajar la interfaz el kernel retiró la ruta por defecto
+sudo ip netns exec R1 ip link set veth-r1-wan up
+sudo ip netns exec R1 ip route replace default via 192.168.100.2
+```
+
+La IP virtual **no se movió** porque R1 sigue enviando anuncios por su LAN. Para que el caso B se resuelva hace falta, además, que **R2 tenga una salida WAN propia**:
+
+| Requisito | Por qué |
+|-----------|---------|
+| Una salida WAN independiente en R2 (otro enlace al exterior) | Si R2 sale por R1, transferir el *gateway* no restablece nada |
+| Ruta por defecto y NAT en R2 | Para que, al ser *master*, pueda sacar el tráfico |
+| Seguimiento de la WAN en `keepalived` (`track_interface` o `track_script`) | Para que R1 **baje su prioridad** al perder la WAN y R2 pase a ser *master* |
+| Reglas de firewall equivalentes en R2 | Para que la política no cambie al cambiar de *master* |
+
+Es la diferencia entre **disponibilidad del *gateway*** (caso A) y **continuidad integral del servicio** (caso B).
+
 ## 15.8 Troubleshooting real
 
 Casos de diagnóstico habituales. Los ejemplos de direcciones (`10.10.1.100`) son **ilustrativos**: no corresponden a un equipo de esta topología. Los comandos siguientes sirven para **representar un diagnóstico de paquetes que atraviesan un túnel**; **no** verifican el túnel construido en apartados anteriores (en este laboratorio no hay ningún túnel GRE ni IPsec).
@@ -641,6 +720,58 @@ EOF
 sudo chmod +x /usr/local/bin/check_arp.sh
 ```
 
+## 15.9 Dependencias, fallos e incidencias
+
+### Matriz de dependencias
+
+Los servicios de red no son independientes: unos **necesitan** que otros funcionen y la política de seguridad **los condiciona a todos**.
+
+| Servicio | Depende de | Qué permite el firewall (`input`) | Si falta algo |
+|----------|------------|-------------------------------------|----------------|
+| **Routing (OSPF)** | Enlaces A/B activos | Protocolo 89 | No hay adyacencia: R1 y R2 no intercambian rutas |
+| **DHCP (dnsmasq)** | Interfaz de la LAN y rango definido | UDP 67 desde Finanzas y Ventas | Los clientes no reciben IP |
+| **VRRP** | Misma LAN de servidores en R1 y R2 | Protocolo 112 | Ambos routers se creen *master* |
+| **Salida a Internet** | WAN de R1, NAT y ruta por defecto | `forward` LAN → WAN | Hay *gateway*, pero no hay salida |
+| **Administración (SSH)** | Alcance a R1 desde Gestión | TCP 22 desde Gestión | No se puede gestionar el router |
+
+### Escenarios de fallo y comportamiento esperado
+
+| Fallo | Qué ocurre | Quién lo resuelve | ¿Se recupera solo? |
+|-------|------------|-------------------|--------------------|
+| Cae el enlace A (R1–R2) | El tráfico pasa al enlace B | OSPF | Sí, en segundos |
+| Cae el servicio VRRP de R1 | R2 asume la IP virtual `10.0.0.1` | VRRP | Sí, en segundos |
+| Cae la WAN de R1 (R1 sigue vivo) | Los servidores conservan el *gateway* pero pierden la salida | **Nadie** (falta seguimiento y WAN en R2) | **No** (caso B) |
+| Se omite `ip protocol ospf accept` | Se pierde la adyacencia; el enlace «funciona» pero no hay rutas dinámicas | El administrador | No |
+| Se omite DHCP (UDP 67) en `input` | Los clientes no obtienen IP | El administrador | No |
+| Falta la regla DNAT | El servicio publicado no es alcanzable desde fuera aunque `forward` lo permita | El administrador | No |
+| MTU menor en un túnel | Las conexiones pequeñas funcionan y las transferencias grandes se cuelgan | Ajuste de MTU/MSS | No |
+
+### Caso final: una incidencia combinada
+
+> **Aviso del equipo:** tras publicar una nueva versión del archivo `fw.nft` en R1, **los equipos que piden dirección ya no reciben IP** y, además, la **sucursal perdió las rutas dinámicas**. Los enlaces A y B están arriba y R1 responde a `ping`.
+
+Dos síntomas distintos, ¿una causa o dos? Antes de abrir la solución, razona **qué comprobarías y en qué orden**. Dispones de `ping`, `tcpdump`, `nft -a list chain inet firewall input` y `vtysh -c "show ip ospf neighbor"`.
+
+??? note "Solución razonada"
+    1.  **Conectividad básica.** `ping` a R1 funciona: `input` acepta ICMP. Así que no es un problema de enlace ni de capa 2.
+    2.  **Síntoma de rutas.** `show ip ospf neighbor` en R1 no muestra a R2 en estado *Full*. Con `tcpdump -i veth-r1r2a proto ospf` se ven los *Hello* de R2 **llegar** a R1, pero R1 no los procesa y nunca declara al vecino: los descarta el firewall.
+    3.  **Síntoma de DHCP.** `tcpdump -i veth-r1fin port 67 or port 68` muestra los `DISCOVER` entrando y ningún `OFFER` saliendo: `dnsmasq` no llega a recibirlos.
+    4.  **Un punto en común.** OSPF y DHCP son tráfico **destinado a R1** (cadena `input`), no tráfico que lo atraviesa. Con `policy drop`, solo pasa lo que `input` acepta de forma explícita. `nft -a list chain inet firewall input` muestra que en la nueva versión **faltan** las reglas de protocolo 89 y de UDP 67.
+    5.  **Corrección y verificación.** Se restituyen las reglas, se comprueba que la adyacencia vuelve a *Full* y que un cliente obtiene IP. **Una sola causa** (la política de `input`) explicaba dos síntomas aparentemente independientes.
+
+    Lección: ante varios síntomas, busca primero lo que tienen en común (aquí, que el destino era el propio router), y no trates cada servicio por separado.
+
+Para **reproducirlo** (opcional), elimina esas reglas por su *handle* y restitúyelas después:
+
+```bash
+sudo ip netns exec R1 nft -a list chain inet firewall input        # anota los handle de «ospf» y «udp dport 67»
+sudo ip netns exec R1 nft delete rule inet firewall input handle N   # repite con cada handle
+
+# Restituir
+sudo ip netns exec R1 nft insert rule inet firewall input ip protocol ospf accept
+sudo ip netns exec R1 nft insert rule inet firewall input iifname '{ "veth-r1fin", "veth-r1ven" }' udp dport 67 accept
+```
+
 ## Limpieza del laboratorio
 
 Al terminar, detén los demonios y elimina solo lo creado aquí. Un namespace **no desaparece del todo mientras tenga procesos dentro**, así que primero se detienen los procesos (todos usan archivos de `/tmp/lab15`):
@@ -679,6 +810,15 @@ Cada apartado funciona por sí mismo, pero conviene comprobar que **el conjunto 
 -   **NAT y firewall:** la NAT de salida sigue siendo `iptables` y la política de reenvío es de `nftables`; conviven en el mismo namespace.
 -   **VLAN:** el apartado 15.3 es una variante; no se mezcla con los demás.
 -   **Alcance de las pruebas:** las comprobaciones de cada apartado demuestran lo que se afirma en él; no demuestran, por ejemplo, que una caída de la WAN se gestione sola (véase VRRP).
+
+## Preguntas de reflexión
+
+1.  ¿Qué mecanismo hace que R2 asuma el *gateway*, y por qué eso no restablece la salida a Internet?
+2.  ¿Qué sucedería si se elimina `ip protocol vrrp accept` del firewall de R1 y R2?
+3.  ¿Qué diferencia hay entre el comportamiento esperado de OSPF ante la caída del enlace A y el que observaste con rutas estáticas en el laboratorio 06?
+4.  ¿Qué limitaciones tiene esta implementación frente a una red empresarial real? (Un solo *gateway* WAN, claves débiles, sin monitoreo.)
+5.  ¿En qué escenario empresarial priorizarías la redundancia de la salida WAN antes que la del *gateway* LAN?
+6.  ¿Qué otros mecanismos podrían resolver el caso B? (Segundo ISP con BGP, SD-WAN.)
 
 ## Conclusiones
 
