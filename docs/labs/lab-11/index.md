@@ -201,6 +201,9 @@ for s in "ServidorWeb veth-web veth-fw-web 10.0.99.10/24" "ServidorDNS veth-dns 
 done
 ```
 
+!!! danger "Cambio en el host en el Paso 3"
+    Dentro del bloque anterior, **estas líneas actúan sobre el equipo real, no sobre un namespace**: `ip addr add 192.168.100.2/24 dev veth-wan-fw`, `sysctl -w net.ipv4.ip_forward=1` y la regla `iptables -t nat … MASQUERADE`. Anota antes `sysctl net.ipv4.ip_forward` y `iptables -t nat -S POSTROUTING`. Ninguna es persistente, pero sí afectan al host hasta que las reviertas (sección «Revertir los cambios del host»).
+
 ### Paso 4: Rutas estáticas con métrica (camino principal y de respaldo)
 
 Cada router tiene un camino **principal** (métrica 10) y uno de **respaldo** (métrica 20). Dos rutas al mismo destino con la misma métrica no pueden coexistir.
@@ -422,6 +425,19 @@ Crea `Access2` y `Access3` siguiendo el Paso 6 y comprueba que los equipos de la
 | Redundancia física | Doble enlace Dist-Core y Core-Firewall (no equivale por sí sola a alta disponibilidad) |
 | Segmentación | VLAN 10, 20, 30 en el acceso |
 | DMZ | Servidores aislados tras el firewall |
+
+### Revertir los cambios del host
+
+```bash
+sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true   # ajusta eth0
+sudo sysctl -w net.ipv4.ip_forward=0        # solo si estaba en 0 antes de empezar
+sudo ip link del veth-wan-fw 2>/dev/null || true
+for ns in Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin; do
+  sudo ip netns del $ns 2>/dev/null || true
+done
+```
+
+Los *namespaces* se eliminan **por nombre**, no todos los del equipo.
 
 ## Preguntas de reflexión
 

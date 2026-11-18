@@ -7,14 +7,14 @@ description: "Laboratorio 15 de NETWORKING Lab — Implementación Práctica Int
 
 # IMPLEMENTACIÓN PRÁCTICA INTEGRAL
 
-<p class="tema-meta"><span>17 secciones</span><span>3 diagramas</span><span>12 tablas</span></p>
+<p class="tema-meta"><span>17 secciones</span><span>3 diagramas</span><span>13 tablas</span></p>
 
 ## Contexto empresarial
 
 La empresa **Networking SecOps** ha completado todos los laboratorios anteriores. Ahora debe **integrar todos los conceptos** en una implementación práctica completa: direccionamiento VLSM, enrutamiento dinámico con OSPF, firewall, DHCP y redundancia de *gateway* con VRRP.
 
 !!! info "Mismo modelo que el resto de la serie"
-    Todo se construye con **namespaces de red**, igual que en los laboratorios anteriores (no se usan interfaces `eth0`-`eth4` reales del equipo, así que no se toca tu red). Es un laboratorio de integración con una topología nueva, por lo que empieza limpiando el entorno. Requiere instalar `frr` (OSPF), `keepalived` (VRRP) y `dnsmasq-base` (DHCP).
+    Todo se construye con **namespaces de red**, igual que en los laboratorios anteriores (las interfaces de la práctica son virtuales). **Algunos pasos sí modifican el host**: el reenvío IPv4, una regla NAT y, en un caso de diagnóstico, un archivo persistente en `/etc/sysctl.d`. Están marcados como «Cambio en el host» y se revierten en la sección «Limpieza del laboratorio». Es un laboratorio de integración con una topología nueva, por lo que empieza limpiando el entorno. Requiere instalar `frr` (OSPF), `keepalived` (VRRP) y `dnsmasq-base` (DHCP).
 
 !!! note "Este es un escenario nuevo"
     Los laboratorios 01–14 usaron topologías diferentes. Aquí **se reutilizan los nombres `R1` y `R2` con otra función y otro direccionamiento** (sede y respaldo/sucursal), y el escenario se construye desde cero. Cada apartado funciona por sí mismo, pero la coherencia global se comprueba en el apartado «Revisión de coherencia» al final: que cada bloque funcione aisladamente no garantiza que el conjunto sea coherente.
@@ -134,6 +134,9 @@ sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>
 enlace R1 veth-r1fin 10.0.1.1/25 fin veth-fin 10.0.1.10/25
 sudo ip netns exec fin ip route add default via 10.0.1.1
 ```
+
+!!! danger "Cambio en el host en este apartado"
+    Los comandos `sudo ip addr add … dev veth-wan-r1`, `sudo sysctl -w net.ipv4.ip_forward=1` e `iptables -t nat … -o eth0 -j MASQUERADE` **se ejecutan en el equipo real**, no dentro de un namespace (los de `ip netns exec R1 …` sí están aislados). Anota antes el valor de `sysctl net.ipv4.ip_forward` y revierte al terminar.
 
 ### Verificar
 
@@ -700,7 +703,7 @@ ip neigh show | wc -l
 sysctl net.ipv4.neigh.default.gc_thresh3
 sudo sysctl -w net.ipv4.neigh.default.gc_thresh3=8192
 sudo sysctl -w net.ipv4.neigh.default.gc_thresh2=4096
-# Para que persista tras reiniciar:
+# ⚠ CAMBIO PERSISTENTE EN EL HOST: sobrevive a reinicios (reversión en «Limpieza del laboratorio»)
 echo 'net.ipv4.neigh.default.gc_thresh3=8192' | sudo tee -a /etc/sysctl.d/99-arp.conf
 echo 'net.ipv4.neigh.default.gc_thresh2=4096' | sudo tee -a /etc/sysctl.d/99-arp.conf
 sudo sysctl --system
@@ -786,7 +789,18 @@ sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>
 sudo ovs-vsctl --if-exists del-br ovs-sw
 ```
 
-El reenvío del host (`net.ipv4.ip_forward`) se revierte aparte si lo activaste solo para estas prácticas.
+### Revertir lo que se hizo en el host
+
+| Cambio | Reversión |
+|--------|-----------|
+| `net.ipv4.ip_forward=1` | `sudo sysctl -w net.ipv4.ip_forward=0` (solo si estaba en 0 antes) |
+| Regla `MASQUERADE` del host | La línea `iptables -t nat -D …` de arriba |
+| Interfaz `veth-wan-r1` | La línea `ip link del veth-wan-r1` de arriba |
+| **Persistente:** `/etc/sysctl.d/99-arp.conf` (caso de agotamiento ARP) | `sudo rm -f /etc/sysctl.d/99-arp.conf && sudo sysctl --system` |
+| `gc_thresh2` y `gc_thresh3` cambiados con `sysctl -w` | Se restauran al reiniciar o con `sudo sysctl --system` tras eliminar el archivo; si no, vuelve a escribir los valores que anotaste |
+| `/usr/local/bin/check_arp.sh` (si lo creaste) | `sudo rm -f /usr/local/bin/check_arp.sh` |
+
+Comprueba al final: `sysctl net.ipv4.ip_forward`, `iptables -t nat -S POSTROUTING` y `ls /etc/sysctl.d/`.
 
 ## Conceptos clave
 

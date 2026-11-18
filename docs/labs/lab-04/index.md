@@ -412,6 +412,37 @@ ip netns exec switch ip link set veth-sv4 up
 ip netns exec ventas4 ping -c 4 10.0.0.1
 ```
 
+### Ejercicio 4: VLSM con tres departamentos y dos enlaces
+
+Con el bloque `192.168.10.0/24`, diseña subredes para Ventas (**60** hosts), Soporte (**28**), Invitados (**12**) y dos enlaces punto a punto `/30`. Cuenta también la dirección del *gateway*.
+
+??? note "Solución"
+    Se asigna de mayor a menor, sin solapar:
+
+    | Segmento | Hosts + gateway | Máscara | Subred | Rango útil |
+    |----------|-----------------|---------|--------|------------|
+    | Ventas | 61 | /26 (62 útiles) | 192.168.10.0/26 | .1 – .62 |
+    | Soporte | 29 | /27 (30 útiles) | 192.168.10.64/27 | .65 – .94 |
+    | Invitados | 13 | /28 (14 útiles) | 192.168.10.96/28 | .97 – .110 |
+    | Enlace 1 | 2 | /30 | 192.168.10.112/30 | .113 – .114 |
+    | Enlace 2 | 2 | /30 | 192.168.10.116/30 | .117 – .118 |
+
+    Quedan libres desde `192.168.10.120` para crecer.
+
+### Ejercicio 5: dimensionar con crecimiento
+
+Ventas tiene **25** equipos y prevé crecer un **50 %** en dos años. ¿Qué máscara necesita (con gateway)? ¿Por qué no basta `/27`?
+
+??? note "Solución"
+    25 × 1,5 ≈ 38 equipos + 1 gateway = 39 direcciones. `/27` ofrece 30 útiles (insuficiente); `/26` ofrece 62: **`/26`**. Dimensionar solo para hoy obliga a renumerar al crecer.
+
+### Ejercicio 6: encontrar el solapamiento
+
+¿Es válido este plan? `10.0.0.0/25` (Ventas) y `10.0.0.64/26` (IT).
+
+??? note "Solución"
+    **No.** `10.0.0.0/25` abarca `10.0.0.0`–`10.0.0.127`, y `10.0.0.64/26` (`.64`–`.127`) queda **dentro**: se solapan. IT podría ir en `10.0.0.128/26`.
+
 ## Errores comunes y soluciones
 
 | Error | Causa | Solución |

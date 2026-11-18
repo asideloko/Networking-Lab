@@ -309,6 +309,9 @@ El selector de las políticas es `10.0.0.0/24` ↔ `10.0.1.0/24`: **solo ese tr�
 
 ### Paso 9: OpenVPN entre el cliente remoto y el VPN Gateway
 
+!!! danger "Configuración de demostración, no de producción"
+    Este paso usa una **clave estática compartida**, una simplificación para ver el funcionamiento. Una implementación de producción usa **TLS con certificados (PKI)**: cada cliente tiene su identidad y se puede revocar. No copies esta configuración a un entorno real.
+
 **OpenVPN** es una solución VPN **basada en TLS**: en su modo normal, cliente y servidor se autentican con certificados (PKI), negocian claves por un canal TLS y transportan el tráfico por UDP o TCP, con sus propios mecanismos de autenticación y cifrado. **No es IPsec ni una variante de GRE.**
 
 Un servidor OpenVPN de acceso remoto "real" necesita esa PKI (CA, certificado de servidor y de cada cliente) y no se genera en unos pocos comandos. Aquí usamos el modo de **clave estática compartida**, que **no usa TLS**, no ofrece secreto perfecto hacia adelante y está en desuso; es suficiente para ver el túnel `tun` y su sobrecarga, pero **no representa una configuración segura de producción**.

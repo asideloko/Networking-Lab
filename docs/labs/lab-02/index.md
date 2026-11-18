@@ -123,6 +123,17 @@ sysctl -w net.ipv4.ip_forward=1
 iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
 ```
 
+!!! danger "Cambio en el host (no en un namespace)"
+    Los dos comandos anteriores **no se ejecutan dentro de un namespace**: modifican el **equipo real**. Antes de ejecutarlos anota el estado actual y ten a mano la reversión (sección «Revertir los cambios del host», al final del laboratorio).
+
+    | Cambio | Dónde | ¿Persiste tras reiniciar? |
+    |--------|-------|---------------------------|
+    | `net.ipv4.ip_forward=1` | Host | **No** (con `sysctl -w`), pero otro servicio podría haberlo tenido ya activo |
+    | Regla `MASQUERADE` en `nat/POSTROUTING` | Host | **No** (salvo que uses un gestor que guarde reglas) |
+    | Par `veth-host` ↔ `veth-wan` | Host | No |
+
+    Antes de empezar: `sysctl net.ipv4.ip_forward` (anota el valor) y `iptables -t nat -S POSTROUTING` (anota las reglas existentes). Ejecuta el laboratorio en una **máquina virtual de pruebas**.
+
 !!! warning "Evita solapar tu red real"
     Si tu red doméstica ya usa `192.168.1.0/24`, el enlace host–router chocará con ella. En ese caso elige otro rango libre para este enlace (por ejemplo `192.168.77.0/24`) y úsalo en todos los pasos y laboratorios siguientes.
 
@@ -344,6 +355,25 @@ ip netns exec cliente1 iperf3 -c 10.0.1.1
 | No sale a Internet | NAT no configurado. | Verificar reglas de iptables y que `ip_forward=1`. |
 | `curl: (6) Could not resolve host` | El namespace no tiene un DNS utilizable (hereda el `resolv.conf` del host, que suele apuntar a `127.0.0.53`). | Crear `/etc/netns/cliente1/resolv.conf` (véase la nota «DNS dentro de un namespace» del Paso 8). **No** escribir en `/etc/resolv.conf`: es el del host. |
 | Los paquetes no llegan al host | Host no tiene ruta de retorno. | Agregar ruta en el host: `ip route add 10.0.1.0/24 via 192.168.1.2`. |
+
+### Revertir los cambios del host
+
+Al terminar, deshaz **solo lo que hiciste aquí** (no borres reglas ajenas):
+
+```bash
+# 1. Regla NAT del host (usa la misma interfaz que pusiste en el Paso 4)
+iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
+
+# 2. Reenvío: vuelve al valor que anotaste (normalmente 0 en un equipo que no es router)
+sysctl -w net.ipv4.ip_forward=0
+
+# 3. Enlace virtual y namespaces del laboratorio
+ip link del veth-host 2>/dev/null || true
+for ns in cliente1 cliente2 router; do ip netns del $ns 2>/dev/null || true; done
+rm -rf /etc/netns/cliente1 /etc/netns/cliente2
+```
+
+Si tu equipo ya tenía `ip_forward=1` antes del laboratorio, **no lo cambies** en el paso 2. Comprueba el resultado con `iptables -t nat -S POSTROUTING` y `sysctl net.ipv4.ip_forward`.
 
 ## Preguntas de reflexión
 

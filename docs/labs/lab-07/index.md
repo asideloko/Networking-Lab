@@ -490,6 +490,16 @@ sudo ip netns exec clienteDHCP dig @10.0.0.5 servidor-interno.secops.local
 
 Haz un `ping -c 2 192.168.100.2` desde `clienteSucB` y observa en `conntrack -L` cómo R1 traduce el origen `10.0.2.10` a `192.168.100.1`. ¿Qué ocurriría si R3 no tuviera su ruta por defecto?
 
+### Ejercicio 5: DNS y servicios desde las sucursales
+
+Las sucursales conservan direccionamiento fijo, así que **no reciben el DNS por DHCP**. Comprueba que, con las rutas del laboratorio 06, una sucursal alcanza el DNS de la sede y resuelve un nombre interno:
+
+```bash
+sudo ip netns exec clienteSucA dig @10.0.0.5 servidor-interno.secops.local +short
+```
+
+Si responde `10.0.0.20`, la consulta UDP/53 atravesó los routers hasta `10.0.0.5` y volvió. Si no responde, razona por capas: ¿hay ruta de ida **y de vuelta**?, ¿el servidor DNS escucha en `10.0.0.5`?, ¿algún filtro bloquea UDP/53? Para que la sucursal use el DNS **sin indicarlo en cada consulta** haría falta configurarlo en su resolvedor (en un namespace, con `/etc/netns/<ns>/resolv.conf`) o entregarlo con DHCP relay.
+
 ## Conceptos clave del Tema 7 aplicados
 
 | Concepto | Aplicación en el laboratorio |
