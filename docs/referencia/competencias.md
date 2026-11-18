@@ -1,11 +1,11 @@
 ---
-title: "COMPETENCIAS, CASOS INTEGRADORES Y EXTENSIONES"
-description: "Competencias que desarrolla NETWORKING Lab, casos integradores por bloque y criterios para futuras ampliaciones."
+title: "COMPETENCIAS Y CASOS INTEGRADORES"
+description: "Competencias que desarrolla NETWORKING Lab y casos integradores por bloque."
 ---
 
 <p class="tema-eyebrow">REFERENCIA</p>
 
-# COMPETENCIAS, CASOS INTEGRADORES Y EXTENSIONES
+# COMPETENCIAS Y CASOS INTEGRADORES
 
 Completar los 15 laboratorios **no convierte** automáticamente a una persona en administradora de redes empresariales. Esta página lista las **competencias que el contenido pretende desarrollar**; no es una certificación de dominio práctico.
 

@@ -75,7 +75,7 @@ Realízalos en orden: **comienza por el laboratorio 01**. No todos usan la misma
 
 ## Operaciones que afectan al equipo anfitrión
 
-Un *namespace* aísla la **red**, no el equipo. Los pasos que modifican el **host** (reenvío IPv4, reglas NAT, `/etc/sysctl.d`, rutas temporales) aparecen siempre bajo el aviso **«Cambio en el host»**, y cada laboratorio que los usa (02, 11 y 15) incluye su sección de **reversión**. Antes de empezar anota `sysctl net.ipv4.ip_forward` y `iptables -t nat -S POSTROUTING`; así sabrás a qué estado volver.
+Los *namespaces* aíslan la red de cada escenario, pero los comandos ejecutados fuera de `ip netns exec` actúan sobre el **equipo anfitrión**. Antes de ejecutar cada bloque, identifica dónde se ejecuta: las modificaciones de reenvío IPv4, NAT, direcciones, rutas o archivos de `/etc` pueden afectar al sistema real. Anota el estado previo y sigue las indicaciones de limpieza del laboratorio. Eliminar los *namespaces* no revierte automáticamente los cambios realizados en el host.
 
 ## Material de referencia
 
@@ -86,6 +86,6 @@ Además de los laboratorios, el sitio incluye páginas de síntesis para consult
 -   [Método de diagnóstico](referencia/diagnostico.md): del síntoma a la causa.
 -   [Arquitectura integral](referencia/arquitectura-integral.md): mapas de síntesis y matriz de disponibilidad.
 -   [Glosario](referencia/glosario.md).
--   [Competencias y casos integradores](referencia/competencias.md): qué se espera al terminar y criterios de ampliación.
+-   [Competencias y casos integradores](referencia/competencias.md): capacidades que desarrolla la serie y ejercicios de integración.
 
-Cada laboratorio termina ahora con **preguntas de reflexión**: qué mecanismo se demuestra, qué pasa si se elimina un componente, qué limitaciones tiene y dónde se usaría en una empresa.
+Cada laboratorio incluye **preguntas de reflexión**: qué mecanismo se demuestra, qué pasa si se elimina un componente, qué limitaciones tiene y dónde se usaría en una empresa.
