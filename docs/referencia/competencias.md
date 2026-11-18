@@ -45,17 +45,3 @@ Explica:
 5.  **Qué sucede ante distintos fallos** (usa la [matriz de disponibilidad](arquitectura-integral.md)).
 6.  **Qué herramientas diagnostican cada situación** (usa el [método de diagnóstico](diagnostico.md)).
 
-## Criterios para futuras ampliaciones
-
-Las siguientes áreas **no son deficiencias** del proyecto: son oportunidades. La regla es no añadir tecnologías para aumentar el número de temas, sino **solo si desarrollan una competencia que el recorrido actual no cubre**.
-
-| Tema | Posible aporte | Prioridad |
-|------|----------------|-----------|
-| IPv6 | Ampliar el direccionamiento más allá de IPv4 | Alta |
-| BGP | Enrutamiento entre sistemas autónomos | Media |
-| SNMP y telemetría | Ampliar la supervisión | Media |
-| Automatización (Ansible) | Administración repetible | Media |
-| QoS | Priorización y tratamiento del tráfico | Media |
-| Gestión de configuración | Respaldos y control de cambios | Media |
-| Wi-Fi empresarial | Redes inalámbricas | Media |
-| DNS avanzado | Zonas, registros y resolución | Baja-media |
