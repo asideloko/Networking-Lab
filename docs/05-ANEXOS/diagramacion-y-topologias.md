@@ -5,7 +5,7 @@ description: "Biblioteca centralizada de topologías, equipos, servicios, proces
 
 # DIAGRAMACIÓN Y TOPOLOGÍAS
 
-Esta sección reúne los **46 diagramas técnicos** del proyecto: laboratorios 01–15, proyecto final y documentos de referencia. Es la biblioteca visual central de NETWORKING Lab. Cada ficha identifica su procedencia, propósito, componentes y función técnica; el código Mermaid se conserva para que cada representación se renderice directamente en el sitio.
+Esta sección reúne los diagramas del proyecto: laboratorios 01–15, proyecto final y documentos de referencia. Es la biblioteca visual central de NETWORKING Lab. Cada ficha identifica su procedencia, propósito, componentes y función técnica; el código Mermaid se conserva para que cada representación se renderice directamente en el sitio.
 
 ## Convenciones cromáticas y de lectura
 
@@ -17,10 +17,6 @@ La colorimetría es una **convención editorial propia del proyecto**. El color 
 | <span class="sx-dot" style="background:#F59E0B"></span> Amarillo `#F59E0B` | Advertencia | Precauciones, riesgos potenciales, acciones que requieren atención y advertencias antes de ejecutar cambios. |
 | <span class="sx-dot" style="background:#10B981"></span> Verde `#10B981` | Dato Técnico | Parámetros, direcciones IP, configuraciones, características de equipos y datos técnicos de referencia. |
 | <span class="sx-dot" style="background:#EF4444"></span> Rojo `#EF4444` | Peligro / Error Crítico | Errores críticos, bloqueos, condiciones peligrosas, fallos graves y acciones que pueden causar daños. |
-
-**Conexiones:** las líneas y flechas indican relación, dirección o secuencia. Los rótulos distinguen enlaces físicos, virtuales, túneles, troncales y flujos lógicos. Los contenedores agrupan equipos o funciones que pertenecen a una misma sede, zona o dominio.
-
-**Tema claro y oscuro:** los fondos, textos y contornos se adaptan al tema activo sin cambiar el significado de cada color. Las decisiones conservan la forma de rombo y las secuencias mantienen la dirección temporal.
 
 **Referencias de accesibilidad:** [WCAG 2.2, criterio 1.4.1](https://www.w3.org/TR/WCAG22/#use-of-color) establece que el color no debe ser el único medio de transmitir información. [ISO 5807:1985](https://www.iso.org/standard/11955.html) ofrece convenciones de símbolos para diagramas de flujo y sistemas; no prescribe esta paleta de red.
 
