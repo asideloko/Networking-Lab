@@ -119,15 +119,15 @@ ip netns exec router ip route add default via 192.168.1.1
 El host también debe reenviar y traducir el tráfico del enlace de laboratorio hacia tu red real. Sustituye `eth0` por la interfaz con la que sales a Internet (`ip route get 8.8.8.8` te la muestra):
 
 ```bash
-# Guarda el valor original: la reversión lo restaura tal cual (no sobrescribe una copia anterior)
+# Guarda el valor original (la reversión lo restaura) y solo entonces modifica el host.
+# Si ya existe una copia, se detiene: revisa su valor y bórrala antes de continuar.
 if [ -e /tmp/lab02-ip_forward.orig ]; then
   echo "/tmp/lab02-ip_forward.orig ya existe: revisa su valor y bórralo antes de continuar"
 else
   sysctl -n net.ipv4.ip_forward > /tmp/lab02-ip_forward.orig
+  sysctl -w net.ipv4.ip_forward=1
+  iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
 fi
-
-sysctl -w net.ipv4.ip_forward=1
-iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
 ```
 
 !!! danger "Cambio en el host (no en un namespace)"
