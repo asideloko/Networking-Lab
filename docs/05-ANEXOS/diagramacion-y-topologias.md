@@ -13,10 +13,10 @@ La colorimetría es una **convención editorial propia del proyecto**. El color 
 
 | Color funcional | Categoría | Elementos representados |
 |---|---|---|
-| <span class="sx-dot sx-device"></span> Violeta `#5B18CC` | Equipos e infraestructura | Routers, switches, hosts, bridges, gateways, interfaces y segmentos físicos o virtuales. |
-| <span class="sx-dot sx-service"></span> Índigo `#29187A` | Servicios y software | DNS, DHCP, NTP, servidores, autenticación, monitoreo y aplicaciones. |
-| <span class="sx-dot sx-process"></span> Púrpura `#8B5CF6` | Procesos y operaciones | Routing, NAT, encapsulación, filtrado, intercambio de mensajes y tratamiento de paquetes. |
-| <span class="sx-dot sx-decision"></span> Lila `#CBBcff` | Decisiones y condiciones | Rombos, bifurcaciones, validaciones, selección de rutas y resultados condicionales. |
+| <span class="sx-dot" style="background:#2196D2"></span> Azul `#2196D2` | Nota / Aviso | Información relevante, observaciones, notas explicativas y avisos que orientan la lectura sin indicar peligro. |
+| <span class="sx-dot" style="background:#F59E0B"></span> Amarillo `#F59E0B` | Advertencia | Precauciones, riesgos potenciales, acciones que requieren atención y advertencias antes de ejecutar cambios. |
+| <span class="sx-dot" style="background:#10B981"></span> Verde `#10B981` | Dato Técnico | Parámetros, direcciones IP, configuraciones, características de equipos y datos técnicos de referencia. |
+| <span class="sx-dot" style="background:#EF4444"></span> Rojo `#EF4444` | Peligro / Error Crítico | Errores críticos, bloqueos, condiciones peligrosas, fallos graves y acciones que pueden causar daños. |
 
 **Conexiones:** las líneas y flechas indican relación, dirección o secuencia. Los rótulos distinguen enlaces físicos, virtuales, túneles, troncales y flujos lógicos. Los contenedores agrupan equipos o funciones que pertenecen a una misma sede, zona o dominio.
 

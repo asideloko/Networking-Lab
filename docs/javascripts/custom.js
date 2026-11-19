@@ -65,78 +65,94 @@ function renderMermaid() {
 }
 
 function aplicarColoresFuncionales(nodos) {
-  var css = getComputedStyle(document.documentElement);
   var oscuro = document.body.getAttribute("data-md-color-scheme") === "slate";
-  var c = function(n,d) { return css.getPropertyValue(n).trim() || d; };
-  var P = {
-    dispositivo:c("--cv-violeta","#5B18CC"),
-    servicio:c("--cv-indigo","#29187A"),
-    proceso:c("--cv-acento","#8B5CF6"),
-    decision:c("--cv-lila","#CBBcff")
+  var C = {
+    aviso: "#2196D2",
+    advertencia: "#F59E0B",
+    tecnico: "#10B981",
+    peligro: "#EF4444"
   };
   var reglas = [
-    ["decision",/decisi[oó]n|condici[oó]n|verdadero|falso|¿|\?|válido|valido|permitido/i],
-    ["servicio",/dhcp|dns|ntp|snmp|syslog|servidor|servicio|api|web|correo|aplicaci[oó]n|base de datos/i],
-    ["proceso",/paquete|trama|encapsul|discover|offer|request|ack|syn|fin\b|consulta|respuesta|flujo|protocolo|autenticaci[oó]n|cifrado|nat\b|acl|iptables|nftables|regla|enrutamiento/i]
+    ["peligro", /peligro|error crítico|error critico|crítico|critico|fatal|fallo crítico|fallo critico|denegado|bloqueado|daño|dano|riesgo/i],
+    ["advertencia", /advertencia|precaución|precaucion|cuidado|alerta|atención|atencion|borrar|eliminar|sobrescribir|respaldo|inseguro/i],
+    ["tecnico", /dato técnico|dato tecnico|información técnica|informacion tecnica|parámetro|parametro|dirección ip|direccion ip|máscara|mascara|gateway|protocolo|configuración|configuracion|comando|interfaz|router|switch|servidor|vlan|subred/i],
+    ["aviso", /nota|aviso|información|informacion|referencia|observación|observacion|importante|recomendación|recomendacion/i]
   ];
-  function tinta(h) {
-    var x=h.replace("#","");
-    var v=[0,2,4].map(function(i) {
-      var n=parseInt(x.slice(i,i+2),16)/255;
-      return n<=.04045?n/12.92:Math.pow((n+.055)/1.055,2.4);
-    });
-    return .2126*v[0]+.7152*v[1]+.0722*v[2]>.42?"#171329":"#F1EDFF";
+
+  function tipo(texto) {
+    for (var i = 0; i < reglas.length; i++) {
+      if (reglas[i][1].test(texto)) return reglas[i][0];
+    }
+    return "aviso";
   }
+
+  function tinta(hex) {
+    var h = hex.slice(1);
+    var rgb = [0,2,4].map(function(i) {
+      var v = parseInt(h.slice(i,i+2),16)/255;
+      return v <= .04045 ? v/12.92 : Math.pow((v+.055)/1.055,2.4);
+    });
+    return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2] > .42
+      ? "#172033" : "#F8FAFC";
+  }
+
   nodos.forEach(function(root) {
     root.querySelectorAll("g.node").forEach(function(node) {
-      var label=(node.textContent||"").replace(/\s+/g," ");
-      var tipo="dispositivo";
-      for(var i=0;i<reglas.length;i++) {
-        if(reglas[i][1].test(label)){tipo=reglas[i][0];break;}
-      }
-      var fondo=P[tipo], texto=tinta(fondo);
-      node.setAttribute("data-funcion",tipo);
+      var texto = (node.textContent || "").replace(/\s+/g," ").trim();
+      var categoria = tipo(texto);
+      var fondo = C[categoria];
+      var frente = tinta(fondo);
+      node.setAttribute("data-funcion",categoria);
+
       node.querySelectorAll("rect,polygon,path,circle,ellipse").forEach(function(el) {
-        if(el.closest("defs")) return;
+        if (el.closest("defs")) return;
         el.style.setProperty("fill",fondo,"important");
         el.style.setProperty("fill-opacity","1","important");
         el.style.setProperty("stroke",fondo,"important");
+        el.style.setProperty("stroke-width","2px","important");
       });
       node.querySelectorAll("text,tspan").forEach(function(el) {
-        el.style.setProperty("fill",texto,"important");
+        el.style.setProperty("fill",frente,"important");
       });
       node.querySelectorAll("foreignObject div,foreignObject span,foreignObject p").forEach(function(el) {
-        el.style.setProperty("color",texto,"important");
+        el.style.setProperty("color",frente,"important");
         el.style.setProperty("background","transparent","important");
       });
     });
+
     root.querySelectorAll(".cluster rect").forEach(function(el) {
-      el.style.setProperty("fill",oscuro?"#171329":"#ECE6FB","important");
-      el.style.setProperty("stroke",oscuro?P.proceso:P.dispositivo,"important");
-      el.style.setProperty("stroke-dasharray","5 3","important");
+      el.style.setProperty("fill",oscuro ? "#172033" : "#F1F5F9","important");
+      el.style.setProperty("stroke",C.aviso,"important");
+      el.style.setProperty("stroke-width","2px","important");
     });
+
+    root.querySelectorAll("g.note rect,g.note polygon").forEach(function(el) {
+      el.style.setProperty("fill",C.aviso,"important");
+      el.style.setProperty("stroke",C.aviso,"important");
+    });
+
+    root.querySelectorAll(".actor rect").forEach(function(el) {
+      el.style.setProperty("fill",C.tecnico,"important");
+      el.style.setProperty("stroke",C.tecnico,"important");
+    });
+
+    root.querySelectorAll(".edgeLabel rect,.labelBox").forEach(function(el) {
+      el.style.setProperty("fill",C.advertencia,"important");
+      el.style.setProperty("stroke",C.advertencia,"important");
+    });
+
     root.querySelectorAll(".edgePath path,.flowchart-link,.messageLine0,.messageLine1,.loopLine,.actor-line").forEach(function(el) {
-      el.style.setProperty("stroke",oscuro?P.decision:P.servicio,"important");
+      el.style.setProperty("stroke",C.aviso,"important");
       el.style.setProperty("fill","none","important");
     });
+
     root.querySelectorAll(".arrowheadPath").forEach(function(el) {
-      el.style.setProperty("fill",oscuro?P.decision:P.servicio,"important");
-      el.style.setProperty("stroke",oscuro?P.decision:P.servicio,"important");
+      el.style.setProperty("fill",C.aviso,"important");
+      el.style.setProperty("stroke",C.aviso,"important");
     });
-    root.querySelectorAll(".actor rect").forEach(function(el) {
-      el.style.setProperty("fill",P.servicio,"important");
-      el.style.setProperty("stroke",P.servicio,"important");
-    });
-    root.querySelectorAll("g.note rect,g.note polygon").forEach(function(el) {
-      el.style.setProperty("fill",P.proceso,"important");
-      el.style.setProperty("stroke",P.proceso,"important");
-    });
-    root.querySelectorAll(".edgeLabel rect,.labelBox").forEach(function(el) {
-      el.style.setProperty("fill",P.decision,"important");
-      el.style.setProperty("stroke",P.decision,"important");
-    });
+
     root.querySelectorAll(".messageText,.noteText,.labelText").forEach(function(el) {
-      el.style.setProperty("fill",oscuro?"#F1EDFF":"#171329","important");
+      el.style.setProperty("fill",oscuro ? "#F8FAFC" : "#172033","important");
     });
   });
 }
