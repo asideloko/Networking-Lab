@@ -65,85 +65,80 @@ function renderMermaid() {
 }
 
 function aplicarColoresFuncionales(nodos) {
-  var oscuro = document.body.getAttribute("data-md-color-scheme") === "slate";
   var css = getComputedStyle(document.documentElement);
-  var color = function (name, fallback) { return css.getPropertyValue(name).trim() || fallback; };
-  var paleta = {
-    dispositivo: color("--cv-violeta", "#5b18cc"),
-    servicio: color("--cv-indigo", "#29187a"),
-    proceso: color("--cv-acento", "#8b5cf6"),
-    decision: color("--cv-lila", "#cbbcff"),
-    linea: oscuro ? "#cbbcff" : "#55418a",
-    grupo: oscuro ? "#8b5cf6" : "#5b18cc",
-    texto: oscuro ? "#f1edff" : "#171329",
-    fondo: oscuro ? "#171329" : "#ffffff"
+  var oscuro = document.body.getAttribute("data-md-color-scheme") === "slate";
+  var c = function(n,d) { return css.getPropertyValue(n).trim() || d; };
+  var P = {
+    dispositivo:c("--cv-violeta","#5B18CC"),
+    servicio:c("--cv-indigo","#29187A"),
+    proceso:c("--cv-acento","#8B5CF6"),
+    decision:c("--cv-lila","#CBBcff")
   };
   var reglas = [
-    { tipo: "decision", re: /¿|\?|decisi[oó]n|selecci[oó]n|condici[oó]n|verdadero|falso|cumple|no cumple|existe\?/i },
-    { tipo: "servicio", re: /\bdhcp\b|\bdns\b|\bntp\b|\bsiem\b|syslog|snmp|https?|servidor|servicio|database|base de datos|aplicaci[oó]n|broker|\bidp\b|monitor|noc/i },
-    { tipo: "proceso", re: /paquete|trama|encapsul|prerouting|postrouting|discover|offer|request|ack|syn|fin\b|push|swap|pop|consulta|respuesta|flujo|negociaci[oó]n|\bacl\b|iptables|nftables|regla|pol[ií]tica|permitir|denegar|bloque|nat\b|routing|enrutamiento|m[eé]trica|failover/i },
-    { tipo: "dispositivo", re: /router|switch|gateway|host|cliente|firewall|core|dist|access|\bpe\b|\bce\b|\br[0-9]+\b|\bsw[0-9]+\b|veth|bridge|equipo|nodo|internet|wan|lan|vlan|vpc|subred|segmento|nube|cloud|sede|sucursal|zona/i }
+    ["decision",/decisi[oó]n|condici[oó]n|verdadero|falso|¿|\?|válido|valido|permitido/i],
+    ["servicio",/dhcp|dns|ntp|snmp|syslog|servidor|servicio|api|web|correo|aplicaci[oó]n|base de datos/i],
+    ["proceso",/paquete|trama|encapsul|discover|offer|request|ack|syn|fin\b|consulta|respuesta|flujo|protocolo|autenticaci[oó]n|cifrado|nat\b|acl|iptables|nftables|regla|enrutamiento/i]
   ];
-  // Rellenos con la paleta institucional original.
-  var tonos = {
-    dispositivo: paleta.dispositivo,
-    servicio: paleta.servicio,
-    proceso: paleta.proceso,
-    decision: paleta.decision
-  };
-  function textoContraste(hex) {
-    var h = hex.replace("#", "");
-    var rgb = [0, 2, 4].map(function (i) {
-      var v = parseInt(h.slice(i, i + 2), 16) / 255;
-      return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  function tinta(h) {
+    var x=h.replace("#","");
+    var v=[0,2,4].map(function(i) {
+      var n=parseInt(x.slice(i,i+2),16)/255;
+      return n<=.04045?n/12.92:Math.pow((n+.055)/1.055,2.4);
     });
-    var l = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
-    return l > 0.42 ? "#171329" : "#ffffff";
+    return .2126*v[0]+.7152*v[1]+.0722*v[2]>.42?"#171329":"#F1EDFF";
   }
-  nodos.forEach(function (contenedor) {
-    contenedor.querySelectorAll("g.node").forEach(function (node) {
-      var label = (node.textContent || "").replace(/\s+/g, " ").trim();
-      var regla = reglas.find(function (r) { return r.re.test(label); });
-      var tipo = regla ? regla.tipo : "dispositivo";
-      var stroke = paleta[tipo];
-      node.setAttribute("data-funcion", tipo);
-      node.querySelectorAll("rect, polygon, path, circle, ellipse").forEach(function (shape) {
-        if (shape.closest("defs")) return;
-        shape.style.fill = tonos[tipo];
-        shape.style.fillOpacity = "1";
-        shape.style.stroke = stroke;
-        shape.style.strokeWidth = tipo === "decision" ? "2.2px" : "2px";
+  nodos.forEach(function(root) {
+    root.querySelectorAll("g.node").forEach(function(node) {
+      var label=(node.textContent||"").replace(/\s+/g," ");
+      var tipo="dispositivo";
+      for(var i=0;i<reglas.length;i++) {
+        if(reglas[i][1].test(label)){tipo=reglas[i][0];break;}
+      }
+      var fondo=P[tipo], texto=tinta(fondo);
+      node.setAttribute("data-funcion",tipo);
+      node.querySelectorAll("rect,polygon,path,circle,ellipse").forEach(function(el) {
+        if(el.closest("defs")) return;
+        el.style.setProperty("fill",fondo,"important");
+        el.style.setProperty("fill-opacity","1","important");
+        el.style.setProperty("stroke",fondo,"important");
       });
-      node.querySelectorAll("text, tspan").forEach(function (el) {
-        el.style.setProperty("fill", textoContraste(tonos[tipo]), "important");
-        el.style.fontWeight = "600";
+      node.querySelectorAll("text,tspan").forEach(function(el) {
+        el.style.setProperty("fill",texto,"important");
+      });
+      node.querySelectorAll("foreignObject div,foreignObject span,foreignObject p").forEach(function(el) {
+        el.style.setProperty("color",texto,"important");
+        el.style.setProperty("background","transparent","important");
       });
     });
-    contenedor.querySelectorAll(".edgePath path.path, .flowchart-link, .messageLine0, .messageLine1, .loopLine").forEach(function (line) {
-      line.style.stroke = paleta.linea;
-      line.style.strokeWidth = "1.9px";
-      line.style.fill = "none";
+    root.querySelectorAll(".cluster rect").forEach(function(el) {
+      el.style.setProperty("fill",oscuro?"#171329":"#ECE6FB","important");
+      el.style.setProperty("stroke",oscuro?P.proceso:P.dispositivo,"important");
+      el.style.setProperty("stroke-dasharray","5 3","important");
     });
-    contenedor.querySelectorAll(".arrowheadPath").forEach(function (arrow) {
-      arrow.style.fill = paleta.linea;
-      arrow.style.stroke = paleta.linea;
+    root.querySelectorAll(".edgePath path,.flowchart-link,.messageLine0,.messageLine1,.loopLine,.actor-line").forEach(function(el) {
+      el.style.setProperty("stroke",oscuro?P.decision:P.servicio,"important");
+      el.style.setProperty("fill","none","important");
     });
-    contenedor.querySelectorAll(".cluster rect").forEach(function (shape) {
-      shape.style.fill = oscuro ? "rgba(139,92,246,.06)" : "rgba(91,24,204,.035)";
-      shape.style.fillOpacity = "1";
-      shape.style.stroke = paleta.grupo;
-      shape.style.strokeWidth = "1.7px";
-      shape.style.strokeDasharray = "5 3";
+    root.querySelectorAll(".arrowheadPath").forEach(function(el) {
+      el.style.setProperty("fill",oscuro?P.decision:P.servicio,"important");
+      el.style.setProperty("stroke",oscuro?P.decision:P.servicio,"important");
     });
-    contenedor.querySelectorAll(".actor rect, .actor-man line, .actor-man circle").forEach(function (shape) {
-      shape.style.fill = tonos.servicio;
-      shape.style.stroke = paleta.servicio;
+    root.querySelectorAll(".actor rect").forEach(function(el) {
+      el.style.setProperty("fill",P.servicio,"important");
+      el.style.setProperty("stroke",P.servicio,"important");
     });
-    contenedor.querySelectorAll(".messageText, .noteText, .labelText").forEach(function (el) {
-      el.style.fill = paleta.texto;
+    root.querySelectorAll("g.note rect,g.note polygon").forEach(function(el) {
+      el.style.setProperty("fill",P.proceso,"important");
+      el.style.setProperty("stroke",P.proceso,"important");
+    });
+    root.querySelectorAll(".edgeLabel rect,.labelBox").forEach(function(el) {
+      el.style.setProperty("fill",P.decision,"important");
+      el.style.setProperty("stroke",P.decision,"important");
+    });
+    root.querySelectorAll(".messageText,.noteText,.labelText").forEach(function(el) {
+      el.style.setProperty("fill",oscuro?"#F1EDFF":"#171329","important");
     });
   });
 }
-
 new MutationObserver(function () { renderMermaid(); })
   .observe(document.body, { attributes: true, attributeFilter: ["data-md-color-scheme"] });
