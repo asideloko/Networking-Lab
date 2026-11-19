@@ -13,6 +13,10 @@
   font-display: swap;
   src: url("../assets/fonts/ChakraPetch-Medium.woff2") format("woff2");
 }
+/* Si agregas más pesos, colócalos en docs/assets/fonts/ y descomenta:
+@font-face { font-family:"Chakra Petch"; font-weight:300; src:url("../assets/fonts/ChakraPetch-Light.woff2") format("woff2"); }
+@font-face { font-family:"Chakra Petch"; font-weight:600; src:url("../assets/fonts/ChakraPetch-SemiBold.woff2") format("woff2"); }
+*/
 
 :root {
   --sx-ink: #181818;
@@ -706,10 +710,11 @@ html:has(#__drawer:checked) { overflow: hidden; }
 
 
 /* ==========================================================================
-   IDENTIDAD DE PORTADA — el sitio hereda la paleta y la composición de la portada del libro
+   IDENTIDAD DE PORTADA (v3) — el sitio hereda la paleta y la composición de la portada del libro
    Colores muestreados de la portada:
      violeta institucional #5b18cc · violeta de esquina #5026ad · índigo #29187a
      noche #0c0d36 · abismo #04040d · acento (barra lateral) #8b5cf6 · lila (textos) #cbbcff
+   Solo cambia color y fondos: no se toca estructura, orden, contenido ni funciones.
    ========================================================================== */
 :root {
   --cv-violeta: #5b18cc;

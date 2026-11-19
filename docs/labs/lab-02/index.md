@@ -7,7 +7,7 @@ description: "Laboratorio 02 de NETWORKING Lab — Transmisión de Datos y Capa 
 
 # TRANSMISIÓN DE DATOS Y CAPA FÍSICA
 
-<p class="tema-meta"><span>13 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>14 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -189,7 +189,6 @@ ip netns exec cliente1 curl -I http://google.com
 ```
 
 **Resultado esperado** (si el host dispone de salida real a Internet):
-
 - `ping` 0% de pérdida.
 - `nslookup` devuelve una IP.
 - `curl` devuelve un código HTTP 301 o 200.
@@ -318,7 +317,6 @@ ip netns exec router ip route show
 ```
 
 **Preguntas:**
-
 - ¿Qué rutas tiene el router?
 - ¿Cómo sabe el router que debe enviar el tráfico a 10.0.1.0/24 por br0?
 - ¿Qué ruta usa para Internet?
@@ -332,7 +330,6 @@ ip netns exec router iptables -t nat -L -v
 ```
 
 **Preguntas:**
-
 - ¿Qué regla de NAT está activa?
 - ¿Cuántos paquetes han sido traducidos?
 
@@ -359,7 +356,7 @@ ip netns exec cliente1 iperf3 -c 10.0.1.1
 | `curl: (6) Could not resolve host` | El namespace no tiene un DNS utilizable (hereda el `resolv.conf` del host, que suele apuntar a `127.0.0.53`). | Crear `/etc/netns/cliente1/resolv.conf` (véase la nota «DNS dentro de un namespace» del Paso 8). **No** escribir en `/etc/resolv.conf`: es el del host. |
 | Los paquetes no llegan al host | Host no tiene ruta de retorno. | Agregar ruta en el host: `ip route add 10.0.1.0/24 via 192.168.1.2`. |
 
-### Revertir los cambios del host
+## Revertir los cambios del host
 
 Al terminar, deshaz **solo lo que hiciste aquí** (no borres reglas ajenas):
 

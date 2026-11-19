@@ -1,11 +1,11 @@
 ---
-title: "COMPETENCIAS, CASOS INTEGRADORES Y EXTENSIONES"
-description: "Competencias que desarrolla NETWORKING Lab, casos integradores por bloque y criterios para futuras ampliaciones."
+title: "COMPETENCIAS Y CASOS INTEGRADORES"
+description: "Competencias que desarrolla NETWORKING Lab y casos integradores para repasar la serie."
 ---
 
 <p class="tema-eyebrow">REFERENCIA</p>
 
-# COMPETENCIAS, CASOS INTEGRADORES Y EXTENSIONES
+# COMPETENCIAS Y CASOS INTEGRADORES
 
 Completar los 15 laboratorios **no convierte** automáticamente a una persona en administradora de redes empresariales. Esta página lista las **competencias que el contenido pretende desarrollar**; no es una certificación de dominio práctico.
 
@@ -44,18 +44,3 @@ Explica:
 4.  **Cómo se supervisan** los servicios (NOC, registros, métricas, alertas).
 5.  **Qué sucede ante distintos fallos** (usa la [matriz de disponibilidad](arquitectura-integral.md)).
 6.  **Qué herramientas diagnostican cada situación** (usa el [método de diagnóstico](diagnostico.md)).
-
-## Criterios para futuras ampliaciones
-
-Las siguientes áreas **no son deficiencias** del proyecto: son oportunidades. La regla es no añadir tecnologías para aumentar el número de temas, sino **solo si desarrollan una competencia que el recorrido actual no cubre**.
-
-| Tema | Posible aporte | Prioridad |
-|------|----------------|-----------|
-| IPv6 | Ampliar el direccionamiento más allá de IPv4 | Alta |
-| BGP | Enrutamiento entre sistemas autónomos | Media |
-| SNMP y telemetría | Ampliar la supervisión | Media |
-| Automatización (Ansible) | Administración repetible | Media |
-| QoS | Priorización y tratamiento del tráfico | Media |
-| Gestión de configuración | Respaldos y control de cambios | Media |
-| Wi-Fi empresarial | Redes inalámbricas | Media |
-| DNS avanzado | Zonas, registros y resolución | Baja-media |

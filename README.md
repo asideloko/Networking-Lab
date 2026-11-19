@@ -1,47 +1,219 @@
-# NETWORKING-Lab
+# NETWORKING LAB
 
-## Laboratorios prácticos de redes
+**Laboratorios prácticos de redes | SecOpsMX**
 
-**Del fundamento teórico a la implementación práctica.**
+> Del fundamento teórico a la comprensión técnica mediante escenarios de red, topologías y demostraciones prácticas.
 
-*NETWORKING-Lab* es el entorno de laboratorios prácticos que complementa el libro *NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico*, de Guillermo Castillo (SecOpsMX, 2026).
+**🌐 Acceder a NETWORKING Lab · 💻 [Código fuente](https://github.com/asideloko/Networking-Lab.git)**
 
-El libro aborda los fundamentos, protocolos, arquitecturas y tecnologías que hacen posible la comunicación entre sistemas y redes. Este laboratorio amplía ese recorrido mediante ejercicios que permiten explorar, configurar, implementar y verificar los conceptos estudiados.
+---
 
-Los laboratorios presentan escenarios ilustrativos de red, topologías, direccionamiento y configuración de tecnologías, además de actividades para comprobar resultados y relacionar los principios técnicos con su aplicación práctica.
 
-## Acceder a los laboratorios
+**NETWORKING Lab** es un entorno de aprendizaje práctico que complementa el libro **NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico**, de **Guillermo Castillo (SecOpsMX)**.
 
-**[Abrir NETWORKING-Lab](https://asideloko.github.io/Networking-Lab/)**
+El proyecto transforma los conceptos fundamentales de las redes de computadoras en escenarios didácticos que permiten comprender el funcionamiento de protocolos, tecnologías, arquitecturas y servicios de red.
 
-## Áreas de práctica
+A través de **15 laboratorios**, se presentan topologías, esquemas de comunicación, direccionamiento, configuraciones ilustrativas, comandos y resultados que permiten relacionar los fundamentos teóricos con su representación técnica.
 
-- Fundamentos de redes y modelos de comunicación.
+El objetivo es comprender cómo funcionan las redes, cómo interactúan sus componentes y qué sucede durante los diferentes procesos de comunicación.
+
+---
+
+## Contenido
+
+El entorno está organizado en **15 laboratorios**, distribuidos en tres bloques temáticos.
+
+### Laboratorios 01–05 · Fundamentos e infraestructura
+
+| N.º | Laboratorio |
+|---:|---|
+| 01 | Fundamentos de Redes y Encapsulación |
+| 02 | Transmisión de Datos y Capa Física |
+| 03 | Componentes de Red y Conmutación |
+| 04 | Direccionamiento IP y Subredes |
+| 05 | Conmutación y Segmentación de Red |
+
+### Laboratorios 06–10 · Conectividad y servicios
+
+| N.º | Laboratorio |
+|---:|---|
+| 06 | Enrutamiento y Conectividad entre Redes |
+| 07 | Protocolos y Servicios de Red |
+| 08 | Seguridad en Redes |
+| 09 | VPN y Tunelización |
+| 10 | Infraestructura WAN y Core |
+
+### Laboratorios 11–15 · Arquitecturas y operación
+
+| N.º | Laboratorio |
+|---:|---|
+| 11 | Arquitectura de Red Empresarial |
+| 12 | Arquitecturas Modernas de Red |
+| 13 | Monitoreo y Diagnóstico de Redes |
+| 14 | Herramientas Linux Avanzadas |
+| 15 | Implementación Práctica Integral |
+
+---
+
+## Metodología de aprendizaje
+
+Cada laboratorio desarrolla un recorrido técnico que incluye:
+
+1. Fundamentos teóricos del tema.
+2. Identificación de conceptos y tecnologías.
+3. Presentación de escenarios de red.
+4. Diseño de topologías y direccionamiento.
+5. Configuraciones y comandos explicados.
+6. Diagramas de arquitectura y comunicación.
+7. Verificación de procedimientos.
+8. Interpretación de resultados.
+9. Relación con los siguientes temas del recorrido.
+
+---
+
+## Tecnologías y áreas de estudio
+
+El contenido aborda diferentes componentes del networking:
+
+- Modelos de comunicación y encapsulación.
+- Ethernet y transmisión de datos.
 - Direccionamiento IPv4 e IPv6.
-- Switching, VLAN y routing.
-- Protocolos y servicios de red.
-- Seguridad, VPN y arquitecturas modernas.
-- Monitorización, diagnóstico y resolución de problemas.
-- Implementación y verificación de escenarios de red.
+- Switching y segmentación mediante VLAN.
+- Routing y conectividad entre redes.
+- Protocolos y servicios de infraestructura.
+- Seguridad de redes y filtrado de tráfico.
+- VPN y tecnologías de tunelización.
+- Infraestructura WAN y arquitecturas empresariales.
+- Monitorización y diagnóstico.
+- Administración de redes mediante herramientas Linux.
+- Alta disponibilidad e integración de servicios.
 
-## Obtener el libro
+---
 
-[NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico en Leanpub](https://leanpub.com/networking-fundamentos)
+## Entorno de simulación y alcance
 
-**Autor:** Guillermo Castillo · SecOpsMX  
-**Edición:** 2026
+Los laboratorios utilizan escenarios ilustrativos basados en tecnologías de **Linux**, incluidos **network namespaces**, interfaces virtuales y herramientas de red.
+
+> **Importante:** este proyecto tiene una finalidad educativa. Sus escenarios permiten comprender y representar procesos de comunicación, pero no constituyen implementaciones completas de infraestructuras empresariales ni sustituyen equipos físicos o plataformas especializadas de simulación.
+
+Cuando una representación simplifica una tecnología, se documentan sus alcances y limitaciones para evitar confundir un modelo didáctico con una implementación real.
+
+---
+
+## Requisitos
+
+Para trabajar con los laboratorios se recomienda:
+
+- Sistema **Linux**, máquina virtual o **WSL2**.
+- Conocimientos básicos de terminal.
+- Permisos de superusuario para los ejercicios que modifican la configuración de red.
+- Herramientas y módulos del kernel indicados en cada laboratorio.
+
+> **Recomendación:** utilizar una máquina virtual o entorno de pruebas. **No ejecutar los ejercicios directamente en servidores de producción.**
+
+---
+
+## Plataforma de documentación
+
+El sitio está construido con **Zensical**, que permite generar documentación técnica mediante **Markdown** y una configuración centralizada.
+
+Entre sus componentes se encuentran:
+
+- Navegación estructurada de los 15 laboratorios.
+- Tema claro y oscuro.
+- Diagramas **Mermaid**.
+- Bloques de código y comandos.
+- Hojas de estilo personalizadas.
+- Recursos gráficos y tipografía local.
+- Documentación adaptable a dispositivos móviles.
+
+---
+
+## Desarrollo local
+
+Para ejecutar el proyecto en un entorno compatible con **Python**:
+
+```bash
+git clone https://github.com/asideloko/Networking-Lab.git
+
+cd Networking-Lab
+
+pip install -r requirements.txt
+```
+
+Iniciar el servidor de desarrollo:
+
+```bash
+zensical serve
+```
+
+Abrir:
+
+```text
+http://localhost:8000
+```
+
+Generar la versión estática:
+
+```bash
+zensical build
+```
+
+Los archivos generados se encuentran en el directorio `site/`.
+
+---
+
+## Estructura del repositorio
+
+```text
+Networking-Lab/
+│
+├── .github/
+│   └── workflows/
+│       └── docs.yml
+│
+├── docs/
+│   ├── assets/
+│   ├── javascripts/
+│   ├── stylesheets/
+│   ├── labs/
+│   │   ├── lab-01/
+│   │   ├── lab-02/
+│   │   ├── ...
+│   │   └── lab-15/
+│   └── index.md
+│
+├── overrides/
+│   ├── main.html
+│   └── partials/
+│
+├── README.md
+├── requirements.txt
+└── zensical.toml
+```
+
+---
+
+## Libro de referencia
+
+**NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico**
+
+- **Autor:** Guillermo Castillo
+- **Editorial / proyecto:** SecOpsMX
+- **Edición:** 2026
+
+Consultar y obtener el libro en **Leanpub**.
+
+---
 
 ## Licencia y uso
 
-Material complementario gratuito del libro NETWORKING. Uso educativo; no se autoriza su redistribución con fines comerciales.
+El material se proporciona con fines educativos como complemento del libro de referencia.
 
-## Generar el sitio localmente
+Consulta los avisos de licencia y las condiciones de uso aplicables a los materiales de este repositorio antes de reproducirlos o distribuirlos.
 
-El sitio se genera con [Zensical](https://zensical.org/).
+---
 
-```bash
-pip install -r requirements.txt
-zensical serve      # vista previa en http://localhost:8000
-zensical build      # genera site/
-python scripts/validar.py
-```
+**Desarrollado por Guillermo Castillo · SecOpsMX**
+
+**NETWORKING Lab** — *Comprender las redes desde sus fundamentos hasta su implementación técnica.*

@@ -365,8 +365,6 @@ Ahora un ping con `-s 8972` (8972 + 8 + 20 = 9000) y `-M do` entre Cliente 1 y C
     ip netns exec switch bridge fdb flush dev br0
     ```
 
-    `bridge fdb flush` requiere iproute2 y kernel 6.0 o posteriores. En un sistema más antiguo (por ejemplo, Ubuntu 22.04) no existe: espera a que las entradas dinámicas envejezcan (300 s por defecto) o recrea el bridge.
-
 2.  Enviar un ping de Cliente 1 a Cliente 2.
 3.  Ver la tabla MAC nuevamente.
 4.  **Pregunta:** ¿Cuánto tiempo tarda el switch en aprender la MAC de Cliente 2?
@@ -380,7 +378,6 @@ Ahora un ping con `-s 8972` (8972 + 8 + 20 = 9000) y `-M do` entre Cliente 1 y C
     ```
 
     Linux ignora por defecto los ping a broadcast (`net.ipv4.icmp_echo_ignore_broadcasts=1`), así que no verás respuestas. Para que los demás clientes contesten, ejecuta antes en cada uno: `ip netns exec clienteN sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=0`.
-
 2.  Capturar en el switch para ver cómo se reenvía la trama de broadcast.
 3.  **Pregunta:** ¿Por qué el switch envía el broadcast a todos los puertos?
 
