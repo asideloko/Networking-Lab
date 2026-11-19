@@ -300,9 +300,38 @@ DHCP_PID="/tmp/nlci-dhclient-${SUF}.pid"; DHCP_LEASES="/tmp/nlci-dhclient-${SUF}
 DHCLIENT_SCRIPT="/tmp/nlci-dhclient-${SUF}.sh"; DHCP_EVENT="/tmp/nlci-dhclient-${SUF}.event"
 PID_FILES+=("$DNS_PID" "$DHCP_PID")
 TEMP_FILES+=("$DNS_LOG" "$DHCP_LEASES" "$DHCP_LOG" "$DHCLIENT_SCRIPT" "$DHCP_EVENT")
-ip netns exec "$DHS" dnsmasq --no-daemon --no-resolv --no-hosts --bind-interfaces --interface=eth0 --listen-address=10.30.0.1 --port=53 --dhcp-range=10.30.0.100,10.30.0.120,255.255.255.0,1h --dhcp-option=option:router,10.30.0.1 --dhcp-option=option:dns-server,10.30.0.1 --address=/app.lab.test/10.30.0.10 --pid-file="$DNS_PID" --log-facility="$DNS_LOG" >/dev/null 2>&1 &
-for _ in $(seq 1 10); do [ -s "$DNS_PID" ] && break; sleep 1; done
-[ -s "$DNS_PID" ] || { echo "FALLO: dnsmasq no inició" >&2; exit 1; }
+ip netns exec "$DHS" dnsmasq \
+  --no-daemon --no-resolv --no-hosts \
+  --bind-interfaces --interface=eth0 \
+  --listen-address=10.30.0.1 --port=53 \
+  --dhcp-range=10.30.0.100,10.30.0.120,255.255.255.0,1h \
+  --dhcp-option=option:router,10.30.0.1 \
+  --dhcp-option=option:dns-server,10.30.0.1 \
+  --address=/app.lab.test/10.30.0.10 \
+  --pid-file="$DNS_PID" >"$DNS_LOG" 2>&1 &
+
+DNS_LAUNCH_PID=$!
+
+DNS_OK=0
+for _ in $(seq 1 10); do
+  if ! kill -0 "$DNS_LAUNCH_PID" 2>/dev/null; then
+    break
+  fi
+
+  if ip netns exec "$DHS" dig +time=1 +tries=1 +short \
+    @10.30.0.1 app.lab.test 2>/dev/null | grep -qx '10.30.0.10'; then
+    DNS_OK=1
+    break
+  fi
+
+  sleep 1
+done
+
+if [ "$DNS_OK" != 1 ]; then
+  echo "FALLO: dnsmasq no quedó operativo o no respondió DNS" >&2
+  cat "$DNS_LOG" >&2 || true
+  exit 1
+fi
 # Script DHCP acotado: registra opciones y no toca /etc/resolv.conf ni archivos del host.
 cat > "$DHCLIENT_SCRIPT" <<'EOF'
 #!/bin/sh
