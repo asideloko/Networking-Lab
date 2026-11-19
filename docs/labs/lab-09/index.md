@@ -125,6 +125,12 @@ Los túneles necesitan módulos del kernel; en una VM Linux estándar se cargan 
 El *VPN Gateway* vive en la **DMZ** (`10.0.99.20`). El empleado remoto (`clienteVPN`) está en "Internet": se conecta al bridge `br-wan` del host (`192.168.100.50`). El firewall publica los puertos VPN hacia la DMZ y permite el acceso de los túneles a la LAN.
 
 ```bash
+for ns in VPN_GW clienteVPN; do
+  if sudo ip netns list | awk '{print $1}' | grep -qx "$ns"; then
+    echo "El namespace $ns ya existe: ejecuta la limpieza del laboratorio 09 antes de repetirlo"
+    exit 1
+  fi
+done
 sudo ip netns add VPN_GW
 sudo ip netns add clienteVPN
 
@@ -253,6 +259,13 @@ Conviene distinguir los elementos de IPsec:
 -   **Políticas y estados XFRM**: en Linux, las *políticas* (`ip xfrm policy`) dicen **qué tráfico** se protege y los *estados* (`ip xfrm state`) contienen las SA con sus claves.
 
 La presencia de comandos `xfrm` **no demuestra por sí sola que exista una VPN funcional**: hay que comprobar que el tráfico selecciona la política, sale como ESP y los contadores de la SA aumentan (Paso 8).
+
+Para que los selectores IPsec protejan los paquetes IP originales, esta prueba utiliza el enlace IP directo R1–R2 como transporte; no apila ESP sobre GRE. Se fijan rutas simétricas por el enlace físico antes de instalar las políticas:
+
+```bash
+sudo ip netns exec R1 ip route replace 10.0.1.0/24 via 192.168.1.2 dev veth-r1r2
+sudo ip netns exec R2 ip route replace 10.0.0.0/24 via 192.168.1.1 dev veth-r2r1
+```
 
 Una VPN IPsec de producción usa un demonio IKE (por ejemplo strongSwan) que negocia las claves. Los demonios guardan su configuración y sus *sockets* en rutas del sistema compartidas, así que **dos routers no pueden ejecutar uno cada uno dentro de namespaces sin trabajo adicional**. Para entender IPsec sin ese problema configuramos el kernel directamente (*manual keying*): definimos las **asociaciones de seguridad** (SA, con sus claves) y las **políticas** que dicen qué tráfico se cifra.
 
