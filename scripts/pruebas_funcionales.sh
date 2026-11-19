@@ -298,8 +298,8 @@ ip netns exec "$DHS" ip addr add 10.30.0.1/24 dev eth0
 ip netns exec "$DHS" ip link set eth0 up
 ip netns exec "$DHC" ip link set eth0 up
 DNS_PID="/tmp/nlci-dnsmasq-${SUF}.pid"; DNS_LOG="/tmp/nlci-dnsmasq-${SUF}.log"
-DHCP_PID="/run/nlci-dhclient-${SUF}.pid"
-DHCP_LEASES="/var/lib/dhcp/nlci-dhclient-${SUF}.leases"
+DHCP_PID="/run/dhclient-nlci-${SUF}.pid"
+DHCP_LEASES="/var/lib/dhcp/dhclient-nlci-${SUF}.leases"
 DHCP_LOG="/tmp/nlci-dhclient-${SUF}.log"
 PID_FILES+=("$DNS_PID" "$DHCP_PID")
 TEMP_FILES+=("$DNS_LOG" "$DHCP_LEASES" "$DHCP_LOG")
