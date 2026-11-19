@@ -87,7 +87,7 @@ for ns in cliente1 cliente2 cliente3 cliente4 router switch \
           VPN_GW clienteVPN; do
   sudo ip netns del $ns 2>/dev/null || true
 done
-sudo ip link del br-wan 2>/dev/null || true
+ip -4 -o addr show dev br-wan 2>/dev/null | grep -q '192\.168\.100\.2/24' && sudo ip link del br-wan   # solo el bridge de esta serie
 sudo ip link del veth-host 2>/dev/null || true
 ```
 

@@ -93,7 +93,7 @@ elif [ -e /tmp/lab15 ]; then
 else
   # Solo se llega aquí si todo lo anterior se ha confirmado
   for ns in $EXISTENTES; do sudo ip netns del $ns 2>/dev/null || true; done
-  sudo ip link del br-wan 2>/dev/null || true
+  ip -4 -o addr show dev br-wan 2>/dev/null | grep -q '192\.168\.100\.2/24' && sudo ip link del br-wan   # solo el bridge de esta serie
   sudo apt-get install -y frr keepalived dnsmasq-base isc-dhcp-client nftables netcat-openbsd
 
   for ns in R1 R2 SWsrv fin ven ges srv suc; do sudo ip netns add $ns; done
