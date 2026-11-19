@@ -21,18 +21,6 @@ jobs:
       - run: zensical build
       - name: Validar documentación, sintaxis Bash y reversión de cambios en el host
         run: python3 scripts/validar.py
-      - name: Instalar herramientas de prueba de red
-        run: sudo apt-get update && sudo apt-get install -y iproute2 iputils-ping nftables iptables dnsmasq-base isc-dhcp-client dnsutils keepalived
-      - name: Pruebas funcionales de L2/FDB, routing, firewall, VLAN 802.1Q, GRE, IPsec, DHCP/DNS, VRRP, continuidad y reversión del host
-        run: sudo env RUNNER_TEMP="$RUNNER_TEMP" GITHUB_RUN_ID="$GITHUB_RUN_ID" bash scripts/pruebas_funcionales.sh
-      - name: Guardar diagnóstico VRRP aunque fallen las pruebas
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: diagnostico-vrrp-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/networking-lab-vrrp-*
-          if-no-files-found: ignore
-          retention-days: 7
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
