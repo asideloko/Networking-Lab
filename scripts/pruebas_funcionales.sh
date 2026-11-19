@@ -214,6 +214,7 @@ done
 
 # Prueba funcional 3: túnel GRE entre routers y rutas de redes remotas.
 GR1="nlci_gr1_${SUF}"; GR2="nlci_gr2_${SUF}"; GH1="nlci_gh1_${SUF}"; GH2="nlci_gh2_${SUF}"
+GRE_DEV="nlgre${SUF}"
 NAMESPACES+=("$GR1" "$GR2" "$GH1" "$GH2")
 for ns in "$GR1" "$GR2" "$GH1" "$GH2"; do ip netns add "$ns"; ip netns exec "$ns" ip link set lo up; done
 HOST_LINKS+=("ngli1_${SUF}" "ngli2_${SUF}" "ngll1_${SUF}" "ngll2_${SUF}")
@@ -235,20 +236,20 @@ ip netns exec "$GR1" ip addr add 10.1.1.1/24 dev lan0
 ip netns exec "$GR2" ip addr add 10.2.2.1/24 dev lan0
 ip netns exec "$GH1" ip addr add 10.1.1.2/24 dev lan0
 ip netns exec "$GH2" ip addr add 10.2.2.2/24 dev lan0
-ip netns exec "$GR1" ip tunnel add gre0 mode gre local 192.0.2.1 remote 192.0.2.2 ttl 64
-ip netns exec "$GR2" ip tunnel add gre0 mode gre local 192.0.2.2 remote 192.0.2.1 ttl 64
-ip netns exec "$GR1" ip addr add 10.255.0.1/30 dev gre0
-ip netns exec "$GR2" ip addr add 10.255.0.2/30 dev gre0
-ip netns exec "$GR1" ip link set gre0 up
-ip netns exec "$GR2" ip link set gre0 up
+ip netns exec "$GR1" ip tunnel add "$GRE_DEV" mode gre local 192.0.2.1 remote 192.0.2.2 ttl 64
+ip netns exec "$GR2" ip tunnel add "$GRE_DEV" mode gre local 192.0.2.2 remote 192.0.2.1 ttl 64
+ip netns exec "$GR1" ip addr add 10.255.0.1/30 dev "$GRE_DEV"
+ip netns exec "$GR2" ip addr add 10.255.0.2/30 dev "$GRE_DEV"
+ip netns exec "$GR1" ip link set "$GRE_DEV" up
+ip netns exec "$GR2" ip link set "$GRE_DEV" up
 ip netns exec "$GR1" sysctl -qw net.ipv4.ip_forward=1
 ip netns exec "$GR2" sysctl -qw net.ipv4.ip_forward=1
-ip netns exec "$GR1" ip route add 10.2.2.0/24 via 10.255.0.2 dev gre0
-ip netns exec "$GR2" ip route add 10.1.1.0/24 via 10.255.0.1 dev gre0
+ip netns exec "$GR1" ip route add 10.2.2.0/24 via 10.255.0.2 dev "$GRE_DEV"
+ip netns exec "$GR2" ip route add 10.1.1.0/24 via 10.255.0.1 dev "$GRE_DEV"
 ip netns exec "$GH1" ip route add default via 10.1.1.1
 ip netns exec "$GH2" ip route add default via 10.2.2.1
 ip netns exec "$GH1" ping -c 2 -W 2 10.2.2.2 >/dev/null
-ip netns exec "$GR1" ip -d tunnel show gre0 | grep -q 'remote 192.0.2.2'
+ip netns exec "$GR1" ip -d tunnel show "$GRE_DEV" | grep -q 'remote 192.0.2.2'
 
 # Prueba funcional 4: IPsec ESP/XFRM en modo transporte entre dos namespaces.
 XI1="nlci_xi1_${SUF}"; XI2="nlci_xi2_${SUF}"
