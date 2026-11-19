@@ -428,6 +428,19 @@ El reparto de ECMP se hace **por flujo**, no por paquete: una sola conexión no 
 | Topología PE/P | Roles de proveedor con enrutamiento IP y rutas estáticas con respaldo |
 | ECMP | Reparto de carga entre caminos de igual coste (no es *failover* ni alta disponibilidad completa) |
 
+## Limpieza del laboratorio
+
+La topología WAN se construye dentro de nueve *namespaces*. Las interfaces, rutas y ajustes MPLS de esta práctica desaparecen al eliminarlos; no es necesario vaciar tablas ni reglas globales del host.
+
+```bash
+for ns in PE1 PE2 PE3 P1 P2 P3 host1 host2 host3; do
+  sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
+  sudo ip netns del "$ns" 2>/dev/null || true
+done
+```
+
+**Comprobación:** `sudo ip netns list` no debe mostrar esos nueve nombres. Si vas a repetir el laboratorio, comienza desde el Paso 0 para reconstruir la topología.
+
 ## Preguntas de reflexión
 
 1.  ¿Qué distingue a un router PE de uno P en una arquitectura de proveedor?

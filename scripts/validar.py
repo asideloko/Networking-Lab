@@ -41,6 +41,9 @@ for md in sorted(docs.rglob("*.md")):
         errores.append(f"{rel}: falta front matter")
     if sum(1 for l in txt.splitlines() if l.startswith("```")) % 2:
         errores.append(f"{rel}: bloque de código sin cerrar")
+    if rel.parts[0] == "labs" and rel.parts[1].startswith("lab-"):
+        if not re.search(r"^##+ .*?(?:Limpieza|Revertir los cambios del host)", txt, re.M):
+            errores.append(f"{rel}: falta una sección explícita de limpieza o reversión")
     for l in sin_codigo(txt):
         for m in re.finditer(r"\]\(([^)#\s]+\.md)(#[^)]*)?\)", l):
             if not existe(md.parent, m.group(1)):

@@ -389,6 +389,19 @@ Redacta (sin implementarlas) las políticas que un SASE aplicaría al tráfico d
 | SASE | SD-WAN + SWG + CASB (conceptual) |
 | Microsegmentación | Políticas granulares entre servidores |
 
+## Limpieza del laboratorio
+
+La práctica crea diez *namespaces*; las interfaces, rutas, reglas `iptables` y parámetros de reenvío configurados dentro de ellos quedan aislados del host. La limpieza detiene los procesos que permanezcan dentro de esos espacios y elimina únicamente los nombres de esta topología.
+
+```bash
+for ns in OnPremise AppServer DBServer AWS_VPC EC2_Server RDS_Server ZTNA_Broker IDP User1 User2; do
+  sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
+  sudo ip netns del "$ns" 2>/dev/null || true
+done
+```
+
+**Comprobación:** `sudo ip netns list` no debe mostrar ninguno de esos diez nombres. Para repetir el laboratorio, vuelve a ejecutar desde el Paso 0.
+
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo distingue dar acceso a una **aplicación** de dar acceso a toda una **red**?

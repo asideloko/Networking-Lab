@@ -506,6 +506,19 @@ Baja el enlace R2-R3 por **ambos extremos** (`veth-r2r3` en R2 y `veth-r3r2` en 
 | Longest prefix match | Selección de ruta más específica |
 | Túnel GRE | Conexión de redes no contiguas |
 
+## Limpieza del laboratorio
+
+Todos los dispositivos y enlaces de esta topología viven dentro de los *namespaces*. No se modifica el reenvío, las rutas ni el firewall global del host. Esta limpieza elimina únicamente los seis namespaces de la práctica; ejecútala cuando hayas terminado los ejercicios.
+
+```bash
+for ns in clienteSede clienteSucA clienteSucB R1 R2 R3; do
+  sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
+  sudo ip netns del "$ns" 2>/dev/null || true
+done
+```
+
+**Comprobación:** `sudo ip netns list` no debe mostrar ninguno de esos seis nombres. Al repetir la práctica, comienza de nuevo por el Paso 0.
+
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo hace que R1 envíe `10.0.2.10` por el enlace directo y no por R2?

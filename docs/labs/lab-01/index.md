@@ -359,6 +359,26 @@ Todo lo que está conectado al mismo bridge pertenece al mismo **dominio de broa
 !!! info "Matiz sobre el bridge"
     En este escenario sencillo el bridge reenvía las tramas **sin modificar sus cabeceras**. No es una regla general de todos los modos de *bridging* (por ejemplo, con VLAN filtering puede añadir o quitar etiquetas, como se verá en el laboratorio 05).
 
+## Limpieza del laboratorio
+
+Esta limpieza elimina únicamente los tres *namespaces* creados en esta práctica. Si continúas con los laboratorios 02 y 03, no la ejecutes todavía: esos laboratorios reutilizan esta topología. Si ya ejecutaste el laboratorio 02 o el 03, utiliza primero las secciones de reversión de esas prácticas para retirar también los cambios que hicieron en el host.
+
+```bash
+# Detener procesos que sigan dentro de los namespaces de esta práctica
+for ns in cliente1 cliente2 router; do
+  ip netns pids "$ns" 2>/dev/null | xargs -r kill
+  ip netns del "$ns" 2>/dev/null || true
+done
+
+# Eliminar únicamente extremos veth que hayan quedado en el host
+# por una ejecución interrumpida antes de moverlos a sus namespaces.
+for dev in veth-c1 veth-r1 veth-c2 veth-r2; do
+  ip link show "$dev" >/dev/null 2>&1 && ip link del "$dev"
+done
+```
+
+**Comprobación:** `ip netns list` no debe mostrar `cliente1`, `cliente2` ni `router`; `ip -br link` no debe mostrar los extremos veth de esta práctica.
+
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo se está demostrando cuando Cliente 1 y Cliente 2 se comunican sin pasar por una dirección de *gateway*?
