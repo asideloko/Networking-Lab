@@ -505,9 +505,16 @@ EOF
 # Arrancar sshd en el namespace del servidor web
 sudo ip netns exec servidorWeb /usr/sbin/sshd -f /tmp/lab08/sshd_config
 
-# Conectar desde el cliente interno (permitido por el firewall)
+# Obtener la clave pública correspondiente a la clave privada del servidor.
+ssh-keygen -y -f /tmp/lab08/host_key > /tmp/lab08/host_key.pub
+# Registrar la clave esperada del laboratorio (huella verificable con ssh-keygen -lf).
+awk '{print "[10.0.99.10]:22 " $1 " " $2}' /tmp/lab08/host_key.pub > /tmp/lab08/known_hosts
+ssh-keygen -lf /tmp/lab08/host_key.pub
+
+# Conectar validando estrictamente la identidad del servidor.
 sudo ip netns exec clienteSede ssh -i /tmp/lab08/id_admin \
-  -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@10.0.99.10 'echo conectado a $(hostname)'
+  -o UserKnownHostsFile=/tmp/lab08/known_hosts \
+  -o StrictHostKeyChecking=yes root@10.0.99.10 'echo conectado a $(hostname)'
 
 # Desde la sucursal B también se permite (red interna 10.0.0.0/22); desde la DMZ hacia la LAN no
 ```
@@ -521,7 +528,8 @@ Generamos un certificado autofirmado y servimos HTTPS con `openssl s_server` den
 
 ```bash
 openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
-  -keyout /tmp/lab08/key.pem -out /tmp/lab08/cert.pem -subj "/CN=servidorWeb" 2>/dev/null
+  -keyout /tmp/lab08/key.pem -out /tmp/lab08/cert.pem -subj "/CN=servidorWeb" \
+  -addext "subjectAltName=DNS:servidorWeb,IP:10.0.99.10" 2>/dev/null
 
 sudo ip netns exec servidorWeb sh -c 'openssl s_server -accept 443 -cert /tmp/lab08/cert.pem -key /tmp/lab08/key.pem -www -ign_eof < /dev/null > /tmp/lab08/tls.log 2>&1 &'
 
@@ -563,9 +571,12 @@ Un firewall que descarta sin dejar rastro es difícil de auditar. Añade una reg
 Por defecto, el kernel solo permite registrar con `LOG` desde el espacio de nombres principal. Para que el *namespace* `firewall` escriba en el registro del sistema hace falta activarlo en el host:
 
 !!! warning "Cambio en el host"
-    `sudo sysctl -w net.netfilter.nf_log_all_netns=1` es temporal (se pierde al reiniciar). Para revertirlo: `sudo sysctl -w net.netfilter.nf_log_all_netns=0`.
+    `sudo sysctl -w net.netfilter.nf_log_all_netns=1` modifica un parámetro global del host. El bloque guarda el valor previo en `/tmp/lab08-nf_log_all_netns.orig`; la limpieza restaura exactamente ese valor, no presupone que fuera `0`.
 
 ```bash
+if [ ! -e /tmp/lab08-nf_log_all_netns.orig ]; then
+  sudo sysctl -n net.netfilter.nf_log_all_netns | sudo tee /tmp/lab08-nf_log_all_netns.orig >/dev/null
+fi
 sudo sysctl -w net.netfilter.nf_log_all_netns=1
 sudo ip netns exec firewall iptables -I FORWARD 1 -i veth-fw-wan -o veth-fw-lan -m limit --limit 5/min -j LOG --log-prefix "FW-DENY-WAN-LAN: "
 sudo dmesg | grep FW-DENY | tail
@@ -644,9 +655,17 @@ if [ -f /tmp/lab08-ip_forward.orig ]; then
   sudo rm -f /tmp/lab08-ip_forward.orig
 fi
 
-# 3. Bridge y enlace del host
+# 3. Parámetro global de logging: restaurar exactamente el valor previo.
+if [ -f /tmp/lab08-nf_log_all_netns.orig ]; then
+  sudo sysctl -w net.netfilter.nf_log_all_netns="$(cat /tmp/lab08-nf_log_all_netns.orig)"
+  sudo rm -f /tmp/lab08-nf_log_all_netns.orig
+fi
+
+# 4. Bridge y enlace del host. El bridge solo se elimina si conserva la marca de propiedad.
 sudo ip link del veth-wan-fw 2>/dev/null || true
-sudo ip link del br-wan 2>/dev/null || true
+if [ "$(cat /sys/class/net/br-wan/ifalias 2>/dev/null)" = networking-lab ] && sudo ip -4 -o addr show dev br-wan | grep -q '192\.168\.100\.2/24'; then
+  sudo ip link del br-wan
+fi
 
 # 4. Servicios (DNS público, sshd) y namespaces de este laboratorio
 for ns in servidorDNS_PUB servidorWeb servidorInterno firewall; do
@@ -654,11 +673,70 @@ for ns in servidorDNS_PUB servidorWeb servidorInterno firewall; do
   sudo ip netns del $ns 2>/dev/null || true
 done
 
-# 5. Archivos temporales del laboratorio
+# 5. Restaurar la WAN original de R1 del laboratorio 07.
+# El Paso 2 de este laboratorio eliminó veth-wan y su par veth-host.
+if ! sudo ip netns exec R1 ip link show veth-wan >/dev/null 2>&1; then
+  sudo ip link add veth-wan type veth peer name veth-host
+  sudo ip link set veth-wan netns R1
+  sudo ip netns exec R1 ip addr add 192.168.100.1/24 dev veth-wan
+  sudo ip netns exec R1 ip link set veth-wan up
+  sudo ip addr add 192.168.100.2/24 dev veth-host
+  sudo ip link set veth-host up
+fi
+sudo ip netns exec R1 ip route replace default via 192.168.100.2 dev veth-wan
+if ! sudo ip netns exec R1 iptables -t nat -C POSTROUTING -o veth-wan -j MASQUERADE 2>/dev/null; then
+  sudo ip netns exec R1 iptables -t nat -A POSTROUTING -o veth-wan -j MASQUERADE
+fi
+
+# 6. Archivos temporales del laboratorio
 sudo rm -rf /tmp/lab08
 ```
 
 `ip netns pids` limita la parada a procesos que viven **dentro** de cada namespace, sin tocar el `sshd` del equipo.
+
+## Profundización: Netfilter, identidad SSH y TLS
+
+### Recorrido de hooks
+
+Para tráfico IPv4 recibido, el esquema simplificado es: PREROUTING → decisión de routing → INPUT si termina en el firewall o FORWARD si atraviesa → POSTROUTING. Conntrack asocia el flujo y NAT puede modificar destino/origen en los hooks correspondientes. El tráfico generado por el propio firewall recorre OUTPUT y POSTROUTING. El orden exacto depende de familia, prioridad de cadenas y backend; no presentes una única lista como si describiera toda combinación de nftables/iptables.
+
+```bash
+sudo ip netns exec firewall iptables -t raw -S
+sudo ip netns exec firewall iptables -t nat -S
+sudo ip netns exec firewall iptables -S
+sudo ip netns exec firewall nft list ruleset 2>/dev/null || true
+```
+
+`INPUT`, `FORWARD` y `OUTPUT` no son intercambiables: una conexión destinada al firewall no se evalúa como tráfico que atraviesa el firewall.
+
+### SSH: autenticar al servidor y al cliente
+
+La autenticación por clave del cliente no sirve si el cliente acepta cualquier clave de host. No uses `StrictHostKeyChecking=no` ni `UserKnownHostsFile=/dev/null` como práctica principal. Obtén la huella del servidor por un canal confiable, compárala y registra la clave en `known_hosts`; después conecta con `StrictHostKeyChecking=yes`. En un laboratorio efímero puede usarse un `UserKnownHostsFile` específico bajo `/tmp/lab08/`, siempre que se valide la huella antes de confiar.
+
+### TLS: SAN e identidad
+
+Los clientes TLS modernos validan `subjectAltName` (SAN) para la identidad DNS/IP; no dependas solo de `CN`. El certificado de demostración debe incluir `subjectAltName=DNS:servidorWeb` y el cliente debe comprobar cadena de confianza, vigencia y nombre. Un certificado autofirmado solo puede validarse tras confiar explícitamente en su certificado/CA; desactivar la verificación no demuestra identidad.
+
+### Parámetro global de logging: restaurar el estado previo
+
+`net.netfilter.nf_log_all_netns` pertenece al host. Antes de modificarlo, guarda el valor y restaura exactamente ese valor (no asumas cero):
+
+```bash
+if [ ! -e /tmp/lab08-nf_log_all_netns.orig ]; then
+  sudo sysctl -n net.netfilter.nf_log_all_netns | sudo tee /tmp/lab08-nf_log_all_netns.orig >/dev/null
+fi
+sudo sysctl -w net.netfilter.nf_log_all_netns=1
+```
+
+En la reversión, ejecuta solo si existe el marcador:
+
+```bash
+if [ -f /tmp/lab08-nf_log_all_netns.orig ]; then
+  sudo sysctl -w net.netfilter.nf_log_all_netns="$(cat /tmp/lab08-nf_log_all_netns.orig)"
+  sudo rm -f /tmp/lab08-nf_log_all_netns.orig
+fi
+```
+
 
 ## Preguntas de reflexión
 

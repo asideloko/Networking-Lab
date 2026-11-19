@@ -588,6 +588,47 @@ Implementa WireGuard entre R2 y R3 como alternativa.
 Este laboratorio deja un extremo de `veth` **en el host** (`veth-wan-cvpn`, unido al bridge `br-wan` del laboratorio 08) y procesos de VPN dentro de los *namespaces*:
 
 ```bash
+# Retirar las rutas añadidas o reemplazadas por el laboratorio 09.
+sudo ip netns exec R1 ip route del 10.0.2.0/24 via 10.10.0.2 dev gre1 2>/dev/null || true
+sudo ip netns exec R2 ip route del 10.0.0.0/24 via 10.10.0.1 dev gre1 2>/dev/null || true
+sudo ip netns exec R2 ip route del 10.0.2.0/24 via 10.10.0.6 dev gre2 2>/dev/null || true
+sudo ip netns exec R3 ip route del 10.0.0.0/24 via 10.10.0.5 dev gre2 2>/dev/null || true
+sudo ip netns exec R1 ip route del 10.0.1.0/24 via 192.168.1.2 dev veth-r1r2 2>/dev/null || true
+sudo ip netns exec R2 ip route del 10.0.0.0/24 via 192.168.1.1 dev veth-r2r1 2>/dev/null || true
+# Eliminar solo las SA de prueba identificadas por extremos y SPI.
+for R in R1 R2; do
+  sudo ip netns exec "$R" ip xfrm state delete src 192.168.1.1 dst 192.168.1.2 proto esp spi 0x1001 2>/dev/null || true
+  sudo ip netns exec "$R" ip xfrm state delete src 192.168.1.2 dst 192.168.1.1 proto esp spi 0x1002 2>/dev/null || true
+done
+# Eliminar políticas XFRM exactas de los selectores del ejercicio.
+sudo ip netns exec R1 ip xfrm policy delete src 10.0.0.0/24 dst 10.0.1.0/24 dir out 2>/dev/null || true
+sudo ip netns exec R1 ip xfrm policy delete src 10.0.1.0/24 dst 10.0.0.0/24 dir in 2>/dev/null || true
+sudo ip netns exec R1 ip xfrm policy delete src 10.0.1.0/24 dst 10.0.0.0/24 dir fwd 2>/dev/null || true
+sudo ip netns exec R2 ip xfrm policy delete src 10.0.1.0/24 dst 10.0.0.0/24 dir out 2>/dev/null || true
+sudo ip netns exec R2 ip xfrm policy delete src 10.0.0.0/24 dst 10.0.1.0/24 dir in 2>/dev/null || true
+sudo ip netns exec R2 ip xfrm policy delete src 10.0.0.0/24 dst 10.0.1.0/24 dir fwd 2>/dev/null || true
+# Retirar reglas añadidas al firewall (si existe aún el namespace heredado del lab 08).
+sudo ip netns exec firewall iptables -t nat -D PREROUTING -i veth-fw-wan -p udp -m multiport --dports 51820,1194 -j DNAT --to-destination 10.0.99.20 2>/dev/null || true
+sudo ip netns exec firewall iptables -D FORWARD -i veth-fw-wan -o br-dmz -p udp -d 10.0.99.20 -m multiport --dports 51820,1194 -j ACCEPT 2>/dev/null || true
+sudo ip netns exec firewall iptables -D FORWARD -i br-dmz -o veth-fw-lan -s 10.8.0.0/15 -d 10.0.0.0/22 -j ACCEPT 2>/dev/null || true
+sudo ip netns exec firewall ip route del 10.8.0.0/24 via 10.0.99.20 2>/dev/null || true
+sudo ip netns exec firewall ip route del 10.9.0.0/24 via 10.0.99.20 2>/dev/null || true
+sudo ip netns exec VPN_GW ip route del 10.0.0.0/22 via 10.0.99.1 2>/dev/null || true
+# Restaurar las rutas estáticas originales del laboratorio 06 que GRE reemplazó.
+sudo ip netns exec R1 ip route replace 10.0.1.0/24 via 192.168.1.2 dev veth-r1r2
+sudo ip netns exec R1 ip route replace 10.0.2.0/24 via 192.168.1.2 dev veth-r1r2 metric 100
+sudo ip netns exec R2 ip route replace 10.0.0.0/24 via 192.168.1.1 dev veth-r2r1
+sudo ip netns exec R2 ip route replace 10.0.2.0/24 via 192.168.2.2 dev veth-r2r3
+sudo ip netns exec R3 ip route replace 10.0.0.0/24 via 192.168.2.1 dev veth-r3r2 metric 100
+# Si se ejecutó el ejercicio opcional GRE3, retirar también su ruta específica.
+sudo ip netns exec R1 ip route del 10.0.2.0/24 via 10.10.0.9 dev gre3 metric 20 2>/dev/null || true
+
+# Retirar los túneles GRE de este laboratorio, no todos los túneles del router.
+for spec in 'R1 gre1' 'R2 gre1' 'R2 gre2' 'R3 gre2' 'R1 gre3' 'R3 gre3'; do
+  set -- $spec
+  sudo ip netns exec "$1" ip tunnel del "$2" 2>/dev/null || true
+done
+
 for ns in VPN_GW clienteVPN; do
   sudo ip netns pids $ns 2>/dev/null | xargs -r sudo kill     # solo procesos dentro de ese namespace
   sudo ip netns del $ns 2>/dev/null || true
@@ -597,6 +638,47 @@ sudo rm -rf /tmp/lab09
 ```
 
 El bridge `br-wan`, la regla NAT y `ip_forward` pertenecen al laboratorio 08: se revierten con su sección «Revertir los cambios del host».
+
+## Profundización: fundamentos comunes y límites de cada VPN
+
+### IPsec: conceptos que no deben confundirse
+
+- **SA (Security Association):** asociación unidireccional identificada, entre otros campos, por SPI, destino y protocolo.
+- **ESP:** proporciona confidencialidad y puede proporcionar integridad/autenticación y protección anti-replay según el conjunto de algoritmos.
+- **AH:** ofrece integridad/autenticación de ciertos campos, pero no confidencialidad y suele ser incompatible con NAT.
+- **Modo transporte:** protege la carga del paquete IP original; **modo túnel:** encapsula el paquete IP completo dentro de otro paquete.
+- **SPD:** política que decide qué tráfico se protege, descarta o deja pasar; **SAD:** almacena las SA activas.
+- **IKE:** negocia parámetros, autentica pares y gestiona claves/renovaciones. La configuración manual XFRM de esta práctica instala estados y políticas de plano de datos; no demuestra por sí misma una negociación IKE.
+- **SPI:** identifica la SA en el paquete ESP; no es una clave.
+- **Anti-replay:** ventana que rechaza paquetes repetidos; no sustituye cifrado ni autenticación.
+
+La clave simétrica configurada manualmente en XFRM permite demostrar protección criptográfica del tráfico, pero no equivale a un despliegue con gestión segura de claves, identidad negociada y rekeying automático. HMAC puede proporcionar integridad/autenticación del paquete mediante secreto compartido; no debe afirmarse que la ausencia de IKE significa ausencia total de autenticación criptográfica.
+
+### OpenVPN y WireGuard
+
+Una clave estática compartida no proporciona el mismo modelo de identidad, revocación y negociación que una PKI con certificados y autenticación mutua. Mantén el modo estático como demostración histórica/limitada y no como configuración recomendada. Documenta versiones de OpenVPN y valida las opciones disponibles con `openvpn --version` y `openvpn --help`; no dependas de una opción retirada o deprecada.
+
+WireGuard utiliza una arquitectura de pares con claves públicas/privadas; `AllowedIPs` participa tanto en la selección de pares para destinos como en la validación de orígenes recibidos. Un handshake demuestra que hubo intercambio criptográfico reciente, no que existan rutas, forwarding, firewall y retorno hacia toda la LAN. `PersistentKeepalive` mantiene mapeos NAT en escenarios que lo requieren; no es un mecanismo de alta disponibilidad.
+
+### Overhead y MTU
+
+No existe un overhead universal para IPsec u OpenVPN. Depende de IPv4/IPv6 exterior, modo, algoritmo, IV/nonce, etiqueta de autenticación, padding, opciones y encapsulaciones adicionales. Calcula el overhead de la configuración concreta y valida con capturas; no presentes valores aproximados como constantes de protocolo.
+
+### Reversión selectiva de los recursos añadidos por este laboratorio
+
+La limpieza de este laboratorio debe retirar sus recursos en **R1, R2, R3 y firewall**, no solo `VPN_GW` y `clienteVPN`. Antes de ejecutar, inspecciona las rutas y políticas para confirmar los prefijos/identificadores exactos de esta práctica:
+
+```bash
+for r in R1 R2 R3; do
+  sudo ip netns exec "$r" ip tunnel show
+  sudo ip netns exec "$r" ip xfrm state
+  sudo ip netns exec "$r" ip xfrm policy
+  sudo ip netns exec "$r" ip route show
+ done
+```
+
+Elimina únicamente las rutas de las redes remotas que añadiste en los pasos de GRE/VPN; elimina los túneles `gre1`, `gre2` y `gre3` solo si pertenecen a esta práctica; elimina las SA XFRM por sus selectores `src`, `dst`, `proto esp` y SPI documentados; elimina las políticas por sus selectores y dirección. **No uses `ip xfrm flush`**, porque puede borrar asociaciones ajenas. Retira además las reglas DNAT/FORWARD insertadas en `firewall` y los procesos OpenVPN/WireGuard que arrancó esta práctica. La WAN `br-wan` y el NAT base pertenecen al laboratorio 08: no los borres aquí; revierte ese laboratorio con su procedimiento propio.
+
 
 ## Preguntas de reflexión
 

@@ -21,6 +21,10 @@ jobs:
       - run: zensical build
       - name: Validar documentación, sintaxis Bash y reversión de cambios en el host
         run: python3 scripts/validar.py
+      - name: Instalar herramientas de prueba de red
+        run: sudo apt-get update && sudo apt-get install -y iproute2 iputils-ping nftables
+      - name: Prueba funcional aislada de L2, routing, firewall y limpieza
+        run: sudo bash scripts/pruebas_funcionales.sh
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

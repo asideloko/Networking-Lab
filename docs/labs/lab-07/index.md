@@ -547,13 +547,63 @@ for ns in servidorDNS servidorDHCP clienteDHCP; do
   sudo ip netns del $ns 2>/dev/null || true
 done
 
-# 4. Archivos del laboratorio
+# 4. Restaurar R1 al estado de LAN del laboratorio 06.
+# El laboratorio 07 convirtió veth-r1c en puerto de br-lan y movió la IP al bridge.
+sudo ip netns exec R1 ip addr del 10.0.0.1/24 dev br-lan 2>/dev/null || true
+sudo ip netns exec R1 ip link set veth-r1c nomaster 2>/dev/null || true
+sudo ip netns exec R1 ip link del br-lan 2>/dev/null || true
+if sudo ip netns exec R1 ip link show veth-r1c >/dev/null 2>&1; then
+  sudo ip netns exec R1 ip addr replace 10.0.0.1/24 dev veth-r1c
+  sudo ip netns exec R1 ip link set veth-r1c up
+fi
+
+# 5. Archivos del laboratorio
 sudo rm -rf /tmp/lab07
 ```
 
 **`/etc/netns/clienteDHCP`:** el laboratorio lo crea para aislar su `resolv.conf`. Antes de borrarlo, comprueba que **no existía de antes** (`ls /etc/netns/`); si solo contiene el `resolv.conf` vacío que creó el laboratorio, elimínalo con `sudo rm -rf /etc/netns/clienteDHCP`. Si tenías otros directorios en `/etc/netns/`, no los toques.
 
 `dnsmasq-base`, `isc-dhcp-client`, `dnsutils`, `netcat-openbsd` y `conntrack` quedan **instalados** en el equipo: son paquetes, no configuración activa, y puedes desinstalarlos con `apt remove` si no los usabas antes.
+
+## Profundización: DHCP, DNS, transporte y conntrack
+
+### DHCP más allá de DORA
+
+DORA describe el intercambio inicial, pero el cliente mantiene una máquina de estados y un *lease*. T1 inicia la renovación normalmente con el servidor original; T2 permite *rebinding* con cualquier servidor disponible si no se renovó. El tiempo exacto depende de las opciones entregadas. Las reservas vinculan un identificador de cliente (a menudo MAC, según configuración) con una dirección; las exclusiones impiden asignar rangos reservados. DHCP relay reenvía solicitudes entre subredes y utiliza `giaddr` para identificar la red del cliente.
+
+Observa las opciones y tiempos en la concesión real, no supongas valores por defecto universales:
+
+```bash
+sudo ip netns exec clienteDHCP tcpdump -ni any 'udp port 67 or udp port 68'
+sudo ip netns exec servidorDHCP journalctl --no-pager -n 80 2>/dev/null || true
+```
+
+### DNS: quién pregunta y quién responde
+
+Distingue el stub resolver del sistema, el resolver recursivo y el servidor autoritativo. Una respuesta `NXDOMAIN` significa que el nombre consultado no existe según la autoridad/resolución; no equivale a timeout ni a falta de conectividad. El TTL controla cuánto puede conservarse una respuesta en caché. DNS usa UDP y también TCP (por ejemplo, respuestas truncadas, transferencias de zona y otras operaciones); no es correcto enseñar “DNS siempre usa UDP”.
+
+```bash
+dig @10.0.0.5 servidor-interno.secops.local A
+dig @10.0.0.5 google.com A
+dig @10.0.0.5 inexistente.secops.local A
+dig @10.0.0.5 google.com A +tcp
+```
+
+### TCP, UDP y QUIC
+
+TCP proporciona un flujo de bytes ordenado con números de secuencia, ACK, retransmisión, control de flujo y control de congestión. UDP entrega datagramas sin garantizar por sí mismo entrega ni orden; aplicaciones como QUIC implementan fiabilidad, control de congestión y cifrado sobre UDP. Por tanto, UDP no significa necesariamente aplicación no fiable.
+
+### NAT/PAT y seguimiento de conexiones
+
+Conntrack mantiene el estado y las tuplas originales/respuesta para asociar paquetes de ida y vuelta; NAT aplica traducciones a esa conexión. Inspecciona contadores y entradas en el router del laboratorio y diferencia las dos traducciones sucesivas cuando existe doble NAT:
+
+```bash
+sudo ip netns exec R1 conntrack -L 2>/dev/null | head -30
+sudo ip netns exec R1 iptables -t nat -vnL
+```
+
+Una regla MASQUERADE no garantiza salida si el firewall del host bloquea `FORWARD`; comprueba por separado el firewall del host y el del router. No cambies políticas globales para “hacer que funcione”: autoriza solo el flujo de laboratorio y registra su reversión.
+
 
 ## Preguntas de reflexión
 

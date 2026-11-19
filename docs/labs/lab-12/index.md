@@ -210,10 +210,15 @@ done
 Cada aplicación se representa con un servicio TCP sencillo (`nc` en modo escucha):
 
 ```bash
-sudo ip netns exec AppServer sh -c 'nc -lk -p 8080 >/dev/null 2>&1 </dev/null &'
-sudo ip netns exec DBServer  sh -c 'nc -lk -p 3306 >/dev/null 2>&1 </dev/null &'
-sudo ip netns exec EC2_Server sh -c 'nc -lk -p 8080 >/dev/null 2>&1 </dev/null &'
-sudo ip netns exec RDS_Server sh -c 'nc -lk -p 5432 >/dev/null 2>&1 </dev/null &'
+if [ -e /tmp/lab12-pids ]; then
+  echo "Existe un registro de procesos anterior; ejecuta la limpieza del laboratorio 12 antes de repetirlo"
+  exit 1
+fi
+: > /tmp/lab12-pids
+sudo ip netns exec AppServer sh -c 'nc -lk -p 8080 >/dev/null 2>&1 </dev/null & echo $! >> /tmp/lab12-pids'
+sudo ip netns exec DBServer  sh -c 'nc -lk -p 3306 >/dev/null 2>&1 </dev/null & echo $! >> /tmp/lab12-pids'
+sudo ip netns exec EC2_Server sh -c 'nc -lk -p 8080 >/dev/null 2>&1 </dev/null & echo $! >> /tmp/lab12-pids'
+sudo ip netns exec RDS_Server sh -c 'nc -lk -p 5432 >/dev/null 2>&1 </dev/null & echo $! >> /tmp/lab12-pids'
 ```
 
 ### Paso 8: Política Zero Trust en el broker (acceso mínimo por aplicación)
@@ -394,13 +399,35 @@ Redacta (sin implementarlas) las políticas que un SASE aplicaría al tráfico d
 La práctica crea diez *namespaces*; las interfaces, rutas, reglas `iptables` y parámetros de reenvío configurados dentro de ellos quedan aislados del host. La limpieza detiene los procesos que permanezcan dentro de esos espacios y elimina únicamente los nombres de esta topología.
 
 ```bash
+# Detener los listeners nc registrados por este laboratorio antes de borrar namespaces.
+if [ -f /tmp/lab12-pids ]; then
+  while read -r pid; do
+    [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null && sudo kill "$pid" 2>/dev/null || true
+  done < /tmp/lab12-pids
+fi
 for ns in OnPremise AppServer DBServer AWS_VPC EC2_Server RDS_Server ZTNA_Broker IDP User1 User2; do
   sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
   sudo ip netns del "$ns" 2>/dev/null || true
 done
+sudo rm -f /tmp/lab12-pids
 ```
 
 **Comprobación:** `sudo ip netns list` no debe mostrar ninguno de esos diez nombres. Para repetir el laboratorio, vuelve a ejecutar desde el Paso 0.
+
+## Profundización: identidad, políticas y procesos
+
+Una regla que autoriza `10.8.0.2 → aplicación:8080` demuestra segmentación por dirección y puerto, no identidad Zero Trust. Una dirección IP puede cambiar, compartirse o suplantarse dentro de ciertos límites. En una arquitectura real, el acceso requiere identidad autenticada, contexto del dispositivo, decisión de política y aplicación de esa decisión en un punto de enforcement. MFA, claims, posture, expiración y revocación son piezas distintas; no las simula el firewall de este ejercicio.
+
+### Experimento: por qué una IP no es identidad
+
+Cambia la IP de un usuario dentro de la topología y observa que la regla basada en IP deja de coincidir o puede autorizar a otro equipo que use esa dirección. Registra la regla efectiva y el resultado. Concluye qué evidencia adicional necesitaría un sistema real para vincular una sesión con una identidad autenticada.
+
+### Procesos: eliminar namespaces no siempre detiene servicios
+
+Los namespaces aíslan la red, no el ciclo de vida de todos los procesos ni el sistema de archivos. Los servidores `nc` iniciados en segundo plano deben tener PID registrados y detenerse selectivamente antes de borrar los namespaces. No uses `pkill nc` ni patrones amplios. Para cada servicio, registra el PID al arrancarlo, comprueba `/proc/$pid/cmdline` y detén solo el proceso cuyo comando corresponda a la ruta/puerto del laboratorio. Después verifica que el puerto dejó de escuchar con `ss -lntup`.
+
+La conectividad `veth` hacia la VPC es una abstracción de underlay; no es AWS VPC real, VPN cifrada ni SASE. Mantén explícito qué parte es ejecutable, simulada o conceptual en los objetivos y conclusiones.
+
 
 ## Preguntas de reflexión
 

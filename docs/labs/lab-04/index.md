@@ -125,7 +125,7 @@ El bloque detecta los nombres que utiliza este laboratorio, muestra los recursos
 
 ```bash
 NS_LAB="cliente1 cliente2 cliente3 cliente4 router switch ventas1 ventas2 ventas3 ventas4 it1 it2 it3"
-IF_LAB="veth-c1 veth-c2 veth-c3 veth-c4 veth-sr veth-host"
+IF_LAB="veth-c1 veth-c2 veth-c3 veth-c4 veth-v1 veth-v2 veth-v3 veth-v4 veth-i1 veth-i2 veth-i3 veth-sr veth-host"
 EXISTENTES=$(ip netns list | awk '{print $1}' | while read -r ns; do
   for esperado in $NS_LAB; do [ "$ns" = "$esperado" ] && echo "$ns"; done
 done)
@@ -518,6 +518,38 @@ done
 ```
 
 Comprueba el resultado: `ip netns list`, `ip link show veth-host`, `sysctl net.ipv4.ip_forward` e `iptables -t nat -S POSTROUTING`.
+
+## Profundización: cómo calcula un host su red local
+
+Un host no decide si el destino es local por proximidad numérica ni por pertenecer al mismo edificio. Aplica la máscara al origen y al destino y compara los prefijos:
+
+\[\text{red} = \text{IP} \;\text{AND}\; \text{máscara}\]
+
+Ejemplo: `10.0.0.18/29` pertenece a `10.0.0.16/29`. La máscara `/29` equivale a `255.255.255.248`; el tamaño del bloque en el último octeto es 8. El rango va de `.16` a `.23`, con hosts `.17`–`.22` y broadcast `.23`.
+
+### Algoritmo VLSM verificable
+
+1. Ordena los segmentos por demanda de hosts, de mayor a menor.
+2. Añade red y broadcast en IPv4 tradicional: para H hosts, busca el menor n tal que `2^n - 2 ≥ H`.
+3. El prefijo es `32 - n`.
+4. Calcula el tamaño del bloque y alinea el inicio al múltiplo correspondiente.
+5. Asigna gateway y hosts sin usar red ni broadcast.
+6. Comprueba que los intervalos no se solapen y que caben en el bloque padre.
+7. Reserva espacio de crecimiento y documenta las decisiones.
+
+### Demostración de decisión local o gateway
+
+```bash
+sudo ip netns exec ventas1 ip route get 10.0.0.20
+sudo ip netns exec ventas1 ip route get 10.0.0.30
+sudo ip netns exec ventas1 ip route show
+sudo ip netns exec ventas1 ip neigh show
+```
+
+El primer destino puede ser local según la máscara configurada; el segundo puede requerir gateway. Cambia temporalmente la máscara en un cliente de laboratorio y predice antes de probar: una máscara demasiado amplia puede hacer que el host intente ARP por un destino remoto; una demasiado estrecha puede enviar al gateway un destino que debería ser local. Restaura la máscara al terminar.
+
+**Evidencia:** cálculo binario de AND, tabla de subredes, `ip route get` antes/después y explicación de qué IP se resuelve por ARP (destino local o siguiente salto).
+
 
 ## Preguntas de reflexión
 

@@ -379,6 +379,44 @@ done
 
 **Comprobación:** `ip netns list` no debe mostrar `cliente1`, `cliente2` ni `router`; `ip -br link` no debe mostrar los extremos veth de esta práctica.
 
+## Profundización: reconstruir un paquete de extremo a extremo
+
+La prueba principal no consiste solo en comprobar que `ping` responde: hay que reconstruir la decisión del kernel y el trabajo del bridge.
+
+### Secuencia de observación
+
+Antes de enviar tráfico, predice qué interfaz utilizará el cliente y qué dirección MAC aparecerá como destino:
+
+```bash
+sudo ip netns exec cliente1 ip route get 10.0.1.3
+sudo ip netns exec cliente1 ip neigh show
+sudo ip netns exec router bridge fdb show br br0
+```
+
+En una terminal captura el enlace del cliente y, en otra, el bridge y sus puertos. Después genera un único intercambio:
+
+```bash
+sudo ip netns exec cliente1 ping -c 1 10.0.1.3
+sudo ip netns exec router bridge fdb show br br0
+sudo ip netns exec cliente1 ip neigh show
+```
+
+**Interpretación causal:** el kernel compara el destino con sus prefijos conectados; al ser local, resuelve por ARP la MAC del destino, no la del gateway. El bridge aprende la MAC de origen al recibir la trama, consulta su FDB y reenvía por el puerto asociado. Si todavía no conoce la MAC de destino, inunda la trama unicast desconocida por los puertos de esa VLAN/dominio, excepto el puerto de entrada. La respuesta permite aprender el sentido inverso.
+
+### Aprendizaje, envejecimiento y ARP obsoleto
+
+```bash
+sudo ip netns exec router bridge fdb show br br0
+sudo ip netns exec cliente1 ip neigh show
+sudo ip netns exec cliente1 ip neigh flush to 10.0.1.3
+sudo ip netns exec cliente1 ping -c 1 10.0.1.3
+```
+
+No confundas las tablas: la FDB asocia MAC con puerto del bridge; la tabla de vecinos asocia IP con MAC en un enlace. El envejecimiento de FDB y el estado NUD de vecinos son mecanismos distintos. Cambiar manualmente una MAC o borrar una entrada solo debe hacerse en esta topología aislada.
+
+**Evidencia que debe entregar el estudiante:** salida de `ip route get`, captura ARP/ICMP, FDB antes y después, tabla de vecinos y explicación de cada transición. No basta con adjuntar la salida sin interpretarla.
+
+
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo se está demostrando cuando Cliente 1 y Cliente 2 se comunican sin pasar por una dirección de *gateway*?

@@ -47,6 +47,7 @@ nav = [
     { "ARQUITECTURA INTEGRAL" = "referencia/arquitectura-integral.md" },
     { "GLOSARIO" = "referencia/glosario.md" },
     { "COMPETENCIAS Y CASOS INTEGRADORES" = "referencia/competencias.md" },
+    { "REGISTRO DE ATENCIÓN DE LA AUDITORÍA" = "referencia/auditoria-atendida.md" },
   ] },
 ]
 

@@ -56,6 +56,22 @@ flowchart TD
 | Los clientes no obtienen IP | `tcpdump port 67 or port 68`, `nft list` | DHCP no recibe (firewall en `input`), rango agotado |
 | Se pierde la adyacencia OSPF | `vtysh -c "show ip ospf neighbor"`, `tcpdump proto ospf` | Protocolo 89 bloqueado, MTU distinta, enlace caído |
 
+## Orden de diagnóstico por capas
+
+Usa el orden siguiente para reducir hipótesis; no saltes directamente a cambiar reglas:
+
+1. **Enlace/interfaz:** `ip -s link`, `ip link`, MTU, estado de veth/bridge y contadores.
+2. **Capa 2:** `bridge fdb show`, `bridge vlan show`, `ip neigh`, ARP y captura Ethernet.
+3. **Capa 3:** `ip addr`, `ip route`, `ip route get`, `ip rule`, traceroute y TTL.
+4. **Transporte:** puertos, `ss`, TCP/UDP, conntrack, retransmisiones y estados.
+5. **Servicios:** DHCP, DNS, HTTP/HTTPS y SSH; distingue timeout, NXDOMAIN, rechazo y error TLS.
+6. **Seguridad:** INPUT/FORWARD/OUTPUT, NAT, contadores, políticas XFRM y estado de túneles.
+7. **Aplicación/operación:** logs con hora sincronizada, métricas, alertas y correlación temporal.
+
+### Estándar de informe de incidencia
+
+Cada ejercicio de diagnóstico debe registrar: síntoma y alcance; hora de inicio y zona horaria; hipótesis iniciales; pruebas realizadas y resultado; evidencia en ambos extremos cuando sea posible; causa raíz o nivel de confianza; impacto; corrección; validación posterior; reversión y riesgo residual. Una pérdida en un salto intermedio de MTR no demuestra pérdida de tránsito si los saltos posteriores responden normalmente: algunos routers limitan ICMP de control.
+
 ## Cinco situaciones para practicar
 
 Cada una se resuelve **razonando** con las herramientas ya vistas; no hace falta construir una topología nueva.

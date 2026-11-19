@@ -322,6 +322,14 @@ sysctl -w net.ipv4.ip_forward=1
 if ! iptables -t nat -C POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE; then
   iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab05-host-nat.added
 fi
+
+# Si el firewall del host tiene FORWARD en DROP, autoriza solo este enlace y el retorno establecido.
+if ! iptables -C FORWARD -i veth-host -o eth0 -s 192.168.1.0/24 -j ACCEPT; then
+  iptables -I FORWARD 1 -i veth-host -o eth0 -s 192.168.1.0/24 -j ACCEPT && touch /tmp/lab05-forward-out.added
+fi
+if ! iptables -C FORWARD -i eth0 -o veth-host -d 192.168.1.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; then
+  iptables -I FORWARD 1 -i eth0 -o veth-host -d 192.168.1.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT && touch /tmp/lab05-forward-in.added
+fi
 ```
 
 El router traduce (NAT) todo lo que sale por `veth-wan`, así que el host solo ve la red `192.168.1.0/24` y **no necesita una ruta de retorno** hacia las VLAN.
@@ -424,7 +432,17 @@ if [ -f /tmp/lab05-host-nat.added ]; then
   rm -f /tmp/lab05-host-nat.added
 fi
 
-# 2. Reenvío: restaura el valor original guardado antes del laboratorio.
+# 2. Reglas FORWARD del host: retirar únicamente las que añadió esta práctica.
+if [ -f /tmp/lab05-forward-out.added ]; then
+  iptables -D FORWARD -i veth-host -o eth0 -s 192.168.1.0/24 -j ACCEPT 2>/dev/null || true
+  rm -f /tmp/lab05-forward-out.added
+fi
+if [ -f /tmp/lab05-forward-in.added ]; then
+  iptables -D FORWARD -i eth0 -o veth-host -d 192.168.1.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+  rm -f /tmp/lab05-forward-in.added
+fi
+
+# 3. Reenvío: restaura el valor original guardado antes del laboratorio.
 if [ -f /tmp/lab05-ip_forward.orig ]; then
   sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab05-ip_forward.orig)"
   rm -f /tmp/lab05-ip_forward.orig
@@ -439,6 +457,36 @@ done
 ```
 
 Si el host ya tenía `ip_forward=1`, **omite** el paso 2. Comprueba con `ip netns list` y `iptables -t nat -S POSTROUTING`.
+
+## Profundización: recorrido de una trama 802.1Q
+
+Sigue una trama de Ventas desde el host hasta otro segmento. En el puerto access entra sin etiqueta; el switch la clasifica usando el PVID configurado; la FDB se consulta dentro del contexto de VLAN; al salir por el trunk se añade la etiqueta 802.1Q (TPID 0x8100 y TCI con PCP/DEI/VID); la subinterfaz del router recibe la VLAN correspondiente y el router realiza una decisión de capa 3. Al salir hacia el puerto access de destino, el switch transmite sin etiqueta si ese puerto está configurado como access/PVID.
+
+La VLAN nativa en equipos reales puede permitir tramas sin etiqueta en un trunk. Este laboratorio usa `vlan_default_pvid 0` para evitar asignaciones implícitas; no extrapoles esa decisión a todos los fabricantes ni asumas que una trama sin etiqueta siempre pertenece a VLAN 1.
+
+### Captura comparativa
+
+```bash
+sudo ip netns exec cliente1 tcpdump -eni veth-c1 'arp or icmp'
+sudo ip netns exec switch tcpdump -eni veth-s1 'vlan or arp or icmp'
+sudo ip netns exec router tcpdump -eni any 'vlan or arp or icmp'
+```
+
+Ejecuta un ping entre VLAN permitidas y compara dónde aparece el encabezado 802.1Q. La captura depende del punto de observación y de offloads; si la etiqueta no aparece donde la esperas, contrasta `bridge vlan show`, `ip -d link show` y la captura en ambos extremos antes de declarar un fallo.
+
+### Matriz de fallos controlados
+
+| Fallo introducido | Síntoma probable | Evidencia que lo localiza |
+|---|---|---|
+| VLAN ausente del puerto access | Host queda aislado o en VLAN distinta | `bridge vlan show`, captura sin tráfico esperado |
+| VID no permitido en trunk | Solo falla ese segmento a través del trunk | VLAN permitidas y captura en ambos extremos |
+| PVID incorrecto | Trama sin etiqueta clasificada en VLAN equivocada | PVID del puerto y tabla VLAN |
+| Gateway incorrecto | L2 local funciona; salida a otras redes falla | `ip route`, `ip route get`, ARP del gateway |
+| Subinterfaz ausente | El trunk transporta la VLAN pero no hay routing | `ip -d link`, direcciones y rutas del router |
+| Regla FORWARD bloqueante | Ruta y ARP correctos, tráfico inter-VLAN descartado | Contadores del firewall y captura a ambos lados |
+
+No dejes reglas temporales ni cambios de PVID al terminar; restaura la configuración de la topología siguiendo la limpieza del laboratorio.
+
 
 ## Preguntas de reflexión
 

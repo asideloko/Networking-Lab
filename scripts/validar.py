@@ -4,6 +4,8 @@
 - Enlaces .md relativos que existen.
 - Imágenes (Markdown y HTML) y recursos url() de CSS que existen.
 - Todo laboratorio que activa ip_forward en el host tiene una sección de reversión.
+- Controles estáticos de propiedad de recursos y cambios globales conocidos.
+- Rechazo de patrones de limpieza/seguridad peligrosos detectados en la auditoría.
 """
 import re, sys, pathlib, subprocess
 
@@ -76,6 +78,61 @@ for md in sorted(docs.rglob("*.md")):
         if not re.search(r"/tmp/[^\s]+host-nat\.added", txt):
             errores.append(f"{rel}: no registra si añadió la regla NAT del host")
 
+# Controles estáticos de seguridad y reversibilidad identificados en la auditoría.
+for md in sorted((docs / "labs").glob("lab-*/index.md")):
+    txt = md.read_text(encoding="utf-8")
+    rel = md.relative_to(docs)
+
+    bash_blocks = "\n".join(re.findall(r"^```bash[ \t]*\n(.*?)^```[ \t]*$", txt, re.M | re.S))
+    if "StrictHostKeyChecking=no" in bash_blocks or "UserKnownHostsFile=/dev/null" in bash_blocks:
+        errores.append(f"{rel}: desactiva la verificación de identidad SSH del servidor")
+
+    if re.search(r"(?m)^\s*(?:sudo )?pkill\s+-f", bash_blocks):
+        errores.append(f"{rel}: usa pkill -f; registrar PID y detener procesos propios selectivamente")
+
+    # nf_log_all_netns es global al host: exige copia previa y restauración del mismo archivo.
+    if "net.netfilter.nf_log_all_netns=1" in txt:
+        if "/tmp/lab08-nf_log_all_netns.orig" not in txt or not re.search(
+            r"sysctl -w net\.netfilter\.nf_log_all_netns=\"\$\(cat /tmp/lab08-nf_log_all_netns\.orig\)\"", txt
+        ):
+            errores.append(f"{rel}: nf_log_all_netns se modifica sin restaurar el valor original")
+
+    # El borrado de OVS debe estar protegido por un marcador creado al crear el bridge.
+    if "ovs-vsctl --if-exists del-br ovs-sw" in txt:
+        if "ovs-sw.created" not in txt:
+            errores.append(f"{rel}: elimina ovs-sw sin verificar propiedad")
+
+    # TCPMSS aplicado al host globalmente es un cambio de firewall peligroso.
+    for line in sin_codigo_y_bloques(txt):
+        if "iptables -t mangle -A FORWARD" in line and "TCPMSS" in line and "ip netns exec" not in line:
+            errores.append(f"{rel}: regla TCPMSS modifica FORWARD del host sin aislamiento")
+
+    # No se permite vaciar indiscriminadamente el estado XFRM del namespace.
+    if re.search(r"ip\s+xfrm\s+(?:state|policy)\s+flush", txt):
+        errores.append(f"{rel}: vacía XFRM indiscriminadamente; eliminar SA/políticas por selector")
+
+    # Los bridges compartidos del host requieren una comprobación de propiedad por alias.
+    if re.search(r"ip link del br-wan", txt) and "ifalias" not in txt:
+        errores.append(f"{rel}: elimina br-wan por nombre sin comprobar su propiedad")
+
+# Regresiones concretas de la auditoría por laboratorio.
+checks = {
+    "lab-02": ["/tmp/lab02-ip_forward.orig", "sysctl -w net.ipv4.ip_forward=\"$(cat /tmp/lab02-ip_forward.orig)\""] ,
+    "lab-04": ["veth-v1 veth-v2 veth-v3 veth-v4", "veth-i1 veth-i2 veth-i3"],
+    "lab-05": ["/tmp/lab05-forward-out.added", "/tmp/lab05-forward-in.added", "iptables -D FORWARD -i veth-host"],
+    "lab-07": ["ip link del br-lan", "ip addr replace 10.0.0.1/24 dev veth-r1c"],
+    "lab-08": ["/tmp/lab08-nf_log_all_netns.orig", "ip route replace default via 192.168.100.2 dev veth-wan", "StrictHostKeyChecking=yes", "subjectAltName=DNS:servidorWeb"],
+    "lab-09": ["ip xfrm state delete", "ip xfrm policy delete", "ip tunnel del"],
+    "lab-12": ["/tmp/lab12-pids", "echo $! >> /tmp/lab12-pids"],
+    "lab-15": ["ovs-sw.created", "/tmp/lab15/tcpmss.added", "/tmp/lab15/r1/zebra.pid", "dnsmasq --conf-file=/tmp/lab15/dns.conf", "dhcp-option=tag:fin,option:dns-server,10.0.1.1"],
+}
+for lab, required in checks.items():
+    md = docs / "labs" / lab / "index.md"
+    content = md.read_text(encoding="utf-8")
+    for token in required:
+        if token not in content:
+            errores.append(f"{md.relative_to(docs)}: falta control de auditoría: {token}")
+
 # Sintaxis de bloques Bash completos (sin ejecutar comandos ni modificar el sistema).
 for md in sorted(docs.rglob("*.md")):
     txt = md.read_text(encoding="utf-8")
@@ -85,6 +142,12 @@ for md in sorted(docs.rglob("*.md")):
         if resultado.returncode:
             detalle = resultado.stderr.strip().splitlines()[-1]
             errores.append(f"{md.relative_to(docs)}: sintaxis Bash inválida en bloque {n}: {detalle}")
+
+funcional = pathlib.Path(__file__).with_name("pruebas_funcionales.sh")
+if funcional.exists():
+    resultado = subprocess.run(["bash", "-n", str(funcional)], text=True, capture_output=True, check=False)
+    if resultado.returncode:
+        errores.append(f"scripts/{funcional.name}: sintaxis Bash inválida: {resultado.stderr.strip()}")
 
 avisos = []
 for css in sorted(docs.rglob("*.css")):

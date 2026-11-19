@@ -53,6 +53,22 @@ graph TB
 | Nube y acceso remoto | Entornos modernos y Zero Trust | 12 |
 | NOC y colector | Observar y diagnosticar | 13, 14 |
 
+## Qué está implementado y qué es una arquitectura de referencia
+
+El mapa anterior es una síntesis curricular, no una única topología desplegada. La serie utiliza escenarios independientes para aislar mecanismos. La continuidad de Networking SecOps es narrativa y conceptual; no implica que todos los namespaces y enlaces persistan de un laboratorio al siguiente.
+
+| Área | Evidencia ejecutable en la serie | Alcance que permanece conceptual o parcial |
+|---|---|---|
+| Ethernet/switching/VLAN | Bridges, veth, FDB y VLAN filtering en labs 01–05; acceso empresarial en 11 | No equivale a ASIC/switch físico ni a toda la redundancia de un campus |
+| Routing/WAN | Rutas estáticas, GRE, OSPF y multipath IP en 06, 10, 15 | Lab 10 no implementa un core MPLS real ni LDP/MP-BGP/VRF |
+| Servicios | DHCP, DNS, NAT/PAT en 07; DHCP y zona DNS interna opcional en 15 | La zona DNS del lab 15 es una demostración pequeña, no una infraestructura autoritativa empresarial completa |
+| Seguridad/VPN | Firewall, DNAT, SSH/TLS, XFRM manual, OpenVPN/WireGuard de laboratorio | No es PKI/IKE empresarial completo, ni plataforma ZTNA/SASE real |
+| Nube híbrida | Conectividad por veth/namespaces en 12 | No es una cuenta/VPC AWS real ni un transporte dedicado |
+| Operación | Herramientas, métricas, capturas y colector rsyslog en 13–14 | rsyslog no es un SIEM completo; iperf3 sobre veth no certifica una WAN física |
+| Integración | VLSM, OSPF, firewall, DHCP/NAT y VRRP parcial en 15 | No reúne en ejecución todas las tecnologías de los 15 laboratorios |
+
+Usa esta tabla para explicar qué se ha construido, qué se ha representado y qué haría falta para un despliegue real. No presentes una abstracción didáctica como una implementación de producto o servicio empresarial.
+
 ## Comparación de tecnologías de conectividad
 
 | Tecnología | Qué resuelve | Cifra | Complejidad | Dónde se practica |

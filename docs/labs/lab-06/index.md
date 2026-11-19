@@ -519,6 +519,34 @@ done
 
 **Comprobación:** `sudo ip netns list` no debe mostrar ninguno de esos seis nombres. Al repetir la práctica, comienza de nuevo por el Paso 0.
 
+## Profundización: plano de control y plano de datos
+
+La **RIB** es la base de información de routing que reúne rutas aprendidas y sus atributos; la selección de rutas decide cuáles son preferibles. La **FIB** es la estructura optimizada que utiliza el plano de datos para reenviar paquetes. En Linux, `ip route` consulta la tabla de routing del kernel; no es una visualización universal de la implementación interna de hardware de un router comercial.
+
+### Reconstrucción de un reenvío
+
+```bash
+sudo ip netns exec R1 ip route get 10.0.2.10
+sudo ip netns exec R1 ip route show table main
+sudo ip netns exec R1 ip neigh show
+sudo ip netns exec R1 ip -s link
+```
+
+El router aplica *longest prefix match* entre rutas elegibles; después resuelve el siguiente salto y la interfaz de salida. Si el vecino no está en caché, ARP resuelve la MAC del siguiente salto en el enlace Ethernet. El router construye una nueva trama de capa 2, decrementa el TTL IPv4 y reenvía el paquete. Si el TTL llega a cero, descarta y normalmente genera ICMP Time Exceeded, sujeto a políticas y rate limiting.
+
+### Métrica no significa calidad física
+
+La métrica es un criterio administrativo de preferencia dentro de la selección de rutas; no mide automáticamente latencia, ancho de banda, pérdida ni número de saltos. Compara una ruta con métrica menor y RTT mayor frente a otra con métrica superior y RTT menor: Linux puede preferir la primera por su métrica, aunque la segunda parezca más rápida en una medición puntual.
+
+### GRE y underlay
+
+El enlace virtual `192.168.3.0/30` simula el **underlay IP** entre extremos; no representa Internet pública. GRE añade una cabecera GRE y una cabecera IP exterior alrededor del paquete interior. El TTL exterior y el interior son campos distintos; observa ambos con capturas en el extremo del túnel y en la interfaz subyacente. La MTU efectiva disminuye por el overhead y debe probarse en ambos sentidos.
+
+### Fallo local frente a fallo remoto
+
+Registra el tiempo, paquetes perdidos y ruta seleccionada cuando bajas una interfaz local. Repite con un fallo remoto que no provoque pérdida de portadora (por ejemplo, descartar tráfico en el extremo remoto dentro del laboratorio). Una ruta estática con siguiente salto todavía alcanzable a nivel de enlace no desaparece necesariamente ante un fallo remoto; no la describas como convergencia automática.
+
+
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo hace que R1 envíe `10.0.2.10` por el enlace directo y no por R2?

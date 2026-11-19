@@ -473,6 +473,30 @@ done
 
 Los *namespaces* se eliminan **por nombre**, no todos los del equipo.
 
+## Profundización: disponibilidad real y mecanismos complementarios
+
+La alta disponibilidad debe evaluarse por servicio y segmento, no por contar enlaces o routers. Una ruta alternativa, STP/RSTP y VRRP resuelven problemas distintos:
+
+- Routing alternativo: el plano de capa 3 selecciona otro next-hop cuando el fallo es detectable y la ruta alternativa resulta elegible.
+- STP/RSTP: evita bucles de capa 2 y desbloquea caminos redundantes según la topología/temporizadores.
+- VRRP: ofrece un gateway virtual a los hosts; no repara automáticamente rutas WAN, DHCP, DNS ni servicios dependientes del router.
+
+### Matriz de disponibilidad que debe completar el estudiante
+
+| Componente/servicio | ¿Está redundado en el escenario base? | Dependencia o punto único de fallo | Prueba necesaria |
+|---|---|---|---|
+| Gateway de VLAN | No, Dist1 es único | Dist1 y su uplink | Caída de Dist1 y medición de pérdida |
+| Core | Parcial | Rutas y conectividad hacia firewall | Caída local y fallo remoto silencioso |
+| Acceso | No necesariamente | Access1/trunk | Desconectar cada uplink |
+| Firewall/Internet | No necesariamente | Firewall y salida host | Probar tráfico interno y externo por separado |
+
+### Fallo local frente a fallo remoto
+
+Una interfaz `DOWN` puede retirar inmediatamente una ruta conectada; un fallo remoto con portadora activa puede no ser detectado por una ruta estática. Registra hora de inicio, detección, cambio de ruta, pérdida de paquetes y recuperación. Si se incorpora VRRP en una ampliación, comprueba prioridad, anuncios, preemption y tracking; no atribuyas a VRRP una convergencia de routing que pertenece a otro protocolo.
+
+La limpieza de recursos del host debe mantener la comprobación de propiedad de `br-wan` (alias `networking-lab` y dirección esperada). La coincidencia de nombre por sí sola no autoriza a borrar un bridge.
+
+
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo hace que el tráfico siga funcionando cuando cae `Core1`, y por qué ese mismo mecanismo no sirve si cae `Dist1`?

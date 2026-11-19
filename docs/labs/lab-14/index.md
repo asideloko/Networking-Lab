@@ -425,6 +425,31 @@ Sustituye la interfaz ficticia `dum0` por un namespace `Detras` unido a Host1 co
 | ethtool | Diagnóstico físico |
 | Netcat | Pruebas de conectividad |
 
+## Profundización: policy routing y alcance de ethtool
+
+`ip rule` define el orden de evaluación de reglas de política; cada regla puede seleccionar una tabla según origen, destino, marca, interfaz u otros selectores. La tabla `main` no es necesariamente la única tabla consultada.
+
+### Ejemplo aislado de routing por origen
+
+En una ampliación controlada, crea tablas nombradas o numeradas en `/etc/iproute2/rt_tables` solo si el ejercicio requiere persistencia; para una prueba efímera usa identificadores numéricos y elimina las reglas al terminar:
+
+```bash
+sudo ip rule show
+sudo ip route show table main
+sudo ip route get 10.0.2.10 from 10.0.1.10
+```
+
+Diseña dos orígenes y dos gateways, predice qué tabla debe resolver cada flujo y verifica con `ip route get ... from ...`. Registra prioridad (`pref`) y evita reglas duplicadas. La reversión debe eliminar únicamente las reglas y rutas que añadió el ejercicio.
+
+### `ethtool`: virtual frente a físico
+
+Sobre `veth`, `ethtool` puede mostrar información limitada del dispositivo virtual y estadísticas software; no demuestra velocidad negociada, dúplex ni propiedades del transceptor físico. Para una NIC real, consulta `ethtool <NIC>`, `ethtool -i <NIC>` y `ethtool -S <NIC>` con permisos adecuados. No fuerces velocidad/autonegociación ni reinicies una interfaz productiva como parte de esta práctica.
+
+### Diagnóstico por evidencia
+
+Si el servicio escucha (`ss`), la ruta existe (`ip route get`) y la conexión falla, captura en ambos extremos (`tcpdump`) y revisa reglas/contadores (`nft list ruleset`). El punto donde desaparece el paquete y el contador que aumenta sustentan el diagnóstico; no basta con que una regla parezca sospechosa.
+
+
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo decide por qué interfaz sale un paquete, y con qué comando lo compruebas?

@@ -420,6 +420,38 @@ done
 
 **Comprobación:** `sudo ip netns list` no debe mostrar `switch`, `cliente3` ni `cliente4`. Si vas a repetir el laboratorio 03, vuelve a ejecutar desde cero los laboratorios 01 y 02 antes de comenzar.
 
+## Profundización: algoritmo de conmutación y FDB
+
+Un switch aprende observando la **MAC de origen** de cada trama recibida; no aprende una MAC porque alguien haya hecho ping a esa dirección. Para cada VLAN/dominio de bridge, el comportamiento básico es:
+
+1. Recibe una trama por un puerto y aprende `MAC_origen → puerto`.
+2. Si la MAC destino es broadcast/multicast, replica según las reglas de la VLAN.
+3. Si la MAC destino unicast está en la FDB, reenvía solo por el puerto aprendido (si no es el puerto de entrada).
+4. Si la MAC destino unicast no está en la FDB, realiza flooding por los puertos elegibles, excepto el de entrada.
+5. Las entradas dinámicas envejecen; las estáticas no siguen necesariamente el mismo temporizador.
+
+### Experimento predictivo
+
+Anota primero qué puertos esperas que reciban cada trama. Después ejecuta:
+
+```bash
+for dev in veth-s1 veth-s2 veth-s3 veth-s4 veth-sr; do
+  sudo ip netns exec switch bridge fdb flush dev "$dev" dynamic
+ done
+sudo ip netns exec switch bridge fdb show br br0
+sudo ip netns exec cliente1 ping -c 1 10.0.1.3
+sudo ip netns exec switch bridge fdb show br br0
+```
+
+Repite desde un cliente hacia otro destino no contactado y compara la captura en los puertos del switch. La FDB se llena con MAC **de origen** de las tramas observadas. El primer unicast puede inundarse si el destino todavía no está aprendido; la respuesta suele permitir aprender ambas MAC.
+
+### MTU y PMTUD
+
+`ping -M do -s N` controla el tamaño de la carga ICMP, no el tamaño total de la trama Ethernet: añade cabecera IP e ICMP. Con IPv4 sin opciones, el tamaño del paquete IP es aproximadamente `N + 28` bytes. Si un router no puede fragmentar un paquete con DF, debe devolver ICMP Destination Unreachable / Fragmentation Needed (tipo 3, código 4). Si ese ICMP se filtra, PMTUD clásico puede fallar de forma silenciosa; no concluyas que todo paquete perdido es un problema de MTU.
+
+El cambio a MTU 9000 debe compararse con pruebas repetidas y la misma carga, duración, CPU y dirección de prueba. Una variación de `iperf3` en veth no demuestra por sí sola una mejora física de jumbo frames.
+
+
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo permite que el *switch* envíe una trama solo al puerto correcto tras aprender una MAC?

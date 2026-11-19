@@ -403,6 +403,29 @@ sudo rm -rf /tmp/lab13
 
 Si quieres retirar también la red del laboratorio 12, elimina sus *namespaces* por nombre (`ip netns list` los muestra). Instalaste `mtr-tiny`, `iperf3`, `rsyslog`, etc.: quedan como paquetes, sin servicio activo propio.
 
+## Profundización: integridad temporal y transporte de logs
+
+El colector `rsyslog` de este laboratorio centraliza mensajes; no constituye por sí solo un SIEM completo. UDP/514 sirve para demostrar syslog básico, pero no garantiza entrega, orden ni confidencialidad. Compara las alternativas:
+
+| Transporte | Ventaja | Límite |
+|---|---|---|
+| Syslog UDP | Simple y ampliamente soportado | Sin confirmación de entrega ni cifrado por sí mismo |
+| Syslog TCP | Transporte fiable a nivel de conexión | No aporta cifrado por sí solo |
+| Syslog TLS | Confidencialidad e integridad del canal, con autenticación según configuración | Requiere certificados, confianza y gestión de claves |
+
+### Tiempo, retención y calidad de evidencia
+
+Sin sincronización horaria, la correlación entre router, firewall y servidores puede producir una secuencia falsa. Comprueba NTP/chrony en los nodos y documenta zona horaria y desfase antes de investigar un incidente. La retención y rotación deben evitar llenar el disco y preservar los registros necesarios; los logs no deben contener secretos ni credenciales.
+
+### Interpretación correcta de iperf3 y MTU
+
+Una prueba `iperf3` sobre veth enseña cómo medir throughput, pérdida y jitter en el escenario virtual; no certifica la capacidad de una WAN física, ISP o VPN de producción. En el caso MTU, captura en emisor y receptor, distingue tamaño de carga ICMP de tamaño IP, observa DF y mensajes ICMP Fragmentation Needed. Si ICMP está filtrado, PMTUD puede quedar bloqueado; confirma la hipótesis con evidencia en ambos extremos.
+
+### Informe de incidente basado en evidencias
+
+Ante un reporte de lentitud, entrega: síntoma y alcance; línea temporal con relojes sincronizados; hipótesis; evidencia de ping/MTR; métricas TCP/UDP; captura que muestre retransmisiones o pérdida; logs de cambios; causa probable y nivel de confianza; corrección; validación posterior y riesgos residuales. No atribuyas pérdida a un salto intermedio de MTR sin verificar si los saltos posteriores también muestran pérdida: algunos routers limitan respuestas ICMP de control.
+
+
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo permite al NOC decidir si un problema es de ruta, de DNS, de servicio o de rendimiento?

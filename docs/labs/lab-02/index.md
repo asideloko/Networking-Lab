@@ -128,16 +128,21 @@ ip netns exec router ip route add default via 192.168.1.1
 El host también debe reenviar y traducir el tráfico del enlace de laboratorio hacia tu red real. Sustituye `eth0` por la interfaz con la que sales a Internet (`ip route get 8.8.8.8` te la muestra):
 
 ```bash
-# Guarda el valor original (la reversión lo restaura) y solo entonces modifica el host.
-# Si ya existe una copia, se detiene: revisa su valor y bórrala antes de continuar.
-if [ -e /tmp/lab02-ip_forward.orig ]; then
-  echo "/tmp/lab02-ip_forward.orig ya existe: revisa su valor y bórralo antes de continuar"
-else
-  sysctl -n net.ipv4.ip_forward > /tmp/lab02-ip_forward.orig
-  sysctl -w net.ipv4.ip_forward=1
-  if ! iptables -t nat -C POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE; then
-    iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab02-host-nat.added
+# Si una ejecución anterior se interrumpió, restaura primero el estado que guardó.
+# Solo retira NAT cuando el marcador demuestra que lo añadió este laboratorio.
+if [ -f /tmp/lab02-ip_forward.orig ]; then
+  if [ -f /tmp/lab02-host-nat.added ]; then
+    iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
+    rm -f /tmp/lab02-host-nat.added
   fi
+  sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab02-ip_forward.orig)"
+  rm -f /tmp/lab02-ip_forward.orig
+fi
+# Guarda una copia nueva y aplica los cambios del host.
+sysctl -n net.ipv4.ip_forward > /tmp/lab02-ip_forward.orig
+sysctl -w net.ipv4.ip_forward=1
+if ! iptables -t nat -C POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE; then
+  iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab02-host-nat.added
 fi
 ```
 
@@ -307,7 +312,7 @@ Cuando ejecutas `ping` o `curl` sobre un enlace **físico real**, los datos gene
 
 La diferencia es importante: los bits son una **representación de los datos**; la señal es su **transmisión física**. Un par veth entre namespaces omite el paso 2 y el 3.
 
-En una red Ethernet real, el esquema de codificación más común hoy es **PAM5** (1000BASE-T) o **PAM16** (10GBASE-T), que transmiten múltiples bits por símbolo.
+No existe un único esquema de señalización para Ethernet: depende del PHY y del medio. Por ejemplo, 100BASE-TX utiliza 4B/5B y MLT-3; 1000BASE-T utiliza señalización 4D-PAM5 sobre cuatro pares; 10GBASE-T utiliza PAM-16 junto con codificación y procesamiento de señal avanzados. Estos son ejemplos de PHY concretos, no características universales de Ethernet.
 
 ### Modulación en medios inalámbricos
 
@@ -445,6 +450,45 @@ fi
 ```
 
 Si tu equipo ya tenía `ip_forward=1`, el paso 2 lo deja en 1, que es su valor original. Si borraste `/tmp/lab02-ip_forward.orig` o abriste otra sesión, consulta el valor que anotaste antes de empezar. Comprueba el resultado con `iptables -t nat -S POSTROUTING` y `sysctl net.ipv4.ip_forward`.
+
+## Profundización: capa física, señalización y límites de la simulación
+
+Ethernet no utiliza un único esquema de señalización. El PHY concreto determina codificación, señalización, velocidad, medio y negociación. No generalices PAM5/PAM16 a todo Ethernet:
+
+| PHY | Medio y señalización (resumen didáctico) | Qué demuestra |
+|---|---|---|
+| 100BASE-TX | Par trenzado; 4B/5B y MLT-3 | La codificación de línea no equivale a una modulación multinivel genérica |
+| 1000BASE-T | Cuatro pares; señalización 4D-PAM5 | Transmisión simultánea por los cuatro pares y procesamiento DSP |
+| 10GBASE-T | Par trenzado; PAM-16 con codificación y procesamiento avanzado | La tasa de símbolos, codificación y bits útiles no son lo mismo |
+
+PAM representa niveles de amplitud; QAM combina amplitud y fase y es habitual en Wi-Fi y otros sistemas, pero no debe describirse como el método de modulación de toda conexión Ethernet. La relación ideal de bits por símbolo depende del número de estados, pero la tasa neta también descuenta codificación, redundancia FEC y overhead.
+
+### Parámetros que deben distinguirse
+
+- **Bitrate:** bits transmitidos por segundo en el enlace o interfaz.
+- **Tasa de símbolos (baud):** símbolos por segundo.
+- **Bandwidth:** capacidad nominal o disponible del canal, según el contexto.
+- **Throughput:** datos entregados por unidad de tiempo.
+- **Goodput:** carga útil de aplicación, excluyendo cabeceras y retransmisiones.
+- **RTT, jitter y pérdida:** dimensiones diferentes de la experiencia temporal.
+
+`veth` es un enlace virtual en software. `iperf3`, `tcpdump` y `ping` sobre él permiten estudiar protocolos, colas y rendimiento del kernel, pero no miden voltaje, potencia óptica, SNR ni una velocidad física negociada. Para observar una NIC real, compara `ethtool <interfaz>` y `ethtool -S <interfaz>`; no cambies autonegociación ni velocidad en una interfaz de producción.
+
+### Experimento de medición reproducible
+
+Ejecuta TCP y UDP con condiciones documentadas y repite cada prueba al menos tres veces:
+
+```bash
+# Servidor en una terminal
+sudo ip netns exec router iperf3 -s
+# TCP: cliente
+sudo ip netns exec cliente1 iperf3 -c 10.0.1.1 -t 15 -i 1
+# UDP: fija una tasa ofrecida moderada y compara pérdida/jitter
+sudo ip netns exec cliente1 iperf3 -c 10.0.1.1 -u -b 20M -t 15 -i 1
+```
+
+Registra CPU, duración, tasa ofrecida, throughput recibido, pérdida y jitter. No compares una tasa UDP ofrecida con el goodput TCP como si fueran la misma magnitud.
+
 
 ## Preguntas de reflexión
 

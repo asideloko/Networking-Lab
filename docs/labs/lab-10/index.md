@@ -441,6 +441,36 @@ done
 
 **Comprobación:** `sudo ip netns list` no debe mostrar esos nueve nombres. Si vas a repetir el laboratorio, comienza desde el Paso 0 para reconstruir la topología.
 
+## Profundización: qué hace realmente un core MPLS
+
+En la topología ejecutada, los routers P reenvían paquetes IP mediante rutas estáticas. No existe MPLS funcional, LDP, LFIB, LSP ni VRF. La explicación conceptual debe conservar esa frontera: no describas los resultados de esta simulación como si se hubiera conmutado una etiqueta.
+
+En una red MPLS real:
+
+- **CE** conecta la red del cliente con el proveedor; **PE** mantiene la separación de clientes (por ejemplo VRF) y aplica/retira etiquetas de servicio; **P** conmuta etiquetas en el núcleo y normalmente no necesita conocer los prefijos IP de las LAN de clientes.
+- **FEC** agrupa paquetes que reciben un tratamiento de forwarding común.
+- **LSP** es el camino etiquetado a través del dominio MPLS.
+- **LDP** puede distribuir etiquetas asociadas a FEC; otros diseños usan mecanismos distintos.
+- **LFIB** consulta la etiqueta entrante y decide operación/next-hop (swap, pop o push).
+- En MPLS L3VPN, MP-BGP distribuye rutas VPNv4/VPNv6; RD hace únicas las rutas solapadas y RT controla importación/exportación entre VRF.
+
+La pila de etiquetas puede contener etiqueta de transporte y etiqueta de servicio. PHP permite que el penúltimo router retire la etiqueta de transporte cuando el diseño lo solicita. No reduzcas MPLS a “IP con una etiqueta”: la separación de forwarding, señalización y contexto de cliente es central.
+
+### ECMP: medir y describir el reparto
+
+ECMP reparte normalmente por flujo mediante un hash para conservar afinidad; no implica que cada paquete de una misma sesión siga un camino distinto. Comprueba la ruta multipath y realiza varias conexiones independientes antes de concluir que el reparto es uniforme. Distingue igualdad de coste calculada por un IGP de una ruta multipath estática configurada manualmente con pesos.
+
+```bash
+sudo ip route show
+sudo ip route get 10.0.2.10
+sudo ip -s link show
+```
+
+### MPLS y SD-WAN no son equivalentes
+
+MPLS es una tecnología/arquitectura de forwarding del proveedor; SD-WAN es una arquitectura de control, políticas y orquestación de conectividad WAN que puede utilizar MPLS, Internet o enlaces LTE como underlay. Evalúa SLA de aplicaciones con latencia, jitter y pérdida, y diferencia edge, controlador y orquestador.
+
+
 ## Preguntas de reflexión
 
 1.  ¿Qué distingue a un router PE de uno P en una arquitectura de proveedor?
