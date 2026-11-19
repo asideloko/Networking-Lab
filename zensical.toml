@@ -50,7 +50,7 @@ nav = [
     { "GLOSARIO" = "04-REFERENCIA/glosario.md" },
   ] },
   { "04 · ANEXOS Y CONVENCIONES" = [
-    { "GUÍA DE USO" = "05-ANEXOS/guia-de-uso.md" }
+    { "GUÍA DE USO" = "05-ANEXOS/guia-de-uso.md" },
     { "DIAGRAMACIÓN Y TOPOLOGÍAS" = "05-ANEXOS/diagramacion-y-topologias.md" },
     { "DERECHOS DE AUTOR" = "05-ANEXOS/derechos-de-autor.md" },
   ] },
