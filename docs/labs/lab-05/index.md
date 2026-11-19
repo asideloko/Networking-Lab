@@ -7,7 +7,7 @@ description: "Laboratorio 05 de NETWORKING Lab — Conmutación y Segmentación 
 
 # CONMUTACIÓN Y SEGMENTACIÓN DE RED
 
-<p class="tema-meta"><span>12 secciones</span><span>2 diagramas</span><span>2 tablas</span></p>
+<p class="tema-meta"><span>11 secciones</span><span>2 diagramas</span><span>2 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -287,9 +287,6 @@ Cada subinterfaz recibe solo las tramas etiquetadas con su VLAN y se convierte e
 
 ### Paso 9: Configurar NAT y salida a Internet
 
-!!! danger "Cambio en el host (no en un namespace)"
-    Este paso crea `veth-host` en el equipo real, activa `net.ipv4.ip_forward` y añade una regla `MASQUERADE` en el host. Antes de ejecutar este paso anota el estado previo del equipo: `sysctl net.ipv4.ip_forward` y `iptables -t nat -S POSTROUTING`. La reversión está en la sección «Revertir los cambios del host» de este laboratorio.
-
 ```bash
 ip link add veth-host type veth peer name veth-wan
 ip link set veth-wan netns router
@@ -381,25 +378,6 @@ ip netns exec switch tcpdump -i veth-sr -n -e -v
 ```
 
 En `bridge vlan show` verás `veth-sv1` con `10 PVID Egress Untagged` (acceso VLAN 10) y `veth-sr` con las VLAN 10, 20, 30 y 99 **sin** PVID ni *Untagged* (trunk etiquetado). En la captura del trunk, `tcpdump -e` mostrará `vlan 10, p 0` (o 20, 30) en cada trama: es la etiqueta 802.1Q. Si no la ves, captura en `veth-rs` del lado del router; algunas versiones ocultan la etiqueta cuando el kernel la extrae como metadato.
-
-## Revertir los cambios del host
-
-```bash
-# 1. Regla NAT del host (ajusta eth0 a tu interfaz de salida)
-iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
-
-# 2. Reenvío: vuelve al valor que anotaste (normalmente 0)
-sysctl -w net.ipv4.ip_forward=0
-
-# 3. Enlace virtual del host y namespaces del laboratorio
-ip link del veth-host 2>/dev/null || true
-for ns in router switch ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2; do
-  ip netns pids $ns 2>/dev/null | xargs -r kill     # solo procesos DENTRO de ese namespace
-  ip netns del $ns 2>/dev/null || true
-done
-```
-
-Si el host ya tenía `ip_forward=1`, **omite** el paso 2. Comprueba con `ip netns list` y `iptables -t nat -S POSTROUTING`.
 
 ## Preguntas de reflexión
 

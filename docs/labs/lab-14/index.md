@@ -78,8 +78,6 @@ sudo ip netns add ServidorDMZ
 La LAN `10.0.0.0/24` es un único segmento con dos equipos, así que el router usa un bridge (`br-lan`):
 
 ```bash
-# ⚠ Desde aquí hasta el MASQUERADE del host: CAMBIOS EN EL HOST (veth-wan-r, ip_forward, NAT).
-#   Anota antes `sysctl net.ipv4.ip_forward`; reversión en «Limpieza selectiva».
 # WAN: el router se conecta al host (que hace de "Internet")
 sudo ip link add veth-r-wan type veth peer name veth-wan-r
 sudo ip link set veth-r-wan netns Router
@@ -202,8 +200,8 @@ El `ping` a `10.0.2.1` demuestra que la ruta y el siguiente salto funcionan, per
 Arrancamos dos servicios de prueba en Host1 y establecemos una conexión desde Host2:
 
 ```bash
-sudo ip netns exec Host1 sh -c 'nc -lk -p 9000 >/dev/null 2>&1 </dev/null & echo $! > /tmp/lab14-nc9000.pid'
-sudo ip netns exec Host1 sh -c 'nc -lk -p 8443 >/dev/null 2>&1 </dev/null & echo $! > /tmp/lab14-nc8443.pid'
+sudo ip netns exec Host1 sh -c 'nc -lk -p 9000 >/dev/null 2>&1 </dev/null &'
+sudo ip netns exec Host1 sh -c 'nc -lk -p 8443 >/dev/null 2>&1 </dev/null &'
 sudo ip netns exec Host2 sh -c 'sleep 300 | nc 10.0.0.10 9000 >/dev/null 2>&1 &'
 
 sudo ip netns exec Host1 ss -tln                    # puertos TCP a la escucha
@@ -272,14 +270,10 @@ Al terminar, elimina **solo** lo creado por este laboratorio:
 
 ```bash
 # Detén primero los procesos: un namespace con procesos dentro no desaparece del todo
-# Solo los PID guardados al iniciarlos (no cualquier `nc` del sistema)
-for f in /tmp/lab14-nc9000.pid /tmp/lab14-nc8443.pid; do
-  [ -f "$f" ] && sudo kill $(cat "$f") 2>/dev/null; rm -f "$f"
-done
+sudo pkill -f 'nc -lk -p (9000|8443)' 2>/dev/null || true
 for ns in Router Host1 Host2 ServidorDMZ; do sudo ip netns del $ns 2>/dev/null || true; done
 sudo ip link del veth-wan-r 2>/dev/null || true
 sudo iptables -t nat -D POSTROUTING -s 203.0.113.0/30 -o eth0 -j MASQUERADE 2>/dev/null || true   # solo si lo añadiste (ajusta eth0)
-sudo sysctl -w net.ipv4.ip_forward=0   # solo si estaba en 0 antes de empezar (lo anotaste en el Paso 2)
 ```
 
 Eliminar un *namespace* borra también sus interfaces y sus reglas de `nft`/`iptables`; las órdenes que tocaron el **host** (`veth-wan-r`, la regla de `MASQUERADE` y `net.ipv4.ip_forward`) hay que revertirlas aparte.
