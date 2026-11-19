@@ -201,7 +201,6 @@ Networking-Lab/
 │   │   └── glosario.md
 │   ├── 05-ANEXOS/
 │   │   ├── guia-de-uso.md
-│   │   ├── justificacion-y-criterios.md
 │   │   └── diagramacion-y-topologias.md
 │   ├── assets/
 │   ├── javascripts/
