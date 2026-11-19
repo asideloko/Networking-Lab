@@ -27,7 +27,7 @@ El **firewall perimetral** controla el tráfico entre el interior, la DMZ e Inte
     En el laboratorio 05 estudiamos **de forma aislada** los mecanismos de segmentación (VLAN, trunk 802.1Q, router-on-a-stick). Aquí esos mismos mecanismos se incorporan **dentro de una arquitectura empresarial jerárquica**. No son el mismo escenario: cambian los dispositivos, los nombres y el direccionamiento (aquí `10.0.10–30.0/24` y enlaces `10.255.x.x`).
 
 !!! info "Alcance"
-    Se construye **una** capa de acceso completa (`Access1`, con las tres VLAN) y la redundancia se logra con **rutas estáticas con métrica**. La alta disponibilidad de *gateway* con VRRP y la reconvergencia dinámica con OSPF se practican en el Laboratorio 15.
+    El escenario base construye **una** capa de acceso completa (`Access1`, con las tres VLAN) y usa **rutas estáticas con métrica**. El **Ejercicio 1** añade un segundo gateway de distribución con VRRP; el Laboratorio 15 vuelve a integrar VRRP junto con OSPF en una topología más amplia.
 
 !!! warning "Tener dos Core y dos Distribution no demuestra alta disponibilidad"
     La redundancia **física** solo se convierte en **disponibilidad** si existen mecanismos que (1) eviten bucles, (2) detecten el fallo y (3) muevan el tráfico (y los *gateways*) al camino alternativo. En esta práctica: el **núcleo** tolera la caída de `Core1` (mediante rutas de respaldo y fallo **local**), pero las VLAN dependen de **un único *gateway***, `Dist1`, porque `Access1` solo se conecta a él. Si `Dist1` falla, las VLAN pierden conectividad aunque `Dist2` esté sana. Resolverlo requiere un segundo trunk, un protocolo contra bucles de capa 2 (STP/RSTP) y redundancia de *gateway* (VRRP): ejercicios y Laboratorio 15.
@@ -113,39 +113,46 @@ graph TB
 
 ## Construcción
 
-### Paso 0: Limpiar laboratorios anteriores
+### Paso 0: Limpiar ejecuciones anteriores de este laboratorio
 
-Este laboratorio es un **escenario nuevo**: reutiliza nombres como `Firewall` o `ServidorWeb` con otra función y otro direccionamiento. Elimina **solo los namespaces de los laboratorios anteriores, por nombre** (no todos los namespaces del equipo):
+Este paso solo retira namespaces y enlaces marcados como propios de Lab11. No elimina `br-wan`, `veth-host`, `veth-wan-cvpn` ni recursos de otros laboratorios; ejecuta la reversión de cada práctica anterior por separado.
 
 ```bash
-NS_LAB="cliente1 cliente2 cliente3 cliente4 router switch ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 R1 R2 R3 clienteSede clienteSucA clienteSucB servidorDNS servidorDHCP clienteDHCP firewall servidorWeb servidorDNS_PUB servidorInterno VPN_GW clienteVPN PE1 PE2 PE3 P1 P2 P3 host1 host2 host3 Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin"
+NS_LAB="Core1 Core2 Dist1 Dist2 Access1 Access2 Firewall ServidorWeb ServidorDNS ventas it admin"
 EXISTENTES=$(sudo ip netns list | awk '{print $1}' | while read -r ns; do
   for esperado in $NS_LAB; do [ "$ns" = "$esperado" ] && echo "$ns"; done
 done)
-VETH_HOST=$(sudo ip -o link show veth-host 2>/dev/null | head -1)
-VETH_WAN_FW=$(sudo ip -o link show veth-wan-fw 2>/dev/null | head -1)
-BR_WAN_OWNED=0
-if [ "$(cat /sys/class/net/br-wan/ifalias 2>/dev/null)" = networking-lab ] && sudo ip -4 -o addr show dev br-wan | grep -q '192\.168\.100\.2/24'; then
-  BR_WAN_OWNED=1
-fi
-printf 'Namespaces existentes: %s\nInterfaz veth-host: %s\nInterfaz veth-wan-fw: %s\nBridge br-wan del proyecto: %s\n' "${EXISTENTES:-(ninguno)}" "${VETH_HOST:-(ausente)}" "${VETH_WAN_FW:-(ausente)}" "$BR_WAN_OWNED"
-if [ -n "$EXISTENTES$VETH_HOST$VETH_WAN_FW" ] || [ "$BR_WAN_OWNED" = 1 ]; then
-  read -r -p "¿Eliminar únicamente los recursos detectados de los laboratorios anteriores? (s/N) " CONFIRMAR
-  if [ "$CONFIRMAR" != s ]; then echo "Cancelado"; exit 1; fi
-  for ns in $EXISTENTES; do
-    sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-    sudo ip netns del "$ns" 2>/dev/null || true
-  done
-  [ "$BR_WAN_OWNED" = 1 ] && sudo ip link del br-wan 2>/dev/null || true
-fi
+NS_SIN_MARCA=""
+for ns in $EXISTENTES; do
+  if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-11 ]; then NS_SIN_MARCA="$NS_SIN_MARCA $ns"; fi
+done
+if [ -n "$NS_SIN_MARCA" ]; then echo "Se aborta; namespaces sin marca:$NS_SIN_MARCA"; exit 1; fi
+if [ -e /tmp/lab11 ] && [ ! -f /tmp/lab11/.networking-lab-lab-11 ]; then echo "/tmp/lab11 existe sin marca de propiedad; no se modifica."; exit 1; fi
+for f in /tmp/lab11-ip_forward.orig /tmp/lab11-host-nat.added /tmp/lab11-forward-out.added /tmp/lab11-forward-in.added; do
+  if [ -e "$f" ]; then echo "Existe el marcador $f; ejecuta la reversión completa de Lab11 antes de repetirlo."; exit 1; fi
+done
+for ns in $EXISTENTES; do
+  PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+  if [ -n "$PIDS" ]; then echo "$ns tiene procesos activos ($PIDS); ejecuta la limpieza antes de repetir Lab11."; exit 1; fi
+done
+for ns in $EXISTENTES; do sudo ip netns del "$ns" 2>/dev/null || true; done
+for f in /sys/class/net/*/ifalias; do
+  [ -r "$f" ] || continue
+  [ "$(cat "$f")" = networking-lab-lab-11 ] || continue
+  dev=${f%/ifalias}; dev=${dev##*/}
+  sudo ip link del "$dev" 2>/dev/null || true
+done
+if [ -f /tmp/lab11/.networking-lab-lab-11 ]; then sudo rm -rf /tmp/lab11; fi
 ```
 
+Si hay recursos activos de otro laboratorio, ejecuta primero la limpieza de ese laboratorio; este paso no los modifica.
 ### Paso 1: Crear namespaces y una función auxiliar
 
 ```bash
 for ns in Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin; do
   sudo ip netns add $ns
 done
+for ns in Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin; do sudo ip netns exec "$ns" ip link set lo alias networking-lab-lab-11; done
 for r in Core1 Core2 Dist1 Dist2 Firewall; do
   sudo ip netns exec $r sysctl -qw net.ipv4.ip_forward=1
 done
@@ -153,6 +160,8 @@ done
 # enlace NS_A IF_A IP_A NS_B IF_B IP_B : crea un par veth con una IP en cada extremo
 enlace() {
   sudo ip link add $2 type veth peer name $5
+  sudo ip link set $2 alias networking-lab-lab-11
+  sudo ip link set $5 alias networking-lab-lab-11
   sudo ip link set $2 netns $1
   sudo ip link set $5 netns $4
   sudo ip netns exec $1 ip addr add $3 dev $2
@@ -181,6 +190,8 @@ enlace Core2 veth-c2fw 10.255.2.5/30 Firewall veth-fwc2 10.255.2.6/30
 
 # Firewall <-> Internet (el host, 192.168.100.2)
 sudo ip link add veth-fw-wan type veth peer name veth-wan-fw
+sudo ip link set veth-fw-wan alias networking-lab-lab-11
+sudo ip link set veth-wan-fw alias networking-lab-lab-11
 sudo ip link set veth-fw-wan netns Firewall
 sudo ip netns exec Firewall ip addr add 192.168.100.1/24 dev veth-fw-wan
 sudo ip netns exec Firewall ip link set veth-fw-wan up
@@ -196,6 +207,13 @@ sudo sysctl -w net.ipv4.ip_forward=1
 if ! sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE; then
   sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab11-host-nat.added
 fi
+# El host puede tener FORWARD=DROP; abre solo el enlace WAN de esta práctica y su retorno.
+if ! sudo iptables -C FORWARD -i veth-wan-fw -o eth0 -s 192.168.100.0/24 -j ACCEPT; then
+  sudo iptables -I FORWARD 1 -i veth-wan-fw -o eth0 -s 192.168.100.0/24 -j ACCEPT && touch /tmp/lab11-forward-out.added
+fi
+if ! sudo iptables -C FORWARD -i eth0 -o veth-wan-fw -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; then
+  sudo iptables -I FORWARD 1 -i eth0 -o veth-wan-fw -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT && touch /tmp/lab11-forward-in.added
+fi
 
 # DMZ: un bridge en el firewall con los dos servidores públicos
 sudo ip netns exec Firewall ip link add br-dmz type bridge
@@ -204,6 +222,8 @@ sudo ip netns exec Firewall ip link set br-dmz up
 for s in "ServidorWeb veth-web veth-fw-web 10.0.99.10/24" "ServidorDNS veth-dns veth-fw-dns 10.0.99.5/24"; do
   set -- $s
   sudo ip link add $2 type veth peer name $3
+  sudo ip link set $2 alias networking-lab-lab-11
+  sudo ip link set $3 alias networking-lab-lab-11
   sudo ip link set $2 netns $1
   sudo ip link set $3 netns Firewall
   sudo ip netns exec Firewall ip link set $3 master br-dmz
@@ -253,12 +273,25 @@ done
 Las VLAN (`10.0.10-30.0/24`) están dentro de `10.0.0.0/18`; la DMZ (`10.0.99.0/24`) queda fuera.
 
 ```bash
+# INPUT: tráfico destinado al propio firewall. OUTPUT: tráfico originado por él.
+# FORWARD: tráfico que atraviesa el firewall entre zonas.
+sudo ip netns exec Firewall iptables -P INPUT DROP
+sudo ip netns exec Firewall iptables -A INPUT -i lo -j ACCEPT
+sudo ip netns exec Firewall iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+sudo ip netns exec Firewall iptables -A INPUT -i br-dmz -s 10.0.99.0/24 -p icmp --icmp-type echo-request -j ACCEPT
+sudo ip netns exec Firewall iptables -A INPUT -i br-dmz -s 10.0.99.0/24 -p tcp --dport 22 -j ACCEPT
+sudo ip netns exec Firewall iptables -P OUTPUT ACCEPT
 sudo ip netns exec Firewall iptables -P FORWARD DROP
-sudo ip netns exec Firewall iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+sudo ip netns exec Firewall iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 sudo ip netns exec Firewall iptables -A FORWARD -s 10.0.0.0/18 -o veth-fw-wan -j ACCEPT
 sudo ip netns exec Firewall iptables -A FORWARD -s 10.0.0.0/18 -o br-dmz -p icmp --icmp-type echo-request -j ACCEPT
 sudo ip netns exec Firewall iptables -A FORWARD -s 10.0.0.0/18 -o br-dmz -p tcp -m multiport --dports 22,80,443 -j ACCEPT
 sudo ip netns exec Firewall iptables -t nat -A POSTROUTING -o veth-fw-wan -j MASQUERADE
+
+# Inspeccionar las tres cadenas: INPUT/OUTPUT no sustituyen a FORWARD.
+sudo ip netns exec Firewall iptables -L INPUT -n -v
+sudo ip netns exec Firewall iptables -L OUTPUT -n -v
+sudo ip netns exec Firewall iptables -L FORWARD -n -v
 ```
 
 ### Paso 6: Capa de acceso con VLAN (Access1)
@@ -272,6 +305,8 @@ sudo ip netns exec Access1 ip link set br0 up
 
 # Trunk Access1 <-> Dist1
 sudo ip link add veth-a1d1 type veth peer name veth-d1a1
+sudo ip link set veth-a1d1 alias networking-lab-lab-11
+sudo ip link set veth-d1a1 alias networking-lab-lab-11
 sudo ip link set veth-a1d1 netns Access1
 sudo ip link set veth-d1a1 netns Dist1
 sudo ip netns exec Access1 ip link set veth-a1d1 master br0
@@ -288,6 +323,8 @@ done
 for h in "ventas 10 veth-ven veth-a1ven" "it 20 veth-it veth-a1it" "admin 30 veth-adm veth-a1adm"; do
   set -- $h
   sudo ip link add $3 type veth peer name $4
+  sudo ip link set $3 alias networking-lab-lab-11
+  sudo ip link set $4 alias networking-lab-lab-11
   sudo ip link set $3 netns $1
   sudo ip link set $4 netns Access1
   sudo ip netns exec Access1 ip link set $4 master br0
@@ -300,7 +337,7 @@ for h in "ventas 10 veth-ven veth-a1ven" "it 20 veth-it veth-a1it" "admin 30 vet
 done
 ```
 
-**Quién es el *gateway* de cada VLAN.** `Dist1` mediante las subinterfaces `veth-d1a1.10/.20/.30` (direcciones `.1`); `Dist2` **no** es gateway de ninguna VLAN. Si `Dist1` falla, no hay otro equipo que asuma esas direcciones: la continuidad del *gateway* requeriría VRRP.
+**Quién es el *gateway* de cada VLAN.** En el escenario base, `Dist1` mediante las subinterfaces `veth-d1a1.10/.20/.30` (direcciones `.1`); `Dist2` **no** es gateway de ninguna VLAN. El Ejercicio 1 convierte `Dist2` en segundo gateway mediante VIP VRRP. Si no se ejecuta ese ejercicio, la caída de `Dist1` deja las VLAN sin gateway.
 
 ### Paso 7: Verificar
 
@@ -336,7 +373,7 @@ Una arquitectura es tan disponible como su **punto único de fallo más débil**
 |-----------|-----------------------|-------------------------|-------------------|
 | **Rutas estáticas con métrica** | Camino de respaldo ante fallo **local** | Fallos remotos | Laboratorios 06, 10, 11 |
 | **OSPF** | Aprender topología y **reconverger** ante fallos | Qué *gateway* usan los hosts | Laboratorio 15 |
-| **VRRP** | Que los hosts conserven un **gateway** (IP virtual) si falla un router | Redundancia de la salida WAN o del resto de la red | Laboratorio 15 |
+| **VRRP** | Que los hosts conserven un **gateway** (IP virtual) si falla un router | Redundancia del gateway de VLAN | Ejercicio 1 de este laboratorio; integración en Laboratorio 15 |
 
 ### STP/RSTP: redundancia física sin bucles
 
@@ -363,6 +400,16 @@ graph TB
 ```
 
 Es la **escalabilidad** del modelo jerárquico: se crece por capas sin rediseñar el núcleo. El coste es que `Dist1` concentra cada vez más dependencia (otro motivo para duplicarlo con VRRP).
+
+### Cómo clasificar el tráfico en el firewall
+
+| Cadena | Dirección lógica | Ejemplo en esta topología |
+|---|---|---|
+| `INPUT` | El destino es una dirección del propio namespace `Firewall` | Ping o SSH dirigido a `10.0.99.1` |
+| `OUTPUT` | El paquete se origina en el propio firewall | Consulta DNS, NTP o respuesta generada por el firewall |
+| `FORWARD` | El firewall enruta el paquete entre interfaces | Cliente interno hacia WAN o hacia la DMZ |
+
+Una regla `FORWARD` no autoriza automáticamente acceso al propio firewall (`INPUT`), y `OUTPUT ACCEPT` no permite tráfico en tránsito. Inspecciona contadores y reglas con `iptables -S INPUT`, `iptables -S OUTPUT` y `iptables -S FORWARD`; para cada prueba identifica primero si el destino es el propio firewall o un host detrás de él.
 
 ## Alta disponibilidad
 
@@ -418,7 +465,46 @@ wait
 tail -3 /tmp/lab11-conv.txt          # paquetes enviados, recibidos y % de pérdida
 ```
 
-Cada paquete perdido equivale a unos 0,2 s sin servicio. Con rutas estáticas y fallo local, la conmutación al camino de respaldo es casi inmediata; con un fallo **remoto** (que el router no detecta en su propia interfaz) no habría conmutación y la pérdida sería total hasta intervenir. Esa diferencia es la razón de usar OSPF y VRRP (laboratorio 15). Restaura Core1 con el bloque de recuperación anterior y vuelve a medir para confirmar que la red recupera su estado original.
+Cada paquete perdido equivale a unos 0,2 s sin servicio. Con rutas estáticas y fallo local, la conmutación al camino de respaldo es casi inmediata; con un fallo **remoto** (que el router no detecta en su propia interfaz) no habría conmutación y la pérdida sería total hasta intervenir. Esa diferencia es la razón de usar OSPF (laboratorio 15) y VRRP (Ejercicio 1 de este laboratorio, con integración en Lab15). Restaura Core1 con el bloque de recuperación anterior y vuelve a medir para confirmar que la red recupera su estado original.
+
+### Experimento: fallo remoto con la interfaz local todavía activa
+
+Ahora no bajes ningún enlace de Core1. Simula que el siguiente salto/firewall deja de reenviar tráfico, aunque el enlace Core1–Firewall conserva portadora. La ruta estática no debe retirar el siguiente salto solo porque el destino final no responda.
+
+En una terminal inicia una prueba continua desde Ventas hacia el servidor DMZ:
+
+```bash
+sudo ip netns exec ventas ping -D -i 0.2 -c 30 10.0.99.10
+```
+
+En otra terminal comprueba la ruta y el estado de los dos extremos del enlace:
+
+```bash
+sudo ip netns exec Core1 ip route get 10.0.99.10
+sudo ip netns exec Core1 ip -br link show veth-c1fw
+sudo ip netns exec Firewall ip -br link show veth-fwc1
+```
+
+Inserta temporalmente una regla de descarte en el firewall remoto (el enlace sigue `UP`):
+
+```bash
+sudo ip netns exec Firewall iptables -I FORWARD 1 -i veth-fwc1 -o br-dmz -s 10.0.0.0/18 -d 10.0.99.0/24 -p icmp --icmp-type echo-request -j DROP
+mkdir -p /tmp/lab11
+[ -f /tmp/lab11/.networking-lab-lab-11 ] || touch /tmp/lab11/.networking-lab-lab-11
+ touch /tmp/lab11/remote-drop.added
+sudo ip netns exec Core1 ip route get 10.0.99.10
+sudo ip netns exec Core1 ip -br link show veth-c1fw
+```
+
+**Resultado esperado:** el ping deja de recibir respuestas, pero `ip route get` sigue seleccionando el siguiente salto por `veth-c1fw` y la interfaz permanece `UP`. La ruta estática no detecta que el firewall remoto está descartando paquetes. Retira la regla exacta y confirma que el ping se recupera:
+
+```bash
+sudo ip netns exec Firewall iptables -D FORWARD -i veth-fwc1 -o br-dmz -s 10.0.0.0/18 -d 10.0.99.0/24 -p icmp --icmp-type echo-request -j DROP
+rm -f /tmp/lab11/remote-drop.added
+sudo ip netns exec ventas ping -c 3 -W 1 10.0.99.10
+```
+
+No confundas este caso con una caída local de interfaz: aquí no hay evento de carrier que retire la ruta. Registra el tiempo y la pérdida en ambos experimentos.
 
 ## Segmentación VLAN
 
@@ -432,17 +518,243 @@ La DMZ (`10.0.99.0/24`) **no** es una VLAN en este laboratorio: es un segmento p
 
 ## Ejercicios
 
-### Ejercicio 1: Agregar redundancia de enlaces en el acceso
+### Ejercicio 1: Segundo gateway de distribución con VRRP
 
-Conecta `Access1` también a `Dist2` con otro trunk. Piensa: ¿por qué aquí no se forma un bucle de capa 2? ¿Qué mecanismo haría falta para que los equipos cambiaran de *gateway* automáticamente si falla Dist1? (VRRP: Laboratorio 15.)
+Este ejercicio convierte a `Dist2` en un segundo gateway de las tres VLAN. Requiere `keepalived`; se ejecuta dentro de namespaces, pero la instalación del paquete modifica el inventario de software del host. Las direcciones físicas de los routers serán `.2` y `.3`; la dirección `.1` quedará reservada para la IP virtual (VIP), que no debe configurarse estáticamente en ninguno de los dos.
 
-### Ejercicio 2: Investigar STP
+```bash
+sudo apt-get install -y keepalived
+if [ -e /tmp/lab11 ]; then echo "/tmp/lab11 ya existe; ejecuta la reversión antes de repetir el ejercicio."; exit 1; fi
+mkdir -p /tmp/lab11
+touch /tmp/lab11/.networking-lab-lab-11
 
-Si conectaras dos switches por dos cables y los unieras en el mismo bridge, aparecería un bucle de capa 2. Crea esa topología con dos bridges y activa STP (`ip link set br0 type bridge stp_state 1`); observa qué puerto queda bloqueado con `bridge link show`.
+# 1. Añadir un segundo trunk desde Access1 a Dist2.
+sudo ip link add veth-a1d2 type veth peer name veth-d2a1
+sudo ip link set veth-a1d2 alias networking-lab-lab-11
+sudo ip link set veth-d2a1 alias networking-lab-lab-11
+sudo ip link set veth-a1d2 netns Access1
+sudo ip link set veth-d2a1 netns Dist2
+sudo ip netns exec Access1 ip link set veth-a1d2 master br0
+sudo ip netns exec Access1 ip link set veth-a1d2 up
+for v in 10 20 30; do sudo ip netns exec Access1 bridge vlan add dev veth-a1d2 vid "$v"; done
+sudo ip netns exec Dist2 ip link set veth-d2a1 up
+for v in 10 20 30; do
+  sudo ip netns exec Dist2 ip link add link veth-d2a1 name veth-d2a1.$v type vlan id "$v"
+  sudo ip netns exec Dist2 ip addr add 10.0.$v.3/24 dev veth-d2a1.$v
+  sudo ip netns exec Dist2 ip link set veth-d2a1.$v up
+  # Dist1 deja de usar la VIP como dirección física.
+  sudo ip netns exec Dist1 ip addr del 10.0.$v.1/24 dev veth-d1a1.$v
+  sudo ip netns exec Dist1 ip addr add 10.0.$v.2/24 dev veth-d1a1.$v
+  # Los dos Core conocen a ambos routers de distribución.
+  sudo ip netns exec Core1 ip route del 10.0.$v.0/24 via 10.255.1.2
+  sudo ip netns exec Core1 ip route add 10.0.$v.0/24 via 10.255.1.2 metric 10
+  sudo ip netns exec Core1 ip route add 10.0.$v.0/24 via 10.255.1.6 metric 20
+  sudo ip netns exec Core2 ip route del 10.0.$v.0/24 via 10.255.1.10
+  sudo ip netns exec Core2 ip route add 10.0.$v.0/24 via 10.255.1.10 metric 10
+  sudo ip netns exec Core2 ip route add 10.0.$v.0/24 via 10.255.1.14 metric 20
+ done
+
+# 2. Una instancia VRRP por VLAN. Dist1 es MASTER; Dist2 queda BACKUP.
+cat > /tmp/lab11/keepalived-dist1.conf <<'EOF'
+global_defs {
+    router_id LAB11_DIST1
+}
+vrrp_instance VLAN10 {
+    state MASTER
+    interface veth-d1a1.10
+    virtual_router_id 110
+    priority 110
+    advert_int 1
+    unicast_src_ip 10.0.10.2
+    unicast_peer {
+        10.0.10.3
+    }
+    virtual_ipaddress {
+        10.0.10.1/24 dev veth-d1a1.10
+    }
+}
+vrrp_instance VLAN20 {
+    state MASTER
+    interface veth-d1a1.20
+    virtual_router_id 120
+    priority 110
+    advert_int 1
+    unicast_src_ip 10.0.20.2
+    unicast_peer {
+        10.0.20.3
+    }
+    virtual_ipaddress {
+        10.0.20.1/24 dev veth-d1a1.20
+    }
+}
+vrrp_instance VLAN30 {
+    state MASTER
+    interface veth-d1a1.30
+    virtual_router_id 130
+    priority 110
+    advert_int 1
+    unicast_src_ip 10.0.30.2
+    unicast_peer {
+        10.0.30.3
+    }
+    virtual_ipaddress {
+        10.0.30.1/24 dev veth-d1a1.30
+    }
+}
+EOF
+cat > /tmp/lab11/keepalived-dist2.conf <<'EOF'
+global_defs {
+    router_id LAB11_DIST2
+}
+vrrp_instance VLAN10 {
+    state BACKUP
+    interface veth-d2a1.10
+    virtual_router_id 110
+    priority 100
+    advert_int 1
+    unicast_src_ip 10.0.10.3
+    unicast_peer {
+        10.0.10.2
+    }
+    virtual_ipaddress {
+        10.0.10.1/24 dev veth-d2a1.10
+    }
+}
+vrrp_instance VLAN20 {
+    state BACKUP
+    interface veth-d2a1.20
+    virtual_router_id 120
+    priority 100
+    advert_int 1
+    unicast_src_ip 10.0.20.3
+    unicast_peer {
+        10.0.20.2
+    }
+    virtual_ipaddress {
+        10.0.20.1/24 dev veth-d2a1.20
+    }
+}
+vrrp_instance VLAN30 {
+    state BACKUP
+    interface veth-d2a1.30
+    virtual_router_id 130
+    priority 100
+    advert_int 1
+    unicast_src_ip 10.0.30.3
+    unicast_peer {
+        10.0.30.2
+    }
+    virtual_ipaddress {
+        10.0.30.1/24 dev veth-d2a1.30
+    }
+}
+EOF
+sudo ip netns exec Dist1 keepalived -n -l -P -f /tmp/lab11/keepalived-dist1.conf -p /tmp/lab11/dist1.pid -r /tmp/lab11/dist1.vrrp.pid >/tmp/lab11/dist1.log 2>&1 &
+sudo ip netns exec Dist2 keepalived -n -l -P -f /tmp/lab11/keepalived-dist2.conf -p /tmp/lab11/dist2.pid -r /tmp/lab11/dist2.vrrp.pid >/tmp/lab11/dist2.log 2>&1 &
+sleep 4
+
+# 3. Verificar que la VIP está en Dist1 y que los clientes conservan gateway .1.
+sudo ip netns exec Dist1 ip -br addr show veth-d1a1.10
+sudo ip netns exec Dist2 ip -br addr show veth-d2a1.10
+sudo ip netns exec ventas ping -c 3 10.0.10.1
+
+# 4. Simular caída de Dist1: detener solo el keepalived arrancado por este ejercicio.
+sudo kill -TERM "$(cat /tmp/lab11/dist1.pid)"
+sleep 4
+sudo ip netns exec Dist2 ip -br addr show veth-d2a1.10
+sudo ip netns exec ventas ping -c 3 10.0.10.1
+```
+
+**Resultado esperado:** la VIP `10.0.10.1` (y las otras dos VIP) aparece primero en Dist1 y, al detener su proceso keepalived, pasa a Dist2. Los hosts no cambian su ruta por defecto. Esto prueba redundancia de gateway en las VLAN; no prueba continuidad de WAN ni de DHCP/DNS. Para volver al estado base, ejecuta el bloque de reversión del ejercicio antes de seguir.
+
+**Reversión del ejercicio 1:**
+
+```bash
+for pf in /tmp/lab11/dist1.pid /tmp/lab11/dist2.pid /tmp/lab11/dist1.vrrp.pid /tmp/lab11/dist2.vrrp.pid; do
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf")
+  if [[ "$pid" =~ ^[0-9]+$ ]] && [ -r "/proc/$pid/cmdline" ] && tr '\0' ' ' < "/proc/$pid/cmdline" | grep -q 'keepalived.*keepalived-dist1.conf'; then
+    sudo kill -TERM "$pid" 2>/dev/null || true
+  fi
+done
+sleep 1
+for pf in /tmp/lab11/dist1.pid /tmp/lab11/dist2.pid /tmp/lab11/dist1.vrrp.pid /tmp/lab11/dist2.vrrp.pid; do
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf"); [[ "$pid" =~ ^[0-9]+$ ]] || continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  if tr '\0' ' ' < "/proc/$pid/cmdline" | grep -q 'keepalived.*keepalived-dist1.conf'; then sudo kill -KILL "$pid" 2>/dev/null || true; fi
+done
+sudo ip netns exec Dist1 ip addr del 10.0.10.2/24 dev veth-d1a1.10 2>/dev/null || true
+sudo ip netns exec Dist1 ip addr del 10.0.20.2/24 dev veth-d1a1.20 2>/dev/null || true
+sudo ip netns exec Dist1 ip addr del 10.0.30.2/24 dev veth-d1a1.30 2>/dev/null || true
+for v in 10 20 30; do
+  sudo ip netns exec Dist1 ip addr add 10.0.$v.1/24 dev veth-d1a1.$v
+  sudo ip netns exec Dist2 ip link del veth-d2a1.$v 2>/dev/null || true
+  sudo ip netns exec Core1 ip route del 10.0.$v.0/24 via 10.255.1.2 metric 10 2>/dev/null || true
+  sudo ip netns exec Core1 ip route del 10.0.$v.0/24 via 10.255.1.6 metric 20 2>/dev/null || true
+  sudo ip netns exec Core2 ip route del 10.0.$v.0/24 via 10.255.1.10 metric 10 2>/dev/null || true
+  sudo ip netns exec Core2 ip route del 10.0.$v.0/24 via 10.255.1.14 metric 20 2>/dev/null || true
+  sudo ip netns exec Core1 ip route add 10.0.$v.0/24 via 10.255.1.2
+  sudo ip netns exec Core2 ip route add 10.0.$v.0/24 via 10.255.1.10
+ done
+sudo ip netns exec Access1 ip link del veth-a1d2 2>/dev/null || true
+if [ -f /tmp/lab11/.networking-lab-lab-11 ]; then sudo rm -rf /tmp/lab11; fi
+```
+
+### Ejercicio 2: Implementar STP en enlaces redundantes de acceso
+
+Linux bridge implementa STP clásico (`stp_state 1`); no implementa RSTP de forma nativa mediante `iproute2`. RSTP se estudia como evolución de STP y requiere un componente compatible específico. El ejercicio crea dos switches con dos enlaces paralelos: sin STP se forma un bucle de capa 2; con STP, uno de los puertos queda bloqueado.
+
+```bash
+if sudo ip netns list | awk '{print $1}' | grep -Fxq Access2; then
+  echo "Access2 ya existe; ejecuta la reversión del ejercicio STP antes de repetirlo."
+  exit 1
+fi
+sudo ip netns add Access2
+sudo ip netns exec Access2 ip link set lo alias networking-lab-lab-11
+sudo ip netns exec Access1 ip link set br0 type bridge stp_state 1
+sudo ip netns exec Access2 ip link add br0 type bridge vlan_filtering 1 vlan_default_pvid 0 stp_state 1
+sudo ip netns exec Access2 ip link set br0 up
+
+# Dos enlaces paralelos entre los bridges: forman un bucle que STP debe bloquear.
+for n in 1 2; do
+  sudo ip link add veth-a1a2-$n type veth peer name veth-a2a1-$n
+  sudo ip link set veth-a1a2-$n alias networking-lab-lab-11
+  sudo ip link set veth-a2a1-$n alias networking-lab-lab-11
+  sudo ip link set veth-a1a2-$n netns Access1
+  sudo ip link set veth-a2a1-$n netns Access2
+  sudo ip netns exec Access1 ip link set veth-a1a2-$n master br0
+  sudo ip netns exec Access2 ip link set veth-a2a1-$n master br0
+  sudo ip netns exec Access1 ip link set veth-a1a2-$n up
+  sudo ip netns exec Access2 ip link set veth-a2a1-$n up
+  for v in 10 20 30; do
+    sudo ip netns exec Access1 bridge vlan add dev veth-a1a2-$n vid $v
+    sudo ip netns exec Access2 bridge vlan add dev veth-a2a1-$n vid $v
+  done
+done
+sleep 30
+sudo ip netns exec Access1 bridge link show
+sudo ip netns exec Access2 bridge link show
+```
+
+**Resultado esperado:** los bridges eligen un puerto raíz y uno de los enlaces paralelos queda en estado `blocking` o `disabled` para evitar el bucle. Si tu kernel no muestra el estado, consulta `bridge -d link show` y los registros del kernel. No confundas STP clásico con RSTP.
+
+**Reversión del ejercicio 2:**
+
+```bash
+for n in 1 2; do sudo ip netns exec Access1 ip link del veth-a1a2-$n 2>/dev/null || true; done
+sudo ip netns exec Access1 ip link set br0 type bridge stp_state 0
+if [ "$(sudo ip netns exec Access2 cat /sys/class/net/lo/ifalias 2>/dev/null)" = networking-lab-lab-11 ]; then
+  PIDS=$(sudo ip netns pids Access2 2>/dev/null || true)
+  if [ -z "$PIDS" ]; then sudo ip netns del Access2; else echo "Access2 conserva procesos ($PIDS); no se elimina."; fi
+fi
+```
+
+Esto elimina los dos enlaces redundantes, devuelve `Access1` al estado STP inicial y elimina únicamente el namespace `Access2` marcado por el laboratorio.
 
 ### Ejercicio 3: Replicar el acceso
 
-Crea `Access2` y `Access3` siguiendo el Paso 6 y comprueba que los equipos de la misma VLAN en distintos switches se alcanzan cuando todos los trunks transportan la VLAN.
+Crea otro switch siguiendo el Paso 6 y comprueba que los equipos de la misma VLAN en distintos switches se alcanzan cuando todos los trunks transportan la VLAN. No añadas un segundo enlace redundante sin activar antes STP.
 
 ## Conceptos clave
 
@@ -457,18 +769,64 @@ Crea `Access2` y `Access3` siguiendo el Paso 6 y comprueba que los equipos de la
 ## Revertir los cambios del host
 
 ```bash
-if [ -f /tmp/lab11-host-nat.added ]; then
-  sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
-  rm -f /tmp/lab11-host-nat.added
-fi
-if [ -f /tmp/lab11-ip_forward.orig ]; then
-  sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab11-ip_forward.orig)"
-  sudo rm -f /tmp/lab11-ip_forward.orig
-fi
-sudo ip link del veth-wan-fw 2>/dev/null || true
-for ns in Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin; do
-  sudo ip netns del $ns 2>/dev/null || true
+# 1. Detener únicamente los procesos keepalived registrados y cuya cmdline apunta a este ejercicio.
+PROC_LEFT=0
+for pf in /tmp/lab11/dist1.pid /tmp/lab11/dist2.pid /tmp/lab11/dist1.vrrp.pid /tmp/lab11/dist2.vrrp.pid; do
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  if [[ "$cmdline" == *keepalived* && "$cmdline" == *"/tmp/lab11/"* ]]; then sudo kill -TERM "$pid" 2>/dev/null || true
+  else echo "PID $pid no coincide con keepalived de /tmp/lab11; no se detiene."; PROC_LEFT=1
+  fi
 done
+sleep 1
+for pf in /tmp/lab11/dist1.pid /tmp/lab11/dist2.pid /tmp/lab11/dist1.vrrp.pid /tmp/lab11/dist2.vrrp.pid; do
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  if [[ "$cmdline" == *keepalived* && "$cmdline" == *"/tmp/lab11/"* ]]; then sudo kill -KILL "$pid" 2>/dev/null || true; fi
+done
+
+# 2. Eliminar solo namespaces propios y sin procesos restantes.
+NS_LEFT=0
+for ns in Core1 Core2 Dist1 Dist2 Access1 Access2 Firewall ServidorWeb ServidorDNS ventas it admin; do
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-11 ]; then echo "Se conserva $ns: no tiene la marca exclusiva de Lab11."; NS_LEFT=1
+    else
+      PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+      if [ -n "$PIDS" ]; then echo "Se conserva $ns: quedan procesos no registrados ($PIDS)."; NS_LEFT=1; fi
+    fi
+  fi
+done
+
+if [ "$NS_LEFT" = 0 ] && [ "$PROC_LEFT" = 0 ]; then
+  if [ -f /tmp/lab11/remote-drop.added ]; then sudo ip netns exec Firewall iptables -D FORWARD -i veth-fwc1 -o br-dmz -s 10.0.0.0/18 -d 10.0.99.0/24 -p icmp --icmp-type echo-request -j DROP 2>/dev/null || true; rm -f /tmp/lab11/remote-drop.added; fi
+  for ns in Core1 Core2 Dist1 Dist2 Access1 Access2 Firewall ServidorWeb ServidorDNS ventas it admin; do
+    if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then sudo ip netns del "$ns" 2>/dev/null || true; fi
+  done
+  # 3. Restaurar NAT, FORWARD e ip_forward del host solo mediante marcadores de propiedad.
+  if [ -f /tmp/lab11-host-nat.added ]; then sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true; rm -f /tmp/lab11-host-nat.added; fi
+  if [ -f /tmp/lab11-forward-out.added ]; then sudo iptables -D FORWARD -i veth-wan-fw -o eth0 -s 192.168.100.0/24 -j ACCEPT 2>/dev/null || true; rm -f /tmp/lab11-forward-out.added; fi
+  if [ -f /tmp/lab11-forward-in.added ]; then sudo iptables -D FORWARD -i eth0 -o veth-wan-fw -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true; rm -f /tmp/lab11-forward-in.added; fi
+  if [ -f /tmp/lab11-ip_forward.orig ]; then sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab11-ip_forward.orig)"; rm -f /tmp/lab11-ip_forward.orig; fi
+
+  # 4. Retirar solo el extremo WAN que creó este laboratorio. br-wan pertenece al laboratorio 08 y se conserva.
+  if [ "$(cat /sys/class/net/veth-wan-fw/ifalias 2>/dev/null)" = networking-lab-lab-11 ]; then sudo ip link del veth-wan-fw; fi
+  for f in /sys/class/net/*/ifalias; do
+    [ -r "$f" ] || continue
+    [ "$(cat "$f")" = networking-lab-lab-11 ] || continue
+    dev=${f%/ifalias}; dev=${dev##*/}
+    sudo ip link del "$dev" 2>/dev/null || true
+  done
+  sudo rm -f /tmp/lab11-conv.txt
+  if [ -f /tmp/lab11/.networking-lab-lab-11 ]; then sudo rm -rf /tmp/lab11; fi
+else
+  echo "Se conservan enlaces WAN, reglas host y /tmp/lab11: hay procesos o namespaces que requieren inspección."
+fi
 ```
 
 Los *namespaces* se eliminan **por nombre**, no todos los del equipo.
@@ -494,7 +852,7 @@ La alta disponibilidad debe evaluarse por servicio y segmento, no por contar enl
 
 Una interfaz `DOWN` puede retirar inmediatamente una ruta conectada; un fallo remoto con portadora activa puede no ser detectado por una ruta estática. Registra hora de inicio, detección, cambio de ruta, pérdida de paquetes y recuperación. Si se incorpora VRRP en una ampliación, comprueba prioridad, anuncios, preemption y tracking; no atribuyas a VRRP una convergencia de routing que pertenece a otro protocolo.
 
-La limpieza de recursos del host debe mantener la comprobación de propiedad de `br-wan` (alias `networking-lab` y dirección esperada). La coincidencia de nombre por sí sola no autoriza a borrar un bridge.
+`br-wan` pertenece al laboratorio 08 y debe conservarse durante la limpieza del laboratorio 11. Este laboratorio elimina únicamente su extremo `veth-wan-fw` cuando conserva el alias `networking-lab-lab-11`; no borra el bridge compartido.
 
 
 ## Preguntas de reflexión

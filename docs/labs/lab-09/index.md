@@ -131,11 +131,40 @@ for ns in VPN_GW clienteVPN; do
     exit 1
   fi
 done
+if [ -e /sys/class/net/veth-wan-cvpn ]; then
+  echo "veth-wan-cvpn ya existe; ejecuta la limpieza del lab09 si tiene la marca networking-lab-lab-09; si no, no lo modifiques."
+  exit 1
+fi
+if [ -e /tmp/lab09 ]; then
+  if [ -f /tmp/lab09/.networking-lab-owned ]; then echo "Existe una ejecución anterior; ejecuta la limpieza del lab09.";
+  else echo "/tmp/lab09 existe sin marca de propiedad; no se modifica."; fi
+  exit 1
+fi
+if [ "$(sudo ip netns exec firewall cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-08 ]; then
+  echo "firewall no tiene marca de propiedad Networking Lab; se aborta sin modificarlo."; exit 1
+fi
+BR_WAN_ALIAS=$(cat /sys/class/net/br-wan/ifalias 2>/dev/null || true)
+BR_WAN_IP=$(ip -4 -o addr show dev br-wan 2>/dev/null || true)
+if [ "$BR_WAN_ALIAS" != networking-lab-lab-08 ] && ! { [ "$BR_WAN_ALIAS" = networking-lab ] && echo "$BR_WAN_IP" | grep -q '192\.168\.100\.2/24'; }; then
+  echo "br-wan no está identificado como bridge WAN del laboratorio 08; ejecuta Lab08 y verifica su propiedad."; exit 1
+fi
+for dev in veth-vpngw veth-cvpn; do
+  if ip link show "$dev" >/dev/null 2>&1; then echo "$dev ya existe en el host; no se reutiliza."; exit 1; fi
+done
+if sudo ip netns exec firewall ip link show veth-fw-vpn >/dev/null 2>&1; then
+  echo "firewall/veth-fw-vpn ya existe; no se reutiliza una interfaz preexistente."; exit 1
+fi
+mkdir -p /tmp/lab09
+touch /tmp/lab09/.networking-lab-owned
 sudo ip netns add VPN_GW
+sudo ip netns exec VPN_GW ip link set lo alias networking-lab-lab-09
 sudo ip netns add clienteVPN
+sudo ip netns exec clienteVPN ip link set lo alias networking-lab-lab-09
 
 # VPN_GW dentro de la DMZ
 sudo ip link add veth-vpngw type veth peer name veth-fw-vpn
+sudo ip link set veth-vpngw alias networking-lab-lab-09
+sudo ip link set veth-fw-vpn alias networking-lab-lab-09
 sudo ip link set veth-vpngw netns VPN_GW
 sudo ip link set veth-fw-vpn netns firewall
 sudo ip netns exec firewall ip link set veth-fw-vpn master br-dmz
@@ -148,6 +177,8 @@ sudo ip netns exec VPN_GW sysctl -w net.ipv4.ip_forward=1
 
 # clienteVPN en "Internet"
 sudo ip link add veth-cvpn type veth peer name veth-wan-cvpn
+sudo ip link set veth-cvpn alias networking-lab-lab-09
+sudo ip link set veth-wan-cvpn alias networking-lab-lab-09
 sudo ip link set veth-cvpn netns clienteVPN
 sudo ip link set veth-wan-cvpn master br-wan
 sudo ip link set veth-wan-cvpn up
@@ -159,17 +190,27 @@ sudo ip netns exec clienteVPN ip link set lo up
 Reglas del firewall: publicar los puertos VPN (DNAT), permitir que el gateway y sus túneles lleguen a la LAN, y devolver el tráfico de retorno hacia los túneles. **Qué se publica y qué se permite:** solo `UDP 51820` (WireGuard) y `UDP 1194` (OpenVPN) hacia **un único host** de la DMZ (`10.0.99.20`); y, desde los túneles, el tráfico hacia la red interna `10.0.0.0/22`. La segunda regla es **amplia a propósito para simplificar** (todo origen del túnel hacia toda la LAN). En una red real se acotaría por usuario, recurso y puerto, con la misma lógica de mínimo privilegio del laboratorio 08:
 
 ```bash
-# Publicar WireGuard (51820/udp) y OpenVPN (1194/udp) hacia el VPN Gateway
-sudo ip netns exec firewall iptables -t nat -A PREROUTING -i veth-fw-wan -p udp -m multiport --dports 51820,1194 -j DNAT --to-destination 10.0.99.20
-sudo ip netns exec firewall iptables -I FORWARD 1 -i veth-fw-wan -o br-dmz -p udp -d 10.0.99.20 -m multiport --dports 51820,1194 -j ACCEPT
+# Publicar WireGuard (51820/udp) y OpenVPN (1194/udp) hacia el VPN Gateway.
+if ! sudo ip netns exec firewall iptables -t nat -C PREROUTING -i veth-fw-wan -p udp -m multiport --dports 51820,1194 -j DNAT --to-destination 10.0.99.20; then
+  sudo ip netns exec firewall iptables -t nat -A PREROUTING -i veth-fw-wan -p udp -m multiport --dports 51820,1194 -j DNAT --to-destination 10.0.99.20 && touch /tmp/lab09/fw-dnat.added
+fi
+if ! sudo ip netns exec firewall iptables -C FORWARD -i veth-fw-wan -o br-dmz -p udp -d 10.0.99.20 -m multiport --dports 51820,1194 -j ACCEPT; then
+  sudo ip netns exec firewall iptables -I FORWARD 1 -i veth-fw-wan -o br-dmz -p udp -d 10.0.99.20 -m multiport --dports 51820,1194 -j ACCEPT && touch /tmp/lab09/fw-forward-dmz.added
+fi
 
-# Los túneles (10.8.0.0/24 y 10.9.0.0/24, ambas dentro de 10.8.0.0/15) pueden llegar a la red interna
-sudo ip netns exec firewall iptables -I FORWARD 1 -i br-dmz -o veth-fw-lan -s 10.8.0.0/15 -d 10.0.0.0/22 -j ACCEPT
-sudo ip netns exec firewall ip route add 10.8.0.0/24 via 10.0.99.20
-sudo ip netns exec firewall ip route add 10.9.0.0/24 via 10.0.99.20
+# Los túneles (10.8.0.0/24 y 10.9.0.0/24, ambas dentro de 10.8.0.0/15) pueden llegar a la red interna.
+if ! sudo ip netns exec firewall iptables -C FORWARD -i br-dmz -o veth-fw-lan -s 10.8.0.0/15 -d 10.0.0.0/22 -j ACCEPT; then
+  sudo ip netns exec firewall iptables -I FORWARD 1 -i br-dmz -o veth-fw-lan -s 10.8.0.0/15 -d 10.0.0.0/22 -j ACCEPT && touch /tmp/lab09/fw-forward-lan.added
+fi
+if ! sudo ip netns exec firewall ip route show 10.8.0.0/24 | grep -q 'via 10.0.99.20'; then
+  sudo ip netns exec firewall ip route add 10.8.0.0/24 via 10.0.99.20 && touch /tmp/lab09/fw-route-openvpn.added
+fi
+if ! sudo ip netns exec firewall ip route show 10.9.0.0/24 | grep -q 'via 10.0.99.20'; then
+  sudo ip netns exec firewall ip route add 10.9.0.0/24 via 10.0.99.20 && touch /tmp/lab09/fw-route-wireguard.added
+fi
 
-# VPN_GW conoce la red interna a través del firewall
-sudo ip netns exec VPN_GW ip route add 10.0.0.0/22 via 10.0.99.1
+# VPN_GW conoce la red interna a través del firewall.
+sudo ip netns exec VPN_GW ip route replace 10.0.0.0/22 via 10.0.99.1
 ```
 
 Comprueba que el puerto publicado llega al gateway (DNAT), sin ninguna VPN todavía:
@@ -177,23 +218,35 @@ Comprueba que el puerto publicado llega al gateway (DNAT), sin ninguna VPN todav
 ```bash
 sudo ip netns exec clienteVPN ping -c 2 192.168.100.1
 # -w 3: el listener termina solo tras 3 s de inactividad, para no dejar ocupado el puerto 51820 que usará WireGuard
-sudo ip netns exec VPN_GW sh -c 'nc -u -l -w 3 -p 51820 > /tmp/lab09_dnat.txt &'
+sudo ip netns exec VPN_GW sh -c 'nc -u -l -w 3 -p 51820 > /tmp/lab09/dnat.txt & echo $! > /tmp/lab09/dnat-nc.pid'
 sudo ip netns exec clienteVPN sh -c 'echo prueba | nc -u -w 1 192.168.100.1 51820'
-cat /tmp/lab09_dnat.txt
+cat /tmp/lab09/dnat.txt
 ```
 
 ### Paso 3: Configurar túnel GRE entre R1 y R2
+
+```bash
+for spec in 'R1 gre1' 'R2 gre1'; do
+  set -- $spec
+  if sudo ip netns exec "$1" ip link show "$2" >/dev/null 2>&1; then
+    echo "$1/$2 ya existe; no se sobrescribe una interfaz ajena. Ejecuta su limpieza propietaria antes de continuar."
+    exit 1
+  fi
+done
+```
 
 GRE encapsula paquetes IP dentro de otros paquetes IP, **sin cifrarlos ni autenticarlos criptográficamente**: cualquiera que capture el enlace verá el contenido original.
 
 ```bash
 # En R1 (Sede)
 sudo ip netns exec R1 ip tunnel add gre1 mode gre remote 192.168.1.2 local 192.168.1.1 ttl 255
+sudo ip netns exec R1 ip link set gre1 alias networking-lab-lab-09
 sudo ip netns exec R1 ip addr add 10.10.0.1/30 dev gre1
 sudo ip netns exec R1 ip link set gre1 up
 
 # En R2 (Sucursal A)
 sudo ip netns exec R2 ip tunnel add gre1 mode gre remote 192.168.1.1 local 192.168.1.2 ttl 255
+sudo ip netns exec R2 ip link set gre1 alias networking-lab-lab-09
 sudo ip netns exec R2 ip addr add 10.10.0.2/30 dev gre1
 sudo ip netns exec R2 ip link set gre1 up
 ```
@@ -201,6 +254,13 @@ sudo ip netns exec R2 ip link set gre1 up
 ### Paso 4: Verificar túnel GRE y crear el túnel R2-R3
 
 ```bash
+for spec in 'R2 gre2' 'R3 gre2'; do
+  set -- $spec
+  if sudo ip netns exec "$1" ip link show "$2" >/dev/null 2>&1; then
+    echo "$1/$2 ya existe; no se sobrescribe una interfaz ajena."
+    exit 1
+  fi
+done
 sudo ip netns exec R1 ip tunnel show gre1
 sudo ip netns exec R1 ping -c 4 10.10.0.2
 ```
@@ -208,11 +268,13 @@ sudo ip netns exec R1 ping -c 4 10.10.0.2
 ```bash
 # En R2 (Sucursal A)
 sudo ip netns exec R2 ip tunnel add gre2 mode gre remote 192.168.2.2 local 192.168.2.1 ttl 255
+sudo ip netns exec R2 ip link set gre2 alias networking-lab-lab-09
 sudo ip netns exec R2 ip addr add 10.10.0.5/30 dev gre2
 sudo ip netns exec R2 ip link set gre2 up
 
 # En R3 (Sucursal B)
 sudo ip netns exec R3 ip tunnel add gre2 mode gre remote 192.168.2.1 local 192.168.2.2 ttl 255
+sudo ip netns exec R3 ip link set gre2 alias networking-lab-lab-09
 sudo ip netns exec R3 ip addr add 10.10.0.6/30 dev gre2
 sudo ip netns exec R3 ip link set gre2 up
 sudo ip netns exec R2 ping -c 2 10.10.0.6
@@ -224,14 +286,20 @@ Las rutas estáticas del laboratorio 06 ya existen para estos prefijos, y un seg
 
 ```bash
 # R1: hacia Sucursal B, vía GRE R1-R2 (métrica 10 < 50 < 100)
-sudo ip netns exec R1 ip route add 10.0.2.0/24 via 10.10.0.2 dev gre1 metric 10
+if ! sudo ip netns exec R1 ip route show 10.0.2.0/24 | grep -q 'via 10.10.0.2.*gre1'; then
+  sudo ip netns exec R1 ip route add 10.0.2.0/24 via 10.10.0.2 dev gre1 metric 10 && touch /tmp/lab09/r1-gre-route.added
+fi
 
 # R2: hacia Sede y Sucursal B, vía túneles (reemplaza las rutas de métrica 0)
+sudo ip netns exec R2 ip route show exact 10.0.0.0/24 > /tmp/lab09/r2-route-10.0.0.0.before
+sudo ip netns exec R2 ip route show exact 10.0.2.0/24 > /tmp/lab09/r2-route-10.0.2.0.before
 sudo ip netns exec R2 ip route replace 10.0.0.0/24 via 10.10.0.1 dev gre1
 sudo ip netns exec R2 ip route replace 10.0.2.0/24 via 10.10.0.6 dev gre2
 
 # R3: hacia Sede, vía túnel GRE R2-R3
-sudo ip netns exec R3 ip route add 10.0.0.0/24 via 10.10.0.5 dev gre2 metric 10
+if ! sudo ip netns exec R3 ip route show 10.0.0.0/24 | grep -q 'via 10.10.0.5.*gre2'; then
+  sudo ip netns exec R3 ip route add 10.0.0.0/24 via 10.10.0.5 dev gre2 metric 10 && touch /tmp/lab09/r3-gre-route.added
+fi
 ```
 
 ### Paso 6: Verificar conectividad a través de GRE
@@ -260,9 +328,13 @@ Conviene distinguir los elementos de IPsec:
 
 La presencia de comandos `xfrm` **no demuestra por sí sola que exista una VPN funcional**: hay que comprobar que el tráfico selecciona la política, sale como ESP y los contadores de la SA aumentan (Paso 8).
 
+En la terminología IPsec, la **SPD** (Security Policy Database) decide qué flujos se descartan, dejan en claro o protegen; la **SAD** (Security Association Database) almacena los parámetros de cada SA. El **SPI** identifica una SA unidireccional en ESP. **AH** aporta autenticación/integridad pero no cifrado y autentica campos del encabezado IP que NAT puede modificar; **ESP** es el uso habitual cuando se requiere confidencialidad. La protección anti-replay usa números de secuencia y una ventana deslizante para rechazar paquetes repetidos; no la desactives en producción. En una implementación con IKEv2, las SA se renuevan (*rekey*) antes de expirar, con nuevos SPI y claves; este ejercicio manual no negocia ni renueva claves.
+
+
 Para que los selectores IPsec protejan los paquetes IP originales, esta prueba utiliza el enlace IP directo R1–R2 como transporte; no apila ESP sobre GRE. Se fijan rutas simétricas por el enlace físico antes de instalar las políticas:
 
 ```bash
+sudo ip netns exec R1 ip route show exact 10.0.1.0/24 > /tmp/lab09/r1-route-10.0.1.0.before
 sudo ip netns exec R1 ip route replace 10.0.1.0/24 via 192.168.1.2 dev veth-r1r2
 sudo ip netns exec R2 ip route replace 10.0.0.0/24 via 192.168.1.1 dev veth-r2r1
 ```
@@ -276,28 +348,40 @@ KEY_ENC=0x$(openssl rand -hex 32)     # AES-256
 KEY_AUTH=0x$(openssl rand -hex 32)    # HMAC-SHA256
 
 for R in R1 R2; do
-  # SA R1->R2 (spi 0x1001, reqid 1) y SA R2->R1 (spi 0x1002, reqid 2)
-  sudo ip netns exec $R ip xfrm state add src 192.168.1.1 dst 192.168.1.2 proto esp spi 0x1001 reqid 1 mode tunnel \
-      auth 'hmac(sha256)' $KEY_AUTH enc 'cbc(aes)' $KEY_ENC
-  sudo ip netns exec $R ip xfrm state add src 192.168.1.2 dst 192.168.1.1 proto esp spi 0x1002 reqid 2 mode tunnel \
-      auth 'hmac(sha256)' $KEY_AUTH enc 'cbc(aes)' $KEY_ENC
+  if sudo ip netns exec "$R" ip xfrm state list | grep -Eq 'spi 0x1001|spi 0x1002'; then
+    echo "$R ya contiene un SPI de esta práctica; no se sobrescribe una SA existente."
+    exit 1
+  fi
+  # SA R1->R2 (spi 0x1001, reqid 1) y SA R2->R1 (spi 0x1002, reqid 2).
+  sudo ip netns exec "$R" ip xfrm state add src 192.168.1.1 dst 192.168.1.2 proto esp spi 0x1001 reqid 1 mode tunnel \
+      auth 'hmac(sha256)' "$KEY_AUTH" enc 'cbc(aes)' "$KEY_ENC" && touch "/tmp/lab09/$R-state-1001.added"
+  sudo ip netns exec "$R" ip xfrm state add src 192.168.1.2 dst 192.168.1.1 proto esp spi 0x1002 reqid 2 mode tunnel \
+      auth 'hmac(sha256)' "$KEY_AUTH" enc 'cbc(aes)' "$KEY_ENC" && touch "/tmp/lab09/$R-state-1002.added"
 done
 
-# Políticas en R1: cifrar 10.0.0.0/24 -> 10.0.1.0/24 y aceptar lo recibido cifrado
+# Políticas en R1: no se reemplaza ninguna política preexistente con estos selectores.
+if sudo ip netns exec R1 ip xfrm policy list | grep -Fq 'src 10.0.0.0/24 dst 10.0.1.0/24' || sudo ip netns exec R1 ip xfrm policy list | grep -Fq 'src 10.0.1.0/24 dst 10.0.0.0/24'; then
+  echo "R1 ya tiene políticas XFRM con los selectores del ejercicio; se aborta sin modificarlas."
+  exit 1
+fi
 sudo ip netns exec R1 ip xfrm policy add src 10.0.0.0/24 dst 10.0.1.0/24 dir out \
-    tmpl src 192.168.1.1 dst 192.168.1.2 proto esp reqid 1 mode tunnel
+    tmpl src 192.168.1.1 dst 192.168.1.2 proto esp reqid 1 mode tunnel && touch /tmp/lab09/R1-policy-out.added
 sudo ip netns exec R1 ip xfrm policy add src 10.0.1.0/24 dst 10.0.0.0/24 dir in \
-    tmpl src 192.168.1.2 dst 192.168.1.1 proto esp reqid 2 mode tunnel
+    tmpl src 192.168.1.2 dst 192.168.1.1 proto esp reqid 2 mode tunnel && touch /tmp/lab09/R1-policy-in.added
 sudo ip netns exec R1 ip xfrm policy add src 10.0.1.0/24 dst 10.0.0.0/24 dir fwd \
-    tmpl src 192.168.1.2 dst 192.168.1.1 proto esp reqid 2 mode tunnel
+    tmpl src 192.168.1.2 dst 192.168.1.1 proto esp reqid 2 mode tunnel && touch /tmp/lab09/R1-policy-fwd.added
 
-# Políticas en R2 (espejo)
+# Políticas en R2 (espejo).
+if sudo ip netns exec R2 ip xfrm policy list | grep -Fq 'src 10.0.1.0/24 dst 10.0.0.0/24' || sudo ip netns exec R2 ip xfrm policy list | grep -Fq 'src 10.0.0.0/24 dst 10.0.1.0/24'; then
+  echo "R2 ya tiene políticas XFRM con los selectores del ejercicio; se aborta sin modificarlas."
+  exit 1
+fi
 sudo ip netns exec R2 ip xfrm policy add src 10.0.1.0/24 dst 10.0.0.0/24 dir out \
-    tmpl src 192.168.1.2 dst 192.168.1.1 proto esp reqid 2 mode tunnel
+    tmpl src 192.168.1.2 dst 192.168.1.1 proto esp reqid 2 mode tunnel && touch /tmp/lab09/R2-policy-out.added
 sudo ip netns exec R2 ip xfrm policy add src 10.0.0.0/24 dst 10.0.1.0/24 dir in \
-    tmpl src 192.168.1.1 dst 192.168.1.2 proto esp reqid 1 mode tunnel
+    tmpl src 192.168.1.1 dst 192.168.1.2 proto esp reqid 1 mode tunnel && touch /tmp/lab09/R2-policy-in.added
 sudo ip netns exec R2 ip xfrm policy add src 10.0.0.0/24 dst 10.0.1.0/24 dir fwd \
-    tmpl src 192.168.1.1 dst 192.168.1.2 proto esp reqid 1 mode tunnel
+    tmpl src 192.168.1.1 dst 192.168.1.2 proto esp reqid 1 mode tunnel && touch /tmp/lab09/R2-policy-fwd.added
 ```
 
 ### Paso 8: Verificar IPsec
@@ -331,32 +415,65 @@ Un servidor OpenVPN de acceso remoto "real" necesita esa PKI (CA, certificado de
 
 ```bash
 sudo apt-get install -y openvpn
-mkdir -p /tmp/lab09
+if [ ! -f /tmp/lab09/.networking-lab-owned ]; then
+  echo "Ejecuta primero el Paso 2: no existe el directorio temporal marcado del laboratorio 09."
+  exit 1
+fi
 
-# Clave compartida (OpenVPN 2.5 o superior)
-openvpn --genkey secret /tmp/lab09/static.key
+# Matriz de compatibilidad del modo legacy de clave estática (solo para observar tun0).
+OVPN_VERSION=$(openvpn --version | awk 'NR==1 {for (i=1; i<=NF; i++) if ($i ~ /^[0-9]+\.[0-9]+/) {print $i; exit}}')
+OVPN_MAJOR=${OVPN_VERSION%%.*}
+OVPN_MINOR=${OVPN_VERSION#*.}; OVPN_MINOR=${OVPN_MINOR%%.*}
+if [ -z "$OVPN_VERSION" ]; then echo "No se pudo detectar la versión de OpenVPN."; exit 1; fi
+if [ "$OVPN_MAJOR" -gt 2 ] || { [ "$OVPN_MAJOR" -eq 2 ] && [ "$OVPN_MINOR" -ge 8 ]; }; then
+  echo "OpenVPN $OVPN_VERSION: el modo estático --secret puede no estar disponible; omite este ejercicio si la versión lo retiró y usa TLS/PKI o --peer-fingerprint."
+else
+  OVPN_STATIC_FLAGS=()
+  if [ "$OVPN_MAJOR" -eq 2 ] && [ "$OVPN_MINOR" -ge 7 ]; then
+    OVPN_STATIC_FLAGS=(--allow-deprecated-insecure-static-crypto)
+  fi
+  if [ "$OVPN_MAJOR" -eq 2 ] && [ "$OVPN_MINOR" -lt 5 ]; then
+    openvpn --genkey --secret /tmp/lab09/static.key
+  else
+    openvpn --genkey secret /tmp/lab09/static.key
+  fi
 
-# VPN Gateway (escucha en 1194/udp; el túnel punto a punto es 10.8.0.1 <-> 10.8.0.2)
-sudo ip netns exec VPN_GW openvpn --daemon --writepid /tmp/lab09/ovpn-gw.pid --log /tmp/lab09/ovpn-gw.log \
-    --dev tun0 --dev-type tun --proto udp --lport 1194 --ifconfig 10.8.0.1 10.8.0.2 \
-    --secret /tmp/lab09/static.key --cipher AES-256-CBC --allow-deprecated-insecure-static-crypto
+  sudo ip netns exec VPN_GW openvpn --daemon --writepid /tmp/lab09/ovpn-gw.pid --log /tmp/lab09/ovpn-gw.log \
+      --dev tun0 --dev-type tun --proto udp --lport 1194 --ifconfig 10.8.0.1 10.8.0.2 \
+      --secret /tmp/lab09/static.key --cipher AES-256-CBC "${OVPN_STATIC_FLAGS[@]}"
 
-# Cliente remoto: se conecta a la IP pública del firewall (que reenvía al gateway)
-sudo ip netns exec clienteVPN openvpn --daemon --writepid /tmp/lab09/ovpn-cli.pid --log /tmp/lab09/ovpn-cli.log \
-    --dev tun0 --dev-type tun --proto udp --remote 192.168.100.1 1194 --ifconfig 10.8.0.2 10.8.0.1 \
-    --secret /tmp/lab09/static.key --cipher AES-256-CBC --allow-deprecated-insecure-static-crypto \
-    --route 10.0.0.0 255.255.252.0
+  sudo ip netns exec clienteVPN openvpn --daemon --writepid /tmp/lab09/ovpn-cli.pid --log /tmp/lab09/ovpn-cli.log \
+      --dev tun0 --dev-type tun --proto udp --remote 192.168.100.1 1194 --ifconfig 10.8.0.2 10.8.0.1 \
+      --secret /tmp/lab09/static.key --cipher AES-256-CBC "${OVPN_STATIC_FLAGS[@]}" \
+      --route 10.0.0.0 255.255.252.0
+fi
 ```
 
-!!! note "Versión de OpenVPN"
-    `--allow-deprecated-insecure-static-crypto` es obligatorio desde OpenVPN 2.7 (y el modo de clave estática desaparecerá en 2.8); en 2.6 o anteriores la opción no existe y debe quitarse (y `--genkey secret` se escribe `--genkey --secret` antes de 2.5). Comprueba tu versión con `openvpn --version`. En producción usa TLS (certificados o `peer-fingerprint`).
+!!! note "Compatibilidad de OpenVPN"
+    | Rama | Modo `--secret` | Acción del laboratorio |
+    |---|---|---|
+    | 2.4–2.5 | Aceptado como modo legacy sin TLS | No pasar `--allow-deprecated-insecure-static-crypto`; en 2.4 usa `--genkey --secret` |
+    | 2.6 | Aceptado con advertencia de obsolescencia | No pasar la opción de excepción |
+    | 2.7 | Deshabilitado por defecto; `--secret` falla salvo opt-in explícito | El bloque añade `--allow-deprecated-insecure-static-crypto`; úsalo solo para esta demostración aislada |
+    | 2.8 o posterior | Retirada prevista del modo estático; verifica la versión instalada | Si la opción ya no existe, omite el ejercicio y usa TLS/PKI o `--peer-fingerprint` |
+
+    Comprueba `openvpn --version` y `openvpn --help` antes de ejecutar opciones legacy. En 2.6 `--secret` emite advertencia; en 2.7 queda bloqueado salvo `--allow-deprecated-insecure-static-crypto`, y su retirada está prevista para 2.8. La clave estática solo ilustra la creación del dispositivo `tun`; no representa una VPN segura de producción.
+
+### Arquitectura de OpenVPN: plano de control y plano de datos
+
+En el modo TLS de producción, el canal de control autentica los extremos y negocia claves; el canal de datos cifra y autentica los paquetes transportados. La PKI valida certificados, cadena de confianza, vigencia y revocación; `--peer-fingerprint` permite fijar la identidad del certificado cuando el diseño lo requiere. `tun` transporta paquetes IP (capa 3); `tap` transporta tramas Ethernet (capa 2) y amplía el dominio de broadcast. El modo `--secret` de este ejercicio no crea ese canal TLS ni una identidad por certificado: se mantiene únicamente como demostración legacy.
+
 
 ### Paso 10: Verificar OpenVPN
 
 ```bash
-sudo ip netns exec clienteVPN ping -c 4 10.8.0.1
-sudo ip netns exec clienteVPN ping -c 4 10.0.0.10
-tail -3 /tmp/lab09/ovpn-cli.log
+if [ -s /tmp/lab09/ovpn-cli.pid ]; then
+  sudo ip netns exec clienteVPN ping -c 4 10.8.0.1
+  sudo ip netns exec clienteVPN ping -c 4 10.0.0.10
+  tail -3 /tmp/lab09/ovpn-cli.log
+else
+  echo "OpenVPN legacy omitido por versión; continúa con WireGuard y revisa la arquitectura TLS/PKI."
+fi
 ```
 
 ## Implementación de WireGuard
@@ -364,6 +481,22 @@ tail -3 /tmp/lab09/ovpn-cli.log
 ### Paso 11: Generar las claves
 
 **WireGuard** funciona con un modelo de **pares** (*peers*): cada extremo tiene un par de claves, conserva su clave privada y entrega solo la **pública** al otro; cada par declara qué direcciones acepta mediante `allowed-ips`, que actúa a la vez como **tabla de enrutamiento criptográfico** y como filtro de origen. Los datos viajan encapsulados en **UDP**.
+
+#### Criptografía y ciclo de claves de WireGuard
+
+WireGuard utiliza una suite criptográfica fija, no una negociación de cifrados por conexión:
+
+| Primitiva | Función |
+|---|---|
+| **Curve25519 (X25519)** | Acuerdo de claves Diffie–Hellman entre pares |
+| **ChaCha20-Poly1305** | Cifrado autenticado de los paquetes de datos (confidencialidad e integridad) |
+| **BLAKE2s** | Funciones hash y derivaciones internas |
+| **HKDF** | Derivación de claves a partir del secreto compartido |
+| **Noise_IK** (con PSK opcional) | Patrón del handshake que autentica las claves públicas y deriva claves de sesión |
+
+Las claves efímeras y las claves de sesión se renuevan automáticamente según los temporizadores y límites internos del protocolo. Eso **no** rota por sí solo la clave privada de larga duración del peer: para rotarla se genera un nuevo par y se actualiza la clave pública correspondiente en el otro extremo, coordinando el cambio para no perder conectividad.
+
+`PersistentKeepalive` envía paquetes vacíos periódicos (por ejemplo, cada 25 s) para mantener una asignación NAT cuando un peer está detrás de NAT y necesita recibir tráfico iniciado desde el otro lado. No es un mecanismo de failover ni una prueba de que las rutas y reglas de firewall funcionen. Usa `wg show` para observar el último handshake y contadores; un handshake reciente confirma intercambio criptográfico, no acceso completo a una aplicación.
 
 ```bash
 sudo apt-get install -y wireguard-tools
@@ -429,12 +562,12 @@ GRE solo **encapsula**: cualquiera en el camino ve el paquete interior. ESP **ci
 
 ```mermaid
 sequenceDiagram
-    participant A as Extremo A (Sede)
-    participant B as Extremo B (Sucursal)
-    A->>B: 1. Acuerdan parámetros y claves (IKE; aquí, claves manuales)
-    A->>B: 2. Tráfico 10.0.0.0/24 encapsulado hacia la IP del extremo B
-    B-->>A: 3. Tráfico de retorno por el mismo túnel
-    Note over A,B: Hacen falta rutas o políticas en ambos extremos para que el tráfico entre al túnel
+    participant A as "Extremo A - Sede"
+    participant B as "Extremo B - Sucursal"
+    A->>B: Acuerdo de parametros y claves mediante IKE o claves manuales
+    A->>B: Paquete de la red 10.0.0.0/24 enviado al extremo remoto
+    B-->>A: Trafico de retorno por el tunel
+    Note over A,B: Ambos extremos necesitan rutas o politicas que dirijan el trafico al tunel
 ```
 
 ### Cifrado, autenticación e integridad
@@ -540,13 +673,20 @@ Con DF activado, el router descarta el paquete grande y avisa con ICMP «fragmen
 Configura un túnel GRE entre R1 y R3 sobre el enlace directo `192.168.3.0/30` que se creó en el Paso 6 del laboratorio 06 (debe seguir activo) para tener redundancia.
 
 ```bash
+for ns in R1 R3; do
+  if sudo ip netns exec "$ns" ip link show gre3 >/dev/null 2>&1; then
+    echo "$ns/gre3 ya existe; no se sobrescribe una interfaz ajena."; exit 1
+  fi
+done
 # En R1
 sudo ip netns exec R1 ip tunnel add gre3 mode gre remote 192.168.3.2 local 192.168.3.1 ttl 255
+sudo ip netns exec R1 ip link set gre3 alias networking-lab-lab-09
 sudo ip netns exec R1 ip addr add 10.10.0.9/30 dev gre3
 sudo ip netns exec R1 ip link set gre3 up
 
 # En R3
 sudo ip netns exec R3 ip tunnel add gre3 mode gre remote 192.168.3.1 local 192.168.3.2 ttl 255
+sudo ip netns exec R3 ip link set gre3 alias networking-lab-lab-09
 sudo ip netns exec R3 ip addr add 10.10.0.10/30 dev gre3
 sudo ip netns exec R3 ip link set gre3 up
 ```
@@ -557,7 +697,9 @@ Configura una ruta con métrica distinta a las existentes para failover (en R1 y
 
 ```bash
 # En R1
-sudo ip netns exec R1 ip route add 10.0.2.0/24 via 10.10.0.9 dev gre3 metric 20
+if ! sudo ip netns exec R1 ip route show 10.0.2.0/24 | grep -q 'via 10.10.0.9.*gre3'; then
+  sudo ip netns exec R1 ip route add 10.0.2.0/24 via 10.10.0.9 dev gre3 metric 20 && touch /tmp/lab09/r1-gre3-route.added
+fi
 ```
 
 ### Ejercicio 3: Configurar WireGuard en Sucursal
@@ -585,56 +727,117 @@ Implementa WireGuard entre R2 y R3 como alternativa.
 
 ## Revertir los cambios del host
 
-Este laboratorio deja un extremo de `veth` **en el host** (`veth-wan-cvpn`, unido al bridge `br-wan` del laboratorio 08) y procesos de VPN dentro de los *namespaces*:
+La reversión detiene primero los procesos de esta VPN y comprueba que los namespaces compartidos no tengan procesos activos. Si detecta un proceso desconocido o una marca de propiedad distinta, no modifica rutas, SA, reglas ni enlaces.
 
 ```bash
-# Retirar las rutas añadidas o reemplazadas por el laboratorio 09.
-sudo ip netns exec R1 ip route del 10.0.2.0/24 via 10.10.0.2 dev gre1 2>/dev/null || true
-sudo ip netns exec R2 ip route del 10.0.0.0/24 via 10.10.0.1 dev gre1 2>/dev/null || true
-sudo ip netns exec R2 ip route del 10.0.2.0/24 via 10.10.0.6 dev gre2 2>/dev/null || true
-sudo ip netns exec R3 ip route del 10.0.0.0/24 via 10.10.0.5 dev gre2 2>/dev/null || true
-sudo ip netns exec R1 ip route del 10.0.1.0/24 via 192.168.1.2 dev veth-r1r2 2>/dev/null || true
-sudo ip netns exec R2 ip route del 10.0.0.0/24 via 192.168.1.1 dev veth-r2r1 2>/dev/null || true
-# Eliminar solo las SA de prueba identificadas por extremos y SPI.
-for R in R1 R2; do
-  sudo ip netns exec "$R" ip xfrm state delete src 192.168.1.1 dst 192.168.1.2 proto esp spi 0x1001 2>/dev/null || true
-  sudo ip netns exec "$R" ip xfrm state delete src 192.168.1.2 dst 192.168.1.1 proto esp spi 0x1002 2>/dev/null || true
+PROC_LEFT=0
+for pf in /tmp/lab09/ovpn-gw.pid /tmp/lab09/ovpn-cli.pid /tmp/lab09/dnat-nc.pid; do
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || { echo "PID inválido en $pf; se conserva el estado."; PROC_LEFT=1; continue; }
+  [ -r "/proc/$pid/cmdline" ] || continue
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  if { [[ "$pf" == *ovpn-* && "$cmdline" == *openvpn* && "$cmdline" == *"$pf"* ]]; } || { [[ "$pf" == *dnat-nc.pid && "$cmdline" == *nc* && "$cmdline" == *51820* ]]; }; then
+    sudo kill -TERM "$pid" 2>/dev/null || true
+  else echo "PID $pid no coincide con el servicio esperado de $pf; no se detiene."; PROC_LEFT=1
+  fi
 done
-# Eliminar políticas XFRM exactas de los selectores del ejercicio.
-sudo ip netns exec R1 ip xfrm policy delete src 10.0.0.0/24 dst 10.0.1.0/24 dir out 2>/dev/null || true
-sudo ip netns exec R1 ip xfrm policy delete src 10.0.1.0/24 dst 10.0.0.0/24 dir in 2>/dev/null || true
-sudo ip netns exec R1 ip xfrm policy delete src 10.0.1.0/24 dst 10.0.0.0/24 dir fwd 2>/dev/null || true
-sudo ip netns exec R2 ip xfrm policy delete src 10.0.1.0/24 dst 10.0.0.0/24 dir out 2>/dev/null || true
-sudo ip netns exec R2 ip xfrm policy delete src 10.0.0.0/24 dst 10.0.1.0/24 dir in 2>/dev/null || true
-sudo ip netns exec R2 ip xfrm policy delete src 10.0.0.0/24 dst 10.0.1.0/24 dir fwd 2>/dev/null || true
-# Retirar reglas añadidas al firewall (si existe aún el namespace heredado del lab 08).
-sudo ip netns exec firewall iptables -t nat -D PREROUTING -i veth-fw-wan -p udp -m multiport --dports 51820,1194 -j DNAT --to-destination 10.0.99.20 2>/dev/null || true
-sudo ip netns exec firewall iptables -D FORWARD -i veth-fw-wan -o br-dmz -p udp -d 10.0.99.20 -m multiport --dports 51820,1194 -j ACCEPT 2>/dev/null || true
-sudo ip netns exec firewall iptables -D FORWARD -i br-dmz -o veth-fw-lan -s 10.8.0.0/15 -d 10.0.0.0/22 -j ACCEPT 2>/dev/null || true
-sudo ip netns exec firewall ip route del 10.8.0.0/24 via 10.0.99.20 2>/dev/null || true
-sudo ip netns exec firewall ip route del 10.9.0.0/24 via 10.0.99.20 2>/dev/null || true
-sudo ip netns exec VPN_GW ip route del 10.0.0.0/22 via 10.0.99.1 2>/dev/null || true
-# Restaurar las rutas estáticas originales del laboratorio 06 que GRE reemplazó.
-sudo ip netns exec R1 ip route replace 10.0.1.0/24 via 192.168.1.2 dev veth-r1r2
-sudo ip netns exec R1 ip route replace 10.0.2.0/24 via 192.168.1.2 dev veth-r1r2 metric 100
-sudo ip netns exec R2 ip route replace 10.0.0.0/24 via 192.168.1.1 dev veth-r2r1
-sudo ip netns exec R2 ip route replace 10.0.2.0/24 via 192.168.2.2 dev veth-r2r3
-sudo ip netns exec R3 ip route replace 10.0.0.0/24 via 192.168.2.1 dev veth-r3r2 metric 100
-# Si se ejecutó el ejercicio opcional GRE3, retirar también su ruta específica.
-sudo ip netns exec R1 ip route del 10.0.2.0/24 via 10.10.0.9 dev gre3 metric 20 2>/dev/null || true
-
-# Retirar los túneles GRE de este laboratorio, no todos los túneles del router.
-for spec in 'R1 gre1' 'R2 gre1' 'R2 gre2' 'R3 gre2' 'R1 gre3' 'R3 gre3'; do
-  set -- $spec
-  sudo ip netns exec "$1" ip tunnel del "$2" 2>/dev/null || true
+sleep 1
+for pf in /tmp/lab09/ovpn-gw.pid /tmp/lab09/ovpn-cli.pid /tmp/lab09/dnat-nc.pid; do
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  if { [[ "$pf" == *ovpn-* && "$cmdline" == *openvpn* && "$cmdline" == *"$pf"* ]]; } || { [[ "$pf" == *dnat-nc.pid && "$cmdline" == *nc* && "$cmdline" == *51820* ]]; }; then sudo kill -KILL "$pid" 2>/dev/null || true; fi
 done
 
-for ns in VPN_GW clienteVPN; do
-  sudo ip netns pids $ns 2>/dev/null | xargs -r sudo kill     # solo procesos dentro de ese namespace
-  sudo ip netns del $ns 2>/dev/null || true
+# Preflight de namespaces compartidos y propios; no se elimina R1/R2/R3 ni firewall.
+NS_LEFT=0
+for ns in R1 R2 R3 firewall VPN_GW clienteVPN; do
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
+    case "$ns" in
+      R1|R2|R3) esperado=networking-lab-owned ;;
+      firewall) esperado=networking-lab-lab-08 ;;
+      VPN_GW|clienteVPN) esperado=networking-lab-lab-09 ;;
+    esac
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != "$esperado" ]; then
+      echo "Se conserva $ns: no tiene la marca esperada ($esperado)."; NS_LEFT=1
+    else
+      PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+      if [ -n "$PIDS" ]; then echo "Se conserva $ns: hay procesos activos ($PIDS)."; NS_LEFT=1; fi
+    fi
+  fi
 done
-sudo ip link del veth-wan-cvpn 2>/dev/null || true
-sudo rm -rf /tmp/lab09
+
+if [ "$NS_LEFT" = 0 ] && [ "$PROC_LEFT" = 0 ]; then
+  ns_exists() { sudo ip netns list | awk '{print $1}' | grep -Fxq "$1"; }
+  # Rutas GRE y rutas reemplazadas: restaurar solo snapshots/entradas marcadas.
+  if [ -f /tmp/lab09/r1-gre-route.added ] && ns_exists R1; then sudo ip netns exec R1 ip route del 10.0.2.0/24 via 10.10.0.2 dev gre1 metric 10 2>/dev/null || true; fi
+  if [ -f /tmp/lab09/r3-gre-route.added ] && ns_exists R3; then sudo ip netns exec R3 ip route del 10.0.0.0/24 via 10.10.0.5 dev gre2 metric 10 2>/dev/null || true; fi
+  if [ -f /tmp/lab09/r1-gre3-route.added ] && ns_exists R1; then sudo ip netns exec R1 ip route del 10.0.2.0/24 via 10.10.0.9 dev gre3 metric 20 2>/dev/null || true; fi
+  restaurar_ruta() {
+    ns=$1; prefijo=$2; archivo=$3
+    [ -f "$archivo" ] || return 0
+    ns_exists "$ns" || return 0
+    sudo ip netns exec "$ns" ip route del "$prefijo" 2>/dev/null || true
+    if [ -s "$archivo" ]; then while IFS= read -r ruta; do [ -n "$ruta" ] && sudo ip netns exec "$ns" ip route add $ruta; done < "$archivo"; fi
+  }
+  restaurar_ruta R1 10.0.1.0/24 /tmp/lab09/r1-route-10.0.1.0.before
+  restaurar_ruta R2 10.0.0.0/24 /tmp/lab09/r2-route-10.0.0.0.before
+  restaurar_ruta R2 10.0.2.0/24 /tmp/lab09/r2-route-10.0.2.0.before
+
+  # Eliminar únicamente SA XFRM marcadas como creadas por este laboratorio.
+  for R in R1 R2; do
+    for spi in 1001 1002; do
+      if [ -f "/tmp/lab09/$R-state-$spi.added" ] && ns_exists "$R"; then
+        if [ "$spi" = 1001 ]; then sudo ip netns exec "$R" ip xfrm state delete src 192.168.1.1 dst 192.168.1.2 proto esp spi 0x1001 2>/dev/null || true
+        else sudo ip netns exec "$R" ip xfrm state delete src 192.168.1.2 dst 192.168.1.1 proto esp spi 0x1002 2>/dev/null || true
+        fi
+      fi
+    done
+  done
+  for spec in 'R1 out' 'R1 in' 'R1 fwd' 'R2 out' 'R2 in' 'R2 fwd'; do
+    set -- $spec; R=$1; dir=$2
+    if [ -f "/tmp/lab09/$R-policy-$dir.added" ] && ns_exists "$R"; then
+      case "$R:$dir" in
+        R1:out) sudo ip netns exec R1 ip xfrm policy delete src 10.0.0.0/24 dst 10.0.1.0/24 dir out 2>/dev/null || true ;;
+        R1:in|R1:fwd) sudo ip netns exec R1 ip xfrm policy delete src 10.0.1.0/24 dst 10.0.0.0/24 dir "$dir" 2>/dev/null || true ;;
+        R2:out) sudo ip netns exec R2 ip xfrm policy delete src 10.0.1.0/24 dst 10.0.0.0/24 dir out 2>/dev/null || true ;;
+        R2:in|R2:fwd) sudo ip netns exec R2 ip xfrm policy delete src 10.0.0.0/24 dst 10.0.1.0/24 dir "$dir" 2>/dev/null || true ;;
+      esac
+    fi
+  done
+
+  # Revertir reglas y rutas insertadas en el firewall compartido de Lab08.
+  if [ -f /tmp/lab09/fw-dnat.added ] && ns_exists firewall; then sudo ip netns exec firewall iptables -t nat -D PREROUTING -i veth-fw-wan -p udp -m multiport --dports 51820,1194 -j DNAT --to-destination 10.0.99.20 2>/dev/null || true; fi
+  if [ -f /tmp/lab09/fw-forward-dmz.added ] && ns_exists firewall; then sudo ip netns exec firewall iptables -D FORWARD -i veth-fw-wan -o br-dmz -p udp -d 10.0.99.20 -m multiport --dports 51820,1194 -j ACCEPT 2>/dev/null || true; fi
+  if [ -f /tmp/lab09/fw-forward-lan.added ] && ns_exists firewall; then sudo ip netns exec firewall iptables -D FORWARD -i br-dmz -o veth-fw-lan -s 10.8.0.0/15 -d 10.0.0.0/22 -j ACCEPT 2>/dev/null || true; fi
+  if [ -f /tmp/lab09/fw-route-openvpn.added ] && ns_exists firewall; then sudo ip netns exec firewall ip route del 10.8.0.0/24 via 10.0.99.20 2>/dev/null || true; fi
+  if [ -f /tmp/lab09/fw-route-wireguard.added ] && ns_exists firewall; then sudo ip netns exec firewall ip route del 10.9.0.0/24 via 10.0.99.20 2>/dev/null || true; fi
+  if ns_exists firewall && [ "$(sudo ip netns exec firewall cat /sys/class/net/veth-fw-vpn/ifalias 2>/dev/null)" = networking-lab-lab-09 ]; then sudo ip netns exec firewall ip link del veth-fw-vpn; fi
+
+  # Retirar los túneles GRE propios de Lab09.
+  for spec in 'R1 gre1' 'R2 gre1' 'R2 gre2' 'R3 gre2' 'R1 gre3' 'R3 gre3'; do
+    set -- $spec; ns=$1; dev=$2
+    if ns_exists "$ns" && [ "$(sudo ip netns exec "$ns" cat "/sys/class/net/$dev/ifalias" 2>/dev/null)" = networking-lab-lab-09 ]; then sudo ip netns exec "$ns" ip tunnel del "$dev" 2>/dev/null || true; fi
+  done
+
+  # Borrar namespaces de acceso remoto y el extremo WAN de este laboratorio.
+  for ns in VPN_GW clienteVPN; do
+    if ns_exists "$ns" && [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" = networking-lab-lab-09 ]; then sudo ip netns del "$ns" 2>/dev/null || true; fi
+  done
+  if [ "$(cat /sys/class/net/veth-wan-cvpn/ifalias 2>/dev/null)" = networking-lab-lab-09 ]; then sudo ip link del veth-wan-cvpn; fi
+  for f in /sys/class/net/*/ifalias; do
+    [ -r "$f" ] || continue
+    [ "$(cat "$f")" = networking-lab-lab-09 ] || continue
+    dev=${f%/ifalias}; dev=${dev##*/}
+    sudo ip link del "$dev" 2>/dev/null || true
+  done
+  if [ -f /tmp/lab09/.networking-lab-owned ]; then sudo rm -rf /tmp/lab09; fi
+else
+  echo "Se conserva /tmp/lab09, rutas, SA, reglas y enlaces: hay procesos o namespaces que requieren inspección."
+fi
 ```
 
 El bridge `br-wan`, la regla NAT y `ip_forward` pertenecen al laboratorio 08: se revierten con su sección «Revertir los cambios del host».

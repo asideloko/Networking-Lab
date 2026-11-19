@@ -104,10 +104,24 @@ Cuando una representación simplifica una tecnología, se documentan sus alcance
 
 Para trabajar con los laboratorios se recomienda:
 
-- Sistema **Linux**, máquina virtual o **WSL2**.
-- Conocimientos básicos de terminal.
-- Permisos de superusuario para los ejercicios que modifican la configuración de red.
-- Herramientas y módulos del kernel indicados en cada laboratorio.
+- Sistema **Linux** (Debian/Ubuntu recomendado), preferiblemente en una máquina virtual dedicada.
+- Kernel con soporte para *network namespaces*, `veth`, bridge y los módulos que requiera cada práctica (`8021q`, `ip_gre`, `xfrm_user`, `tun`, `wireguard`, etc.).
+- Sesión con `root` o capacidades efectivas `CAP_NET_ADMIN` y `CAP_NET_RAW` para los ejercicios que crean interfaces, rutas, túneles o capturas.
+- Herramientas indicadas en cada laboratorio (`iproute2`, `bridge`, `nftables`/`iptables`, `tcpdump`, `dnsmasq`, `keepalived`, `openvpn`, `wireguard-tools`, entre otras).
+
+**Android/Termux no es un entorno de ejecución soportado** para estas topologías: el aislamiento de aplicaciones y las capacidades del kernel suelen impedir crear namespaces, bridges y enlaces `veth`, incluso si se instala `iproute2`. El sitio sí puede consultarse desde Android; para ejecutar las prácticas usa Linux en un PC o VM. WSL2 puede servir para ejercicios básicos, pero la disponibilidad de módulos y funciones de red depende de su kernel; verifica cada requisito antes de ejecutar.
+
+Antes de comparar resultados entre equipos, registra las versiones y el kernel disponibles:
+
+```bash
+uname -sr
+ip -Version
+bridge -Version
+nft --version 2>/dev/null || iptables --version
+ethtool --version 2>/dev/null || true
+openvpn --version 2>/dev/null | head -1 || true
+wg --version 2>/dev/null || true
+```
 
 > **Recomendación:** utilizar una máquina virtual o entorno de pruebas. **No ejecutar los ejercicios directamente en servidores de producción.**
 

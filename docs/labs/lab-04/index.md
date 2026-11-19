@@ -77,6 +77,20 @@ La red actual (todos los clientes en una sola subred `10.0.1.0/24`) ya no es suf
 
 La convención «primera dirección útil = gateway» es habitual, pero no obligatoria: lo importante es que sea una dirección fija, documentada y **no asignada a un cliente**.
 
+### Cálculo VLSM y operación AND
+
+No elijas prefijos por intuición. Para cada subred:
+
+1. Cuenta los hosts requeridos, incluidos gateway, servidores e interfaces de infraestructura.
+2. Ordena los requerimientos de mayor a menor para evitar fragmentar el espacio.
+3. Busca el menor número de bits de host `h` que cumpla `2^h - 2 >= hosts` (para subredes IPv4 convencionales; `/31` punto a punto es una excepción específica).
+4. Calcula el prefijo `/(32-h)` y el tamaño del bloque `2^h` direcciones.
+5. Alinea la siguiente dirección de red al múltiplo del tamaño de bloque, determina broadcast y rango usable, y verifica que no haya solapamientos.
+
+La decisión de red local se obtiene con una operación AND bit a bit entre IP y máscara: `1 AND 1 = 1`; cualquier otro par produce `0`. Por ejemplo, `10.0.0.18 AND 255.255.255.248 = 10.0.0.16`, por lo que `10.0.0.18/29` pertenece a `10.0.0.16/29`. Si el destino AND máscara produce otra red, el host no hace ARP por el destino: consulta la tabla de rutas y resuelve por ARP la MAC del siguiente salto (normalmente el gateway).
+
+Antes de configurar, valida cada subred con una calculadora CIDR o con Python; después confirma en Linux con `ip route get DESTINO`, `ip route show table main` y `ip neigh show`. La calculadora verifica el cálculo, pero no sustituye el razonamiento sobre gateway y rutas.
+
 ## Topología
 
 ```mermaid
@@ -124,28 +138,74 @@ ip netns exec cliente1 ping -c 2 10.0.1.3
 El bloque detecta los nombres que utiliza este laboratorio, muestra los recursos existentes y solicita confirmación antes de eliminarlos.
 
 ```bash
-NS_LAB="cliente1 cliente2 cliente3 cliente4 router switch ventas1 ventas2 ventas3 ventas4 it1 it2 it3"
-IF_LAB="veth-c1 veth-c2 veth-c3 veth-c4 veth-v1 veth-v2 veth-v3 veth-v4 veth-i1 veth-i2 veth-i3 veth-sr veth-host"
-EXISTENTES=$(ip netns list | awk '{print $1}' | while read -r ns; do
-  for esperado in $NS_LAB; do [ "$ns" = "$esperado" ] && echo "$ns"; done
-done)
-IF_EXISTENTES=$(ip -o link show | awk -F': ' '{print $2}' | cut -d@ -f1 | while read -r dev; do
-  for esperado in $IF_LAB; do [ "$dev" = "$esperado" ] && echo "$dev"; done
-done)
-ROUTE_MARKER=$( [ -f /tmp/lab04-host-route.added ] && echo 1 )
+# Inventario único de recursos administrados por este laboratorio.
+RECURSOS_LAB=(
+  "ns:cliente1" "ns:cliente2" "ns:cliente3" "ns:cliente4" "ns:router" "ns:switch"
+  "ns:ventas1" "ns:ventas2" "ns:ventas3" "ns:ventas4" "ns:it1" "ns:it2" "ns:it3"
+  "link:veth-c1" "link:veth-c2" "link:veth-c3" "link:veth-c4"
+  "link:veth-v1" "link:veth-v2" "link:veth-v3" "link:veth-v4"
+  "link:veth-i1" "link:veth-i2" "link:veth-i3" "link:veth-sr" "link:veth-host"
+  "marker:/tmp/lab04-host-route.added"
+)
+EXISTENTES=""; IF_EXISTENTES=""; ROUTE_MARKER=0
+for recurso in "${RECURSOS_LAB[@]}"; do
+  tipo=${recurso%%:*}; nombre=${recurso#*:}
+  case "$tipo" in
+    ns) if ip netns list | awk '{print $1}' | grep -Fxq "$nombre"; then EXISTENTES="$EXISTENTES $nombre"; fi ;;
+    link) if ip link show "$nombre" >/dev/null 2>&1; then IF_EXISTENTES="$IF_EXISTENTES $nombre"; fi ;;
+    marker) [ -f "$nombre" ] && ROUTE_MARKER=1 ;;
+  esac
+done
+# No borrar por nombre: cada namespace debe llevar la marca escrita al crearlo el proyecto.
+NS_SIN_MARCA=""
+for ns in $EXISTENTES; do
+  if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-owned ]; then
+    NS_SIN_MARCA="$NS_SIN_MARCA $ns"
+  fi
+done
+if [ -n "$NS_SIN_MARCA" ]; then
+  echo "Se aborta sin borrar namespaces sin marca de propiedad:$NS_SIN_MARCA"
+  echo "Comprueba manualmente su origen; no se eliminarán por coincidencia de nombre."
+  exit 1
+fi
+IF_SIN_MARCA=""
+for dev in $IF_EXISTENTES; do
+  if [ "$(cat /sys/class/net/$dev/ifalias 2>/dev/null)" != networking-lab-lab-04 ]; then
+    IF_SIN_MARCA="$IF_SIN_MARCA $dev"
+  fi
+done
+if [ -n "$IF_SIN_MARCA" ]; then
+  echo "Se aborta: interfaces sin marca de propiedad:$IF_SIN_MARCA"
+  exit 1
+fi
+
+for f in /tmp/lab04-ip_forward.orig /tmp/lab04-host-nat.added /tmp/lab04-forward-out.added /tmp/lab04-forward-in.added; do
+  if [ -e "$f" ]; then echo "Existe el marcador $f; ejecuta la reversión completa de Lab04 antes de repetirlo."; exit 1; fi
+done
+for ns in $EXISTENTES; do
+  PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+  if [ -n "$PIDS" ]; then echo "$ns tiene procesos activos ($PIDS); deténlos desde su práctica propietaria antes de limpiar."; exit 1; fi
+done
 printf 'Namespaces existentes: %s\nInterfaces existentes: %s\nRuta del laboratorio registrada: %s\n' "${EXISTENTES:-(ninguno)}" "${IF_EXISTENTES:-(ninguna)}" "${ROUTE_MARKER:-0}"
-if [ -n "$EXISTENTES$IF_EXISTENTES$ROUTE_MARKER" ]; then
+if [ -n "$EXISTENTES$IF_EXISTENTES" ] || [ "$ROUTE_MARKER" = 1 ]; then
   read -r -p "¿Eliminar únicamente estos recursos del laboratorio 04? (s/N) " CONFIRMAR
   if [ "$CONFIRMAR" != s ]; then echo "Cancelado"; exit 1; fi
   for ns in $EXISTENTES; do
-    ip netns pids "$ns" 2>/dev/null | xargs -r kill
-    ip netns del "$ns" 2>/dev/null || true
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" = networking-lab-owned ]; then
+      ip netns del "$ns" 2>/dev/null || true
+    else
+      echo "Se conserva $ns: no tiene la marca de propiedad Networking Lab."
+    fi
   done
   if [ -f /tmp/lab04-host-route.added ]; then
     ip route del 10.0.0.0/24 via 192.168.1.2 2>/dev/null || true
     rm -f /tmp/lab04-host-route.added
   fi
-  for dev in $IF_EXISTENTES; do ip link del "$dev" 2>/dev/null || true; done
+  for dev in $IF_EXISTENTES; do
+    if [ "$(cat /sys/class/net/$dev/ifalias 2>/dev/null)" = networking-lab-lab-04 ]; then ip link del "$dev" 2>/dev/null || true
+    else echo "Se conserva $dev: no tiene la marca exacta de Lab04."
+    fi
+  done
 fi
 ```
 
@@ -154,19 +214,27 @@ fi
 ```bash
 # Router
 ip netns add router
+ip netns exec router ip link set lo alias networking-lab-owned
 
 # Switch (bridge)
 ip netns add switch
+ip netns exec switch ip link set lo alias networking-lab-owned
 
 # Clientes del departamento Ventas (3 para demostración)
 ip netns add ventas1
+ip netns exec ventas1 ip link set lo alias networking-lab-owned
 ip netns add ventas2
+ip netns exec ventas2 ip link set lo alias networking-lab-owned
 ip netns add ventas3
+ip netns exec ventas3 ip link set lo alias networking-lab-owned
 
 # Clientes del departamento IT (3 para demostración)
 ip netns add it1
+ip netns exec it1 ip link set lo alias networking-lab-owned
 ip netns add it2
+ip netns exec it2 ip link set lo alias networking-lab-owned
 ip netns add it3
+ip netns exec it3 ip link set lo alias networking-lab-owned
 ```
 
 ### Paso 4: Crear el bridge en el switch
@@ -182,6 +250,8 @@ ip netns exec switch ip link set br0 up
 ```bash
 # Ventas 1
 ip link add veth-v1 type veth peer name veth-sv1
+ip link set veth-v1 alias networking-lab-lab-04
+ip link set veth-sv1 alias networking-lab-lab-04
 ip link set veth-v1 netns ventas1
 ip link set veth-sv1 netns switch
 ip netns exec ventas1 ip addr add 10.0.0.1/28 dev veth-v1
@@ -193,6 +263,8 @@ ip netns exec switch ip link set veth-sv1 up
 
 # Ventas 2
 ip link add veth-v2 type veth peer name veth-sv2
+ip link set veth-v2 alias networking-lab-lab-04
+ip link set veth-sv2 alias networking-lab-lab-04
 ip link set veth-v2 netns ventas2
 ip link set veth-sv2 netns switch
 ip netns exec ventas2 ip addr add 10.0.0.2/28 dev veth-v2
@@ -204,6 +276,8 @@ ip netns exec switch ip link set veth-sv2 up
 
 # Ventas 3
 ip link add veth-v3 type veth peer name veth-sv3
+ip link set veth-v3 alias networking-lab-lab-04
+ip link set veth-sv3 alias networking-lab-lab-04
 ip link set veth-v3 netns ventas3
 ip link set veth-sv3 netns switch
 ip netns exec ventas3 ip addr add 10.0.0.3/28 dev veth-v3
@@ -219,6 +293,8 @@ ip netns exec switch ip link set veth-sv3 up
 ```bash
 # IT 1
 ip link add veth-i1 type veth peer name veth-si1
+ip link set veth-i1 alias networking-lab-lab-04
+ip link set veth-si1 alias networking-lab-lab-04
 ip link set veth-i1 netns it1
 ip link set veth-si1 netns switch
 ip netns exec it1 ip addr add 10.0.0.17/29 dev veth-i1
@@ -230,6 +306,8 @@ ip netns exec switch ip link set veth-si1 up
 
 # IT 2
 ip link add veth-i2 type veth peer name veth-si2
+ip link set veth-i2 alias networking-lab-lab-04
+ip link set veth-si2 alias networking-lab-lab-04
 ip link set veth-i2 netns it2
 ip link set veth-si2 netns switch
 ip netns exec it2 ip addr add 10.0.0.18/29 dev veth-i2
@@ -241,6 +319,8 @@ ip netns exec switch ip link set veth-si2 up
 
 # IT 3
 ip link add veth-i3 type veth peer name veth-si3
+ip link set veth-i3 alias networking-lab-lab-04
+ip link set veth-si3 alias networking-lab-lab-04
 ip link set veth-i3 netns it3
 ip link set veth-si3 netns switch
 ip netns exec it3 ip addr add 10.0.0.19/29 dev veth-i3
@@ -256,6 +336,8 @@ ip netns exec switch ip link set veth-si3 up
 ```bash
 # Crear par veth switch-router
 ip link add veth-sr type veth peer name veth-rs
+ip link set veth-sr alias networking-lab-lab-04
+ip link set veth-rs alias networking-lab-lab-04
 ip link set veth-sr netns switch
 ip link set veth-rs netns router
 
@@ -293,6 +375,9 @@ ip netns exec router sysctl -w net.ipv4.ip_forward=1
 # Configurar NAT (asumiendo que el host tiene una interfaz con Internet)
 # En este laboratorio, simulamos Internet con el host
 ip link add veth-host type veth peer name veth-wan
+ip link set veth-host alias networking-lab-lab-04
+ip link set veth-wan alias networking-lab-lab-04
+ip link set veth-host alias networking-lab-lab-04
 ip link set veth-wan netns router
 ip netns exec router ip addr add 192.168.1.2/24 dev veth-wan
 ip netns exec router ip link set veth-wan up
@@ -307,6 +392,12 @@ if [ ! -e /tmp/lab04-ip_forward.orig ]; then
   sysctl -n net.ipv4.ip_forward > /tmp/lab04-ip_forward.orig
 fi
 sysctl -w net.ipv4.ip_forward=1
+if ! iptables -C FORWARD -i veth-host -o eth0 -s 192.168.1.0/24 -j ACCEPT; then
+  iptables -I FORWARD 1 -i veth-host -o eth0 -s 192.168.1.0/24 -j ACCEPT && touch /tmp/lab04-forward-out.added
+fi
+if ! iptables -C FORWARD -i eth0 -o veth-host -d 192.168.1.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; then
+  iptables -I FORWARD 1 -i eth0 -o veth-host -d 192.168.1.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT && touch /tmp/lab04-forward-in.added
+fi
 if ! iptables -t nat -C POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE; then
   iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab04-host-nat.added
 fi
@@ -314,7 +405,7 @@ fi
 # NAT
 ip netns exec router iptables -t nat -A POSTROUTING -o veth-wan -j MASQUERADE
 ip netns exec router iptables -A FORWARD -i veth-rs -o veth-wan -j ACCEPT
-ip netns exec router iptables -A FORWARD -i veth-wan -o veth-rs -m state --state RELATED,ESTABLISHED -j ACCEPT
+ip netns exec router iptables -A FORWARD -i veth-wan -o veth-rs -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 
 # Ruta opcional del host hacia las redes del laboratorio
 if ! ip route show 10.0.0.0/24 | grep -q 'via 192.168.1.2'; then
@@ -373,6 +464,27 @@ ip netns exec ventas1 ping -c 2 -W 1 10.0.0.20      # Destination Host Unreachab
 ```
 
 **Por qué ocurre:** en la prueba 1 el kernel no tiene ninguna ruta hacia `10.0.0.17` (queda fuera de `10.0.0.0/28`), por eso falla de inmediato y sin enviar nada; dentro de la propia subred no hace falta gateway. En la prueba 2 el paquete sí llega al router, pero este no obtiene respuesta ARP de `10.0.0.20` y devuelve un ICMP *host unreachable*: la subred existe, el equipo no.
+
+### Experimento: máscara incorrecta y decisión de siguiente salto
+
+Añade temporalmente `10.0.0.9/28` a `ventas2` (dirección libre dentro de Ventas). Observa la decisión correcta y luego reduce la máscara de `ventas1` de `/28` a `/29`: el destino `.9` quedará fuera del prefijo local y el host intentará usar el gateway `.14`. Las interfaces de este laboratorio son `veth-v1` y `veth-v2`:
+
+```bash
+sudo ip netns exec ventas2 ip addr add 10.0.0.9/28 dev veth-v2
+sudo ip netns exec ventas1 ip route get 10.0.0.9
+
+sudo ip netns exec ventas1 ip addr del 10.0.0.1/28 dev veth-v1
+sudo ip netns exec ventas1 ip addr add 10.0.0.1/29 dev veth-v1
+sudo ip netns exec ventas1 ip route get 10.0.0.9
+sudo ip netns exec ventas1 ip neigh show
+
+# Reversión exacta de las direcciones temporales.
+sudo ip netns exec ventas1 ip addr del 10.0.0.1/29 dev veth-v1
+sudo ip netns exec ventas1 ip addr add 10.0.0.1/28 dev veth-v1
+sudo ip netns exec ventas2 ip addr del 10.0.0.9/28 dev veth-v2
+```
+
+**Resultado esperado:** con `/28`, `10.0.0.9` es local y se resuelve directamente por ARP; con `/29`, queda fuera del prefijo local y el host intenta usar la ruta por defecto vía `10.0.0.14`. Observa el cambio con `ip route get` y `ip neigh`; no confundas el resultado de la tabla con que el siguiente salto vaya a responder. Ejecuta la reversión incluso si una prueba falla.
 
 ## Observación y análisis
 
@@ -437,7 +549,10 @@ Agrega un cuarto cliente al departamento Ventas (10.0.0.4/28) y verifica que pue
 
 ```bash
 ip netns add ventas4
+ip netns exec ventas4 ip link set lo alias networking-lab-owned
 ip link add veth-v4 type veth peer name veth-sv4
+ip link set veth-v4 alias networking-lab-lab-04
+ip link set veth-sv4 alias networking-lab-lab-04
 ip link set veth-v4 netns ventas4
 ip link set veth-sv4 netns switch
 ip netns exec ventas4 ip addr add 10.0.0.4/28 dev veth-v4
@@ -490,34 +605,35 @@ Ventas tiene **25** equipos y prevé crecer un **50 %** en dos años. ¿Qué má
 
 ## Revertir los cambios del host
 
-Los *namespaces* aíslan la red, pero la salida a Internet de este laboratorio modificó el **equipo real**. Deshaz solo lo que hiciste aquí:
-
 ```bash
-# 1. Regla NAT y ruta del host (ajusta eth0 a tu interfaz de salida)
-if [ -f /tmp/lab04-host-nat.added ]; then
-  iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
-  rm -f /tmp/lab04-host-nat.added
-fi
-if [ -f /tmp/lab04-host-route.added ]; then
-  ip route del 10.0.0.0/24 via 192.168.1.2 2>/dev/null || true
-  rm -f /tmp/lab04-host-route.added
-fi
-
-# 2. Reenvío: restaura el valor original guardado antes del laboratorio.
-if [ -f /tmp/lab04-ip_forward.orig ]; then
-  sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab04-ip_forward.orig)"
-  rm -f /tmp/lab04-ip_forward.orig
-fi
-
-# 3. Enlace virtual del host y namespaces del laboratorio
-ip link del veth-host 2>/dev/null || true
+NS_LEFT=0
 for ns in router switch ventas1 ventas2 ventas3 ventas4 it1 it2 it3; do
-  ip netns pids $ns 2>/dev/null | xargs -r kill     # solo procesos DENTRO de ese namespace
-  ip netns del $ns 2>/dev/null || true
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-owned ]; then echo "Se conserva $ns: no tiene la marca de propiedad Networking Lab."; NS_LEFT=1
+    else
+      PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+      if [ -n "$PIDS" ]; then echo "Se conserva $ns: quedan procesos activos ($PIDS); deténlos desde su terminal."; NS_LEFT=1; fi
+    fi
+  fi
 done
+if [ "$NS_LEFT" = 0 ]; then
+  for ns in router switch ventas1 ventas2 ventas3 ventas4 it1 it2 it3; do
+    if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then sudo ip netns del "$ns" 2>/dev/null || true; fi
+  done
+  if [ -f /tmp/lab04-host-nat.added ]; then iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true; rm -f /tmp/lab04-host-nat.added; fi
+  if [ -f /tmp/lab04-forward-out.added ]; then iptables -D FORWARD -i veth-host -o eth0 -s 192.168.1.0/24 -j ACCEPT 2>/dev/null || true; rm -f /tmp/lab04-forward-out.added; fi
+  if [ -f /tmp/lab04-forward-in.added ]; then iptables -D FORWARD -i eth0 -o veth-host -d 192.168.1.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true; rm -f /tmp/lab04-forward-in.added; fi
+  if [ -f /tmp/lab04-ip_forward.orig ]; then sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab04-ip_forward.orig)"; rm -f /tmp/lab04-ip_forward.orig; fi
+  if [ -f /tmp/lab04-host-route.added ]; then ip route del 10.0.0.0/24 via 192.168.1.2 2>/dev/null || true; rm -f /tmp/lab04-host-route.added; fi
+  if [ "$(cat /sys/class/net/veth-host/ifalias 2>/dev/null)" = networking-lab-lab-04 ]; then ip link del veth-host; fi
+  for f in /sys/class/net/*/ifalias; do
+    [ -r "$f" ] || continue
+    [ "$(cat "$f")" = networking-lab-lab-04 ] || continue
+    dev=${f%/ifalias}; dev=${dev##*/}
+    ip link del "$dev" 2>/dev/null || true
+  done
+else echo "Se conservan reglas host, rutas, enlaces y marcadores: hay procesos activos en namespaces."; fi
 ```
-
-Comprueba el resultado: `ip netns list`, `ip link show veth-host`, `sysctl net.ipv4.ip_forward` e `iptables -t nat -S POSTROUTING`.
 
 ## Profundización: cómo calcula un host su red local
 

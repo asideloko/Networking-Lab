@@ -22,8 +22,8 @@ jobs:
       - name: Validar documentación, sintaxis Bash y reversión de cambios en el host
         run: python3 scripts/validar.py
       - name: Instalar herramientas de prueba de red
-        run: sudo apt-get update && sudo apt-get install -y iproute2 iputils-ping nftables
-      - name: Prueba funcional aislada de L2, routing, firewall y limpieza
+        run: sudo apt-get update && sudo apt-get install -y iproute2 iputils-ping nftables iptables dnsmasq-base isc-dhcp-client dnsutils keepalived
+      - name: Pruebas funcionales de L2/FDB, routing, firewall, VLAN 802.1Q, GRE, IPsec, DHCP/DNS, VRRP, continuidad y reversión del host
         run: sudo bash scripts/pruebas_funcionales.sh
       - uses: actions/upload-pages-artifact@v3
         with:

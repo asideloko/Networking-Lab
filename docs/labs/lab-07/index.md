@@ -131,16 +131,26 @@ sudo apt-get install -y dnsmasq-base isc-dhcp-client dnsutils netcat-openbsd con
 
 ```bash
 for ns in servidorDNS servidorDHCP clienteDHCP; do
-  if sudo ip netns list | awk '{print $1}' | grep -qx "$ns"; then
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
     echo "El namespace $ns ya existe: ejecuta la limpieza del laboratorio 07 antes de repetirlo"
     exit 1
   fi
 done
+if [ -e /tmp/lab07 ]; then
+  if [ -f /tmp/lab07/.networking-lab-owned ]; then echo "Existe una ejecución anterior del laboratorio 07; ejecuta su limpieza.";
+  else echo "/tmp/lab07 existe sin marca de propiedad; no se modifica."; fi
+  exit 1
+fi
+mkdir -p /tmp/lab07
+touch /tmp/lab07/.networking-lab-owned
 
 # Servidores de servicios
 sudo ip netns add servidorDNS
+sudo ip netns exec servidorDNS ip link set lo alias networking-lab-owned
 sudo ip netns add servidorDHCP
+sudo ip netns exec servidorDHCP ip link set lo alias networking-lab-owned
 sudo ip netns add clienteDHCP
+sudo ip netns exec clienteDHCP ip link set lo alias networking-lab-owned
 ```
 
 ### Paso 3: Convertir la LAN de la sede en un switch (bridge) y conectar los servicios
@@ -148,8 +158,13 @@ sudo ip netns add clienteDHCP
 Hasta ahora `veth-r1c` era el único equipo de la LAN `10.0.0.0/24`. Para que el cliente, los servidores DNS/DHCP y el router compartan **el mismo segmento** necesitamos un switch: creamos un bridge `br-lan` en R1 y le pasamos la IP del router.
 
 ```bash
-# Bridge de la LAN de la sede dentro de R1
+# Bridge de la LAN de la sede dentro de R1: no reutilizar uno preexistente.
+if sudo ip netns exec R1 ip link show br-lan >/dev/null 2>&1; then
+  echo "R1/br-lan ya existe; no se modifica una interfaz preexistente."
+  exit 1
+fi
 sudo ip netns exec R1 ip link add br-lan type bridge
+sudo ip netns exec R1 ip link set br-lan alias networking-lab-lab-07
 sudo ip netns exec R1 ip link set br-lan up
 sudo ip netns exec R1 ip addr del 10.0.0.1/24 dev veth-r1c
 sudo ip netns exec R1 ip link set veth-r1c master br-lan
@@ -161,6 +176,8 @@ Ahora conectamos cada servicio con un par veth cuyo extremo en R1 se une al brid
 ```bash
 # Servidor DNS
 sudo ip link add veth-dns type veth peer name veth-r1dns
+sudo ip link set veth-dns alias networking-lab-lab-07
+sudo ip link set veth-r1dns alias networking-lab-lab-07
 sudo ip link set veth-dns netns servidorDNS
 sudo ip link set veth-r1dns netns R1
 sudo ip netns exec R1 ip link set veth-r1dns master br-lan
@@ -168,6 +185,8 @@ sudo ip netns exec R1 ip link set veth-r1dns up
 
 # Servidor DHCP
 sudo ip link add veth-dhcp type veth peer name veth-r1dhcp
+sudo ip link set veth-dhcp alias networking-lab-lab-07
+sudo ip link set veth-r1dhcp alias networking-lab-lab-07
 sudo ip link set veth-dhcp netns servidorDHCP
 sudo ip link set veth-r1dhcp netns R1
 sudo ip netns exec R1 ip link set veth-r1dhcp master br-lan
@@ -175,6 +194,8 @@ sudo ip netns exec R1 ip link set veth-r1dhcp up
 
 # Cliente DHCP
 sudo ip link add veth-dhcpcl type veth peer name veth-r1dhcpcl
+sudo ip link set veth-dhcpcl alias networking-lab-lab-07
+sudo ip link set veth-r1dhcpcl alias networking-lab-lab-07
 sudo ip link set veth-dhcpcl netns clienteDHCP
 sudo ip link set veth-r1dhcpcl netns R1
 sudo ip netns exec R1 ip link set veth-r1dhcpcl master br-lan
@@ -212,27 +233,45 @@ R1 será la única puerta de salida de la sede **y** de las sucursales. Su inter
 
 ```bash
 # Interfaz WAN de R1
+if [ -e /sys/class/net/veth-host ]; then
+  echo "veth-host ya existe; comprueba la propiedad y ejecuta la reversión anterior."
+  exit 1
+fi
 sudo ip link add veth-wan type veth peer name veth-host
+sudo ip link set veth-wan alias networking-lab-lab-07
+sudo ip link set veth-host alias networking-lab-lab-07
 sudo ip link set veth-wan netns R1
 sudo ip netns exec R1 ip addr add 192.168.100.1/24 dev veth-wan
 sudo ip netns exec R1 ip link set veth-wan up
 sudo ip addr add 192.168.100.2/24 dev veth-host
 sudo ip link set veth-host up
 
-# R1: reenvío, ruta por defecto hacia el host y NAT para todo lo que sale por la WAN
-sudo ip netns exec R1 sysctl -w net.ipv4.ip_forward=1
-sudo ip netns exec R1 ip route add default via 192.168.100.2
-sudo ip netns exec R1 iptables -t nat -A POSTROUTING -o veth-wan -j MASQUERADE
+# Guardar el estado previo de R1/R2/R3 antes de reemplazar sus rutas por defecto.
+for ns in R1 R2 R3; do sudo ip netns exec "$ns" ip route show default > "/tmp/lab07/$ns-default.before"; done
+sudo ip netns exec R1 sysctl -n net.ipv4.ip_forward > /tmp/lab07/R1-ip_forward.before
 
-# Las sucursales envían a R1 todo lo que no conocen (R3 lo hace a través de R2)
-sudo ip netns exec R2 ip route add default via 192.168.1.1
-sudo ip netns exec R3 ip route add default via 192.168.2.1
+# R1: reenvío, ruta por defecto hacia el host y NAT para todo lo que sale por la WAN.
+sudo ip netns exec R1 sysctl -w net.ipv4.ip_forward=1
+sudo ip netns exec R1 ip route replace default via 192.168.100.2
+if ! sudo ip netns exec R1 iptables -t nat -C POSTROUTING -o veth-wan -j MASQUERADE; then
+  sudo ip netns exec R1 iptables -t nat -A POSTROUTING -o veth-wan -j MASQUERADE && touch /tmp/lab07/R1-nat.added
+fi
+
+# Las sucursales envían a R1 todo lo que no conocen (R3 lo hace a través de R2).
+sudo ip netns exec R2 ip route replace default via 192.168.1.1
+sudo ip netns exec R3 ip route replace default via 192.168.2.1
 
 # El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)
 if [ ! -e /tmp/lab07-ip_forward.orig ]; then
   sudo sysctl -n net.ipv4.ip_forward | sudo tee /tmp/lab07-ip_forward.orig >/dev/null
 fi
 sudo sysctl -w net.ipv4.ip_forward=1
+if ! sudo iptables -C FORWARD -i veth-host -o eth0 -s 192.168.100.0/24 -j ACCEPT; then
+  sudo iptables -I FORWARD 1 -i veth-host -o eth0 -s 192.168.100.0/24 -j ACCEPT && touch /tmp/lab07-forward-out.added
+fi
+if ! sudo iptables -C FORWARD -i eth0 -o veth-host -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; then
+  sudo iptables -I FORWARD 1 -i eth0 -o veth-host -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT && touch /tmp/lab07-forward-in.added
+fi
 if ! sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE; then
   sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab07-host-nat.added
 fi
@@ -255,7 +294,6 @@ sudo ip netns exec clienteSucB ping -c 2 192.168.100.2
 Un servidor DNS no debe repartir direcciones: ese es el trabajo del servidor DHCP. Configuramos `dnsmasq` únicamente con la función DNS, con un dominio interno y reenvío a DNS públicos. `8.8.8.8` y `8.8.4.4` son **DNS públicos de ejemplo** (reenviadores externos), no servidores internos de la empresa: el servidor interno es `10.0.0.5`, que consulta a los externos solo para nombres que no conoce:
 
 ```bash
-mkdir -p /tmp/lab07
 touch /tmp/lab07/hosts
 
 cat > /tmp/lab07/dns.conf << 'EOF'
@@ -325,7 +363,20 @@ Ambos servidores usan rangos y funciones distintas: no hay dos servidores DHCP c
 `dhclient` reescribe `/etc/resolv.conf`. Para que no toque el de tu equipo, damos al namespace su propio `resolv.conf` (`ip netns exec` lo monta automáticamente desde `/etc/netns/<nombre>/`):
 
 ```bash
-sudo mkdir -p /etc/netns/clienteDHCP
+if [ -L /etc/netns/clienteDHCP/resolv.conf ]; then
+  echo "/etc/netns/clienteDHCP/resolv.conf es un enlace simbólico; se aborta para no escribir fuera del directorio de namespace."
+  exit 1
+fi
+if [ -e /etc/netns/clienteDHCP/resolv.conf ]; then
+  sudo cp -a /etc/netns/clienteDHCP/resolv.conf /tmp/lab07/resolv.conf.before
+  touch /tmp/lab07/resolv.conf.preexisting
+else
+  touch /tmp/lab07/resolv.conf.absent
+fi
+if [ ! -d /etc/netns/clienteDHCP ]; then
+  sudo mkdir -p /etc/netns/clienteDHCP
+  touch /tmp/lab07/netns-dir.created
+fi
 sudo touch /etc/netns/clienteDHCP/resolv.conf
 
 # Obtener IP por DHCP
@@ -525,43 +576,108 @@ Si responde `10.0.0.20`, la consulta UDP/53 atravesó los routers hasta `10.0.0.
 | DHCP | Asignación automática de IPs |
 | NAT/PAT | Traducción de direcciones (y puertos) para salida a Internet |
 
-## Revertir los cambios del host
+## Revertir los cambios del host (laboratorio 07)
+
+La reversión detiene únicamente los procesos identificados por los PID files del laboratorio, elimina sus namespaces si ya no contienen procesos y restaura las rutas y parámetros que se guardaron antes de la práctica. No usa `pkill` ni mata todos los procesos de un namespace.
 
 ```bash
-# 1. Regla NAT y reenvío del host (ajusta eth0)
-if [ -f /tmp/lab07-host-nat.added ]; then
-  sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
-  rm -f /tmp/lab07-host-nat.added
-fi
-if [ -f /tmp/lab07-ip_forward.orig ]; then
-  sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab07-ip_forward.orig)"
-  sudo rm -f /tmp/lab07-ip_forward.orig
-fi
-
-# 2. Interfaz del host
-sudo ip link del veth-host 2>/dev/null || true
-
-# 3. Servicios y namespaces creados en este laboratorio (no los de laboratorios anteriores)
-for ns in servidorDNS servidorDHCP clienteDHCP; do
-  sudo ip netns pids $ns 2>/dev/null | xargs -r sudo kill     # solo procesos DENTRO de ese namespace
-  sudo ip netns del $ns 2>/dev/null || true
+PROC_LEFT=0
+for spec in 'dnsmasq /tmp/lab07/dns.pid' 'dnsmasq /tmp/lab07/dhcp.pid' 'dhclient /tmp/lab07/dhclient.pid'; do
+  set -- $spec; proceso=$1; pf=$2
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  if [[ "$cmdline" == *"$proceso"* && "$cmdline" == *"$pf"* ]]; then sudo kill -TERM "$pid" 2>/dev/null || true
+  else echo "PID $pid no coincide con $proceso/$pf; no se detiene."; PROC_LEFT=1
+  fi
+done
+sleep 1
+for spec in 'dnsmasq /tmp/lab07/dns.pid' 'dnsmasq /tmp/lab07/dhcp.pid' 'dhclient /tmp/lab07/dhclient.pid'; do
+  set -- $spec; proceso=$1; pf=$2
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  if [[ "$cmdline" == *"$proceso"* && "$cmdline" == *"$pf"* ]]; then sudo kill -KILL "$pid" 2>/dev/null || true; fi
 done
 
-# 4. Restaurar R1 al estado de LAN del laboratorio 06.
-# El laboratorio 07 convirtió veth-r1c en puerto de br-lan y movió la IP al bridge.
-sudo ip netns exec R1 ip addr del 10.0.0.1/24 dev br-lan 2>/dev/null || true
-sudo ip netns exec R1 ip link set veth-r1c nomaster 2>/dev/null || true
-sudo ip netns exec R1 ip link del br-lan 2>/dev/null || true
-if sudo ip netns exec R1 ip link show veth-r1c >/dev/null 2>&1; then
-  sudo ip netns exec R1 ip addr replace 10.0.0.1/24 dev veth-r1c
-  sudo ip netns exec R1 ip link set veth-r1c up
+NS_LEFT=0
+# R1/R2/R3 pertenecen a Lab06; se modifican sus rutas, pero nunca se borran aquí.
+for ns in R1 R2 R3; do
+  PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+  if [ -n "$PIDS" ]; then echo "Se conservan rutas y estado host: $ns tiene procesos activos ($PIDS)."; NS_LEFT=1; fi
+done
+# Preflight de todos los namespaces de servicio antes de eliminar cualquiera.
+for ns in servidorDNS servidorDHCP clienteDHCP; do
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-owned ]; then echo "Se conserva $ns: no tiene la marca de propiedad Networking Lab."; NS_LEFT=1
+    else
+      PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+      if [ -n "$PIDS" ]; then echo "Se conserva $ns: quedan procesos no registrados ($PIDS)."; NS_LEFT=1; fi
+    fi
+  fi
+done
+
+if [ "$NS_LEFT" = 0 ] && [ "$PROC_LEFT" = 0 ]; then
+  for ns in servidorDNS servidorDHCP clienteDHCP; do
+    if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then sudo ip netns del "$ns" 2>/dev/null || true; fi
+  done
+  # Restaurar rutas por defecto e ip_forward de R1, R2 y R3.
+  restaurar_default() {
+    ns=$1; archivo=$2
+    [ -f "$archivo" ] || return 0
+    sudo ip netns exec "$ns" ip route del default 2>/dev/null || true
+    if [ -s "$archivo" ]; then
+      while IFS= read -r ruta; do [ -n "$ruta" ] && sudo ip netns exec "$ns" ip route add $ruta; done < "$archivo"
+    fi
+  }
+  for ns in R1 R2 R3; do restaurar_default "$ns" "/tmp/lab07/$ns-default.before"; done
+  if [ -s /tmp/lab07/R1-ip_forward.before ]; then
+    sudo ip netns exec R1 sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab07/R1-ip_forward.before)"
+  fi
+  if [ -f /tmp/lab07/R1-nat.added ]; then
+    sudo ip netns exec R1 iptables -t nat -D POSTROUTING -o veth-wan -j MASQUERADE 2>/dev/null || true
+  fi
+
+  # Restaurar el estado de la LAN del laboratorio 06.
+  if [ "$(sudo ip netns exec R1 cat /sys/class/net/br-lan/ifalias 2>/dev/null)" = networking-lab-lab-07 ]; then
+    sudo ip netns exec R1 ip addr del 10.0.0.1/24 dev br-lan 2>/dev/null || true
+    sudo ip netns exec R1 ip link set veth-r1c nomaster 2>/dev/null || true
+    sudo ip netns exec R1 ip link del br-lan
+    if sudo ip netns exec R1 ip link show veth-r1c >/dev/null 2>&1; then
+      sudo ip netns exec R1 ip addr replace 10.0.0.1/24 dev veth-r1c
+      sudo ip netns exec R1 ip link set veth-r1c up
+    fi
+  fi
+
+  # Revertir cambios del host únicamente si sus marcadores prueban que fueron añadidos aquí.
+  if [ -f /tmp/lab07-host-nat.added ]; then sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true; rm -f /tmp/lab07-host-nat.added; fi
+  if [ -f /tmp/lab07-forward-out.added ]; then sudo iptables -D FORWARD -i veth-host -o eth0 -s 192.168.100.0/24 -j ACCEPT 2>/dev/null || true; rm -f /tmp/lab07-forward-out.added; fi
+  if [ -f /tmp/lab07-forward-in.added ]; then sudo iptables -D FORWARD -i eth0 -o veth-host -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true; rm -f /tmp/lab07-forward-in.added; fi
+  if [ -f /tmp/lab07-ip_forward.orig ]; then sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab07-ip_forward.orig)"; rm -f /tmp/lab07-ip_forward.orig; fi
+
+  if [ "$(cat /sys/class/net/veth-host/ifalias 2>/dev/null)" = networking-lab-lab-07 ]; then sudo ip link del veth-host; fi
+
+  # Restaurar /etc/netns/clienteDHCP sin borrar contenido preexistente.
+  if [ -f /tmp/lab07/resolv.conf.preexisting ]; then sudo cp -a /tmp/lab07/resolv.conf.before /etc/netns/clienteDHCP/resolv.conf
+  elif [ -f /tmp/lab07/resolv.conf.absent ]; then sudo rm -f /etc/netns/clienteDHCP/resolv.conf
+  fi
+  if [ -f /tmp/lab07/netns-dir.created ]; then sudo rmdir /etc/netns/clienteDHCP 2>/dev/null || true; fi
+
+  for f in /sys/class/net/*/ifalias; do
+    [ -r "$f" ] || continue
+    [ "$(cat "$f")" = networking-lab-lab-07 ] || continue
+    dev=${f%/ifalias}; dev=${dev##*/}
+    sudo ip link del "$dev" 2>/dev/null || true
+  done
+  if [ -f /tmp/lab07/.networking-lab-owned ]; then sudo rm -rf /tmp/lab07; fi
+else
+  echo "Se conservan rutas, enlaces y /tmp/lab07: quedan procesos o namespaces que requieren inspección."
 fi
-
-# 5. Archivos del laboratorio
-sudo rm -rf /tmp/lab07
 ```
-
-**`/etc/netns/clienteDHCP`:** el laboratorio lo crea para aislar su `resolv.conf`. Antes de borrarlo, comprueba que **no existía de antes** (`ls /etc/netns/`); si solo contiene el `resolv.conf` vacío que creó el laboratorio, elimínalo con `sudo rm -rf /etc/netns/clienteDHCP`. Si tenías otros directorios en `/etc/netns/`, no los toques.
 
 `dnsmasq-base`, `isc-dhcp-client`, `dnsutils`, `netcat-openbsd` y `conntrack` quedan **instalados** en el equipo: son paquetes, no configuración activa, y puedes desinstalarlos con `apt remove` si no los usabas antes.
 

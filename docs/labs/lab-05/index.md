@@ -103,26 +103,32 @@ graph TB
 
 ### Paso 1: Preparar el entorno
 
-El bloque detecta los nombres que utiliza este laboratorio, muestra los recursos existentes y solicita confirmación antes de eliminarlos.
+Este paso solo limpia una ejecución anterior de Lab05. No elimina interfaces ni namespaces de otros laboratorios; ejecuta primero la reversión de la práctica propietaria.
 
 ```bash
 NS_LAB="ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 router switch"
-IF_LAB="veth-host veth-wan"
-EXISTENTES=$(ip netns list | awk '{print $1}' | while read -r ns; do
+IF_LAB="veth-host"
+EXISTENTES=$(sudo ip netns list | awk '{print $1}' | while read -r ns; do
   for esperado in $NS_LAB; do [ "$ns" = "$esperado" ] && echo "$ns"; done
 done)
-IF_EXISTENTES=$(ip -o link show | awk -F': ' '{print $2}' | cut -d@ -f1 | while read -r dev; do
-  for esperado in $IF_LAB; do [ "$dev" = "$esperado" ] && echo "$dev"; done
-done)
-printf 'Namespaces existentes: %s\nInterfaces existentes: %s\n' "${EXISTENTES:-(ninguno)}" "${IF_EXISTENTES:-(ninguna)}"
+for ns in $EXISTENTES; do
+  if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-05 ]; then echo "Se aborta: $ns no tiene marca de propiedad."; exit 1; fi
+  PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+  if [ -n "$PIDS" ]; then echo "$ns tiene procesos activos ($PIDS); ejecuta la limpieza antes de repetir Lab05."; exit 1; fi
+done
+IF_EXISTENTES=$(ip -o link show | awk -F': ' '{print $2}' | cut -d@ -f1 | grep -Fx "$IF_LAB" || true)
+for dev in $IF_EXISTENTES; do
+  if [ "$(cat /sys/class/net/$dev/ifalias 2>/dev/null)" != networking-lab-lab-05 ]; then echo "Se aborta: $dev no tiene la marca exacta de Lab05."; exit 1; fi
+done
+for f in /tmp/lab05-host-nat.added /tmp/lab05-forward-out.added /tmp/lab05-forward-in.added /tmp/lab05-ip_forward.orig; do
+  if [ -e "$f" ]; then echo "Existe el marcador $f; ejecuta la reversión completa antes de repetir Lab05."; exit 1; fi
+done
+printf 'Namespaces propios: %s\nInterfaces propias: %s\n' "${EXISTENTES:-(ninguno)}" "${IF_EXISTENTES:-(ninguna)}"
 if [ -n "$EXISTENTES$IF_EXISTENTES" ]; then
-  read -r -p "¿Eliminar únicamente estos recursos del laboratorio 05? (s/N) " CONFIRMAR
-  if [ "$CONFIRMAR" != s ]; then echo "Cancelado"; exit 1; fi
-  for ns in $EXISTENTES; do
-    ip netns pids "$ns" 2>/dev/null | xargs -r kill
-    ip netns del "$ns" 2>/dev/null || true
-  done
-  for dev in $IF_EXISTENTES; do ip link del "$dev" 2>/dev/null || true; done
+  read -r -p "¿Eliminar únicamente los recursos de Lab05 indicados? (s/N) " CONFIRMAR
+  [ "$CONFIRMAR" = s ] || { echo "Cancelado"; exit 1; }
+  for ns in $EXISTENTES; do sudo ip netns del "$ns"; done
+  for dev in $IF_EXISTENTES; do sudo ip link del "$dev"; done
 fi
 ```
 
@@ -130,15 +136,25 @@ fi
 
 ```bash
 ip netns add router
+ip netns exec router ip link set lo alias networking-lab-lab-05
 ip netns add switch
+ip netns exec switch ip link set lo alias networking-lab-lab-05
 ip netns add ventas1
+ip netns exec ventas1 ip link set lo alias networking-lab-lab-05
 ip netns add ventas2
+ip netns exec ventas2 ip link set lo alias networking-lab-lab-05
 ip netns add ventas3
+ip netns exec ventas3 ip link set lo alias networking-lab-lab-05
 ip netns add it1
+ip netns exec it1 ip link set lo alias networking-lab-lab-05
 ip netns add it2
+ip netns exec it2 ip link set lo alias networking-lab-lab-05
 ip netns add it3
+ip netns exec it3 ip link set lo alias networking-lab-lab-05
 ip netns add admin1
+ip netns exec admin1 ip link set lo alias networking-lab-lab-05
 ip netns add admin2
+ip netns exec admin2 ip link set lo alias networking-lab-lab-05
 ```
 
 ### Paso 3: Crear bridge con VLAN filtering
@@ -154,6 +170,8 @@ ip netns exec switch ip link set br0 up
 ```bash
 # Ventas 1
 ip link add veth-v1 type veth peer name veth-sv1
+ip link set veth-v1 alias networking-lab-lab-05
+ip link set veth-sv1 alias networking-lab-lab-05
 ip link set veth-v1 netns ventas1
 ip link set veth-sv1 netns switch
 ip netns exec ventas1 ip addr add 10.0.10.2/24 dev veth-v1
@@ -165,6 +183,8 @@ ip netns exec switch bridge vlan add dev veth-sv1 vid 10 pvid untagged
 
 # Ventas 2
 ip link add veth-v2 type veth peer name veth-sv2
+ip link set veth-v2 alias networking-lab-lab-05
+ip link set veth-sv2 alias networking-lab-lab-05
 ip link set veth-v2 netns ventas2
 ip link set veth-sv2 netns switch
 ip netns exec ventas2 ip addr add 10.0.10.3/24 dev veth-v2
@@ -176,6 +196,8 @@ ip netns exec switch bridge vlan add dev veth-sv2 vid 10 pvid untagged
 
 # Ventas 3
 ip link add veth-v3 type veth peer name veth-sv3
+ip link set veth-v3 alias networking-lab-lab-05
+ip link set veth-sv3 alias networking-lab-lab-05
 ip link set veth-v3 netns ventas3
 ip link set veth-sv3 netns switch
 ip netns exec ventas3 ip addr add 10.0.10.4/24 dev veth-v3
@@ -191,6 +213,8 @@ ip netns exec switch bridge vlan add dev veth-sv3 vid 10 pvid untagged
 ```bash
 # IT 1
 ip link add veth-i1 type veth peer name veth-si1
+ip link set veth-i1 alias networking-lab-lab-05
+ip link set veth-si1 alias networking-lab-lab-05
 ip link set veth-i1 netns it1
 ip link set veth-si1 netns switch
 ip netns exec it1 ip addr add 10.0.20.2/24 dev veth-i1
@@ -202,6 +226,8 @@ ip netns exec switch bridge vlan add dev veth-si1 vid 20 pvid untagged
 
 # IT 2
 ip link add veth-i2 type veth peer name veth-si2
+ip link set veth-i2 alias networking-lab-lab-05
+ip link set veth-si2 alias networking-lab-lab-05
 ip link set veth-i2 netns it2
 ip link set veth-si2 netns switch
 ip netns exec it2 ip addr add 10.0.20.3/24 dev veth-i2
@@ -213,6 +239,8 @@ ip netns exec switch bridge vlan add dev veth-si2 vid 20 pvid untagged
 
 # IT 3
 ip link add veth-i3 type veth peer name veth-si3
+ip link set veth-i3 alias networking-lab-lab-05
+ip link set veth-si3 alias networking-lab-lab-05
 ip link set veth-i3 netns it3
 ip link set veth-si3 netns switch
 ip netns exec it3 ip addr add 10.0.20.4/24 dev veth-i3
@@ -228,6 +256,8 @@ ip netns exec switch bridge vlan add dev veth-si3 vid 20 pvid untagged
 ```bash
 # Admin 1
 ip link add veth-a1 type veth peer name veth-sa1
+ip link set veth-a1 alias networking-lab-lab-05
+ip link set veth-sa1 alias networking-lab-lab-05
 ip link set veth-a1 netns admin1
 ip link set veth-sa1 netns switch
 ip netns exec admin1 ip addr add 10.0.30.2/24 dev veth-a1
@@ -239,6 +269,8 @@ ip netns exec switch bridge vlan add dev veth-sa1 vid 30 pvid untagged
 
 # Admin 2
 ip link add veth-a2 type veth peer name veth-sa2
+ip link set veth-a2 alias networking-lab-lab-05
+ip link set veth-sa2 alias networking-lab-lab-05
 ip link set veth-a2 netns admin2
 ip link set veth-sa2 netns switch
 ip netns exec admin2 ip addr add 10.0.30.3/24 dev veth-a2
@@ -253,6 +285,8 @@ ip netns exec switch bridge vlan add dev veth-sa2 vid 30 pvid untagged
 
 ```bash
 ip link add veth-sr type veth peer name veth-rs
+ip link set veth-sr alias networking-lab-lab-05
+ip link set veth-rs alias networking-lab-lab-05
 ip link set veth-sr netns switch
 ip link set veth-rs netns router
 ip netns exec switch ip link set veth-sr master br0
@@ -302,6 +336,9 @@ Cada subinterfaz recibe solo las tramas etiquetadas con su VLAN y se convierte e
 
 ```bash
 ip link add veth-host type veth peer name veth-wan
+ip link set veth-host alias networking-lab-lab-05
+ip link set veth-wan alias networking-lab-lab-05
+ip link set veth-host alias networking-lab-lab-05
 ip link set veth-wan netns router
 ip netns exec router ip addr add 192.168.1.2/24 dev veth-wan
 ip netns exec router ip link set veth-wan up
@@ -311,8 +348,20 @@ ip link set veth-host up
 # El router necesita ruta por defecto hacia el host y NAT hacia fuera
 ip netns exec router ip route add default via 192.168.1.1
 ip netns exec router iptables -t nat -A POSTROUTING -o veth-wan -j MASQUERADE
-ip netns exec router iptables -A FORWARD -i 'veth-rs.+' -o veth-wan -j ACCEPT
-ip netns exec router iptables -A FORWARD -i veth-wan -o 'veth-rs.+' -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+# Política de seguridad: denegar por defecto y permitir solo flujos explícitos.
+ip netns exec router iptables -P FORWARD DROP
+ip netns exec router iptables -A FORWARD -m conntrack --ctstate INVALID -j DROP
+ip netns exec router iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+# Las VLAN de usuarios pueden salir a WAN.
+for vlan in 10 20 30; do
+  ip netns exec router iptables -A FORWARD -i "veth-rs.$vlan" -o veth-wan -j ACCEPT
+done
+# Administración puede diagnosticar Ventas e IT; los demás cruces quedan denegados.
+ip netns exec router iptables -A FORWARD -i veth-rs.30 -o veth-rs.10 -p icmp -j ACCEPT
+ip netns exec router iptables -A FORWARD -i veth-rs.30 -o veth-rs.20 -p icmp -j ACCEPT
+ip netns exec router iptables -A FORWARD -i veth-rs.30 -o veth-rs.10 -p tcp --dport 22 -j ACCEPT
+ip netns exec router iptables -A FORWARD -i veth-rs.30 -o veth-rs.20 -p tcp --dport 22 -j ACCEPT
 
 # El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)
 if [ ! -e /tmp/lab05-ip_forward.orig ]; then
@@ -340,17 +389,26 @@ El router traduce (NAT) todo lo que sale por `veth-wan`, así que el host solo v
 # Misma VLAN
 ip netns exec ventas1 ping -c 4 10.0.10.3
 
-# Entre VLANs (vía router)
-ip netns exec ventas1 ping -c 4 10.0.20.2
+# Entre VLANs: Ventas -> IT debe quedar bloqueado por la política.
+if ip netns exec ventas1 ping -c 2 -W 1 10.0.20.2; then
+  echo "ERROR: Ventas alcanzó IT pese a la política de denegación por defecto"
+  exit 1
+else
+  echo "OK: Ventas -> IT denegado"
+fi
+# Administración puede diagnosticar IT por la regla explícita.
+ip netns exec admin1 ping -c 4 10.0.20.2
 
-# Internet (si el host tiene salida real)
-ip netns exec ventas1 ping -c 4 8.8.8.8
+# Internet: el resultado depende de la salida real y de los filtros ICMP del proveedor.
+ip netns exec ventas1 ping -c 4 -W 2 8.8.8.8 || echo "ICMP externo no disponible; no concluyas que la salida TCP falla."
+ip netns exec ventas1 nc -vz -w 3 1.1.1.1 443 || echo "TCP/443 externo no disponible; prueba contra un destino HTTPS controlado."
+ip netns exec ventas1 curl -I --connect-timeout 5 https://example.com || echo "HTTPS/DNS externo no disponible; revisa primero DNS y salida WAN."
 
 # Gestión (VLAN 99): router ↔ switch
 ip netns exec router ping -c 2 10.0.99.2
 ```
 
-**Resultado esperado:** 0 % de pérdida en todas. Comprueba también el aislamiento de capa 2: Ventas 1 **no** puede alcanzar a IT 1 por ARP (`ip netns exec ventas1 ping -c 1 10.0.20.2` solo funciona porque pasa por el router; si le configurases una IP de `10.0.20.0/24` y quitaras el gateway, no llegaría).
+**Resultado esperado:** la misma VLAN conserva conectividad; Ventas no alcanza IT porque el router aplica `FORWARD DROP`; Administración sí puede enviar ICMP a IT por una regla explícita. La prueba de Internet no es determinista: el host, el proveedor o el destino pueden filtrar ICMP. No uses un ping externo como único criterio de conectividad.
 
 ### Comprobar las VLAN permitidas en el trunk
 
@@ -373,15 +431,26 @@ Una VLAN que existe en los puertos de acceso pero **no** está permitida en el t
 
 ### Seguridad entre VLAN
 
-Con la política por defecto del router (`FORWARD` en `ACCEPT`), **cualquier VLAN puede comunicarse con cualquier otra**: el ping de Ventas a IT lo demuestra. La separación de VLAN no es, por tanto, una barrera de seguridad suficiente. Para aplicar una política, el filtrado se hace en el router. Por ejemplo, impedir que Ventas llegue a Administración:
+La política ya parte de **denegar por defecto**. Su orden importa: primero descarta `INVALID`, después permite `ESTABLISHED,RELATED`, luego autoriza salidas a WAN y, finalmente, permite únicamente el diagnóstico ICMP/SSH desde Administración hacia Ventas e IT. Cualquier otro cruce inter-VLAN queda bloqueado. La VLAN separa dominios de broadcast; el firewall L3 aplica la política entre ellos.
+
+| Flujo | Política |
+|---|---|
+| Ventas / IT / Administración → WAN | Permitir |
+| Administración → Ventas / IT (ICMP y TCP/22) | Permitir explícitamente |
+| Ventas ↔ IT y demás cruces entre VLAN | Denegar por defecto |
+| Tráfico `ESTABLISHED,RELATED` | Permitir retorno |
+| Tráfico `INVALID` | Denegar |
+| Cualquier otro flujo reenviado | Denegar por política `FORWARD DROP` |
+
+Inspecciona reglas y contadores:
 
 ```bash
-ip netns exec router iptables -I FORWARD -i veth-rs.10 -o veth-rs.30 -j DROP
-ip netns exec ventas1 ping -c 2 -W 1 10.0.30.2   # sin respuesta
-ip netns exec router iptables -D FORWARD -i veth-rs.10 -o veth-rs.30 -j DROP   # deshacer
+ip netns exec router iptables -S FORWARD
+ip netns exec router iptables -L FORWARD -n -v --line-numbers
+ip netns exec router conntrack -L 2>/dev/null | head -30
 ```
 
-Una política real debería partir de «denegar por defecto» y permitir solo los flujos necesarios; ese enfoque se desarrolla en los laboratorios 08 y 15.
+Si `conntrack` no está instalado, instala el paquete `conntrack` con `sudo apt-get install -y conntrack`. Para observar eventos en tiempo real, ejecuta `ip netns exec router conntrack -E` en otra terminal y genera conexiones desde los clientes.
 
 ### Subred frente a VLAN
 
@@ -426,37 +495,35 @@ En `bridge vlan show` verás `veth-sv1` con `10 PVID Egress Untagged` (acceso VL
 ## Revertir los cambios del host
 
 ```bash
-# 1. Regla NAT del host (ajusta eth0 a tu interfaz de salida)
-if [ -f /tmp/lab05-host-nat.added ]; then
-  iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
-  rm -f /tmp/lab05-host-nat.added
-fi
-
-# 2. Reglas FORWARD del host: retirar únicamente las que añadió esta práctica.
-if [ -f /tmp/lab05-forward-out.added ]; then
-  iptables -D FORWARD -i veth-host -o eth0 -s 192.168.1.0/24 -j ACCEPT 2>/dev/null || true
-  rm -f /tmp/lab05-forward-out.added
-fi
-if [ -f /tmp/lab05-forward-in.added ]; then
-  iptables -D FORWARD -i eth0 -o veth-host -d 192.168.1.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
-  rm -f /tmp/lab05-forward-in.added
-fi
-
-# 3. Reenvío: restaura el valor original guardado antes del laboratorio.
-if [ -f /tmp/lab05-ip_forward.orig ]; then
-  sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab05-ip_forward.orig)"
-  rm -f /tmp/lab05-ip_forward.orig
-fi
-
-# 3. Enlace virtual del host y namespaces del laboratorio
-ip link del veth-host 2>/dev/null || true
+NS_LEFT=0
 for ns in router switch ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2; do
-  ip netns pids $ns 2>/dev/null | xargs -r kill     # solo procesos DENTRO de ese namespace
-  ip netns del $ns 2>/dev/null || true
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-05 ]; then echo "Se conserva $ns: no tiene la marca exclusiva de Lab05."; NS_LEFT=1
+    else
+      PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+      if [ -n "$PIDS" ]; then echo "Se conserva $ns: quedan procesos activos ($PIDS); deténlos desde su terminal."; NS_LEFT=1; fi
+    fi
+  fi
 done
+if [ "$NS_LEFT" = 0 ]; then
+  for ns in router switch ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2; do
+    if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then sudo ip netns del "$ns" 2>/dev/null || true; fi
+  done
+  if [ -f /tmp/lab05-host-nat.added ]; then iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true; rm -f /tmp/lab05-host-nat.added; fi
+  if [ -f /tmp/lab05-forward-out.added ]; then iptables -D FORWARD -i veth-host -o eth0 -s 192.168.1.0/24 -j ACCEPT 2>/dev/null || true; rm -f /tmp/lab05-forward-out.added; fi
+  if [ -f /tmp/lab05-forward-in.added ]; then iptables -D FORWARD -i eth0 -o veth-host -d 192.168.1.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true; rm -f /tmp/lab05-forward-in.added; fi
+  if [ -f /tmp/lab05-ip_forward.orig ]; then sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab05-ip_forward.orig)"; rm -f /tmp/lab05-ip_forward.orig; fi
+  if [ "$(cat /sys/class/net/veth-host/ifalias 2>/dev/null)" = networking-lab-lab-05 ]; then ip link del veth-host; fi
+  for f in /sys/class/net/*/ifalias; do
+    [ -r "$f" ] || continue
+    [ "$(cat "$f")" = networking-lab-lab-05 ] || continue
+    dev=${f%/ifalias}; dev=${dev##*/}
+    ip link del "$dev" 2>/dev/null || true
+  done
+else
+  echo "Se conservan reglas host, enlaces y marcadores; hay procesos activos en namespaces."
+fi
 ```
-
-Si el host ya tenía `ip_forward=1`, **omite** el paso 2. Comprueba con `ip netns list` y `iptables -t nat -S POSTROUTING`.
 
 ## Profundización: recorrido de una trama 802.1Q
 

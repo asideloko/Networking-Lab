@@ -90,3 +90,93 @@ Además de los laboratorios, el sitio incluye páginas de síntesis para consult
 -   [Competencias y casos integradores](referencia/competencias.md): qué se espera al terminar y casos para repasar la serie.
 
 Cada laboratorio termina con **preguntas de reflexión**: qué mecanismo se demuestra, qué pasa si se elimina un componente, qué limitaciones tiene y dónde se usaría en una empresa.
+
+## Recopilación de diagramas de los laboratorios
+
+Esta sección reúne los diagramas incluidos en los 15 laboratorios. Cada enlace lleva al diagrama original, dentro de su explicación y contexto; las descripciones siguientes resumen qué representa.
+
+### Laboratorio 01 — Fundamentos de redes y encapsulación
+
+1. [Topología](labs/lab-01/index.md#topologia): equipos y enlaces virtuales del escenario inicial.
+2. [Conexión lógica del escenario](labs/lab-01/index.md#conexion-logica-del-escenario): relación entre los dispositivos y sus segmentos de red.
+3. [Esquema de encapsulación con campos](labs/lab-01/index.md#esquema-de-encapsulacion-con-campos): cómo se anidan los encabezados de las distintas capas.
+
+### Laboratorio 02 — Transmisión de datos y capa física
+
+4. [Topología](labs/lab-02/index.md#topologia): recorrido físico y lógico de la transmisión representada.
+
+### Laboratorio 03 — Componentes de red y conmutación
+
+5. [Topología](labs/lab-03/index.md#topologia): dispositivos y enlaces utilizados para estudiar la conmutación.
+
+### Laboratorio 04 — Direccionamiento IP y subredes
+
+6. [Topología](labs/lab-04/index.md#topologia): redes y subredes que forman el escenario de direccionamiento.
+
+### Laboratorio 05 — Conmutación y segmentación de red
+
+7. [Topología](labs/lab-05/index.md#topologia): separación de segmentos y conexiones del escenario VLAN.
+8. [Subred frente a VLAN](labs/lab-05/index.md#subred-frente-a-vlan): diferencia entre el límite lógico de capa 3 y el dominio de capa 2.
+
+### Laboratorio 06 — Enrutamiento y conectividad entre redes
+
+9. [Topología](labs/lab-06/index.md#topologia): routers, redes y enlaces entre sucursales.
+10. [Cómo se elige la ruta: *longest prefix match*](labs/lab-06/index.md#como-se-elige-la-ruta-longest-prefix-match): selección de la ruta más específica antes de comparar métricas.
+11. [Recorrido de un paquete entre sucursales](labs/lab-06/index.md#recorrido-de-un-paquete-entre-sucursales): saltos que atraviesa un paquete entre redes remotas.
+12. [Cambio de ruta por métrica](labs/lab-06/index.md#la-ruta-de-metrica-50-desaparece-y-entra-la-de-metrica-100-por-r2): sustitución de la ruta preferida cuando deja de estar disponible.
+
+### Laboratorio 07 — Protocolos y servicios de red
+
+13. [Topología](labs/lab-07/index.md#topologia): clientes, servidores y servicios del escenario.
+14. [Relación entre los cuatro servicios](labs/lab-07/index.md#como-se-relacionan-los-cuatro-servicios): interacción de los servicios básicos de red.
+15. [Resolución DNS](labs/lab-07/index.md#resolucion-dns): consulta y respuesta para traducir un nombre en una dirección.
+16. [Proceso DHCP (DORA)](labs/lab-07/index.md#proceso-dhcp-dora): secuencia Discover, Offer, Request y Acknowledge.
+17. [Establecimiento y cierre de una conexión TCP](labs/lab-07/index.md#establecimiento-y-cierre-de-una-conexion-tcp): negociación inicial y terminación ordenada de la sesión.
+
+### Laboratorio 08 — Seguridad en redes
+
+18. [Topología](labs/lab-08/index.md#topologia): zonas, equipos y puntos de control de seguridad.
+19. [Recorrido de un paquete por el firewall](labs/lab-08/index.md#recorrido-de-un-paquete-por-el-firewall): decisión de filtrado según el recorrido del paquete por Netfilter.
+
+### Laboratorio 09 — VPN y tunelización
+
+20. [Topología](labs/lab-09/index.md#topologia): extremos y redes conectadas mediante túneles.
+21. [Qué añade cada tecnología a un paquete](labs/lab-09/index.md#que-anade-cada-tecnologia-a-un-paquete): comparación de encapsulación GRE y protección ESP/IPsec.
+22. [Establecimiento de un túnel](labs/lab-09/index.md#establecimiento-de-un-tunel): acuerdo de parámetros, envío encapsulado y retorno entre extremos.
+23. [NAT-T y AllowedIPs](labs/lab-09/index.md#nat-t-y-allowedips): transporte de IPsec a través de NAT y selección de tráfico en WireGuard.
+
+### Laboratorio 10 — Infraestructura WAN y Core
+
+24. [Topología](labs/lab-10/index.md#topologia): estructura de proveedor y conexiones WAN del escenario.
+25. [Red de proveedor: roles PE y P](labs/lab-10/index.md#red-de-proveedor-roles-pe-y-p): separación de routers de borde y routers internos del proveedor.
+26. [Push, swap y pop](labs/lab-10/index.md#push-swap-y-pop): operaciones de imposición, sustitución y retirada de etiquetas MPLS.
+27. [Failover frente a ECMP](labs/lab-10/index.md#failover-frente-a-ecmp): diferencia entre respaldo de ruta y reparto entre caminos equivalentes.
+
+### Laboratorio 11 — Arquitectura de red empresarial
+
+28. [Las capas son funciones, no niveles físicos](labs/lab-11/index.md#las-capas-son-funciones-no-niveles-fisicos): funciones de acceso, distribución y core en el diseño jerárquico.
+29. [Topología](labs/lab-11/index.md#topologia): componentes y enlaces de la arquitectura empresarial.
+30. [STP/RSTP: redundancia física sin bucles](labs/lab-11/index.md#stprstp-redundancia-fisica-sin-bucles): bloqueo de caminos redundantes para evitar bucles de capa 2.
+31. [Ejemplo de crecimiento: Access2 y Access3](labs/lab-11/index.md#ejemplo-de-crecimiento-access2-y-access3): ampliación de la capa de acceso y sus conexiones.
+
+### Laboratorio 12 — Arquitecturas modernas de red
+
+32. [Topología](labs/lab-12/index.md#topologia): componentes y límites de confianza del escenario moderno.
+33. [Componentes de una arquitectura ZTNA real](labs/lab-12/index.md#componentes-de-una-arquitectura-ztna-real): relación entre identidad, decisión de acceso y punto de aplicación de políticas.
+34. [VPC con subred pública y privada](labs/lab-12/index.md#vpc-con-subred-publica-y-privada): separación de recursos expuestos y recursos internos.
+
+### Laboratorio 13 — Monitoreo y diagnóstico de redes
+
+35. [Topología](labs/lab-13/index.md#topologia): fuentes, colectores y puntos de observación.
+36. [Del síntoma a la causa: método de diagnóstico](labs/lab-13/index.md#del-sintoma-a-la-causa-metodo-de-diagnostico): secuencia para acotar una falla con evidencias.
+
+### Laboratorio 14 — Herramientas Linux avanzadas
+
+37. [Topología](labs/lab-14/index.md#topologia): interfaces, rutas y nodos empleados en las pruebas avanzadas.
+38. [Recorrido de un paquete: input, forward y output](labs/lab-14/index.md#recorrido-de-un-paquete-input-forward-y-output): cadenas que atraviesa el tráfico según su destino en el host.
+
+### Laboratorio 15 — Implementación práctica integral
+
+39. [Topología](labs/lab-15/index.md#topologia): vista general de routers, servicios, redes y redundancia.
+40. [Mapa del escenario: redes, *gateways* y caminos](labs/lab-15/index.md#mapa-del-escenario-redes-gateways-y-caminos): direccionamiento y caminos previstos para la práctica integral.
+41. [Cambio de *master* y *backup*](labs/lab-15/index.md#cambio-de-master-y-backup): transición del rol activo al respaldo en la redundancia de gateway.

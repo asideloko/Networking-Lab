@@ -74,49 +74,62 @@ graph TB
 
 ## Construcción de la red
 
-### Paso 0: Limpiar laboratorios anteriores (recomendado)
+### Paso 0: Limpiar ejecuciones anteriores de este laboratorio
 
-Este laboratorio usa una topología nueva e independiente (**un escenario distinto** de los anteriores: otros dispositivos, otro direccionamiento). Para no mezclar equipos, elimina **solo los namespaces creados en los laboratorios 01 a 10**, por nombre. No uses un bucle que borre todos los namespaces de `ip netns list`: eliminaría también los de otros entornos o servicios de tu equipo.
+Este paso solo puede retirar recursos de Lab10. No elimina namespaces, interfaces ni bridges de otros laboratorios; en particular, **`br-wan` pertenece al laboratorio 08 y se conserva**. Si siguen activos recursos de otra práctica, ejecuta la limpieza de esa práctica.
 
 ```bash
-NS_LAB="cliente1 cliente2 cliente3 cliente4 router switch ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 R1 R2 R3 clienteSede clienteSucA clienteSucB servidorDNS servidorDHCP clienteDHCP firewall servidorWeb servidorDNS_PUB servidorInterno VPN_GW clienteVPN PE1 PE2 PE3 P1 P2 P3 host1 host2 host3"
+VETH_WAN_CVPN_OWNED=0
+if [ "$(cat /sys/class/net/veth-wan-cvpn/ifalias 2>/dev/null)" = networking-lab-lab-09 ]; then VETH_WAN_CVPN_OWNED=1; fi
+if [ "$VETH_WAN_CVPN_OWNED" = 1 ]; then
+  echo "veth-wan-cvpn pertenece al laboratorio 09; ejecuta su reversión antes de Lab10. No se elimina aquí."
+  exit 1
+fi
+NS_LAB="PE1 PE2 PE3 P1 P2 P3 host1 host2 host3"
 EXISTENTES=$(sudo ip netns list | awk '{print $1}' | while read -r ns; do
   for esperado in $NS_LAB; do [ "$ns" = "$esperado" ] && echo "$ns"; done
 done)
-VETH_HOST=$(sudo ip -o link show veth-host 2>/dev/null | head -1)
-VETH_WAN_FW=$(sudo ip -o link show veth-wan-fw 2>/dev/null | head -1)
-BR_WAN_OWNED=0
-if [ "$(cat /sys/class/net/br-wan/ifalias 2>/dev/null)" = networking-lab ] && sudo ip -4 -o addr show dev br-wan | grep -q '192\.168\.100\.2/24'; then
-  BR_WAN_OWNED=1
-fi
-printf 'Namespaces existentes: %s\nInterfaz veth-host: %s\nInterfaz veth-wan-fw: %s\nBridge br-wan del proyecto: %s\n' "${EXISTENTES:-(ninguno)}" "${VETH_HOST:-(ausente)}" "${VETH_WAN_FW:-(ausente)}" "$BR_WAN_OWNED"
-if [ -n "$EXISTENTES$VETH_HOST$VETH_WAN_FW" ] || [ "$BR_WAN_OWNED" = 1 ]; then
-  read -r -p "¿Eliminar únicamente los recursos detectados de los laboratorios anteriores? (s/N) " CONFIRMAR
-  if [ "$CONFIRMAR" != s ]; then echo "Cancelado"; exit 1; fi
-  for ns in $EXISTENTES; do
-    sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-    sudo ip netns del "$ns" 2>/dev/null || true
-  done
-  [ -n "$VETH_HOST" ] && sudo ip link del veth-host 2>/dev/null || true
-  [ "$BR_WAN_OWNED" = 1 ] && sudo ip link del br-wan 2>/dev/null || true
-  [ -n "$VETH_WAN_FW" ] && sudo ip link del veth-wan-fw 2>/dev/null || true
-fi
+NS_SIN_MARCA=""
+for ns in $EXISTENTES; do
+  if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-10 ]; then NS_SIN_MARCA="$NS_SIN_MARCA $ns"; fi
+done
+if [ -n "$NS_SIN_MARCA" ]; then echo "Se aborta; namespaces sin marca:$NS_SIN_MARCA"; exit 1; fi
+for ns in $EXISTENTES; do
+  PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+  if [ -n "$PIDS" ]; then echo "$ns tiene procesos activos ($PIDS); ejecuta su limpieza antes de repetir Lab10."; exit 1; fi
+done
+for ns in $EXISTENTES; do sudo ip netns del "$ns" 2>/dev/null || true; done
+for f in /sys/class/net/*/ifalias; do
+  [ -r "$f" ] || continue
+  [ "$(cat "$f")" = networking-lab-lab-10 ] || continue
+  dev=${f%/ifalias}; dev=${dev##*/}
+  sudo ip link del "$dev" 2>/dev/null || true
+done
 ```
 
-Si no existen recursos de los laboratorios anteriores, el bloque continúa sin realizar cambios.
+Si no existen recursos propios de Lab10, el bloque no modifica nada.
 
 ### Paso 1: Crear namespaces
 
 ```bash
 sudo ip netns add PE1
+sudo ip netns exec PE1 ip link set lo alias networking-lab-lab-10
 sudo ip netns add PE2
+sudo ip netns exec PE2 ip link set lo alias networking-lab-lab-10
 sudo ip netns add PE3
+sudo ip netns exec PE3 ip link set lo alias networking-lab-lab-10
 sudo ip netns add P1
+sudo ip netns exec P1 ip link set lo alias networking-lab-lab-10
 sudo ip netns add P2
+sudo ip netns exec P2 ip link set lo alias networking-lab-lab-10
 sudo ip netns add P3
+sudo ip netns exec P3 ip link set lo alias networking-lab-lab-10
 sudo ip netns add host1
+sudo ip netns exec host1 ip link set lo alias networking-lab-lab-10
 sudo ip netns add host2
+sudo ip netns exec host2 ip link set lo alias networking-lab-lab-10
 sudo ip netns add host3
+sudo ip netns exec host3 ip link set lo alias networking-lab-lab-10
 
 # Un router solo reenvía si ip_forward vale 1 (en un namespace nuevo vale 0)
 for r in PE1 PE2 PE3 P1 P2 P3; do
@@ -128,6 +141,8 @@ done
 
 ```bash
 sudo ip link add veth-pe1p1 type veth peer name veth-p1pe1
+sudo ip link set veth-pe1p1 alias networking-lab-lab-10
+sudo ip link set veth-p1pe1 alias networking-lab-lab-10
 sudo ip link set veth-pe1p1 netns PE1
 sudo ip link set veth-p1pe1 netns P1
 sudo ip netns exec PE1 ip addr add 192.168.1.1/30 dev veth-pe1p1
@@ -136,6 +151,8 @@ sudo ip netns exec P1 ip addr add 192.168.1.2/30 dev veth-p1pe1
 sudo ip netns exec P1 ip link set veth-p1pe1 up
 
 sudo ip link add veth-pe2p2 type veth peer name veth-p2pe2
+sudo ip link set veth-pe2p2 alias networking-lab-lab-10
+sudo ip link set veth-p2pe2 alias networking-lab-lab-10
 sudo ip link set veth-pe2p2 netns PE2
 sudo ip link set veth-p2pe2 netns P2
 sudo ip netns exec PE2 ip addr add 192.168.1.5/30 dev veth-pe2p2
@@ -144,6 +161,8 @@ sudo ip netns exec P2 ip addr add 192.168.1.6/30 dev veth-p2pe2
 sudo ip netns exec P2 ip link set veth-p2pe2 up
 
 sudo ip link add veth-pe3p3 type veth peer name veth-p3pe3
+sudo ip link set veth-pe3p3 alias networking-lab-lab-10
+sudo ip link set veth-p3pe3 alias networking-lab-lab-10
 sudo ip link set veth-pe3p3 netns PE3
 sudo ip link set veth-p3pe3 netns P3
 sudo ip netns exec PE3 ip addr add 192.168.1.9/30 dev veth-pe3p3
@@ -156,6 +175,8 @@ sudo ip netns exec P3 ip link set veth-p3pe3 up
 
 ```bash
 sudo ip link add veth-p1p2 type veth peer name veth-p2p1
+sudo ip link set veth-p1p2 alias networking-lab-lab-10
+sudo ip link set veth-p2p1 alias networking-lab-lab-10
 sudo ip link set veth-p1p2 netns P1
 sudo ip link set veth-p2p1 netns P2
 sudo ip netns exec P1 ip addr add 192.168.1.13/30 dev veth-p1p2
@@ -164,6 +185,8 @@ sudo ip netns exec P2 ip addr add 192.168.1.14/30 dev veth-p2p1
 sudo ip netns exec P2 ip link set veth-p2p1 up
 
 sudo ip link add veth-p2p3 type veth peer name veth-p3p2
+sudo ip link set veth-p2p3 alias networking-lab-lab-10
+sudo ip link set veth-p3p2 alias networking-lab-lab-10
 sudo ip link set veth-p2p3 netns P2
 sudo ip link set veth-p3p2 netns P3
 sudo ip netns exec P2 ip addr add 192.168.1.21/30 dev veth-p2p3
@@ -172,6 +195,8 @@ sudo ip netns exec P3 ip addr add 192.168.1.22/30 dev veth-p3p2
 sudo ip netns exec P3 ip link set veth-p3p2 up
 
 sudo ip link add veth-p1p3 type veth peer name veth-p3p1
+sudo ip link set veth-p1p3 alias networking-lab-lab-10
+sudo ip link set veth-p3p1 alias networking-lab-lab-10
 sudo ip link set veth-p1p3 netns P1
 sudo ip link set veth-p3p1 netns P3
 sudo ip netns exec P1 ip addr add 192.168.1.17/30 dev veth-p1p3
@@ -186,6 +211,8 @@ sudo ip netns exec P3 ip link set veth-p3p1 up
 for n in 1 2 3; do
   case $n in 1) NET=10.0.0.;; 2) NET=10.1.0.;; 3) NET=10.2.0.;; esac
   sudo ip link add veth-pe${n}lan type veth peer name veth-lanpe${n}
+  sudo ip link set veth-pe${n}lan alias networking-lab-lab-10
+  sudo ip link set veth-lanpe${n} alias networking-lab-lab-10
   sudo ip link set veth-pe${n}lan netns PE${n}
   sudo ip link set veth-lanpe${n} netns host${n}
   sudo ip netns exec PE${n} ip addr add ${NET}1/24 dev veth-pe${n}lan
@@ -433,10 +460,27 @@ El reparto de ECMP se hace **por flujo**, no por paquete: una sola conexión no 
 La topología WAN se construye dentro de nueve *namespaces*. Las interfaces, rutas y ajustes MPLS de esta práctica desaparecen al eliminarlos; no es necesario vaciar tablas ni reglas globales del host.
 
 ```bash
+NS_LEFT=0
 for ns in PE1 PE2 PE3 P1 P2 P3 host1 host2 host3; do
-  sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-  sudo ip netns del "$ns" 2>/dev/null || true
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-10 ]; then echo "Se conserva $ns: no tiene la marca exclusiva de Lab10."; NS_LEFT=1
+    else
+      PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+      if [ -n "$PIDS" ]; then echo "Se conserva $ns: quedan procesos activos ($PIDS)."; NS_LEFT=1; fi
+    fi
+  fi
 done
+if [ "$NS_LEFT" = 0 ]; then
+  for ns in PE1 PE2 PE3 P1 P2 P3 host1 host2 host3; do
+    if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then sudo ip netns del "$ns" 2>/dev/null || true; fi
+  done
+  for f in /sys/class/net/*/ifalias; do
+    [ -r "$f" ] || continue
+    [ "$(cat "$f")" = networking-lab-lab-10 ] || continue
+    dev=${f%/ifalias}; dev=${dev##*/}
+    sudo ip link del "$dev" 2>/dev/null || true
+  done
+else echo "Se conservan enlaces host: hay namespaces con procesos activos."; fi
 ```
 
 **Comprobación:** `sudo ip netns list` no debe mostrar esos nueve nombres. Si vas a repetir el laboratorio, comienza desde el Paso 0 para reconstruir la topología.

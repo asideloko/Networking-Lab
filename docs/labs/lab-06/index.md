@@ -90,28 +90,28 @@ Además, cada router tiene conectada su propia LAN (`10.0.0.0/24`, `10.0.1.0/24`
 
 ## Construcción de la red
 
-### Paso 0: Limpiar el laboratorio anterior
+### Paso 0: Limpiar ejecuciones anteriores de este laboratorio
 
-Este laboratorio construye una topología nueva. El bloque detecta los recursos de los laboratorios 05 y 06 y solicita confirmación antes de eliminarlos:
+Este paso solo retira los namespaces creados por Lab06. No elimina recursos de Lab05 ni de otros laboratorios: ejecuta primero la limpieza de la práctica propietaria para que sus rutas, reglas y cambios del host se reviertan correctamente.
 
 ```bash
-NS_LAB="ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 router switch R1 R2 R3 clienteSede clienteSucA clienteSucB"
+NS_LAB="R1 R2 R3 clienteSede clienteSucA clienteSucB"
 EXISTENTES=$(sudo ip netns list | awk '{print $1}' | while read -r ns; do
   for esperado in $NS_LAB; do [ "$ns" = "$esperado" ] && echo "$ns"; done
 done)
-VETH_HOST=$(sudo ip -o link show veth-host 2>/dev/null | head -1)
-printf 'Namespaces existentes: %s\nInterfaz veth-host: %s\n' "${EXISTENTES:-(ninguno)}" "${VETH_HOST:-(ausente)}"
-if [ -n "$EXISTENTES$VETH_HOST" ]; then
-  read -r -p "¿Eliminar únicamente los recursos detectados de los laboratorios 05 y 06? (s/N) " CONFIRMAR
-  if [ "$CONFIRMAR" != s ]; then echo "Cancelado"; exit 1; fi
-  for ns in $EXISTENTES; do
-    sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-    sudo ip netns del "$ns" 2>/dev/null || true
-  done
-  [ -n "$VETH_HOST" ] && sudo ip link del veth-host 2>/dev/null || true
-fi
+NS_SIN_MARCA=""
+for ns in $EXISTENTES; do
+  if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-owned ]; then NS_SIN_MARCA="$NS_SIN_MARCA $ns"; fi
+done
+if [ -n "$NS_SIN_MARCA" ]; then echo "Se aborta; namespaces sin marca:$NS_SIN_MARCA"; exit 1; fi
+for ns in $EXISTENTES; do
+  PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+  if [ -n "$PIDS" ]; then echo "$ns tiene procesos activos ($PIDS); ejecuta su limpieza antes de repetir Lab06."; exit 1; fi
+done
+for ns in $EXISTENTES; do sudo ip netns del "$ns" 2>/dev/null || true; done
 ```
 
+Si siguen activos namespaces de otras prácticas, ejecuta su reversión; este paso no los modifica.
 ### Paso 1: Crear namespaces y enlaces
 
 Creamos tres routers y tres clientes (uno por oficina).
@@ -119,13 +119,19 @@ Creamos tres routers y tres clientes (uno por oficina).
 ```bash
 # Routers
 sudo ip netns add R1
+sudo ip netns exec R1 ip link set lo alias networking-lab-owned
 sudo ip netns add R2
+sudo ip netns exec R2 ip link set lo alias networking-lab-owned
 sudo ip netns add R3
+sudo ip netns exec R3 ip link set lo alias networking-lab-owned
 
 # Clientes
 sudo ip netns add clienteSede
+sudo ip netns exec clienteSede ip link set lo alias networking-lab-owned
 sudo ip netns add clienteSucA
+sudo ip netns exec clienteSucA ip link set lo alias networking-lab-owned
 sudo ip netns add clienteSucB
+sudo ip netns exec clienteSucB ip link set lo alias networking-lab-owned
 ```
 
 ### Paso 2: Conectar routers y clientes
@@ -133,26 +139,36 @@ sudo ip netns add clienteSucB
 ```bash
 # Enlace R1 - R2
 sudo ip link add veth-r1r2 type veth peer name veth-r2r1
+sudo ip link set veth-r1r2 alias networking-lab-lab-06
+sudo ip link set veth-r2r1 alias networking-lab-lab-06
 sudo ip link set veth-r1r2 netns R1
 sudo ip link set veth-r2r1 netns R2
 
 # Enlace R2 - R3
 sudo ip link add veth-r2r3 type veth peer name veth-r3r2
+sudo ip link set veth-r2r3 alias networking-lab-lab-06
+sudo ip link set veth-r3r2 alias networking-lab-lab-06
 sudo ip link set veth-r2r3 netns R2
 sudo ip link set veth-r3r2 netns R3
 
 # Cliente Sede -> R1
 sudo ip link add veth-c1 type veth peer name veth-r1c
+sudo ip link set veth-c1 alias networking-lab-lab-06
+sudo ip link set veth-r1c alias networking-lab-lab-06
 sudo ip link set veth-c1 netns clienteSede
 sudo ip link set veth-r1c netns R1
 
 # Cliente Sucursal A -> R2
 sudo ip link add veth-c2 type veth peer name veth-r2c
+sudo ip link set veth-c2 alias networking-lab-lab-06
+sudo ip link set veth-r2c alias networking-lab-lab-06
 sudo ip link set veth-c2 netns clienteSucA
 sudo ip link set veth-r2c netns R2
 
 # Cliente Sucursal B -> R3
 sudo ip link add veth-c3 type veth peer name veth-r3c
+sudo ip link set veth-c3 alias networking-lab-lab-06
+sudo ip link set veth-r3c alias networking-lab-lab-06
 sudo ip link set veth-c3 netns clienteSucB
 sudo ip link set veth-r3c netns R3
 ```
@@ -325,6 +341,8 @@ Un enlace directo es un camino más corto. Lo agregamos y le damos una **métric
 ```bash
 # Crear enlace R1-R3
 sudo ip link add veth-r1r3 type veth peer name veth-r3r1
+sudo ip link set veth-r1r3 alias networking-lab-lab-06
+sudo ip link set veth-r3r1 alias networking-lab-lab-06
 sudo ip link set veth-r1r3 netns R1
 sudo ip link set veth-r3r1 netns R3
 sudo ip netns exec R1 ip addr add 192.168.3.1/30 dev veth-r1r3
@@ -511,10 +529,26 @@ Baja el enlace R2-R3 por **ambos extremos** (`veth-r2r3` en R2 y `veth-r3r2` en 
 Todos los dispositivos y enlaces de esta topología viven dentro de los *namespaces*. No se modifica el reenvío, las rutas ni el firewall global del host. Esta limpieza elimina únicamente los seis namespaces de la práctica; ejecútala cuando hayas terminado los ejercicios.
 
 ```bash
+NS_LEFT=0
 for ns in clienteSede clienteSucA clienteSucB R1 R2 R3; do
-  sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-  sudo ip netns del "$ns" 2>/dev/null || true
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" = networking-lab-owned ]; then
+      PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+      if [ -n "$PIDS" ]; then echo "Se conserva $ns: quedan procesos activos ($PIDS)."; NS_LEFT=1
+      else sudo ip netns del "$ns" 2>/dev/null || true
+      fi
+    else echo "Se conserva $ns: no tiene la marca de propiedad Networking Lab."; NS_LEFT=1
+    fi
+  fi
 done
+if [ "$NS_LEFT" = 0 ]; then
+  for f in /sys/class/net/*/ifalias; do
+    [ -r "$f" ] || continue
+    [ "$(cat "$f")" = networking-lab-lab-06 ] || continue
+    dev=${f%/ifalias}; dev=${dev##*/}
+    sudo ip link del "$dev" 2>/dev/null || true
+  done
+else echo "Se conservan enlaces host; hay namespaces con procesos activos."; fi
 ```
 
 **Comprobación:** `sudo ip netns list` no debe mostrar ninguno de esos seis nombres. Al repetir la práctica, comienza de nuevo por el Paso 0.

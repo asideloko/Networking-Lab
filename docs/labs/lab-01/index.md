@@ -48,7 +48,8 @@ Antes de construir nada conviene fijar seis términos que se usan en todo el lab
 
 ## Herramientas necesarias
 
--   Linux (Debian/Ubuntu recomendado) con privilegios de superusuario.
+-   Linux (Debian/Ubuntu recomendado) con `root` o `CAP_NET_ADMIN` y `CAP_NET_RAW`; el kernel debe permitir *network namespaces*, bridges y `veth`.
+-   Android/Termux permite consultar la documentación, pero no es un entorno compatible garantizado para ejecutar estas prácticas: el sandbox de Android normalmente no concede las capacidades de red necesarias. Usa una VM o PC Linux.
 -   Comandos: `ip`, `ping`, `tcpdump` (`nslookup` y `curl` se usarán a partir del laboratorio 02).
 -   Paquetes que se usan a lo largo de la serie (instálalos una vez): `sudo apt install tcpdump traceroute iperf3 dnsutils curl`.
 -   Editor de texto para scripts (opcional).
@@ -123,8 +124,11 @@ Creamos un namespace para cada dispositivo:
 
 ```bash
 ip netns add cliente1
+ip netns exec cliente1 ip link set lo alias networking-lab-owned
 ip netns add cliente2
+ip netns exec cliente2 ip link set lo alias networking-lab-owned
 ip netns add router
+ip netns exec router ip link set lo alias networking-lab-owned
 ```
 
 Verificamos que se hayan creado:
@@ -148,9 +152,13 @@ Necesitamos conectar cada cliente al router. Para ello, creamos dos pares veth:
 ```bash
 # Par para Cliente 1
 ip link add veth-c1 type veth peer name veth-r1
+ip link set veth-c1 alias networking-lab-lab-01
+ip link set veth-r1 alias networking-lab-lab-01
 
 # Par para Cliente 2
 ip link add veth-c2 type veth peer name veth-r2
+ip link set veth-c2 alias networking-lab-lab-01
+ip link set veth-r2 alias networking-lab-lab-01
 ```
 
 ### Paso 4: Asignar cada extremo a su namespace
@@ -190,6 +198,7 @@ ip netns exec cliente2 ip link set lo up
 ```bash
 # En el namespace router
 ip netns exec router ip link add br0 type bridge
+ip netns exec router ip link set br0 alias networking-lab-lab-01
 ip netns exec router ip link set veth-r1 master br0
 ip netns exec router ip link set veth-r2 master br0
 ip netns exec router ip addr add 10.0.1.1/24 dev br0
@@ -364,16 +373,25 @@ Todo lo que está conectado al mismo bridge pertenece al mismo **dominio de broa
 Esta limpieza elimina únicamente los tres *namespaces* creados en esta práctica. Si continúas con los laboratorios 02 y 03, no la ejecutes todavía: esos laboratorios reutilizan esta topología. Si ya ejecutaste el laboratorio 02 o el 03, utiliza primero las secciones de reversión de esas prácticas para retirar también los cambios que hicieron en el host.
 
 ```bash
-# Detener procesos que sigan dentro de los namespaces de esta práctica
-for ns in cliente1 cliente2 router; do
-  ip netns pids "$ns" 2>/dev/null | xargs -r kill
-  ip netns del "$ns" 2>/dev/null || true
+# Eliminar solo namespaces propios que ya no contienen procesos.
+for ns in cliente1 cliente2 router observador; do
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" = networking-lab-owned ]; then
+      PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+      if [ -n "$PIDS" ]; then echo "Se conserva $ns: hay procesos activos ($PIDS); ciérralos desde su terminal.";
+      else sudo ip netns del "$ns" 2>/dev/null || true
+      fi
+    else echo "Se conserva $ns: no tiene la marca de propiedad Networking Lab."
+    fi
+  fi
 done
 
-# Eliminar únicamente extremos veth que hayan quedado en el host
-# por una ejecución interrumpida antes de moverlos a sus namespaces.
-for dev in veth-c1 veth-r1 veth-c2 veth-r2; do
-  ip link show "$dev" >/dev/null 2>&1 && ip link del "$dev"
+# Retirar solo interfaces huérfanas en el host con la marca de este laboratorio.
+for f in /sys/class/net/*/ifalias; do
+  [ -r "$f" ] || continue
+  [ "$(cat "$f")" = networking-lab-lab-01 ] || continue
+  dev=${f%/ifalias}; dev=${dev##*/}
+  ip link del "$dev" 2>/dev/null || true
 done
 ```
 
@@ -412,7 +430,94 @@ sudo ip netns exec cliente1 ip neigh flush to 10.0.1.3
 sudo ip netns exec cliente1 ping -c 1 10.0.1.3
 ```
 
-No confundas las tablas: la FDB asocia MAC con puerto del bridge; la tabla de vecinos asocia IP con MAC en un enlace. El envejecimiento de FDB y el estado NUD de vecinos son mecanismos distintos. Cambiar manualmente una MAC o borrar una entrada solo debe hacerse en esta topología aislada.
+No confundas las tablas: la FDB asocia MAC con puerto del bridge; la tabla de vecinos asocia IP con MAC en un enlace. Sus temporizadores son independientes:
+
+- **Caché ARP (`ip neigh`)**: los estados NUD incluyen `REACHABLE`, `STALE`, `DELAY`, `PROBE`, `INCOMPLETE` y `FAILED`. `base_reachable_time_ms` es el tiempo base de alcanzabilidad (habitualmente 30 000 ms, con variación aleatoria); al vencer, una entrada puede pasar a `STALE` y se vuelve a validar cuando se utiliza.
+- **FDB del bridge (`bridge fdb`)**: las entradas dinámicas se eliminan tras el `ageing_time` del bridge (habitualmente 300 s sin tráfico); las entradas estáticas no envejecen de esa forma.
+
+Consulta ambos temporizadores y sus estados por separado:
+
+```bash
+sudo ip netns exec cliente1 ip -s neigh show dev veth-c1
+sudo ip netns exec cliente1 sysctl net.ipv4.neigh.veth-c1.base_reachable_time_ms
+sudo ip netns exec router bridge -s fdb show br br0
+sudo ip netns exec router cat /sys/class/net/br0/bridge/ageing_time
+```
+
+Para observar una nueva resolución ARP sin esperar al temporizador, elimina solo la entrada de prueba y genera tráfico:
+
+```bash
+sudo ip netns exec cliente1 ip neigh flush to 10.0.1.3 dev veth-c1
+sudo ip netns exec cliente1 ping -c 1 10.0.1.3
+sudo ip netns exec cliente1 ip -s neigh show to 10.0.1.3 dev veth-c1
+```
+
+El valor sysfs `ageing_time` del bridge se expresa en centésimas de segundo. Una entrada puede seguir presente en una tabla y haber expirado en la otra; no deduzcas la edad de FDB a partir del estado ARP.
+
+### Experimento: aprendizaje, unicast conocido y flooding de unicast desconocido
+
+Para distinguir el flooding de ARP broadcast del *unknown-unicast flooding*, se añade temporalmente un puerto de observación sin dirección IP. El cliente 1 usará una entrada ARP permanente para que la resolución ARP no aprenda primero la MAC de cliente 2 en la FDB.
+
+```bash
+if sudo ip netns list | awk '{print $1}' | grep -Fxq observador; then echo "observador ya existe; ejecuta la limpieza antes de repetir."; exit 1; fi
+if sudo ip link show veth-obs >/dev/null 2>&1; then echo "veth-obs ya existe; no se modifica."; exit 1; fi
+sudo ip netns add observador
+sudo ip netns exec observador ip link set lo alias networking-lab-owned
+sudo ip link add veth-obs type veth peer name veth-obs-ns
+sudo ip link set veth-obs alias networking-lab-lab-01
+sudo ip link set veth-obs-ns alias networking-lab-lab-01
+sudo ip link set veth-obs netns router
+sudo ip link set veth-obs-ns netns observador
+sudo ip netns exec router ip link set veth-obs master br0
+sudo ip netns exec router ip link set veth-obs up
+sudo ip netns exec observador ip link set veth-obs-ns up
+MAC_C2=$(sudo ip netns exec cliente2 cat /sys/class/net/veth-c2/address)
+sudo ip netns exec cliente1 ip neigh replace 10.0.1.3 lladdr "$MAC_C2" nud permanent dev veth-c1
+if ! sudo ip netns exec router bridge fdb flush br br0 dynamic; then
+  echo "Tu combinación de iproute2/kernel no admite bridge fdb flush; elimina solo la entrada dinámica de MAC destino o espera el ageing_time del bridge."
+  MAC_C2=$(sudo ip netns exec cliente2 cat /sys/class/net/veth-c2/address)
+  sudo ip netns exec router bridge fdb del "$MAC_C2" dev veth-r2 master 2>/dev/null || true
+fi
+sudo ip netns exec router bridge fdb show br br0
+```
+
+En una terminal captura el puerto observador:
+
+```bash
+sudo ip netns exec router tcpdump -ni veth-obs -e -vv icmp
+```
+
+En otra terminal ejecuta dos pings, uno a la vez:
+
+```bash
+sudo ip netns exec cliente1 ping -c 1 10.0.1.3
+sudo ip netns exec router bridge fdb show br br0
+sudo ip netns exec cliente1 ping -c 1 10.0.1.3
+```
+
+**Resultado esperado:** el primer Echo Request aparece en `veth-obs`: el bridge aún desconoce el puerto asociado a la MAC destino y replica la trama unicast por los demás puertos. La respuesta de cliente 2 enseña su MAC en la FDB. El segundo Echo Request ya se reenvía solo por el puerto aprendido y no debe aparecer en `veth-obs`. No confundas este caso con ARP: la entrada permanente evita que el ARP broadcast sea el motivo de la copia observada.
+
+Retira la entrada permanente y el puerto temporal:
+
+```bash
+sudo ip netns exec cliente1 ip neigh del 10.0.1.3 dev veth-c1 2>/dev/null || true
+PIDS=$(sudo ip netns pids observador 2>/dev/null || true)
+if [ -z "$PIDS" ] && [ "$(sudo ip netns exec observador cat /sys/class/net/lo/ifalias 2>/dev/null)" = networking-lab-lab-01 ]; then sudo ip netns del observador
+else echo "Se conserva observador: tiene procesos activos o no pertenece a Lab01."; fi
+```
+
+### Interpretar la trama y la desencapsulación
+
+| Campo observado | Qué representa | Qué debe explicar el estudiante |
+|---|---|---|
+| MAC destino / MAC origen | Direcciones de enlace Ethernet | La MAC destino permite al bridge consultar la FDB; la MAC origen se aprende en el puerto de entrada |
+| EtherType | Protocolo encapsulado (por ejemplo, IPv4 `0x0800` o ARP `0x0806`) | Permite identificar qué protocolo recibe el payload Ethernet |
+| IPv4 origen/destino, TTL y protocolo | Cabecera de red | Identifica extremos lógicos, límite de saltos y protocolo superior |
+| ICMP tipo/código, identificador y secuencia | Mensaje de control | Distingue Echo Request y Echo Reply y correlaciona solicitud/respuesta |
+| FCS | Comprobación de trama Ethernet | Normalmente no aparece en capturas del host porque la NIC/driver lo retira antes de entregar la trama al kernel |
+
+Usa `tcpdump -e -vv -XX` para relacionar los bytes con los campos. En el destino se retira la cabecera Ethernet, se procesa IPv4 y se entrega ICMP; la respuesta se encapsula en una **nueva** trama con MAC origen/destino correspondientes al sentido de retorno. La captura en `any`, bridge o veth puede variar por offloads; no concluyas que falta FCS o VLAN solo porque el host no lo muestra.
+
 
 **Evidencia que debe entregar el estudiante:** salida de `ip route get`, captura ARP/ICMP, FDB antes y después, tabla de vecinos y explicación de cada transición. No basta con adjuntar la salida sin interpretarla.
 

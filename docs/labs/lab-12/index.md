@@ -68,39 +68,32 @@ La red `10.8.0.0/24` es una **red virtual de acceso de los usuarios del escenari
 
 ## Construcción
 
-### Paso 0: Limpiar laboratorios anteriores
+### Paso 0: Limpiar ejecuciones anteriores de Lab12
 
-Este laboratorio es un **escenario nuevo** (otros equipos y direccionamiento). Elimina **solo los namespaces de los laboratorios anteriores, por nombre**:
+Este paso solo retira namespaces creados por Lab12. No elimina `br-wan`, `veth-host`, `veth-wan-fw`, `veth-wan-cvpn` ni recursos de otros laboratorios; ejecuta la reversión de cada práctica anterior por separado.
 
 ```bash
-NS_LAB="cliente1 cliente2 cliente3 cliente4 router switch ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 R1 R2 R3 clienteSede clienteSucA clienteSucB servidorDNS servidorDHCP clienteDHCP firewall servidorWeb servidorDNS_PUB servidorInterno VPN_GW clienteVPN PE1 PE2 PE3 P1 P2 P3 host1 host2 host3 Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin OnPremise AppServer DBServer AWS_VPC EC2_Server RDS_Server ZTNA_Broker IDP User1 User2"
+NS_LAB="OnPremise AppServer DBServer AWS_VPC EC2_Server RDS_Server ZTNA_Broker IDP User1 User2"
 EXISTENTES=$(sudo ip netns list | awk '{print $1}' | while read -r ns; do
   for esperado in $NS_LAB; do [ "$ns" = "$esperado" ] && echo "$ns"; done
 done)
-VETH_HOST=$(sudo ip -o link show veth-host 2>/dev/null | head -1)
-VETH_WAN_FW=$(sudo ip -o link show veth-wan-fw 2>/dev/null | head -1)
-BR_WAN_OWNED=0
-if [ "$(cat /sys/class/net/br-wan/ifalias 2>/dev/null)" = networking-lab ] && sudo ip -4 -o addr show dev br-wan | grep -q '192\.168\.100\.2/24'; then
-  BR_WAN_OWNED=1
-fi
-printf 'Namespaces existentes: %s\nInterfaz veth-host: %s\nInterfaz veth-wan-fw: %s\nBridge br-wan del proyecto: %s\n' "${EXISTENTES:-(ninguno)}" "${VETH_HOST:-(ausente)}" "${VETH_WAN_FW:-(ausente)}" "$BR_WAN_OWNED"
-if [ -n "$EXISTENTES$VETH_HOST$VETH_WAN_FW" ] || [ "$BR_WAN_OWNED" = 1 ]; then
-  read -r -p "¿Eliminar únicamente los recursos detectados de los laboratorios anteriores? (s/N) " CONFIRMAR
-  if [ "$CONFIRMAR" != s ]; then echo "Cancelado"; exit 1; fi
-  for ns in $EXISTENTES; do
-    sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-    sudo ip netns del "$ns" 2>/dev/null || true
-  done
-  [ "$BR_WAN_OWNED" = 1 ] && sudo ip link del br-wan 2>/dev/null || true
-fi
+for ns in $EXISTENTES; do
+  if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-12 ]; then echo "Se aborta: $ns no tiene la marca exclusiva de Lab12."; exit 1; fi
+  PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+  if [ -n "$PIDS" ]; then echo "$ns tiene procesos activos ($PIDS); ejecuta la limpieza de Lab12 antes de repetir."; exit 1; fi
+done
+if [ -e /tmp/lab12-pids ]; then echo "/tmp/lab12-pids existe; ejecuta la limpieza completa antes de repetir Lab12."; exit 1; fi
+for ns in $EXISTENTES; do sudo ip netns del "$ns" 2>/dev/null || true; done
 ```
 
+Si quedan recursos de otra práctica, ejecuta primero su reversión; este paso no los modifica.
 ### Paso 1: Crear namespaces y la función auxiliar
 
 ```bash
 for ns in OnPremise AppServer DBServer AWS_VPC EC2_Server RDS_Server ZTNA_Broker IDP User1 User2; do
   sudo ip netns add $ns
 done
+for ns in OnPremise AppServer DBServer AWS_VPC EC2_Server RDS_Server ZTNA_Broker IDP User1 User2; do sudo ip netns exec "$ns" ip link set lo alias networking-lab-lab-12; done
 # Los routers deben reenviar paquetes
 for r in OnPremise AWS_VPC ZTNA_Broker; do
   sudo ip netns exec $r sysctl -qw net.ipv4.ip_forward=1
@@ -109,6 +102,8 @@ done
 # enlace NS_A IF_A IP_A NS_B IF_B IP_B
 enlace() {
   sudo ip link add $2 type veth peer name $5
+  sudo ip link set $2 alias networking-lab-lab-12
+  sudo ip link set $5 alias networking-lab-lab-12
   sudo ip link set $2 netns $1
   sudo ip link set $5 netns $4
   sudo ip netns exec $1 ip addr add $3 dev $2
@@ -130,6 +125,8 @@ sudo ip netns exec OnPremise ip link set br-lan up
 for s in "AppServer veth-app veth-op-app 10.0.0.10/24" "DBServer veth-db veth-op-db 10.0.0.20/24"; do
   set -- $s
   sudo ip link add $2 type veth peer name $3
+  sudo ip link set $2 alias networking-lab-lab-12
+  sudo ip link set $3 alias networking-lab-lab-12
   sudo ip link set $2 netns $1
   sudo ip link set $3 netns OnPremise
   sudo ip netns exec OnPremise ip link set $3 master br-lan
@@ -194,6 +191,8 @@ sudo ip netns exec ZTNA_Broker ip link set br-users up
 for u in "User1 veth-user1 veth-bk-u1 10.8.0.2/24" "User2 veth-user2 veth-bk-u2 10.8.0.3/24"; do
   set -- $u
   sudo ip link add $2 type veth peer name $3
+  sudo ip link set $2 alias networking-lab-lab-12
+  sudo ip link set $3 alias networking-lab-lab-12
   sudo ip link set $2 netns $1
   sudo ip link set $3 netns ZTNA_Broker
   sudo ip netns exec ZTNA_Broker ip link set $3 master br-users
@@ -215,10 +214,10 @@ if [ -e /tmp/lab12-pids ]; then
   exit 1
 fi
 : > /tmp/lab12-pids
-sudo ip netns exec AppServer sh -c 'nc -lk -p 8080 >/dev/null 2>&1 </dev/null & echo $! >> /tmp/lab12-pids'
-sudo ip netns exec DBServer  sh -c 'nc -lk -p 3306 >/dev/null 2>&1 </dev/null & echo $! >> /tmp/lab12-pids'
-sudo ip netns exec EC2_Server sh -c 'nc -lk -p 8080 >/dev/null 2>&1 </dev/null & echo $! >> /tmp/lab12-pids'
-sudo ip netns exec RDS_Server sh -c 'nc -lk -p 5432 >/dev/null 2>&1 </dev/null & echo $! >> /tmp/lab12-pids'
+sudo ip netns exec AppServer sh -c 'nc -lk -p 8080 >/dev/null 2>&1 </dev/null & echo "$! 8080" >> /tmp/lab12-pids'
+sudo ip netns exec DBServer  sh -c 'nc -lk -p 3306 >/dev/null 2>&1 </dev/null & echo "$! 3306" >> /tmp/lab12-pids'
+sudo ip netns exec EC2_Server sh -c 'nc -lk -p 8080 >/dev/null 2>&1 </dev/null & echo "$! 8080" >> /tmp/lab12-pids'
+sudo ip netns exec RDS_Server sh -c 'nc -lk -p 5432 >/dev/null 2>&1 </dev/null & echo "$! 5432" >> /tmp/lab12-pids'
 ```
 
 ### Paso 8: Política Zero Trust en el broker (acceso mínimo por aplicación)
@@ -230,7 +229,7 @@ Por defecto **nada** pasa a través del broker. Se abre solo lo necesario para c
 
 ```bash
 sudo ip netns exec ZTNA_Broker iptables -P FORWARD DROP
-sudo ip netns exec ZTNA_Broker iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+sudo ip netns exec ZTNA_Broker iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 sudo ip netns exec ZTNA_Broker iptables -A FORWARD -s 10.8.0.2 -d 10.0.0.10 -p tcp --dport 8080 -j ACCEPT
 sudo ip netns exec ZTNA_Broker iptables -A FORWARD -s 10.8.0.3 -d 10.100.1.10 -p tcp --dport 8080 -j ACCEPT
 ```
@@ -243,17 +242,28 @@ Cada servidor acepta **solo** lo que su función necesita, con política por def
 # DB (on-premise): solo el servidor App, y solo al puerto 3306
 sudo ip netns exec DBServer iptables -P INPUT DROP
 sudo ip netns exec DBServer iptables -A INPUT -i lo -j ACCEPT
-sudo ip netns exec DBServer iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+sudo ip netns exec DBServer iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 sudo ip netns exec DBServer iptables -A INPUT -s 10.0.0.10 -p tcp --dport 3306 -j ACCEPT
 
 # RDS (nube): solo EC2, y solo al puerto 5432
 sudo ip netns exec RDS_Server iptables -P INPUT DROP
 sudo ip netns exec RDS_Server iptables -A INPUT -i lo -j ACCEPT
-sudo ip netns exec RDS_Server iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+sudo ip netns exec RDS_Server iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 sudo ip netns exec RDS_Server iptables -A INPUT -s 10.100.1.10 -p tcp --dport 5432 -j ACCEPT
 ```
 
 ### Paso 10: Verificar
+
+Primero confirma que los procesos de escucha están activos; si no aparecen, no interpretes un timeout como un bloqueo de política:
+
+```bash
+for ns in AppServer DBServer EC2_Server RDS_Server; do
+  echo "=== $ns ==="
+  sudo ip netns exec "$ns" ss -lntp
+ done
+```
+
+Después prueba los permisos por aplicación:
 
 ```bash
 # Usuario 1: SÍ a la app on-premise, NO a la de la nube
@@ -298,6 +308,23 @@ sudo ip netns exec AppServer nc -zv -w 2 10.100.2.10 5432
 ### Flujo Usuario → IdP → Broker → Aplicación
 
 El **proveedor de identidad (IdP)** responde a «¿quién eres y puedes acceder?»; el **broker** aplica la política: «¿puede *esta* identidad llegar a *esta* aplicación?». En el laboratorio el IdP es solo un nodo alcanzable, pero el flujo real es:
+
+### Componentes de una arquitectura ZTNA real
+
+| Componente | Responsabilidad | Evidencia o decisión |
+|---|---|---|
+| **Identity Provider (IdP)** | Autentica al usuario y emite una identidad verificable | Sesión, token firmado y atributos/claims; puede exigir MFA |
+| **MFA** | Añade un factor independiente a la contraseña o credencial primaria | Resultado de autenticación multifactor y política de recuperación |
+| **Claims** | Transportan atributos como usuario, grupos, rol y nivel de autenticación | Claims firmados y vigencia del token; no son una dirección IP |
+| **Device posture** | Evalúa el estado del dispositivo (gestión, cifrado, parches, EDR, certificado) | Señal de cumplimiento y contexto, con fecha y fuente |
+| **PDP (Policy Decision Point)** | Evalúa identidad, dispositivo, contexto, recurso y riesgo | Decisión `allow/deny` y condiciones de sesión |
+| **PEP (Policy Enforcement Point)** | Aplica la decisión en el punto de acceso al recurso | Abre, limita o corta la sesión; puede residir en broker, gateway o agente |
+| **Broker/conector** | Establece el canal hacia la aplicación privada sin exponer toda la red | Conexión específica a la aplicación/puerto, no una ruta general a la LAN |
+| **Revocación y reevaluación** | Invalida sesiones o vuelve a evaluar cambios de identidad, postura o riesgo | Expiración, revocación de token/sesión y cierre de conexión existente |
+
+**Flujo de decisión:** el IdP autentica y entrega claims; el PDP combina esos atributos con la postura del dispositivo y el contexto; el PEP aplica la decisión para una aplicación concreta. MFA autentica mejor, pero no sustituye al PDP; el broker transporta la conexión, pero no debe confundirse con el IdP. La autorización puede reevaluarse durante la sesión y revocarse si cambian las condiciones.
+
+**Alcance de esta práctica:** el nodo `IDP` no emite tokens, no ejecuta MFA ni valida postura; el broker aplica reglas estáticas de IP/puerto y representa una función de PEP simplificada. No hay PDP real, claims firmados, evaluación continua ni revocación de sesiones. El ejercicio demuestra acceso mínimo por aplicación, no una plataforma ZTNA completa.
 
 ```mermaid
 sequenceDiagram
@@ -399,17 +426,51 @@ Redacta (sin implementarlas) las políticas que un SASE aplicaría al tráfico d
 La práctica crea diez *namespaces*; las interfaces, rutas, reglas `iptables` y parámetros de reenvío configurados dentro de ellos quedan aislados del host. La limpieza detiene los procesos que permanezcan dentro de esos espacios y elimina únicamente los nombres de esta topología.
 
 ```bash
-# Detener los listeners nc registrados por este laboratorio antes de borrar namespaces.
+# Detener solo listeners cuyo PID y puerto coinciden con el registro de esta práctica.
+# Se valida /proc/PID/cmdline para no matar un proceso ajeno si el PID fue reutilizado.
+PROC_LEFT=0
 if [ -f /tmp/lab12-pids ]; then
-  while read -r pid; do
-    [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null && sudo kill "$pid" 2>/dev/null || true
+  while read -r pid port; do
+    [[ "$pid" =~ ^[0-9]+$ && "$port" =~ ^(8080|3306|5432)$ ]] || continue
+    [ -r "/proc/$pid/cmdline" ] || continue
+    cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+    case "$cmdline" in
+      *nc*"-lk -p $port"*) sudo kill -TERM "$pid" 2>/dev/null || true ;;
+      *) echo "PID $pid no coincide con nc en puerto $port; no se detiene."; PROC_LEFT=1 ;;
+    esac
+  done < /tmp/lab12-pids
+  sleep 1
+  while read -r pid port; do
+    [[ "$pid" =~ ^[0-9]+$ && "$port" =~ ^(8080|3306|5432)$ ]] || continue
+    [ -r "/proc/$pid/cmdline" ] || continue
+    cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+    case "$cmdline" in
+      *nc*"-lk -p $port"*) sudo kill -KILL "$pid" 2>/dev/null || true ;;
+    esac
   done < /tmp/lab12-pids
 fi
+NS_LEFT=0
 for ns in OnPremise AppServer DBServer AWS_VPC EC2_Server RDS_Server ZTNA_Broker IDP User1 User2; do
-  sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-  sudo ip netns del "$ns" 2>/dev/null || true
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-12 ]; then echo "Se conserva $ns: no tiene la marca exclusiva de Lab12."; NS_LEFT=1
+    else
+      PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+      if [ -n "$PIDS" ]; then echo "Se conserva $ns: quedan procesos no registrados ($PIDS)."; NS_LEFT=1; fi
+    fi
+  fi
 done
-sudo rm -f /tmp/lab12-pids
+if [ "$NS_LEFT" = 0 ] && [ "$PROC_LEFT" = 0 ]; then
+  for ns in OnPremise AppServer DBServer AWS_VPC EC2_Server RDS_Server ZTNA_Broker IDP User1 User2; do
+    if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then sudo ip netns del "$ns" 2>/dev/null || true; fi
+  done
+  for f in /sys/class/net/*/ifalias; do
+    [ -r "$f" ] || continue
+    [ "$(cat "$f")" = networking-lab-lab-12 ] || continue
+    dev=${f%/ifalias}; dev=${dev##*/}
+    sudo ip link del "$dev" 2>/dev/null || true
+  done
+else echo "Se conservan las interfaces host y /tmp/lab12-pids para inspección posterior."; fi
+if [ "$NS_LEFT" = 0 ] && [ "$PROC_LEFT" = 0 ]; then sudo rm -f /tmp/lab12-pids; else echo "Se conserva /tmp/lab12-pids; hay procesos que requieren revisión."; fi
 ```
 
 **Comprobación:** `sudo ip netns list` no debe mostrar ninguno de esos diez nombres. Para repetir el laboratorio, vuelve a ejecutar desde el Paso 0.
@@ -424,7 +485,7 @@ Cambia la IP de un usuario dentro de la topología y observa que la regla basada
 
 ### Procesos: eliminar namespaces no siempre detiene servicios
 
-Los namespaces aíslan la red, no el ciclo de vida de todos los procesos ni el sistema de archivos. Los servidores `nc` iniciados en segundo plano deben tener PID registrados y detenerse selectivamente antes de borrar los namespaces. No uses `pkill nc` ni patrones amplios. Para cada servicio, registra el PID al arrancarlo, comprueba `/proc/$pid/cmdline` y detén solo el proceso cuyo comando corresponda a la ruta/puerto del laboratorio. Después verifica que el puerto dejó de escuchar con `ss -lntup`.
+Los namespaces aíslan la red, no el ciclo de vida de todos los procesos ni el sistema de archivos. Los servidores `nc` iniciados en segundo plano deben tener PID registrados y detenerse selectivamente antes de borrar los namespaces. No uses `pkill nc` ni patrones amplios. Para cada servicio, registra PID y puerto al arrancarlo. La limpieza comprueba `/proc/$pid/cmdline` antes de enviar `TERM`; espera y usa `KILL` solo como último recurso sobre el mismo PID validado. Después verifica que el puerto dejó de escuchar con `ss -lntup`.
 
 La conectividad `veth` hacia la VPC es una abstracción de underlay; no es AWS VPC real, VPN cifrada ni SASE. Mantén explícito qué parte es ejecutable, simulada o conceptual en los objetivos y conclusiones.
 

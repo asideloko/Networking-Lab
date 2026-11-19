@@ -97,27 +97,61 @@ Si no existen los namespaces, ejecuta los comandos de los laboratorios 01 y 02 p
 En el laboratorio 01, creamos un bridge `br0` dentro del router para conectar los clientes. Ahora el bridge pasará a un **namespace propio para el switch**, de modo que el router quede solo con funciones de capa 3. Eliminamos el bridge y los cables virtuales anteriores (al borrar un extremo de un par veth desaparece también el otro; los clientes perderán su IP y su ruta, que se reconfiguran en el Paso 7):
 
 ```bash
-ip netns exec router ip link delete br0
-ip netns exec router ip link delete veth-r1
-ip netns exec router ip link delete veth-r2
+if [ "$(ip netns exec router cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-owned ]; then
+  echo "router no tiene la marca de propiedad Networking Lab; se aborta la migración."
+  exit 1
+fi
+PIDS_ROUTER=$(sudo ip netns pids router 2>/dev/null || true)
+if [ -n "$PIDS_ROUTER" ]; then echo "router tiene procesos activos ($PIDS_ROUTER); ciérralos antes de migrar."; exit 1; fi
+if ip netns list | awk '{print $1}' | grep -Fxq remote; then
+  if [ "$(ip netns exec remote cat /sys/class/net/lo/ifalias 2>/dev/null)" = networking-lab-owned ]; then
+    PIDS_REMOTE=$(sudo ip netns pids remote 2>/dev/null || true)
+    if [ -n "$PIDS_REMOTE" ]; then echo "remote tiene procesos activos ($PIDS_REMOTE); ciérralos antes de migrar."; exit 1; fi
+    ip netns del remote
+  else
+    echo "Existe remote sin marca de propiedad; se aborta sin modificarlo."; exit 1
+  fi
+fi
+if [ -f /tmp/lab03-pmtud-icmp-drop.added ]; then
+  ip netns exec router iptables -D OUTPUT -p icmp --icmp-type fragmentation-needed -d 10.0.1.2 -j DROP 2>/dev/null || true
+  rm -f /tmp/lab03-pmtud-icmp-drop.added
+fi
+if [ -f /tmp/lab03-router-ip_forward.orig ]; then
+  ip netns exec router sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab03-router-ip_forward.orig)"
+  rm -f /tmp/lab03-router-ip_forward.orig
+fi
+for dev in br0 veth-r1 veth-r2; do
+  if ip netns exec router ip link show "$dev" >/dev/null 2>&1; then
+    if [ "$(ip netns exec router cat "/sys/class/net/$dev/ifalias" 2>/dev/null)" = networking-lab-lab-01 ]; then
+      ip netns exec router ip link del "$dev"
+    else
+      echo "Se conserva router/$dev: no tiene marca del laboratorio 01."
+      exit 1
+    fi
+  fi
+done
+# Retirar reglas antiguas solo si el laboratorio 02 dejó su marcador de propiedad.
+if [ -f /tmp/lab02-router-forward-out.added ]; then
+  ip netns exec router iptables -D FORWARD -i br0 -o veth-wan -j ACCEPT 2>/dev/null || true
+  rm -f /tmp/lab02-router-forward-out.added
+elif ip netns exec router iptables -C FORWARD -i br0 -o veth-wan -j ACCEPT 2>/dev/null; then
+  echo "Regla heredada br0 detectada sin marcador; se conserva para revisión manual."
+fi
+if [ -f /tmp/lab02-router-forward-in.added ]; then
+  ip netns exec router iptables -D FORWARD -i veth-wan -o br0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+  rm -f /tmp/lab02-router-forward-in.added
+elif ip netns exec router iptables -C FORWARD -i veth-wan -o br0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || ip netns exec router iptables -C FORWARD -i veth-wan -o br0 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null; then
+  echo "Regla heredada br0 detectada sin marcador; se conserva para revisión manual."
+fi
 ```
 
-!!! warning "Las reglas del laboratorio 02 mencionaban `br0`"
-    Las reglas de `FORWARD` del router creadas en el laboratorio 02 mencionan `br0` (la de ida con `-i br0`, la de retorno con `-o br0`). Al borrar el bridge del router esas reglas dejan de aplicarse. Con la política por defecto (`ACCEPT`) la salida a Internet seguirá funcionando, pero conviene mantener la coherencia: tras el Paso 9 sustitúyelas por sus equivalentes con `veth-rs`:
-
-    ```bash
-    ip netns exec router iptables -D FORWARD -i br0 -o veth-wan -j ACCEPT
-    ip netns exec router iptables -D FORWARD -i veth-wan -o br0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-    ip netns exec router iptables -A FORWARD -i veth-rs -o veth-wan -j ACCEPT
-    ip netns exec router iptables -A FORWARD -i veth-wan -o veth-rs -m state --state RELATED,ESTABLISHED -j ACCEPT
-    ```
-
-    La regla de `MASQUERADE` usa `-o veth-wan` y no se ve afectada.
-
+!!! info "Transición de reglas de reenvío"
+    El Paso 2 elimina las reglas `FORWARD` que el laboratorio 02 haya marcado como propias. Si detecta reglas `br0` sin marcador, las conserva y avisa: no puede demostrar que las creó este proyecto. El Paso 9 instala las reglas equivalentes sobre `veth-rs` y registra su propiedad. La limpieza final elimina el namespace `router`; por eso sus reglas y contadores desaparecen junto con él.
 ### Paso 3: Crear el namespace del switch
 
 ```bash
 ip netns add switch
+ip netns exec switch ip link set lo alias networking-lab-owned
 ```
 
 ### Paso 4: Crear el bridge en el switch
@@ -132,7 +166,9 @@ ip netns exec switch ip link set br0 up
 
 ```bash
 ip netns add cliente3
+ip netns exec cliente3 ip link set lo alias networking-lab-owned
 ip netns add cliente4
+ip netns exec cliente4 ip link set lo alias networking-lab-owned
 ```
 
 ### Paso 6: Crear interfaces para los 4 clientes
@@ -140,21 +176,29 @@ ip netns add cliente4
 ```bash
 # Cliente 1
 ip link add veth-c1 type veth peer name veth-s1
+ip link set veth-c1 alias networking-lab-lab-03
+ip link set veth-s1 alias networking-lab-lab-03
 ip link set veth-c1 netns cliente1
 ip link set veth-s1 netns switch
 
 # Cliente 2
 ip link add veth-c2 type veth peer name veth-s2
+ip link set veth-c2 alias networking-lab-lab-03
+ip link set veth-s2 alias networking-lab-lab-03
 ip link set veth-c2 netns cliente2
 ip link set veth-s2 netns switch
 
 # Cliente 3
 ip link add veth-c3 type veth peer name veth-s3
+ip link set veth-c3 alias networking-lab-lab-03
+ip link set veth-s3 alias networking-lab-lab-03
 ip link set veth-c3 netns cliente3
 ip link set veth-s3 netns switch
 
 # Cliente 4
 ip link add veth-c4 type veth peer name veth-s4
+ip link set veth-c4 alias networking-lab-lab-03
+ip link set veth-s4 alias networking-lab-lab-03
 ip link set veth-c4 netns cliente4
 ip link set veth-s4 netns switch
 ```
@@ -208,6 +252,8 @@ Necesitamos un enlace entre el switch y el router:
 ```bash
 # Crear par veth switch-router
 ip link add veth-sr type veth peer name veth-rs
+ip link set veth-sr alias networking-lab-lab-03
+ip link set veth-rs alias networking-lab-lab-03
 ip link set veth-sr netns switch
 ip link set veth-rs netns router
 
@@ -218,6 +264,12 @@ ip netns exec switch ip link set veth-sr up
 # Configurar IP en el router (interfaz hacia el switch)
 ip netns exec router ip addr add 10.0.1.1/24 dev veth-rs
 ip netns exec router ip link set veth-rs up
+if ! ip netns exec router iptables -C FORWARD -i veth-rs -o veth-wan -j ACCEPT; then
+  ip netns exec router iptables -A FORWARD -i veth-rs -o veth-wan -j ACCEPT && touch /tmp/lab03-router-forward-out.added
+fi
+if ! ip netns exec router iptables -C FORWARD -i veth-wan -o veth-rs -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; then
+  ip netns exec router iptables -A FORWARD -i veth-wan -o veth-rs -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT && touch /tmp/lab03-router-forward-in.added
+fi
 ```
 
 ### Paso 10: Verificar conectividad entre clientes
@@ -346,6 +398,14 @@ Este experimento es **local**: el error lo genera el propio origen. En un camino
 Podemos cambiar la MTU para soportar jumboframes entre Cliente 1 y Cliente 3. La MTU debe subirse en **todos los extremos del camino**: ambos clientes y los puertos del switch por los que pasa la trama (el bridge adopta por defecto la menor MTU de sus puertos, por eso también se sube a mano; la MTU de `br0` solo afecta a la interfaz del propio bridge, y es la de cada puerto la que limita lo que se transmite):
 
 ```bash
+MTU_FILE=/tmp/lab03-mtu.before
+if [ -e "$MTU_FILE" ]; then echo "Existe $MTU_FILE; restaura la MTU o ejecuta la limpieza de Lab03."; exit 1; fi
+: > "$MTU_FILE"
+for spec in "cliente1 veth-c1" "cliente3 veth-c3" "switch veth-s1" "switch veth-s3" "switch br0"; do
+  read -r ns dev <<< "$spec"
+  mtu=$(ip netns exec "$ns" cat "/sys/class/net/$dev/mtu") || { echo "No se pudo leer MTU de $ns/$dev"; rm -f "$MTU_FILE"; exit 1; }
+  printf '%s %s %s\n' "$ns" "$dev" "$mtu" >> "$MTU_FILE"
+done
 ip netns exec cliente1 ip link set veth-c1 mtu 9000
 ip netns exec cliente3 ip link set veth-c3 mtu 9000
 ip netns exec switch ip link set veth-s1 mtu 9000
@@ -353,7 +413,67 @@ ip netns exec switch ip link set veth-s3 mtu 9000
 ip netns exec switch ip link set br0 mtu 9000
 ```
 
-Ahora un ping con `-s 8972` (8972 + 8 + 20 = 9000) y `-M do` entre Cliente 1 y Cliente 3 debería funcionar. Un ping con `-s 9000` no cabría: sumaría 28 bytes de cabeceras. Los otros puertos del bridge (`veth-s2`, `veth-s4`, `veth-sr`) conservan 1500, de modo que el tráfico hacia ellos sigue limitado por esa MTU.
+Ahora un ping con `-s 8972` (8972 + 8 + 20 = 9000) y `-M do` entre Cliente 1 y Cliente 3 debería funcionar. Un ping con `-s 9000` no cabría: sumaría 28 bytes de cabeceras. Los otros puertos del bridge (`veth-s2`, `veth-s4`, `veth-sr`) conservan 1500, de modo que el tráfico hacia ellos sigue limitado por esa MTU. Restaura al terminar:
+
+```bash
+while read -r ns dev mtu; do ip netns exec "$ns" ip link set "$dev" mtu "$mtu"; done < /tmp/lab03-mtu.before
+rm -f /tmp/lab03-mtu.before
+```
+
+### Ejercicio: PMTUD a través de un router cuando se bloquea ICMP
+
+El Paso 15 anterior muestra un error local del origen; este ejercicio crea un segundo salto con MTU menor para observar PMTUD real. El router ya tiene `10.0.1.1/24` hacia los clientes. Se añade una red remota `10.0.2.0/24` con MTU 1200. Todo se ejecuta dentro de namespaces; no modifica el host.
+
+```bash
+sudo ip netns add remote
+sudo ip netns exec remote ip link set lo alias networking-lab-owned
+sudo ip link add veth-rmt type veth peer name veth-remote
+sudo ip link set veth-rmt alias networking-lab-lab-03
+sudo ip link set veth-remote alias networking-lab-lab-03
+sudo ip link set veth-rmt netns router
+sudo ip link set veth-remote netns remote
+sudo ip netns exec router ip addr add 10.0.2.1/24 dev veth-rmt
+sudo ip netns exec remote ip addr add 10.0.2.2/24 dev veth-remote
+sudo ip netns exec router ip link set veth-rmt mtu 1200 up
+sudo ip netns exec remote ip link set veth-remote mtu 1200 up
+sudo ip netns exec remote ip link set lo up
+if [ -e /tmp/lab03-router-ip_forward.orig ]; then echo "Existe /tmp/lab03-router-ip_forward.orig; ejecuta la limpieza de Lab03 antes de repetir."; exit 1; fi
+sudo ip netns exec router sysctl -n net.ipv4.ip_forward | sudo tee /tmp/lab03-router-ip_forward.orig >/dev/null
+sudo ip netns exec router sysctl -w net.ipv4.ip_forward=1
+
+# El datagrama IP de 1200 bytes (1172 de datos ICMP + 28 de cabeceras) debe pasar.
+sudo ip netns exec cliente1 ping -M do -c 2 -s 1172 10.0.2.2
+
+# Un datagrama mayor requiere ICMP type 3/code 4 desde el router.
+sudo ip netns exec cliente1 ping -M do -c 2 -s 1300 10.0.2.2 || true
+
+# Bloquear solo el mensaje ICMP Fragmentation Needed dirigido a Cliente 1.
+if ! sudo ip netns exec router iptables -C OUTPUT -p icmp --icmp-type fragmentation-needed -d 10.0.1.2 -j DROP; then
+  sudo ip netns exec router iptables -I OUTPUT 1 -p icmp --icmp-type fragmentation-needed -d 10.0.1.2 -j DROP && touch /tmp/lab03-pmtud-icmp-drop.added
+fi
+sudo ip netns exec cliente1 ping -M do -c 2 -W 1 -s 1300 10.0.2.2 || echo "Esperado: sin ICMP de PMTUD, el origen no aprende la MTU del camino."
+if [ -f /tmp/lab03-pmtud-icmp-drop.added ]; then
+  sudo ip netns exec router iptables -D OUTPUT -p icmp --icmp-type fragmentation-needed -d 10.0.1.2 -j DROP 2>/dev/null || true
+  rm -f /tmp/lab03-pmtud-icmp-drop.added
+fi
+
+sudo ip netns exec router sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab03-router-ip_forward.orig)"
+rm -f /tmp/lab03-router-ip_forward.orig
+PIDS_REMOTE=$(sudo ip netns pids remote 2>/dev/null || true)
+if [ "$(sudo ip netns exec remote cat /sys/class/net/lo/ifalias 2>/dev/null)" = networking-lab-owned ] && [ -z "$PIDS_REMOTE" ]; then
+  sudo ip netns del remote
+else
+  echo "Se conserva remote: tiene procesos activos o no tiene la marca de propiedad."
+fi
+```
+
+Para observar el mensaje ICMP, ejecuta en otra terminal antes de repetir el ping grande (si `tcpdump` está instalado):
+
+```bash
+sudo ip netns exec router tcpdump -ni veth-rs -c 1 'icmp[0] = 3 and icmp[1] = 4'
+```
+
+**Resultado esperado:** con ICMP permitido, el router informa la MTU 1200; al bloquear ese mensaje, el paquete grande deja de progresar y la aplicación puede experimentar un *black hole* de PMTUD. Los paquetes de 1172 bytes de datos siguen pasando. La regla se elimina y el valor original de `ip_forward` se restaura dentro del namespace.
 
 ## Ejercicios prácticos
 
@@ -362,10 +482,10 @@ Ahora un ping con `-s 8972` (8972 + 8 + 20 = 9000) y `-M do` entre Cliente 1 y C
 1.  Limpiar la tabla MAC del switch:
 
     ```bash
-    ip netns exec switch bridge fdb flush dev br0
+    ip netns exec switch bridge fdb flush dev br0 dynamic
     ```
 
-    `bridge fdb flush` requiere iproute2 y kernel 6.0 o posteriores. En un sistema más antiguo (por ejemplo, Ubuntu 22.04) no existe: espera a que las entradas dinámicas envejezcan (300 s por defecto) o recrea el bridge.
+    La forma extendida de `bridge fdb flush` depende de una versión de `iproute2` que implemente el filtro `dynamic` y del soporte netlink del kernel; no debe fijarse un umbral universal de kernel 6.0. Comprueba `bridge fdb help`/`bridge -Version`. Si el filtro no está disponible, elimina solo la MAC de prueba con `bridge fdb del LLADDR dev PUERTO master` o espera al envejecimiento dinámico (300 s por defecto).
 
 2.  Enviar un ping de Cliente 1 a Cliente 2.
 3.  Ver la tabla MAC nuevamente.
@@ -386,16 +506,41 @@ Ahora un ping con `-s 8972` (8972 + 8 + 20 = 9000) y `-M do` entre Cliente 1 y C
 
 ### Ejercicio 3: Impacto de la MTU en el rendimiento
 
-1.  Medir el throughput con MTU 1500:
+La prueba se realiza entre `cliente1` y `cliente3`, que comparten el mismo dominio de capa 2: el tráfico **no atraviesa el router**. Por tanto, cambia la MTU solo en los extremos y puertos del bridge que realmente están en ese camino.
+
+1. Medir el throughput con MTU 1500. El servidor se ejecuta como daemon con PID file para poder detenerlo de forma selectiva:
 
     ```bash
-    ip netns exec router iperf3 -s &
-    ip netns exec cliente1 iperf3 -c 10.0.1.1
+    if [ -e /tmp/lab03-iperf3.pid ]; then echo "Existe /tmp/lab03-iperf3.pid; ejecuta la limpieza de Lab03."; exit 1; fi
+    ip netns exec cliente3 iperf3 -s -D -I /tmp/lab03-iperf3.pid
+    for n in 1 2 3 4 5; do ip netns exec cliente1 iperf3 -c 10.0.1.4 -P 1 -t 10 -O 2; done
     ```
 
-2.  Cambiar la MTU a 9000 en todos los enlaces del camino (`veth-c1`, `veth-s1`, `br0`, `veth-sr`, `veth-rs`) y repetir la medición.
-3.  **Pregunta:** ¿Mejora el throughput con jumboframes? ¿Por qué?
+2. Cambiar la MTU a 9000 en todos los enlaces del camino (`cliente1:veth-c1`, `switch:veth-s1`, `switch:br0`, `switch:veth-s3`, `cliente3:veth-c3`) y repetir exactamente las cinco mediciones con `-P 1`, `-t 10` y `-O 2`:
 
+    ```bash
+    MTU_FILE=/tmp/lab03-mtu.before
+    if [ -e "$MTU_FILE" ]; then echo "Existe $MTU_FILE; restaura la MTU antes de medir."; exit 1; fi
+    : > "$MTU_FILE"
+    for spec in "cliente1 veth-c1" "cliente3 veth-c3" "switch veth-s1" "switch veth-s3" "switch br0"; do
+      read -r ns dev <<< "$spec"
+      mtu=$(ip netns exec "$ns" cat "/sys/class/net/$dev/mtu") || { echo "No se pudo leer MTU de $ns/$dev"; rm -f "$MTU_FILE"; exit 1; }
+      printf '%s %s %s\n' "$ns" "$dev" "$mtu" >> "$MTU_FILE"
+    done
+    ip netns exec cliente1 ip link set veth-c1 mtu 9000
+    ip netns exec switch ip link set veth-s1 mtu 9000
+    ip netns exec switch ip link set br0 mtu 9000
+    ip netns exec switch ip link set veth-s3 mtu 9000
+    ip netns exec cliente3 ip link set veth-c3 mtu 9000
+    for n in 1 2 3 4 5; do ip netns exec cliente1 iperf3 -c 10.0.1.4 -P 1 -t 10 -O 2; done
+    while read -r ns dev mtu; do ip netns exec "$ns" ip link set "$dev" mtu "$mtu"; done < "$MTU_FILE"
+    rm -f "$MTU_FILE"
+    ```
+
+3. Registra los cinco valores de bitrate del receptor para cada condición y compara la **mediana**. Mantén constante la dirección, extremos, número de flujos, duración y carga de CPU.
+4. **Pregunta:** ¿Mejora el throughput con jumboframes? ¿La diferencia supera la variación entre repeticiones?
+
+La diferencia puede ser pequeña o nula en `veth`: el límite puede ser la CPU, el proceso de copia o el generador. Una mejora en esta topología virtual no demuestra por sí sola una mejora en una NIC física.
 ## Errores comunes y soluciones
 
 | Error | Causa | Solución |
@@ -407,18 +552,76 @@ Ahora un ping con `-s 8972` (8972 + 8 + 20 = 9000) y `-M do` entre Cliente 1 y C
 
 ## Limpieza del laboratorio
 
-El laboratorio 03 transforma la topología creada en los laboratorios 01 y 02. Para revertir también los cambios que el laboratorio 02 hizo en el **host** (reenvío, NAT, reglas `FORWARD`, ruta y `veth-host`), ejecuta primero su sección **«Revertir los cambios del host»**. Esa sección también elimina `cliente1`, `cliente2` y `router`.
-
-Después elimina los tres namespaces exclusivos de esta práctica:
+Primero detén el servidor `iperf3` de esta práctica. Después elimina los namespaces exclusivos de Lab03. **No borres `router` ni reviertas cambios del host desde esta sección**: ejecuta al final la sección de reversión del Laboratorio 02, que es propietaria de `router`, `cliente1`, `cliente2`, NAT, `FORWARD`, `ip_forward`, ruta y `veth-host`.
 
 ```bash
-for ns in switch cliente3 cliente4; do
-  sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-  sudo ip netns del "$ns" 2>/dev/null || true
+PROC_LEFT=0
+if [ -s /tmp/lab03-iperf3.pid ]; then
+  PID=$(cat /tmp/lab03-iperf3.pid 2>/dev/null || true)
+  if [[ "$PID" =~ ^[0-9]+$ ]] && [ -r "/proc/$PID/cmdline" ]; then
+    CMDLINE=$(tr '\0' ' ' < "/proc/$PID/cmdline")
+    if [[ "$CMDLINE" == *iperf3* && "$CMDLINE" == *"/tmp/lab03-iperf3.pid"* ]]; then sudo kill -TERM "$PID" 2>/dev/null || true
+    else echo "PID $PID no coincide con el servidor iperf3 de Lab03; no se detiene."; PROC_LEFT=1
+    fi
+  fi
+fi
+sleep 1
+if [ -s /tmp/lab03-iperf3.pid ]; then
+  PID=$(cat /tmp/lab03-iperf3.pid 2>/dev/null || true)
+  if [[ "$PID" =~ ^[0-9]+$ ]] && [ -r "/proc/$PID/cmdline" ]; then
+    CMDLINE=$(tr '\0' ' ' < "/proc/$PID/cmdline")
+    if [[ "$CMDLINE" == *iperf3* && "$CMDLINE" == *"/tmp/lab03-iperf3.pid"* ]]; then sudo kill -KILL "$PID" 2>/dev/null || true; fi
+  fi
+fi
+
+NS_LEFT=0
+if sudo ip netns list | awk '{print $1}' | grep -Fxq cliente1; then
+  if [ "$(sudo ip netns exec cliente1 cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-owned ]; then echo "Se conserva cliente1: no tiene la marca exclusiva de Lab01."; NS_LEFT=1
+  else PIDS_C1=$(sudo ip netns pids cliente1 2>/dev/null || true); if [ -n "$PIDS_C1" ]; then echo "Se conserva cliente1: hay procesos activos ($PIDS_C1)."; NS_LEFT=1; fi
+  fi
+fi
+if [ -f /tmp/lab03-router-ip_forward.orig ] || [ -f /tmp/lab03-pmtud-icmp-drop.added ] || [ -f /tmp/lab03-router-forward-out.added ] || [ -f /tmp/lab03-router-forward-in.added ]; then
+  if [ "$(sudo ip netns exec router cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-owned ]; then echo "Se conserva router: no tiene la marca de propiedad de Lab01."; NS_LEFT=1
+  else PIDS_ROUTER=$(sudo ip netns pids router 2>/dev/null || true); if [ -n "$PIDS_ROUTER" ]; then echo "Se conserva router: hay procesos activos ($PIDS_ROUTER)."; NS_LEFT=1; fi
+  fi
+fi
+for ns in switch cliente3 cliente4 remote; do
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-owned ]; then echo "Se conserva $ns: no tiene la marca de propiedad Networking Lab."; NS_LEFT=1
+    else
+      PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+      if [ -n "$PIDS" ]; then echo "Se conserva $ns: hay procesos activos ($PIDS); ciérralos desde su terminal."; NS_LEFT=1; fi
+    fi
+  fi
 done
+if [ "$NS_LEFT" = 0 ] && [ "$PROC_LEFT" = 0 ]; then
+  if [ -f /tmp/lab03-mtu.before ]; then
+    while read -r ns dev mtu; do
+      if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then sudo ip netns exec "$ns" ip link set "$dev" mtu "$mtu" 2>/dev/null || true; fi
+    done < /tmp/lab03-mtu.before
+    rm -f /tmp/lab03-mtu.before
+  fi
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq router; then
+    if [ -f /tmp/lab03-router-forward-out.added ]; then sudo ip netns exec router iptables -D FORWARD -i veth-rs -o veth-wan -j ACCEPT 2>/dev/null || true; fi
+    if [ -f /tmp/lab03-router-forward-in.added ]; then sudo ip netns exec router iptables -D FORWARD -i veth-wan -o veth-rs -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true; fi
+    if [ -f /tmp/lab03-pmtud-icmp-drop.added ]; then sudo ip netns exec router iptables -D OUTPUT -p icmp --icmp-type fragmentation-needed -d 10.0.1.2 -j DROP 2>/dev/null || true; fi
+    if [ -f /tmp/lab03-router-ip_forward.orig ]; then sudo ip netns exec router sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab03-router-ip_forward.orig)"; fi
+  fi
+  rm -f /tmp/lab03-router-forward-out.added /tmp/lab03-router-forward-in.added /tmp/lab03-pmtud-icmp-drop.added /tmp/lab03-router-ip_forward.orig
+  for ns in switch cliente3 cliente4 remote; do
+    if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then sudo ip netns del "$ns" 2>/dev/null || true; fi
+  done
+  rm -f /tmp/lab03-iperf3.pid /tmp/lab03-mtu.before
+  for f in /sys/class/net/*/ifalias; do
+    [ -r "$f" ] || continue
+    [ "$(cat "$f")" = networking-lab-lab-03 ] || continue
+    dev=${f%/ifalias}; dev=${dev##*/}
+    sudo ip link del "$dev" 2>/dev/null || true
+  done
+else echo "Se conservan namespaces y marcadores de Lab03: hay procesos o recursos sin marca que requieren inspección."; fi
 ```
 
-**Comprobación:** `sudo ip netns list` no debe mostrar `switch`, `cliente3` ni `cliente4`. Si vas a repetir el laboratorio 03, vuelve a ejecutar desde cero los laboratorios 01 y 02 antes de comenzar.
+Cuando termine esta sección, ejecuta la reversión del Laboratorio 02 para retirar el router compartido y restaurar el estado original del host.
 
 ## Profundización: algoritmo de conmutación y FDB
 

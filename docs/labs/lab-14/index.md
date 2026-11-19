@@ -50,38 +50,52 @@ graph TB
 
 ## Construcción
 
-### Paso 0: Limpiar el entorno
+### Paso 0: Limpiar ejecuciones anteriores de este laboratorio
 
-Elimina únicamente los *namespaces* que crea este laboratorio, por nombre. **No** uses un bucle que borre todos los de `ip netns list`: un usuario puede tener otros entornos virtuales, laboratorios o servicios que utilicen *namespaces*, y esa orden los eliminaría. Esta limpieza solo afecta a los cuatro nombres de este escenario (`Router`, `Host1`, `Host2` y `ServidorDMZ`, con esa capitalización; son distintos de `router` o `host1` de laboratorios anteriores).
+Este paso solo retira los cuatro namespaces de la topología de Lab14, sus dos namespaces opcionales de policy routing y sus enlaces marcados. No elimina recursos de otros laboratorios: en particular, conserva `veth-wan-op` de Lab13 y cualquier bridge compartido.
 
 ```bash
-NS_LAB="Router Host1 Host2 ServidorDMZ"
+NS_LAB="Router Host1 Host2 ServidorDMZ GW_A GW_B"
 EXISTENTES=$(sudo ip netns list | awk '{print $1}' | while read -r ns; do
   for esperado in $NS_LAB; do [ "$ns" = "$esperado" ] && echo "$ns"; done
 done)
-VETH_WAN=$(sudo ip -o link show veth-wan-r 2>/dev/null | head -1)
-printf 'Namespaces existentes: %s\nInterfaz veth-wan-r: %s\n' "${EXISTENTES:-(ninguno)}" "${VETH_WAN:-(ausente)}"
-if [ -n "$EXISTENTES$VETH_WAN" ]; then
-  read -r -p "¿Eliminar únicamente estos recursos del laboratorio 14? (s/N) " CONFIRMAR
-  if [ "$CONFIRMAR" != s ]; then echo "Cancelado"; exit 1; fi
-  for ns in $EXISTENTES; do
-    sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-    sudo ip netns del "$ns" 2>/dev/null || true
-  done
-  [ -n "$VETH_WAN" ] && sudo ip link del veth-wan-r 2>/dev/null || true
-fi
-sudo apt-get install -y ethtool traceroute tcpdump netcat-openbsd nftables
+NS_SIN_MARCA=""
+for ns in $EXISTENTES; do
+  if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-14 ]; then NS_SIN_MARCA="$NS_SIN_MARCA $ns"; fi
+done
+if [ -n "$NS_SIN_MARCA" ]; then echo "Se aborta; namespaces sin marca:$NS_SIN_MARCA"; exit 1; fi
+for ns in $EXISTENTES; do
+  PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+  if [ -n "$PIDS" ]; then echo "$ns tiene procesos activos ($PIDS); ejecuta la limpieza antes de repetir Lab14."; exit 1; fi
+done
+if [ -e /tmp/lab14 ] && [ ! -f /tmp/lab14/.networking-lab-lab-14 ]; then echo "/tmp/lab14 existe sin marca de propiedad; no se modifica."; exit 1; fi
+for f in /tmp/lab14-host-nat.added /tmp/lab14-forward-out.added /tmp/lab14-forward-in.added /tmp/lab14-ip_forward.orig; do
+  if [ -e "$f" ]; then echo "Existe el marcador $f; ejecuta la reversión completa de Lab14 antes de repetirlo."; exit 1; fi
+done
+for ns in $EXISTENTES; do sudo ip netns del "$ns" 2>/dev/null || true; done
+for f in /sys/class/net/*/ifalias; do
+  [ -r "$f" ] || continue
+  [ "$(cat "$f")" = networking-lab-lab-14 ] || continue
+  dev=${f%/ifalias}; dev=${dev##*/}
+  sudo ip link del "$dev" 2>/dev/null || true
+done
+if [ -f /tmp/lab14/.networking-lab-lab-14 ]; then sudo rm -rf /tmp/lab14; fi
 ```
 
-Si los *namespaces* de los laboratorios anteriores te estorban, elimínalos tú **por nombre** (véase el Paso 0 del laboratorio 10) y no con un bucle general.
+sudo apt-get install -y ethtool traceroute tcpdump netcat-openbsd nftables conntrack
 
+Si siguen activos recursos de otra práctica, ejecuta la limpieza de esa práctica; este paso no los elimina.
 ### Paso 1: Crear namespaces
 
 ```bash
 sudo ip netns add Router
+sudo ip netns exec Router ip link set lo alias networking-lab-lab-14
 sudo ip netns add Host1
+sudo ip netns exec Host1 ip link set lo alias networking-lab-lab-14
 sudo ip netns add Host2
+sudo ip netns exec Host2 ip link set lo alias networking-lab-lab-14
 sudo ip netns add ServidorDMZ
+sudo ip netns exec ServidorDMZ ip link set lo alias networking-lab-lab-14
 ```
 
 ### Paso 2: Conectar interfaces
@@ -93,6 +107,8 @@ La LAN `10.0.0.0/24` es un único segmento con dos equipos, así que el router u
 #   Anota antes `sysctl net.ipv4.ip_forward`; reversión en «Limpieza selectiva».
 # WAN: el router se conecta al host (que hace de "Internet")
 sudo ip link add veth-r-wan type veth peer name veth-wan-r
+sudo ip link set veth-r-wan alias networking-lab-lab-14
+sudo ip link set veth-wan-r alias networking-lab-lab-14
 sudo ip link set veth-r-wan netns Router
 sudo ip netns exec Router ip addr add 203.0.113.1/30 dev veth-r-wan
 sudo ip netns exec Router ip link set veth-r-wan up
@@ -105,6 +121,8 @@ sudo ip netns exec Router ip addr add 10.0.0.1/24 dev br-lan
 sudo ip netns exec Router ip link set br-lan up
 
 sudo ip link add veth-r-lan1 type veth peer name veth-lan1-r
+sudo ip link set veth-r-lan1 alias networking-lab-lab-14
+sudo ip link set veth-lan1-r alias networking-lab-lab-14
 sudo ip link set veth-r-lan1 netns Router
 sudo ip link set veth-lan1-r netns Host1
 sudo ip netns exec Router ip link set veth-r-lan1 master br-lan
@@ -115,6 +133,8 @@ sudo ip netns exec Host1 ip link set lo up
 sudo ip netns exec Host1 ip route add default via 10.0.0.1
 
 sudo ip link add veth-r-lan2h type veth peer name veth-lan2h
+sudo ip link set veth-r-lan2h alias networking-lab-lab-14
+sudo ip link set veth-lan2h alias networking-lab-lab-14
 sudo ip link set veth-r-lan2h netns Router
 sudo ip link set veth-lan2h netns Host2
 sudo ip netns exec Router ip link set veth-r-lan2h master br-lan
@@ -126,6 +146,8 @@ sudo ip netns exec Host2 ip route add default via 10.0.0.1
 
 # DMZ: enlace punto a punto con el servidor
 sudo ip link add veth-r-lan2 type veth peer name veth-lan2-r
+sudo ip link set veth-r-lan2 alias networking-lab-lab-14
+sudo ip link set veth-lan2-r alias networking-lab-lab-14
 sudo ip link set veth-r-lan2 netns Router
 sudo ip link set veth-lan2-r netns ServidorDMZ
 sudo ip netns exec Router ip addr add 10.0.1.1/24 dev veth-r-lan2
@@ -152,6 +174,12 @@ if [ ! -e /tmp/lab14-ip_forward.orig ]; then
   sudo sysctl -n net.ipv4.ip_forward | sudo tee /tmp/lab14-ip_forward.orig >/dev/null
 fi
 sudo sysctl -w net.ipv4.ip_forward=1
+if ! sudo iptables -C FORWARD -i veth-wan-r -o eth0 -s 203.0.113.0/30 -j ACCEPT; then
+  sudo iptables -I FORWARD 1 -i veth-wan-r -o eth0 -s 203.0.113.0/30 -j ACCEPT && touch /tmp/lab14-forward-out.added
+fi
+if ! sudo iptables -C FORWARD -i eth0 -o veth-wan-r -d 203.0.113.0/30 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; then
+  sudo iptables -I FORWARD 1 -i eth0 -o veth-wan-r -d 203.0.113.0/30 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT && touch /tmp/lab14-forward-in.added
+fi
 if ! sudo iptables -t nat -C POSTROUTING -s 203.0.113.0/30 -o eth0 -j MASQUERADE; then
   sudo iptables -t nat -A POSTROUTING -s 203.0.113.0/30 -o eth0 -j MASQUERADE && touch /tmp/lab14-host-nat.added
 fi
@@ -217,9 +245,12 @@ El `ping` a `10.0.2.1` demuestra que la ruta y el siguiente salto funcionan, per
 Arrancamos dos servicios de prueba en Host1 y establecemos una conexión desde Host2:
 
 ```bash
-sudo ip netns exec Host1 sh -c 'nc -lk -p 9000 >/dev/null 2>&1 </dev/null & echo $! > /tmp/lab14-nc9000.pid'
-sudo ip netns exec Host1 sh -c 'nc -lk -p 8443 >/dev/null 2>&1 </dev/null & echo $! > /tmp/lab14-nc8443.pid'
-sudo ip netns exec Host2 sh -c 'sleep 300 | nc 10.0.0.10 9000 >/dev/null 2>&1 &'
+if [ -e /tmp/lab14 ]; then echo "/tmp/lab14 ya existe; ejecuta limpieza."; exit 1; fi
+mkdir -p /tmp/lab14; touch /tmp/lab14/.networking-lab-lab-14
+sudo ip netns exec Host1 sh -c 'nc -lk -p 9000 >/dev/null 2>&1 </dev/null & echo $! > /tmp/lab14/nc9000.pid'
+sudo ip netns exec Host1 sh -c 'nc -lk -p 8443 >/dev/null 2>&1 </dev/null & echo $! > /tmp/lab14/nc8443.pid'
+mkfifo /tmp/lab14/nc-input
+sudo ip netns exec Host2 sh -c 'sleep 300 > /tmp/lab14/nc-input & echo $! > /tmp/lab14/sleep.pid; nc 10.0.0.10 9000 < /tmp/lab14/nc-input >/dev/null 2>&1 & echo $! > /tmp/lab14/nc-client.pid'
 
 sudo ip netns exec Host1 ss -tln                    # puertos TCP a la escucha
 sudo ip netns exec Host1 ss -tlnp                   # ... con el proceso dueño
@@ -283,27 +314,63 @@ Con Internet disponible en tu equipo: `sudo ip netns exec Router traceroute -n 8
 
 ### Paso 8: Limpieza selectiva
 
-Al terminar, elimina **solo** lo creado por este laboratorio:
-
 ```bash
-# Detén primero los procesos: un namespace con procesos dentro no desaparece del todo
-# Solo los PID guardados al iniciarlos (no cualquier `nc` del sistema)
-for f in /tmp/lab14-nc9000.pid /tmp/lab14-nc8443.pid; do
-  [ -f "$f" ] && sudo kill $(cat "$f") 2>/dev/null; rm -f "$f"
+PROC_LEFT=0
+for spec in 'nc /tmp/lab14/nc9000.pid 9000' 'nc /tmp/lab14/nc8443.pid 8443' 'nc /tmp/lab14/nc-client.pid 10.0.0.10' 'sleep /tmp/lab14/sleep.pid 300'; do
+  set -- $spec; proceso=$1; pf=$2; firma=$3
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  if [[ "$cmdline" == *"$proceso"* && "$cmdline" == *"$firma"* ]]; then sudo kill -TERM "$pid" 2>/dev/null || true
+  else echo "PID $pid no coincide con $proceso/$firma; no se detiene."; PROC_LEFT=1
+  fi
 done
-for ns in Router Host1 Host2 ServidorDMZ; do sudo ip netns del $ns 2>/dev/null || true; done
-sudo ip link del veth-wan-r 2>/dev/null || true
-if [ -f /tmp/lab14-host-nat.added ]; then
-  sudo iptables -t nat -D POSTROUTING -s 203.0.113.0/30 -o eth0 -j MASQUERADE 2>/dev/null || true
-  rm -f /tmp/lab14-host-nat.added
-fi
-if [ -f /tmp/lab14-ip_forward.orig ]; then
-  sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab14-ip_forward.orig)"
-  sudo rm -f /tmp/lab14-ip_forward.orig
+sleep 1
+for spec in 'nc /tmp/lab14/nc9000.pid 9000' 'nc /tmp/lab14/nc8443.pid 8443' 'nc /tmp/lab14/nc-client.pid 10.0.0.10' 'sleep /tmp/lab14/sleep.pid 300'; do
+  set -- $spec; proceso=$1; pf=$2; firma=$3
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  if [[ "$cmdline" == *"$proceso"* && "$cmdline" == *"$firma"* ]]; then sudo kill -KILL "$pid" 2>/dev/null || true; fi
+done
+
+NS_LEFT=0
+for ns in Router Host1 Host2 ServidorDMZ GW_A GW_B; do
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-14 ]; then echo "Se conserva $ns: no tiene marca exclusiva de Lab14."; NS_LEFT=1
+    else
+      PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+      if [ -n "$PIDS" ]; then echo "Se conserva $ns: quedan procesos no registrados ($PIDS)."; NS_LEFT=1; fi
+    fi
+  fi
+done
+if [ "$NS_LEFT" = 0 ] && [ "$PROC_LEFT" = 0 ]; then
+  for ns in Router Host1 Host2 ServidorDMZ GW_A GW_B; do
+    if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then sudo ip netns del "$ns" 2>/dev/null || true; fi
+  done
+  if [ -f /tmp/lab14-host-nat.added ]; then sudo iptables -t nat -D POSTROUTING -s 203.0.113.0/30 -o eth0 -j MASQUERADE 2>/dev/null || true; rm -f /tmp/lab14-host-nat.added; fi
+  if [ -f /tmp/lab14-forward-out.added ]; then sudo iptables -D FORWARD -i veth-wan-r -o eth0 -s 203.0.113.0/30 -j ACCEPT 2>/dev/null || true; rm -f /tmp/lab14-forward-out.added; fi
+  if [ -f /tmp/lab14-forward-in.added ]; then sudo iptables -D FORWARD -i eth0 -o veth-wan-r -d 203.0.113.0/30 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true; rm -f /tmp/lab14-forward-in.added; fi
+  if [ -f /tmp/lab14-ip_forward.orig ]; then sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab14-ip_forward.orig)"; rm -f /tmp/lab14-ip_forward.orig; fi
+  if [ "$(cat /sys/class/net/veth-wan-r/ifalias 2>/dev/null)" = networking-lab-lab-14 ]; then sudo ip link del veth-wan-r; fi
+  for f in /sys/class/net/*/ifalias; do
+    [ -r "$f" ] || continue
+    [ "$(cat "$f")" = networking-lab-lab-14 ] || continue
+    dev=${f%/ifalias}; dev=${dev##*/}
+    sudo ip link del "$dev" 2>/dev/null || true
+  done
+  if [ -f /tmp/lab14/.networking-lab-lab-14 ]; then sudo rm -rf /tmp/lab14; fi
+else
+  echo "Se conservan enlaces host y /tmp/lab14: quedan procesos o namespaces que requieren inspección."
 fi
 ```
 
-Eliminar un *namespace* borra también sus interfaces y sus reglas de `nft`/`iptables`; las órdenes que tocaron el **host** (`veth-wan-r`, la regla de `MASQUERADE` y `net.ipv4.ip_forward`) hay que revertirlas aparte.
+Eliminar un *namespace* borra sus interfaces y reglas `nft`/`iptables`; los cambios del **host** (`veth-wan-r`, reglas NAT/FORWARD y `net.ipv4.ip_forward`) se revierten únicamente si sus marcadores prueban que fueron creados por este laboratorio.
+
 
 ### Herramienta según el objetivo operativo
 
@@ -444,6 +511,63 @@ Diseña dos orígenes y dos gateways, predice qué tabla debe resolver cada fluj
 ### `ethtool`: virtual frente a físico
 
 Sobre `veth`, `ethtool` puede mostrar información limitada del dispositivo virtual y estadísticas software; no demuestra velocidad negociada, dúplex ni propiedades del transceptor físico. Para una NIC real, consulta `ethtool <NIC>`, `ethtool -i <NIC>` y `ethtool -S <NIC>` con permisos adecuados. No fuerces velocidad/autonegociación ni reinicies una interfaz productiva como parte de esta práctica.
+
+### Ejercicio: policy routing por dirección de origen
+
+Este ejercicio crea dos siguientes saltos aislados dentro de namespaces; no modifica `/etc/iproute2/rt_tables` ni el enrutamiento del host. Las tablas 101 y 102 existen solo dentro de `Router` y se eliminan con ese namespace.
+
+```bash
+for ns in GW_A GW_B; do
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then echo "$ns ya existe; ejecuta limpieza antes de repetir."; exit 1; fi
+done
+sudo ip netns add GW_A; sudo ip netns exec GW_A ip link set lo alias networking-lab-lab-14
+sudo ip netns add GW_B; sudo ip netns exec GW_B ip link set lo alias networking-lab-lab-14
+sudo ip link add veth-r-gwa type veth peer name veth-gwa-r
+sudo ip link set veth-r-gwa alias networking-lab-lab-14
+sudo ip link set veth-gwa-r alias networking-lab-lab-14
+sudo ip link set veth-r-gwa netns Router; sudo ip link set veth-gwa-r netns GW_A
+sudo ip netns exec Router ip addr add 198.51.100.1/30 dev veth-r-gwa
+sudo ip netns exec GW_A ip addr add 198.51.100.2/30 dev veth-gwa-r
+sudo ip netns exec Router ip link set veth-r-gwa up; sudo ip netns exec GW_A ip link set veth-gwa-r up
+sudo ip link add veth-r-gwb type veth peer name veth-gwb-r
+sudo ip link set veth-r-gwb alias networking-lab-lab-14
+sudo ip link set veth-gwb-r alias networking-lab-lab-14
+sudo ip link set veth-r-gwb netns Router; sudo ip link set veth-gwb-r netns GW_B
+sudo ip netns exec Router ip addr add 203.0.113.1/30 dev veth-r-gwb
+sudo ip netns exec GW_B ip addr add 203.0.113.2/30 dev veth-gwb-r
+sudo ip netns exec Router ip link set veth-r-gwb up; sudo ip netns exec GW_B ip link set veth-gwb-r up
+
+sudo ip netns exec Router ip route add 10.0.0.0/24 dev br-lan table 101
+sudo ip netns exec Router ip route add 198.51.100.0/30 dev veth-r-gwa table 101
+sudo ip netns exec Router ip route add default via 198.51.100.2 dev veth-r-gwa table 101
+sudo ip netns exec Router ip route add 10.0.0.0/24 dev br-lan table 102
+sudo ip netns exec Router ip route add 203.0.113.0/30 dev veth-r-gwb table 102
+sudo ip netns exec Router ip route add default via 203.0.113.2 dev veth-r-gwb table 102
+sudo ip netns exec Router ip rule add pref 100 from 10.0.0.10/32 table 101
+sudo ip netns exec Router ip rule add pref 110 from 10.0.0.20/32 table 102
+
+sudo ip netns exec Router ip rule show
+sudo ip netns exec Router ip route get 198.51.100.10 from 10.0.0.10
+sudo ip netns exec Router ip route get 203.0.113.10 from 10.0.0.20
+```
+
+El primer origen debe seleccionar la tabla 101 y el gateway `198.51.100.2`; el segundo, la tabla 102 y `203.0.113.2`. `ip route get` demuestra la decisión local de selección, no conectividad a Internet: los namespaces `GW_A` y `GW_B` son siguientes saltos didácticos, no proveedores externos.
+
+Reversión del ejercicio (antes de borrar `Router`):
+
+```bash
+sudo ip netns exec Router ip rule del pref 100 from 10.0.0.10/32 table 101 2>/dev/null || true
+sudo ip netns exec Router ip rule del pref 110 from 10.0.0.20/32 table 102 2>/dev/null || true
+sudo ip netns exec Router ip route flush table 101
+sudo ip netns exec Router ip route flush table 102
+for ns in GW_A GW_B; do
+  if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" = networking-lab-lab-14 ]; then
+    PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+    if [ -z "$PIDS" ]; then sudo ip netns del "$ns"; else echo "$ns conserva procesos ($PIDS); no se elimina."; fi
+  fi
+done
+```
+
 
 ### Diagnóstico por evidencia
 

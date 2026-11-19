@@ -56,9 +56,10 @@ graph TB
 
 ### Paso 1: Verificar infraestructura existente
 
-Este laboratorio continúa sobre la red del laboratorio 12 (namespaces `OnPremise`, `AppServer`, `DBServer`, `AWS_VPC`, `EC2_Server`...). Comprueba que sigue en pie:
+Este laboratorio continúa sobre la red del laboratorio 12 (namespaces `OnPremise`, `AppServer`, `DBServer`, `AWS_VPC`, `EC2_Server`...). Comprueba que `OnPremise` conserva la marca del laboratorio 12 y sigue en pie:
 
 ```bash
+if [ "$(sudo ip netns exec OnPremise cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-12 ]; then echo "OnPremise no pertenece a Lab12 o no está disponible; ejecuta su configuración antes de Lab13."; exit 1; fi
 sudo ip netns list
 sudo ip netns exec OnPremise ping -c 2 10.100.1.10
 sudo ip netns exec OnPremise ping -c 2 10.0.0.10
@@ -67,7 +68,7 @@ sudo ip netns exec OnPremise ping -c 2 10.0.0.10
 Si no existe, ejecuta antes el laboratorio 12. Instala las herramientas (en el host):
 
 ```bash
-sudo apt-get install -y mtr-tiny traceroute tcpdump iperf3 rsyslog dnsutils netcat-openbsd
+sudo apt-get install -y mtr-tiny traceroute tcpdump iperf3 rsyslog rsyslog-gnutls dnsutils netcat-openbsd openssl logrotate
 ```
 
 ### Paso 2: Crear servidores de monitoreo
@@ -85,7 +86,9 @@ if [ -e /tmp/lab13 ] || [ -n "$VETH_WAN_OP" ] || [ -e /tmp/lab13-ip_forward.orig
   exit 1
 fi
 sudo ip netns add NOC
+sudo ip netns exec NOC ip link set lo alias networking-lab-lab-13
 sudo ip netns add SIEM
+sudo ip netns exec SIEM ip link set lo alias networking-lab-lab-13
 ```
 
 ### Paso 3: Conectarlos a la LAN de OnPremise
@@ -96,6 +99,8 @@ Ambos se unen al bridge `br-lan` del router (la misma LAN que App y DB), no a in
 for s in "NOC veth-noc veth-op-noc 10.0.0.100/24" "SIEM veth-siem veth-op-siem 10.0.0.200/24"; do
   set -- $s
   sudo ip link add $2 type veth peer name $3
+  sudo ip link set $2 alias networking-lab-lab-13
+  sudo ip link set $3 alias networking-lab-lab-13
   sudo ip link set $2 netns $1
   sudo ip link set $3 netns OnPremise
   sudo ip netns exec OnPremise ip link set $3 master br-lan
@@ -115,14 +120,27 @@ done
 Para las pruebas hacia Internet, OnPremise se conecta al host y traduce direcciones (NAT):
 
 ```bash
+if [ -e /sys/class/net/veth-wan-op ]; then
+  echo "veth-wan-op ya existe; no se reutiliza una interfaz preexistente."
+  exit 1
+fi
+for f in /tmp/lab13-ip_forward.orig /tmp/lab13-host-nat.added /tmp/lab13-forward-out.added /tmp/lab13-forward-in.added /tmp/lab13-onprem-nat.added /tmp/lab13-onprem-default.added; do
+  if [ -e "$f" ]; then echo "Existe un marcador anterior ($f); ejecuta la reversión del laboratorio 13 antes de repetir este paso."; exit 1; fi
+done
 sudo ip link add veth-op-wan type veth peer name veth-wan-op
+sudo ip link set veth-op-wan alias networking-lab-lab-13
+sudo ip link set veth-wan-op alias networking-lab-lab-13
 sudo ip link set veth-op-wan netns OnPremise
 sudo ip netns exec OnPremise ip addr add 192.168.100.1/24 dev veth-op-wan
 sudo ip netns exec OnPremise ip link set veth-op-wan up
 sudo ip addr add 192.168.100.2/24 dev veth-wan-op
 sudo ip link set veth-wan-op up
-sudo ip netns exec OnPremise ip route add default via 192.168.100.2
-sudo ip netns exec OnPremise iptables -t nat -A POSTROUTING -o veth-op-wan -j MASQUERADE
+if ! sudo ip netns exec OnPremise ip route show default | grep -q 'via 192.168.100.2.*veth-op-wan'; then
+  sudo ip netns exec OnPremise ip route add default via 192.168.100.2 && touch /tmp/lab13-onprem-default.added
+fi
+if ! sudo ip netns exec OnPremise iptables -t nat -C POSTROUTING -o veth-op-wan -j MASQUERADE; then
+  sudo ip netns exec OnPremise iptables -t nat -A POSTROUTING -o veth-op-wan -j MASQUERADE && touch /tmp/lab13-onprem-nat.added
+fi
 
 # El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida).
 # El valor original de ip_forward y la creación de la regla NAT quedan registrados para revertirlos.
@@ -132,6 +150,12 @@ fi
 sudo sysctl -w net.ipv4.ip_forward=1
 if ! sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE; then
   sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab13-host-nat.added
+fi
+if ! sudo iptables -C FORWARD -i veth-wan-op -o eth0 -s 192.168.100.0/24 -j ACCEPT; then
+  sudo iptables -I FORWARD 1 -i veth-wan-op -o eth0 -s 192.168.100.0/24 -j ACCEPT && touch /tmp/lab13-forward-out.added
+fi
+if ! sudo iptables -C FORWARD -i eth0 -o veth-wan-op -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; then
+  sudo iptables -I FORWARD 1 -i eth0 -o veth-wan-op -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT && touch /tmp/lab13-forward-in.added
 fi
 ```
 
@@ -169,7 +193,16 @@ sudo ip netns exec NOC mtr -n -r -c 10 10.100.1.10
 Las capturas se guardan en `/tmp/lab13/` (el `/tmp` real: los namespaces no aíslan archivos).
 
 ```bash
+if [ -e /tmp/lab13 ]; then
+  if [ -f /tmp/lab13/.networking-lab-owned ]; then
+    echo "Existe una ejecución anterior del laboratorio 13; ejecuta su limpieza antes de repetirlo."
+  else
+    echo "/tmp/lab13 existe sin marca de propiedad; no se modifica."
+  fi
+  exit 1
+fi
 mkdir -p /tmp/lab13
+touch /tmp/lab13/.networking-lab-owned
 
 # Capturar 10 paquetes mientras haces algún ping desde otra terminal
 sudo ip netns exec NOC tcpdump -i veth-noc -c 10 -n
@@ -194,9 +227,7 @@ sudo ip netns exec AppServer iperf3 -s -D -I /tmp/lab13/iperf3.pid
 sudo ip netns exec NOC iperf3 -c 10.0.0.10 -t 5
 sudo ip netns exec NOC iperf3 -c 10.0.0.10 -u -b 100M -t 5
 
-# Detener SOLO ese servidor: el PID guardado, no `pkill iperf3`
-# (pkill actúa sobre todo el sistema: los namespaces aíslan la red, no los procesos)
-sudo kill $(cat /tmp/lab13/iperf3.pid)
+# Mantén el servidor para el ejercicio bidireccional; la limpieza validada lo detiene al final.
 ```
 
 **Cómo interpretar los resultados.**
@@ -225,11 +256,26 @@ En la prueba **UDP**, mira además `Lost/Total` y `Jitter`: una pérdida de 0 % 
 Arrancamos una instancia de `rsyslog` **solo para el SIEM**, con su propia configuración (no se toca el `rsyslog` del equipo):
 
 ```bash
+# Certificados efímeros de laboratorio: CA, servidor SIEM y cliente NOC.
+openssl req -x509 -newkey rsa:2048 -nodes -keyout /tmp/lab13/ca.key -out /tmp/lab13/ca.pem -days 1 -subj "/CN=NetworkingLab-CA"
+openssl req -new -newkey rsa:2048 -nodes -keyout /tmp/lab13/siem.key -out /tmp/lab13/siem.csr -subj "/CN=siem.lab"
+openssl x509 -req -in /tmp/lab13/siem.csr -CA /tmp/lab13/ca.pem -CAkey /tmp/lab13/ca.key -CAcreateserial -out /tmp/lab13/siem.crt -days 1 -extfile <(printf 'subjectAltName=DNS:siem.lab\nextendedKeyUsage=serverAuth\n')
+openssl req -new -newkey rsa:2048 -nodes -keyout /tmp/lab13/noc.key -out /tmp/lab13/noc.csr -subj "/CN=noc.lab"
+openssl x509 -req -in /tmp/lab13/noc.csr -CA /tmp/lab13/ca.pem -CAkey /tmp/lab13/ca.key -CAcreateserial -out /tmp/lab13/noc.crt -days 1 -extfile <(printf 'subjectAltName=DNS:noc.lab\nextendedKeyUsage=clientAuth\n')
+chmod 600 /tmp/lab13/*.key
+
 cat > /tmp/lab13/siem.conf << 'EOF'
+global(
+  DefaultNetstreamDriver="gtls"
+  DefaultNetstreamDriverCAFile="/tmp/lab13/ca.pem"
+  DefaultNetstreamDriverCertFile="/tmp/lab13/siem.crt"
+  DefaultNetstreamDriverKeyFile="/tmp/lab13/siem.key"
+)
 module(load="imudp")
 input(type="imudp" port="514")
 module(load="imtcp")
 input(type="imtcp" port="514")
+input(type="imtcp" port="6514" StreamDriver.Name="gtls" StreamDriver.Mode="1" StreamDriver.AuthMode="x509/name" PermittedPeer="noc.lab")
 template(name="RemoteLogs" type="string" string="%timegenerated% %HOSTNAME% %syslogtag% %msg%\n")
 *.* /tmp/lab13/remote.log;RemoteLogs
 EOF
@@ -237,11 +283,11 @@ EOF
 sudo ip netns exec SIEM sh -c 'rsyslogd -n -f /tmp/lab13/siem.conf -i /tmp/lab13/siem.pid >/tmp/lab13/rsyslog.out 2>&1 </dev/null &'
 ```
 
-Los equipos envían eventos al SIEM con `logger` (UDP al puerto 514):
+El colector acepta UDP/514 y TCP/514 para comparar transporte sin cifrado. `logger -d` usa UDP; `logger -T` usa TCP:
 
 ```bash
-sudo ip netns exec NOC logger -n 10.0.0.200 -P 514 -d -t noc "enlace hacia la nube con perdida"
-sudo ip netns exec AppServer logger -n 10.0.0.200 -P 514 -d -t app "error de conexion a la base de datos"
+sudo ip netns exec NOC logger -n 10.0.0.200 -P 514 -d -t noc "syslog UDP: enlace hacia la nube con perdida"
+sudo ip netns exec AppServer logger -n 10.0.0.200 -P 514 -T -t app "syslog TCP: error de conexion a la base de datos"
 sleep 1
 cat /tmp/lab13/remote.log
 ```
@@ -255,6 +301,66 @@ grep -i "error" /tmp/lab13/remote.log
 **Qué demuestra esto y qué no.** El envío de mensajes con `logger` demuestra el **transporte de eventos** hacia un punto central. Es un ejemplo básico de **centralización y consulta de registros**. **No** constituye correlación avanzada, detección automatizada ni respuesta ante incidentes: un SIEM real normaliza los eventos de muchas fuentes, los correlaciona (por ejemplo, «muchos fallos de acceso seguidos de un acceso correcto») y genera alertas.
 
 **Monitoreo y seguridad.** Los datos de monitoreo y los registros permiten **detectar anomalías**, pero **no sustituyen** las medidas **preventivas** (firewall, segmentación, autenticación) ni los mecanismos de **respuesta** (procedimientos, aislamiento, recuperación).
+
+### Syslog TLS con autenticación mutua
+
+TCP por sí solo no cifra ni autentica. Para el canal TLS, el SIEM presenta `siem.lab` y exige un certificado de cliente `noc.lab` firmado por la CA de prueba. El cliente verifica el nombre del servidor y el servidor limita los pares permitidos. Las claves de esta práctica son efímeras y se guardan únicamente en `/tmp/lab13/`; no reutilices esta CA ni estos certificados.
+
+```bash
+cat > /tmp/lab13/noc-tls.conf <<'EOF'
+global(
+  DefaultNetstreamDriver="gtls"
+  DefaultNetstreamDriverCAFile="/tmp/lab13/ca.pem"
+  DefaultNetstreamDriverCertFile="/tmp/lab13/noc.crt"
+  DefaultNetstreamDriverKeyFile="/tmp/lab13/noc.key"
+)
+module(load="imudp")
+input(type="imudp" port="5514" address="127.0.0.1")
+action(type="omfwd" target="10.0.0.200" port="6514" protocol="tcp" StreamDriver="gtls" StreamDriverMode="1" StreamDriverAuthMode="x509/name" StreamDriverPermittedPeers="siem.lab" action.resumeRetryCount="-1")
+EOF
+sudo ip netns exec NOC sh -c 'rsyslogd -n -f /tmp/lab13/noc-tls.conf -i /tmp/lab13/noc-tls.pid >/tmp/lab13/noc-tls.out 2>&1 </dev/null &'
+sudo ip netns exec NOC logger -n 127.0.0.1 -P 5514 -d -t noc "syslog TLS mTLS: prueba de integridad y autenticación"
+sleep 2
+grep -F "syslog TLS mTLS" /tmp/lab13/remote.log
+```
+
+Si el mensaje no aparece, revisa `/tmp/lab13/rsyslog.out` y `/tmp/lab13/noc-tls.out`, la confianza de la CA, los CN `siem.lab`/`noc.lab`, la hora del sistema y que `rsyslog-gnutls` esté instalado. TLS protege el canal y autentica según los certificados; no sustituye controles de autorización, retención ni protección del almacenamiento.
+
+### Retención y rotación de registros
+
+El archivo del colector no debe crecer sin límite. Esta política de ejemplo conserva siete rotaciones comprimidas y usa `copytruncate` para que la instancia de laboratorio siga escribiendo en el mismo archivo:
+
+```bash
+cat > /tmp/lab13/logrotate.conf <<'EOF'
+/tmp/lab13/remote.log {
+    size 1M
+    rotate 7
+    daily
+    compress
+    missingok
+    notifempty
+    copytruncate
+}
+EOF
+logrotate -d -s /tmp/lab13/logrotate.status /tmp/lab13/logrotate.conf
+logrotate -f -s /tmp/lab13/logrotate.status /tmp/lab13/logrotate.conf
+ls -lh /tmp/lab13/remote.log*
+```
+
+El archivo de estado de `logrotate` también queda en `/tmp/lab13/`; no se modifica `/etc/logrotate.d` del host.
+
+### NTP y consistencia temporal
+
+Los namespaces comparten el reloj del kernel con el host: **no** arranques un `chronyd` de prueba dentro de un namespace ni cambies la hora del equipo para este laboratorio. Comprueba la sincronización del host y registra zona horaria/desfase antes de correlacionar:
+
+```bash
+timedatectl show -p NTPSynchronized -p TimeUSec -p Timezone
+chronyc tracking
+chronyc sources -v
+```
+
+Si `chronyc` no está instalado o no hay un cliente NTP activo, documenta esa limitación en el informe; no asumas que la marca temporal de dos equipos es comparable sin verificarla.
+
 
 ### Del síntoma a la causa: método de diagnóstico
 
@@ -335,24 +441,41 @@ Puedes abrir el `.pcap` con Wireshark o `tshark` para un análisis más detallad
 
 ### Ejercicio 2: Monitoreo bidireccional
 
+El servidor iniciado en el Paso 7 permanece activo y conserva su PID en `/tmp/lab13/iperf3.pid`. Reutilízalo; no arranques otro servidor sobre el mismo puerto:
+
 ```bash
-mkdir -p /tmp/lab13
-sudo ip netns exec AppServer iperf3 -s -D -I /tmp/lab13/iperf3.pid
 sudo ip netns exec NOC iperf3 -c 10.0.0.10 --bidir -t 5
-sudo kill $(cat /tmp/lab13/iperf3.pid)
 ```
 
 ### Ejercicio 3: Simular un fallo de MTU
 
-Bajamos la MTU **solo en el servidor App**. El NOC (que está en la misma LAN, sin pasar por el router) sigue enviando paquetes de hasta 1500 bytes y el servidor, con MTU 1400, normalmente descarta los que no caben sin avisar (no se genera el mensaje ICMP "fragmentation needed", porque en capa 2 no hay un router que lo emita): un "agujero negro" de MTU. El comportamiento exacto de recepción de tramas mayores que la MTU puede variar según el kernel.
+Bajamos la MTU **solo en el servidor App**. NOC y AppServer están en la misma LAN, sin un router entre ambos. Por eso el servidor con MTU 1400 puede descartar un paquete IP mayor sin que exista un router que genere ICMP «Fragmentation Needed»: es un agujero negro local. El comportamiento exacto de la captura en el receptor puede variar según kernel/driver, porque el descarte puede ocurrir en distintos puntos de la recepción.
 
 ```bash
 sudo ip netns exec AppServer ip link set veth-app mtu 1400
-sudo ip netns exec NOC ping -c 2 -M do -s 1200 10.0.0.10     # cabe: responde
-sudo ip netns exec NOC ping -c 2 -W 1 -M do -s 1450 10.0.0.10  # no cabe: sin respuesta ni error
+```
+
+En dos terminales captura en ambos extremos. `-e` muestra la cabecera Ethernet; `-vv` decodifica IP/ICMP; `-s0` evita truncar el paquete:
+
+```bash
+sudo ip netns exec NOC timeout 12 tcpdump -ni veth-noc -e -vv -s0 icmp
+```
+
+```bash
+sudo ip netns exec AppServer timeout 12 tcpdump -ni veth-app -e -vv -s0 icmp
+```
+
+Desde NOC prueba primero un paquete IPv4 de 1500 bytes (`1472` de payload ICMP + 8 ICMP + 20 IPv4) con DF, y luego uno de 1400 bytes (`1372` + 8 + 20):
+
+```bash
+sudo ip netns exec NOC ping -c 2 -W 1 -M do -s 1472 10.0.0.10
+sudo ip netns exec NOC ping -c 2 -W 1 -M do -s 1372 10.0.0.10
 sudo ip netns exec AppServer ip link set veth-app mtu 1500     # restaurar
 ```
 
+**Interpretación:** el emisor puede mostrar que el Echo Request sale; el receptor puede mostrar la trama en `tcpdump` aunque su pila IP la descarte. Si el receptor no la muestra, anota en qué punto parece producirse el descarte. El tamaño `-s` de `ping` es solo el payload ICMP: no es el tamaño IP ni el tamaño Ethernet. Con 1472 bytes, IP mide 1500; la trama añade 14 bytes de cabecera Ethernet (el FCS normalmente no aparece en la captura del host). Con 1372, IP mide 1400.
+
+**Comparación con un camino enrutado o un túnel:** si un router recibe un paquete IPv4 mayor que la MTU de salida y DF está activo, debe descartarlo y devolver ICMP tipo 3/código 4 (*Fragmentation Needed*) con la MTU siguiente; en IPv6 se utiliza ICMPv6 *Packet Too Big*. PMTUD ajusta el tamaño a partir de esos mensajes. Si el firewall filtra el ICMP necesario, la conexión puede quedarse colgada. En un túnel, la cabecera exterior consume parte de la MTU disponible (GRE sobre IPv4 añade normalmente 24 bytes sin opciones/clave; IPsec depende del modo y algoritmos), por lo que el MTU interior debe ser menor o ajustarse MSS. Esta práctica demuestra el caso local; los túneles se estudian en el laboratorio 09 y el ajuste MSS en el 15.
 ## Errores comunes
 
 | Error | Solución |
@@ -378,30 +501,82 @@ sudo ip netns exec AppServer ip link set veth-app mtu 1500     # restaurar
 Este laboratorio continúa el 12: **no elimines** `OnPremise`, `AppServer` ni el resto de la red de ese laboratorio si aún la necesitas. Solo deshaz lo añadido aquí:
 
 ```bash
-# 1. Procesos del laboratorio, por PID
-[ -f /tmp/lab13/iperf3.pid ] && sudo kill $(cat /tmp/lab13/iperf3.pid) 2>/dev/null || true
-[ -f /tmp/lab13/siem.pid ]  && sudo kill $(cat /tmp/lab13/siem.pid)  2>/dev/null || true
-sudo ip netns pids NOC  2>/dev/null | xargs -r sudo kill
-sudo ip netns pids SIEM 2>/dev/null | xargs -r sudo kill
+# 1. Procesos iniciados por el laboratorio: validar PID y línea de comandos.
+PROC_LEFT=0
+for spec in 'iperf3 /tmp/lab13/iperf3.pid' 'rsyslogd /tmp/lab13/siem.pid' 'rsyslogd /tmp/lab13/noc-tls.pid'; do
+  set -- $spec; proceso=$1; pf=$2
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  if [[ "$cmdline" == *"$proceso"* && "$cmdline" == *"$pf"* ]]; then sudo kill -TERM "$pid" 2>/dev/null || true
+  else echo "PID $pid no coincide con $proceso/$pf; no se termina."; PROC_LEFT=1
+  fi
+done
+sleep 1
+for spec in 'iperf3 /tmp/lab13/iperf3.pid' 'rsyslogd /tmp/lab13/siem.pid' 'rsyslogd /tmp/lab13/noc-tls.pid'; do
+  set -- $spec; proceso=$1; pf=$2
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  if [[ "$cmdline" == *"$proceso"* && "$cmdline" == *"$pf"* ]]; then sudo kill -KILL "$pid" 2>/dev/null || true; fi
+done
 
-# 2. Salida opcional a Internet (solo si hiciste el Paso 3b; ajusta eth0)
-sudo ip netns exec OnPremise iptables -t nat -D POSTROUTING -o veth-op-wan -j MASQUERADE 2>/dev/null || true
-if [ -f /tmp/lab13-host-nat.added ]; then
-  sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
-  rm -f /tmp/lab13-host-nat.added
+# 2. Eliminar NOC/SIEM solo cuando ya no conservan procesos.
+NS_LEFT=0
+if sudo ip netns list | awk '{print $1}' | grep -Fxq OnPremise; then
+  if [ "$(sudo ip netns exec OnPremise cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-12 ]; then echo "Se conserva OnPremise: no tiene la marca exclusiva de Lab12."; NS_LEFT=1; fi
+  PIDS_ONPREMISE=$(sudo ip netns pids OnPremise 2>/dev/null || true)
+  if [ -n "$PIDS_ONPREMISE" ]; then echo "Se conserva OnPremise y sus rutas: hay procesos activos ($PIDS_ONPREMISE)."; NS_LEFT=1; fi
+else echo "Se conserva el estado de Lab13: falta OnPremise de Lab12."; NS_LEFT=1
 fi
-if [ -f /tmp/lab13-ip_forward.orig ]; then
-  sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab13-ip_forward.orig)"
-  sudo rm -f /tmp/lab13-ip_forward.orig
-fi
-sudo ip link del veth-wan-op 2>/dev/null || true
+for ns in NOC SIEM; do
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-13 ]; then echo "Se conserva $ns: no tiene la marca exclusiva de Lab13."; NS_LEFT=1
+    else
+      PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+      if [ -n "$PIDS" ]; then echo "Se conserva $ns: quedan procesos no registrados ($PIDS)."; NS_LEFT=1; fi
+    fi
+  fi
+done
 
-# 3. Namespaces de monitoreo y archivos temporales
-for ns in NOC SIEM; do sudo ip netns del $ns 2>/dev/null || true; done
-sudo rm -rf /tmp/lab13
+if [ "$NS_LEFT" = 0 ] && [ "$PROC_LEFT" = 0 ]; then
+  for ns in NOC SIEM; do
+    if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then sudo ip netns del "$ns" 2>/dev/null || true; fi
+  done
+  # 3. Revertir únicamente las rutas y reglas añadidas a OnPremise en el Paso 3b.
+  if [ -f /tmp/lab13-onprem-nat.added ]; then
+    sudo ip netns exec OnPremise iptables -t nat -D POSTROUTING -o veth-op-wan -j MASQUERADE 2>/dev/null || true
+    rm -f /tmp/lab13-onprem-nat.added
+  fi
+  if [ -f /tmp/lab13-onprem-default.added ]; then
+    sudo ip netns exec OnPremise ip route del default via 192.168.100.2 dev veth-op-wan 2>/dev/null || true
+    rm -f /tmp/lab13-onprem-default.added
+  fi
+
+  # 4. Restaurar reglas y sysctl del host solo si este laboratorio los añadió.
+  if [ -f /tmp/lab13-host-nat.added ]; then sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true; rm -f /tmp/lab13-host-nat.added; fi
+  if [ -f /tmp/lab13-forward-out.added ]; then sudo iptables -D FORWARD -i veth-wan-op -o eth0 -s 192.168.100.0/24 -j ACCEPT 2>/dev/null || true; rm -f /tmp/lab13-forward-out.added; fi
+  if [ -f /tmp/lab13-forward-in.added ]; then sudo iptables -D FORWARD -i eth0 -o veth-wan-op -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true; rm -f /tmp/lab13-forward-in.added; fi
+  if [ -f /tmp/lab13-ip_forward.orig ]; then sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab13-ip_forward.orig)"; rm -f /tmp/lab13-ip_forward.orig; fi
+
+  if [ "$(cat /sys/class/net/veth-wan-op/ifalias 2>/dev/null)" = networking-lab-lab-13 ]; then sudo ip link del veth-wan-op; fi
+  for f in /sys/class/net/*/ifalias; do
+    [ -r "$f" ] || continue
+    [ "$(cat "$f")" = networking-lab-lab-13 ] || continue
+    dev=${f%/ifalias}; dev=${dev##*/}
+    sudo ip link del "$dev" 2>/dev/null || true
+  done
+  if [ -f /tmp/lab13/.networking-lab-owned ]; then sudo rm -rf /tmp/lab13; fi
+else
+  echo "Se conservan OnPremise, reglas host, veth-wan-op y /tmp/lab13: quedan procesos o namespaces que requieren inspección."
+fi
 ```
 
-Si quieres retirar también la red del laboratorio 12, elimina sus *namespaces* por nombre (`ip netns list` los muestra). Instalaste `mtr-tiny`, `iperf3`, `rsyslog`, etc.: quedan como paquetes, sin servicio activo propio.
+Si quieres retirar también la red del laboratorio 12, ejecuta la sección de reversión del laboratorio 12; no elimines sus *namespaces* por nombre. Instalaste `mtr-tiny`, `iperf3`, `rsyslog`, etc.: quedan como paquetes, sin servicio activo propio.
 
 ## Profundización: integridad temporal y transporte de logs
 

@@ -140,9 +140,24 @@ sudo apt-get install -y openssh-server openssh-client openssl conntrack
 Hasta ahora R1 tenía su propia salida a Internet. Con un firewall perimetral, **toda la salida debe pasar por él**. Eliminamos la WAN de R1 (al borrar `veth-wan` desaparece también `veth-host` del host, junto con la ruta por defecto de R1 y su IP `192.168.100.2`):
 
 ```bash
+if [ -e /tmp/lab08 ]; then
+  if [ -f /tmp/lab08/.networking-lab-lab-08 ]; then echo "Existe una ejecución anterior del laboratorio 08; ejecuta su limpieza.";
+  else echo "/tmp/lab08 existe sin marca de propiedad; no se modifica."; fi
+  exit 1
+fi
+if [ "$(sudo ip netns exec R1 cat /sys/class/net/veth-wan/ifalias 2>/dev/null)" != networking-lab-lab-07 ] || [ "$(cat /sys/class/net/veth-host/ifalias 2>/dev/null)" != networking-lab-lab-07 ]; then
+  echo "La WAN de R1 no conserva las marcas del laboratorio 07; se aborta sin eliminarla."
+  exit 1
+fi
+mkdir -p /tmp/lab08
+touch /tmp/lab08/.networking-lab-lab-08
+sudo ip netns exec R1 ip route show default > /tmp/lab08/R1-default.before
+if [ -f /tmp/lab07/R1-nat.added ] && sudo ip netns exec R1 iptables -t nat -C POSTROUTING -o veth-wan -j MASQUERADE; then
+  sudo ip netns exec R1 iptables -t nat -D POSTROUTING -o veth-wan -j MASQUERADE
+  touch /tmp/lab08/R1-nat-removed.added
+fi
 sudo ip netns exec R1 ip link del veth-wan
-# Elimina solo la regla MASQUERADE que R1 recibió en el laboratorio 07 (no vacía toda la cadena)
-sudo ip netns exec R1 iptables -t nat -D POSTROUTING -o veth-wan -j MASQUERADE
+touch /tmp/lab08/r1-wan-removed.added
 ```
 
 ### Paso 3: Crear namespaces para firewall y DMZ
@@ -150,13 +165,17 @@ sudo ip netns exec R1 iptables -t nat -D POSTROUTING -o veth-wan -j MASQUERADE
 ```bash
 # Firewall
 sudo ip netns add firewall
+sudo ip netns exec firewall ip link set lo alias networking-lab-lab-08
 
 # Servidores DMZ
 sudo ip netns add servidorWeb
+sudo ip netns exec servidorWeb ip link set lo alias networking-lab-lab-08
 sudo ip netns add servidorDNS_PUB
+sudo ip netns exec servidorDNS_PUB ip link set lo alias networking-lab-lab-08
 
 # Servidor Interno
 sudo ip netns add servidorInterno
+sudo ip netns exec servidorInterno ip link set lo alias networking-lab-lab-08
 ```
 
 ### Paso 4: Conectar el firewall a la zona externa (WAN)
@@ -166,14 +185,20 @@ El host hace de "Internet". Su lado de la WAN será un bridge (`br-wan`) para po
 ```bash
 # ⚠ CAMBIOS EN EL HOST (no en un namespace): bridge, IP, ip_forward y NAT.
 #   Anota antes `sysctl net.ipv4.ip_forward`; reversión al final del laboratorio.
-# Bridge del lado Internet (en el host)
+# Bridge del lado Internet (en el host). No reutilizar nombres preexistentes.
+if [ -e /sys/class/net/br-wan ] || [ -e /sys/class/net/veth-wan-fw ]; then
+  echo "br-wan o veth-wan-fw ya existe; ejecuta la reversión del lab08 y verifica su propiedad antes de continuar."
+  exit 1
+fi
 sudo ip link add br-wan type bridge
 sudo ip link set br-wan up
 sudo ip addr add 192.168.100.2/24 dev br-wan
-sudo ip link set br-wan alias networking-lab   # marca: los laboratorios 10 a 15 solo eliminan un br-wan con esta marca
+sudo ip link set br-wan alias networking-lab-lab-08
 
 # Enlace firewall <-> Internet
 sudo ip link add veth-fw-wan type veth peer name veth-wan-fw
+sudo ip link set veth-fw-wan alias networking-lab-lab-08
+sudo ip link set veth-wan-fw alias networking-lab-lab-08
 sudo ip link set veth-fw-wan netns firewall
 sudo ip netns exec firewall ip addr add 192.168.100.1/24 dev veth-fw-wan
 sudo ip netns exec firewall ip link set veth-fw-wan up
@@ -190,6 +215,13 @@ sudo sysctl -w net.ipv4.ip_forward=1
 if ! sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE; then
   sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab08-host-nat.added
 fi
+# El host también filtra FORWARD. Autoriza solo la WAN de este laboratorio y el retorno establecido.
+if ! sudo iptables -C FORWARD -i br-wan -o eth0 -s 192.168.100.0/24 -j ACCEPT; then
+  sudo iptables -I FORWARD 1 -i br-wan -o eth0 -s 192.168.100.0/24 -j ACCEPT && touch /tmp/lab08-forward-out.added
+fi
+if ! sudo iptables -C FORWARD -i eth0 -o br-wan -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; then
+  sudo iptables -I FORWARD 1 -i eth0 -o br-wan -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT && touch /tmp/lab08-forward-in.added
+fi
 ```
 
 ### Paso 5: Crear la DMZ (un único segmento con los dos servidores)
@@ -204,6 +236,8 @@ sudo ip netns exec firewall ip link set br-dmz up
 
 # Servidor Web (10.0.99.10)
 sudo ip link add veth-web type veth peer name veth-fw-web
+sudo ip link set veth-web alias networking-lab-lab-08
+sudo ip link set veth-fw-web alias networking-lab-lab-08
 sudo ip link set veth-web netns servidorWeb
 sudo ip link set veth-fw-web netns firewall
 sudo ip netns exec firewall ip link set veth-fw-web master br-dmz
@@ -215,6 +249,8 @@ sudo ip netns exec servidorWeb ip route add default via 10.0.99.1
 
 # Servidor DNS público (10.0.99.5)
 sudo ip link add veth-dnspub type veth peer name veth-fw-dnspub
+sudo ip link set veth-dnspub alias networking-lab-lab-08
+sudo ip link set veth-fw-dnspub alias networking-lab-lab-08
 sudo ip link set veth-dnspub netns servidorDNS_PUB
 sudo ip link set veth-fw-dnspub netns firewall
 sudo ip netns exec firewall ip link set veth-fw-dnspub master br-dmz
@@ -232,6 +268,8 @@ El firewall se une al bridge `br-lan` de R1 con la IP `10.0.0.254`. R1 pasa a en
 ```bash
 # Firewall dentro de la LAN de la sede
 sudo ip link add veth-fw-lan type veth peer name veth-lan-fw
+sudo ip link set veth-fw-lan alias networking-lab-lab-08
+sudo ip link set veth-lan-fw alias networking-lab-lab-08
 sudo ip link set veth-fw-lan netns firewall
 sudo ip link set veth-lan-fw netns R1
 sudo ip netns exec firewall ip addr add 10.0.0.254/24 dev veth-fw-lan
@@ -240,10 +278,12 @@ sudo ip netns exec R1 ip link set veth-lan-fw master br-lan
 sudo ip netns exec R1 ip link set veth-lan-fw up
 
 # R1 envía su tráfico externo al firewall
-sudo ip netns exec R1 ip route add default via 10.0.0.254
+sudo ip netns exec R1 ip route replace default via 10.0.0.254
 
 # Servidor Interno (10.0.0.20) en la misma LAN
 sudo ip link add veth-srv type veth peer name veth-r1srv
+sudo ip link set veth-srv alias networking-lab-lab-08
+sudo ip link set veth-r1srv alias networking-lab-lab-08
 sudo ip link set veth-srv netns servidorInterno
 sudo ip link set veth-r1srv netns R1
 sudo ip netns exec R1 ip link set veth-r1srv master br-lan
@@ -294,8 +334,8 @@ sudo ip netns exec firewall iptables -P OUTPUT ACCEPT
 sudo ip netns exec firewall iptables -A INPUT -i lo -j ACCEPT
 
 # Permitir conexiones establecidas y relacionadas
-sudo ip netns exec firewall iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-sudo ip netns exec firewall iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+sudo ip netns exec firewall iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+sudo ip netns exec firewall iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 ```
 
 **Reglas desde Internet hacia DMZ (servidores públicos):**
@@ -346,7 +386,7 @@ sudo ip netns exec firewall iptables -A FORWARD -i br-dmz -o veth-fw-lan -j DROP
 Un servidor público **no debe recibir acceso irrestricto a la red interna**: la comunicación DMZ → LAN debe limitarse a políticas explícitas (por ejemplo, solo el puerto de base de datos de un servidor concreto, si la aplicación lo requiere). Aquí se deniega por completo. Observa también que el lado contrario (LAN → DMZ) está **acotado**: solo ICMP, SSH y HTTPS hacia hosts concretos, y no «todo».
 
 !!! info "ACL frente a firewall con seguimiento de estado"
-    Una **ACL** es un mecanismo de control de tráfico (una lista ordenada de reglas permitir/denegar) que puede aplicarse en distintos puntos: un router, un switch, una interfaz. Una ACL clásica evalúa cada paquete de forma independiente. Un **firewall con seguimiento de estado** (como `iptables` con `conntrack` o `nftables`) además recuerda las conexiones y permite automáticamente las respuestas. En este laboratorio las reglas de `FORWARD` con `-m state` actúan como firewall con estado; las reglas que restringen orígenes y puertos (por ejemplo `-s 10.0.0.0/22`) se comportan como las ACL. (Nota: `-m state` es la sintaxis histórica; hoy se recomienda `-m conntrack --ctstate`, equivalente en estos ejemplos.)
+    Una **ACL** es un mecanismo de control de tráfico (una lista ordenada de reglas permitir/denegar) que puede aplicarse en distintos puntos: un router, un switch, una interfaz. Una ACL clásica evalúa cada paquete de forma independiente. Un **firewall con seguimiento de estado** (como `iptables` con `conntrack` o `nftables`) además recuerda las conexiones y permite automáticamente las respuestas. En este laboratorio las reglas de `FORWARD` con `-m conntrack --ctstate` actúan como firewall con estado; las reglas que restringen orígenes y puertos (por ejemplo `-s 10.0.0.0/22`) se comportan como las ACL.
 
 ### Recorrido de un paquete por el firewall
 
@@ -424,8 +464,8 @@ sudo ip netns exec servidorWeb ping -c 2 -W 1 10.0.0.10
 **Probar la regla "Internet → DMZ" desde el host** (que hace de Internet). El host necesita una ruta hacia la DMZ a través del firewall:
 
 ```bash
-sudo ip route add 10.0.99.0/24 via 192.168.100.1
-sudo ip route add 10.0.0.0/22 via 192.168.100.1
+if ! sudo ip route show 10.0.99.0/24 | grep -q 'via 192.168.100.1'; then sudo ip route add 10.0.99.0/24 via 192.168.100.1 && touch /tmp/lab08/host-route-dmz.added; fi
+if ! sudo ip route show 10.0.0.0/22 | grep -q 'via 192.168.100.1'; then sudo ip route add 10.0.0.0/22 via 192.168.100.1 && touch /tmp/lab08/host-route-lan.added; fi
 
 # A la LAN interna: debe FALLAR (no hay servicio publicado y la política lo bloquea)
 ping -c 2 -W 1 10.0.0.10
@@ -436,8 +476,8 @@ ping -c 2 -W 1 10.0.0.10
 Al terminar las pruebas elimina las rutas temporales:
 
 ```bash
-sudo ip route del 10.0.99.0/24 via 192.168.100.1
-sudo ip route del 10.0.0.0/22 via 192.168.100.1
+if [ -f /tmp/lab08/host-route-dmz.added ]; then sudo ip route del 10.0.99.0/24 via 192.168.100.1 2>/dev/null || true; rm -f /tmp/lab08/host-route-dmz.added; fi
+if [ -f /tmp/lab08/host-route-lan.added ]; then sudo ip route del 10.0.0.0/22 via 192.168.100.1 2>/dev/null || true; rm -f /tmp/lab08/host-route-lan.added; fi
 ```
 
 ### Servidor DNS público en la DMZ
@@ -445,7 +485,6 @@ sudo ip route del 10.0.0.0/22 via 192.168.100.1
 La topología incluye un servidor DNS en la DMZ y el firewall permite UDP 53 hacia él, así que conviene que **exista de verdad** y no solo en el dibujo. Reutilizamos `dnsmasq` como en el laboratorio 07, esta vez solo con la función DNS y un dominio de demostración (`secops.example`):
 
 ```bash
-mkdir -p /tmp/lab08
 cat > /tmp/lab08/dns-pub.conf << 'EOF'
 listen-address=10.0.99.5
 bind-interfaces
@@ -458,12 +497,12 @@ EOF
 sudo ip netns exec servidorDNS_PUB dnsmasq --conf-file=/tmp/lab08/dns-pub.conf --pid-file=/tmp/lab08/dns-pub.pid
 
 # Probar desde el host (que hace de Internet) con la ruta temporal del Paso 10
-sudo ip route add 10.0.99.0/24 via 192.168.100.1
+if ! sudo ip route show 10.0.99.0/24 | grep -q 'via 192.168.100.1'; then sudo ip route add 10.0.99.0/24 via 192.168.100.1 && touch /tmp/lab08/host-route-dmz.added; fi
 dig @10.0.99.5 www.secops.example +short          # debe devolver 10.0.99.10
-sudo ip route del 10.0.99.0/24 via 192.168.100.1
+if [ -f /tmp/lab08/host-route-dmz.added ]; then sudo ip route del 10.0.99.0/24 via 192.168.100.1 2>/dev/null || true; rm -f /tmp/lab08/host-route-dmz.added; fi
 ```
 
-La consulta pasa porque la regla `FORWARD` de UDP/53 la permite. Desde la **LAN interna** la misma consulta se descarta: la política solo deja ICMP, SSH y HTTPS hacia la DMZ. Compruébalo con `sudo ip netns exec clienteSede dig @10.0.99.5 www.secops.example +time=2 +tries=1`. Al terminar: `sudo kill $(cat /tmp/lab08/dns-pub.pid)`.
+La consulta pasa porque la regla `FORWARD` de UDP/53 la permite. Desde la **LAN interna** la misma consulta se descarta: la política solo deja ICMP, SSH y HTTPS hacia la DMZ. Compruébalo con `sudo ip netns exec clienteSede dig @10.0.99.5 www.secops.example +time=2 +tries=1`. El proceso queda registrado para detenerlo en la limpieza del laboratorio.
 
 !!! note "Qué representa este DNS"
     Es un servidor de **demostración** que responde para una zona local; no es un DNS autoritativo de producción (sin delegación, sin transferencias de zona, sin DNSSEC).
@@ -484,7 +523,7 @@ Arrancamos un `sshd` **dentro** del namespace del servidor web (no con `systemct
 
 ```bash
 mkdir -p /tmp/lab08
-sudo mkdir -p /run/sshd
+if [ ! -d /run/sshd ]; then sudo mkdir -p /run/sshd; touch /tmp/lab08/run-sshd-dir.created; fi
 
 # Clave del servidor y clave del administrador
 ssh-keygen -q -t ed25519 -N '' -f /tmp/lab08/host_key
@@ -531,7 +570,7 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
   -keyout /tmp/lab08/key.pem -out /tmp/lab08/cert.pem -subj "/CN=servidorWeb" \
   -addext "subjectAltName=DNS:servidorWeb,IP:10.0.99.10" 2>/dev/null
 
-sudo ip netns exec servidorWeb sh -c 'openssl s_server -accept 443 -cert /tmp/lab08/cert.pem -key /tmp/lab08/key.pem -www -ign_eof < /dev/null > /tmp/lab08/tls.log 2>&1 &'
+sudo ip netns exec servidorWeb sh -c 'openssl s_server -accept 443 -cert /tmp/lab08/cert.pem -key /tmp/lab08/key.pem -www -ign_eof < /dev/null > /tmp/lab08/tls.log 2>&1 & echo $! > /tmp/lab08/tls.pid'
 
 # Desde el cliente interno: negociar TLS y ver el certificado y el cifrado elegido
 sudo ip netns exec clienteSede sh -c 'openssl s_client -connect 10.0.99.10:443 -brief </dev/null'
@@ -638,61 +677,127 @@ sudo ip netns exec firewall conntrack -L
 | SSH | Canal de administración cifrado |
 | TLS | Autenticación y cifrado de la comunicación de aplicación |
 
-## Revertir los cambios del host
+## Revertir los cambios del host (laboratorio 08)
+
+La limpieza detiene solo los servicios que registraron PID y cuya línea de comandos coincide con su configuración de `/tmp/lab08`. No mata indiscriminadamente todos los procesos de un namespace.
 
 ```bash
-# 1. Rutas temporales del host (si quedó alguna)
-sudo ip route del 10.0.99.0/24 via 192.168.100.1 2>/dev/null || true
-sudo ip route del 10.0.0.0/22 via 192.168.100.1 2>/dev/null || true
-
-# 2. NAT y reenvío del host (ajusta eth0); se restaura el estado original.
-if [ -f /tmp/lab08-host-nat.added ]; then
-  sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
-  rm -f /tmp/lab08-host-nat.added
-fi
-if [ -f /tmp/lab08-ip_forward.orig ]; then
-  sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab08-ip_forward.orig)"
-  sudo rm -f /tmp/lab08-ip_forward.orig
-fi
-
-# 3. Parámetro global de logging: restaurar exactamente el valor previo.
-if [ -f /tmp/lab08-nf_log_all_netns.orig ]; then
-  sudo sysctl -w net.netfilter.nf_log_all_netns="$(cat /tmp/lab08-nf_log_all_netns.orig)"
-  sudo rm -f /tmp/lab08-nf_log_all_netns.orig
-fi
-
-# 4. Bridge y enlace del host. El bridge solo se elimina si conserva la marca de propiedad.
-sudo ip link del veth-wan-fw 2>/dev/null || true
-if [ "$(cat /sys/class/net/br-wan/ifalias 2>/dev/null)" = networking-lab ] && sudo ip -4 -o addr show dev br-wan | grep -q '192\.168\.100\.2/24'; then
-  sudo ip link del br-wan
-fi
-
-# 4. Servicios (DNS público, sshd) y namespaces de este laboratorio
-for ns in servidorDNS_PUB servidorWeb servidorInterno firewall; do
-  sudo ip netns pids $ns 2>/dev/null | xargs -r sudo kill     # solo procesos DENTRO de ese namespace
-  sudo ip netns del $ns 2>/dev/null || true
+PROC_LEFT=0
+for spec in 'dnsmasq /tmp/lab08/dns-pub.pid' 'sshd /tmp/lab08/sshd.pid' 'openssl /tmp/lab08/tls.pid'; do
+  set -- $spec; proceso=$1; pf=$2
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  case "$proceso" in
+    dnsmasq)
+      if [[ "$cmdline" == *dnsmasq* && "$cmdline" == *"$pf"* ]]; then sudo kill -TERM "$pid" 2>/dev/null || true
+      else echo "PID $pid no coincide con dnsmasq/$pf; no se detiene."; PROC_LEFT=1; fi ;;
+    sshd)
+      if [[ "$cmdline" == *sshd* && "$cmdline" == *"/tmp/lab08/sshd_config"* ]]; then sudo kill -TERM "$pid" 2>/dev/null || true
+      else echo "PID $pid no coincide con sshd de /tmp/lab08; no se detiene."; PROC_LEFT=1; fi ;;
+    openssl)
+      if [[ "$cmdline" == *openssl* && "$cmdline" == *s_server* && "$cmdline" == *"/tmp/lab08/cert.pem"* ]]; then sudo kill -TERM "$pid" 2>/dev/null || true
+      else echo "PID $pid no coincide con openssl s_server de /tmp/lab08; no se detiene."; PROC_LEFT=1; fi ;;
+  esac
+done
+sleep 1
+for spec in 'dnsmasq /tmp/lab08/dns-pub.pid' 'sshd /tmp/lab08/sshd.pid' 'openssl /tmp/lab08/tls.pid'; do
+  set -- $spec; proceso=$1; pf=$2
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  case "$proceso" in
+    dnsmasq) if [[ "$cmdline" == *dnsmasq* && "$cmdline" == *"$pf"* ]]; then sudo kill -KILL "$pid" 2>/dev/null || true; fi ;;
+    sshd) if [[ "$cmdline" == *sshd* && "$cmdline" == *"/tmp/lab08/sshd_config"* ]]; then sudo kill -KILL "$pid" 2>/dev/null || true; fi ;;
+    openssl) if [[ "$cmdline" == *openssl* && "$cmdline" == *s_server* && "$cmdline" == *"/tmp/lab08/cert.pem"* ]]; then sudo kill -KILL "$pid" 2>/dev/null || true; fi ;;
+  esac
 done
 
-# 5. Restaurar la WAN original de R1 del laboratorio 07.
-# El Paso 2 de este laboratorio eliminó veth-wan y su par veth-host.
-if ! sudo ip netns exec R1 ip link show veth-wan >/dev/null 2>&1; then
-  sudo ip link add veth-wan type veth peer name veth-host
-  sudo ip link set veth-wan netns R1
-  sudo ip netns exec R1 ip addr add 192.168.100.1/24 dev veth-wan
-  sudo ip netns exec R1 ip link set veth-wan up
-  sudo ip addr add 192.168.100.2/24 dev veth-host
-  sudo ip link set veth-host up
-fi
-sudo ip netns exec R1 ip route replace default via 192.168.100.2 dev veth-wan
-if ! sudo ip netns exec R1 iptables -t nat -C POSTROUTING -o veth-wan -j MASQUERADE 2>/dev/null; then
-  sudo ip netns exec R1 iptables -t nat -A POSTROUTING -o veth-wan -j MASQUERADE
-fi
+NS_LEFT=0
+PIDS_R1=$(sudo ip netns pids R1 2>/dev/null || true)
+if [ -n "$PIDS_R1" ]; then echo "Se conserva R1 y su estado de rutas: hay procesos activos ($PIDS_R1)."; NS_LEFT=1; fi
+for ns in servidorDNS_PUB servidorWeb servidorInterno firewall; do
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-08 ]; then echo "Se conserva $ns: no tiene la marca exclusiva de Lab08."; NS_LEFT=1
+    else
+      PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+      if [ -n "$PIDS" ]; then echo "Se conserva $ns: quedan procesos no registrados ($PIDS)."; NS_LEFT=1; fi
+    fi
+  fi
+done
 
-# 6. Archivos temporales del laboratorio
-sudo rm -rf /tmp/lab08
+if [ "$NS_LEFT" = 0 ] && [ "$PROC_LEFT" = 0 ]; then
+  for ns in servidorDNS_PUB servidorWeb servidorInterno firewall; do
+    if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then sudo ip netns del "$ns" 2>/dev/null || true; fi
+  done
+  RESTORE_LEFT=0
+  if [ -f /tmp/lab08/r1-wan-removed.added ]; then
+    R1_WAN_ALIAS=$(sudo ip netns exec R1 cat /sys/class/net/veth-wan/ifalias 2>/dev/null || true)
+    HOST_WAN_ALIAS=$(cat /sys/class/net/veth-host/ifalias 2>/dev/null || true)
+    if [ "$R1_WAN_ALIAS" = networking-lab-lab-07 ] && [ "$HOST_WAN_ALIAS" = networking-lab-lab-07 ]; then
+      echo "La WAN de Lab07 ya está restaurada; se conserva y se restaura su ruta."
+    elif [ -z "$R1_WAN_ALIAS" ] && [ -z "$HOST_WAN_ALIAS" ]; then
+      :
+    else
+      echo "Conflicto al restaurar WAN: veth-wan/veth-host existe con estado parcial o marca distinta. No se modifica."
+      RESTORE_LEFT=1
+    fi
+  fi
+
+  if [ "$RESTORE_LEFT" = 0 ]; then
+    # El bridge y el veth perimetral pertenecen a Lab08; br-wan no se borra si hay conflicto.
+    if [ "$(cat /sys/class/net/veth-wan-fw/ifalias 2>/dev/null)" = networking-lab-lab-08 ]; then sudo ip link del veth-wan-fw; fi
+    if [ "$(cat /sys/class/net/br-wan/ifalias 2>/dev/null)" = networking-lab-lab-08 ]; then sudo ip link del br-wan; fi
+
+    # Restaurar la WAN original de Lab07 solo si Lab08 la retiró.
+    if [ -f /tmp/lab08/r1-wan-removed.added ] && [ -z "$R1_WAN_ALIAS" ] && [ -z "$HOST_WAN_ALIAS" ]; then
+      sudo ip link add veth-wan type veth peer name veth-host
+      sudo ip link set veth-wan alias networking-lab-lab-07
+      sudo ip link set veth-host alias networking-lab-lab-07
+      sudo ip link set veth-wan netns R1
+      sudo ip netns exec R1 ip addr add 192.168.100.1/24 dev veth-wan
+      sudo ip netns exec R1 ip link set veth-wan up
+      sudo ip addr add 192.168.100.2/24 dev veth-host
+      sudo ip link set veth-host up
+    fi
+    if [ -f /tmp/lab08/r1-wan-removed.added ]; then
+      sudo ip netns exec R1 ip route del default via 10.0.0.254 2>/dev/null || true
+      sudo ip netns exec R1 ip route del default 2>/dev/null || true
+      if [ -s /tmp/lab08/R1-default.before ]; then
+        while IFS= read -r ruta; do [ -n "$ruta" ] && sudo ip netns exec R1 ip route add $ruta; done < /tmp/lab08/R1-default.before
+      fi
+    fi
+    if [ -f /tmp/lab08/R1-nat-removed.added ] && sudo ip netns exec R1 ip link show veth-wan >/dev/null 2>&1; then
+      sudo ip netns exec R1 iptables -t nat -A POSTROUTING -o veth-wan -j MASQUERADE
+    fi
+
+    # Restaurar rutas host, NAT, FORWARD, ip_forward y nf_log_all_netns.
+    if [ -f /tmp/lab08/host-route-dmz.added ]; then sudo ip route del 10.0.99.0/24 via 192.168.100.1 2>/dev/null || true; fi
+    if [ -f /tmp/lab08/host-route-lan.added ]; then sudo ip route del 10.0.0.0/22 via 192.168.100.1 2>/dev/null || true; fi
+    if [ -f /tmp/lab08-host-nat.added ]; then sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true; rm -f /tmp/lab08-host-nat.added; fi
+    if [ -f /tmp/lab08-forward-out.added ]; then sudo iptables -D FORWARD -i br-wan -o eth0 -s 192.168.100.0/24 -j ACCEPT 2>/dev/null || true; rm -f /tmp/lab08-forward-out.added; fi
+    if [ -f /tmp/lab08-forward-in.added ]; then sudo iptables -D FORWARD -i eth0 -o br-wan -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true; rm -f /tmp/lab08-forward-in.added; fi
+    if [ -f /tmp/lab08-ip_forward.orig ]; then sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab08-ip_forward.orig)"; rm -f /tmp/lab08-ip_forward.orig; fi
+    if [ -f /tmp/lab08-nf_log_all_netns.orig ]; then sudo sysctl -w net.netfilter.nf_log_all_netns="$(cat /tmp/lab08-nf_log_all_netns.orig)"; rm -f /tmp/lab08-nf_log_all_netns.orig; fi
+    if [ -f /tmp/lab08/run-sshd-dir.created ]; then sudo rmdir /run/sshd 2>/dev/null || true; fi
+    for f in /sys/class/net/*/ifalias; do
+      [ -r "$f" ] || continue
+      [ "$(cat "$f")" = networking-lab-lab-08 ] || continue
+      dev=${f%/ifalias}; dev=${dev##*/}
+      sudo ip link del "$dev" 2>/dev/null || true
+    done
+    if [ -f /tmp/lab08/.networking-lab-lab-08 ]; then sudo rm -rf /tmp/lab08; fi
+  else
+    echo "Se conservan br-wan, enlaces, reglas y /tmp/lab08 para resolver la WAN parcialmente restaurada."
+  fi
+else
+  echo "Se conservan interfaces, rutas y /tmp/lab08: quedan procesos o namespaces que requieren inspección."
+fi
 ```
-
-`ip netns pids` limita la parada a procesos que viven **dentro** de cada namespace, sin tocar el `sshd` del equipo.
 
 ## Profundización: Netfilter, identidad SSH y TLS
 

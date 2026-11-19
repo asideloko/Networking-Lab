@@ -72,59 +72,35 @@ Tres ideas para leerlo: (1) la **única salida a Internet** es la WAN de R1 (R2 
 
 ## Construcción
 
-### Paso 0: Limpiar y preparar
+### Paso 0: Limpiar ejecuciones anteriores de Lab15
 
-Elimina **solo los namespaces de los laboratorios anteriores, por nombre** (un bucle que borrara todos los de `ip netns list` afectaría también a otros entornos de tu equipo). Estos nombres (`R1`, `R2`, `host1`…) se reutilizan en toda la serie: si tu equipo tiene un entorno propio con alguno de ellos, **no continúes**; el bloque siguiente muestra cuáles existen y pide confirmación antes de borrar.
+Este paso solo puede retirar recursos de una ejecución anterior de Lab15. **No elimina namespaces ni interfaces de otros laboratorios**, no toca `br-wan` y no retira `veth-host`, `veth-wan-fw`, `veth-wan-cvpn` ni `veth-wan-op`. Ejecuta primero la reversión de cada laboratorio anterior para restaurar sus propias rutas, reglas y parámetros del host.
 
 ```bash
-NS_SERIE="cliente1 cliente2 cliente3 cliente4 router switch ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 R1 R2 R3 clienteSede clienteSucA clienteSucB servidorDNS servidorDHCP clienteDHCP firewall servidorWeb servidorDNS_PUB servidorInterno VPN_GW clienteVPN PE1 PE2 PE3 P1 P2 P3 host1 host2 host3 Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin OnPremise AppServer DBServer AWS_VPC EC2_Server RDS_Server ZTNA_Broker IDP User1 User2 NOC SIEM Router Host1 Host2 ServidorDMZ SWsrv fin ven ges srv suc"
-
-# Muestra cuáles de esos namespaces existen ahora mismo
-EXISTENTES=$(ip netns list | awk '{print $1}' | grep -xF -f <(echo $NS_SERIE | tr ' ' '\n'))
-VETH_WAN_FW=$(sudo ip -o link show veth-wan-fw 2>/dev/null | head -1)
-echo "Se eliminarán: ${EXISTENTES:-(ninguno)}"
-echo "Interfaz veth-wan-fw: ${VETH_WAN_FW:-(ausente)}"
-read -r -p "¿Son todos recursos de laboratorios anteriores? (s/N) " R
-
-if [ "$R" != s ]; then
-  echo "Cancelado: renombra tus namespaces o usa una máquina virtual limpia"
-elif pgrep -f '[/]tmp/lab15' >/dev/null; then
-  echo "Hay procesos de una ejecución anterior de este laboratorio: aplica primero «Limpieza del laboratorio»"
-else
-  # Solo se llega aquí si todo lo anterior se ha confirmado
-  for ns in $EXISTENTES; do
-    sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-    sudo ip netns del "$ns" 2>/dev/null || true
-  done
-  [ -n "$VETH_WAN_FW" ] && sudo ip link del veth-wan-fw 2>/dev/null || true
-  [ "$(cat /sys/class/net/br-wan/ifalias 2>/dev/null)" = networking-lab ] && ip -4 -o addr show dev br-wan | grep -q '192\.168\.100\.2/24' && sudo ip link del br-wan   # solo el bridge de esta serie (marca + dirección)
-  sudo apt-get install -y frr keepalived dnsmasq-base isc-dhcp-client dnsutils nftables netcat-openbsd
-
-  for ns in R1 R2 SWsrv fin ven ges srv suc; do sudo ip netns add $ns; done
-  for r in R1 R2; do sudo ip netns exec $r sysctl -qw net.ipv4.ip_forward=1; done
-  mkdir -p /tmp/lab15
-
-  # Registra ahora qué directorios DNS existían antes: la limpieza borra solo los que cree el laboratorio
-  touch /tmp/lab15/netns.preexistente
-  for ns in fin ven; do
-    [ -e /etc/netns/$ns ] && echo "$ns" >> /tmp/lab15/netns.preexistente
-  done
-
-  # enlace NS_A IF_A IP_A NS_B IF_B IP_B
-  enlace() {
-    sudo ip link add $2 type veth peer name $5
-    sudo ip link set $2 netns $1
-    sudo ip link set $5 netns $4
-    sudo ip netns exec $1 ip addr add $3 dev $2
-    sudo ip netns exec $1 ip link set $2 up
-    sudo ip netns exec $4 ip addr add $6 dev $5
-    sudo ip netns exec $4 ip link set $5 up
-  }
+NS_LAB="R1 R2 SWsrv fin ven ges srv suc"
+EXISTENTES=$(sudo ip netns list | awk '{print $1}' | while read -r ns; do
+  for esperado in $NS_LAB; do [ "$ns" = "$esperado" ] && echo "$ns"; done
+done)
+for ns in $EXISTENTES; do
+  if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-15 ]; then
+    echo "Se aborta: $ns no tiene la marca exclusiva de Lab15; ejecuta la limpieza de su laboratorio propietario."
+    exit 1
+  fi
+  PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+  if [ -n "$PIDS" ]; then echo "$ns tiene procesos activos ($PIDS); ejecuta la limpieza antes de repetir Lab15."; exit 1; fi
+done
+if [ -e /tmp/lab15 ]; then echo "/tmp/lab15 existe; ejecuta la limpieza completa de Lab15 antes de repetirlo."; exit 1; fi
+for f in /tmp/lab15-ip_forward.orig /tmp/lab15-host-nat.added /tmp/lab15-forward-out.added /tmp/lab15-forward-in.added; do
+  if [ -e "$f" ]; then echo "Existe el marcador $f; ejecuta la reversión completa de Lab15 antes de repetirlo."; exit 1; fi
+done
+if [ -e /sys/class/net/veth-wan-r1 ] && [ "$(cat /sys/class/net/veth-wan-r1/ifalias 2>/dev/null)" != networking-lab-lab-15 ]; then
+  echo "veth-wan-r1 existe sin marca exclusiva de Lab15; se aborta sin modificarla."; exit 1
 fi
+for ns in $EXISTENTES; do sudo ip netns del "$ns" 2>/dev/null || true; done
+if [ "$(cat /sys/class/net/veth-wan-r1/ifalias 2>/dev/null)" = networking-lab-lab-15 ]; then sudo ip link del veth-wan-r1; fi
 ```
 
-Si aparece cualquiera de los mensajes de cancelación o aviso, **detente aquí**: no se ha creado nada y los apartados siguientes asumen el entorno preparado.
-
+Si aparece un namespace `R1` o `R2` de otra práctica, no lo borres aquí: ejecuta la reversión de esa práctica primero.
 ## 15.1 Configuración de red básica
 
 R1 es el router de la sede: una WAN hacia el host (que hace de "Internet"), NAT, y su primera LAN (Finanzas).
@@ -133,6 +109,8 @@ La WAN une R1 con el **host** (sin namespace), así que se configura a mano:
 
 ```bash
 sudo ip link add veth-r1-wan type veth peer name veth-wan-r1
+sudo ip link set veth-r1-wan alias networking-lab-lab-15
+sudo ip link set veth-wan-r1 alias networking-lab-lab-15
 sudo ip link set veth-r1-wan netns R1
 sudo ip netns exec R1 ip addr add 192.168.100.1/24 dev veth-r1-wan
 sudo ip netns exec R1 ip link set veth-r1-wan up
@@ -148,6 +126,12 @@ sudo ip netns exec R1 iptables -t nat -A POSTROUTING -o veth-r1-wan -j MASQUERAD
 mkdir -p /tmp/lab15
 sysctl -n net.ipv4.ip_forward > /tmp/lab15/ip_forward.orig
 sudo sysctl -w net.ipv4.ip_forward=1
+if ! sudo iptables -C FORWARD -i veth-wan-r1 -o eth0 -s 192.168.100.0/24 -j ACCEPT; then
+  sudo iptables -I FORWARD 1 -i veth-wan-r1 -o eth0 -s 192.168.100.0/24 -j ACCEPT && touch /tmp/lab15/host-forward-out.added
+fi
+if ! sudo iptables -C FORWARD -i eth0 -o veth-wan-r1 -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; then
+  sudo iptables -I FORWARD 1 -i eth0 -o veth-wan-r1 -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT && touch /tmp/lab15/host-forward-in.added
+fi
 if ! sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE; then
   sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab15-host-nat.added
 fi
@@ -176,14 +160,22 @@ sudo ip netns exec fin ping -c 3 192.168.100.2
 | Departamento | Hosts | Subred | Máscara | Rango útil | Gateway |
 |--------------|-------|--------|---------|------------|---------|
 | Servidores | 200 | 10.0.0.0/24 | /24 | 10.0.0.1 - 10.0.0.254 | 10.0.0.1 |
+| Sucursal (R2) | 200 | 10.0.2.0/24 | /24 | 10.0.2.1 - 10.0.2.254 | 10.0.2.1 |
 | Finanzas | 100 | 10.0.1.0/25 | /25 | 10.0.1.1 - 10.0.1.126 | 10.0.1.1 |
 | Ventas | 50 | 10.0.1.128/26 | /26 | 10.0.1.129 - 10.0.1.190 | 10.0.1.129 |
 | Gestión | 10 | 10.0.1.192/28 | /28 | 10.0.1.193 - 10.0.1.206 | 10.0.1.193 |
 | Enlace A R1-R2 | 2 | 10.0.1.208/30 | /30 | 10.0.1.209 - 10.0.1.210 | - |
 | Enlace B R1-R2 | 2 | 10.0.1.212/30 | /30 | 10.0.1.213 - 10.0.1.214 | - |
-| Sucursal (R2) | 200 | 10.0.2.0/24 | /24 | 10.0.2.1 - 10.0.2.254 | 10.0.2.1 |
 
-Cada bloque se asigna de mayor a menor sin solaparse (la sucursal, del mismo tamaño que Servidores, se reserva aparte en `10.0.2.0/24`).
+**Algoritmo VLSM que debe poder reproducir el estudiante:**
+
+1. Ordenar las necesidades de mayor a menor cantidad de hosts (incluyendo redes del mismo tamaño).
+2. Para cada segmento, sumar red y broadcast (`hosts + 2`) y redondear al siguiente tamaño potencia de dos.
+3. Calcular el prefijo: `32 − log2(tamaño del bloque)`; comprobar que el bloque queda alineado en su frontera de red.
+4. Asignar cada bloque dentro de `10.0.0.0/22`, sin solapamientos, reservando espacio de crecimiento.
+5. Verificar red, broadcast, rango útil, gateway y máscara de cada segmento.
+
+Ejemplos: 200 hosts requieren 202 direcciones → bloque 256 → `/24`; 100 requieren 102 → bloque 128 → `/25`; 50 requieren 52 → bloque 64 → `/26`; 10 requieren 12 → bloque 16 → `/28`; un enlace punto a punto con 2 hosts requiere 4 direcciones → `/30`. El orden de la tabla sigue el tamaño descendente; la red `10.0.3.0/24` y el resto libre de `10.0.1.0/24` quedan reservados para crecimiento.
 
 **Correspondencia entre cada red y su interfaz.** Cada gateway pertenece a la interfaz que representa ese segmento y no a otra; las redes departamentales se distinguen de los enlaces punto a punto:
 
@@ -210,6 +202,8 @@ sudo ip netns exec ges ip route add default via 10.0.1.193
 sudo ip netns exec SWsrv ip link add br0 type bridge
 sudo ip netns exec SWsrv ip link set br0 up
 sudo ip link add veth-r1srv type veth peer name veth-sw-r1
+sudo ip link set veth-r1srv alias networking-lab-lab-15
+sudo ip link set veth-sw-r1 alias networking-lab-lab-15
 sudo ip link set veth-r1srv netns R1
 sudo ip link set veth-sw-r1 netns SWsrv
 sudo ip netns exec SWsrv ip link set veth-sw-r1 master br0
@@ -217,6 +211,8 @@ sudo ip netns exec SWsrv ip link set veth-sw-r1 up
 sudo ip netns exec R1 ip addr add 10.0.0.1/24 dev veth-r1srv
 sudo ip netns exec R1 ip link set veth-r1srv up
 sudo ip link add veth-srv type veth peer name veth-sw-srv
+sudo ip link set veth-srv alias networking-lab-lab-15
+sudo ip link set veth-sw-srv alias networking-lab-lab-15
 sudo ip link set veth-srv netns srv
 sudo ip link set veth-sw-srv netns SWsrv
 sudo ip netns exec SWsrv ip link set veth-sw-srv master br0
@@ -267,6 +263,8 @@ sudo ovs-vsctl add-br ovs-sw && touch /tmp/lab15/ovs-sw.created
 for h in "fin 10" "ven 20" "ges 30"; do
   set -- $h
   sudo ip link add puerto-$1 type veth peer name veth-eq-$1
+  sudo ip link set puerto-$1 alias networking-lab-lab-15
+  sudo ip link set veth-eq-$1 alias networking-lab-lab-15
   sudo ip link set veth-eq-$1 netns $1
   sudo ip link set puerto-$1 up
   sudo ovs-vsctl add-port ovs-sw puerto-$1 tag=$2      # puerto de acceso (sin etiqueta hacia el equipo)
@@ -274,6 +272,8 @@ done
 
 # Trunk hacia R1: el switch etiqueta 10, 20 y 30
 sudo ip link add trunk-r1 type veth peer name trunk
+sudo ip link set trunk-r1 alias networking-lab-lab-15
+sudo ip link set trunk alias networking-lab-lab-15
 sudo ip link set trunk netns R1
 sudo ip link set trunk-r1 up
 sudo ovs-vsctl add-port ovs-sw trunk-r1 trunks=10,20,30
@@ -493,6 +493,16 @@ El protocolo OSPF (número 89) debe aceptarse en `input`, o R1 dejaría de ver a
 
     Sin la regla de `PREROUTING`, el host no alcanzaría el servidor aunque la política de `forward` lo permitiera.
 
+**Convivencia de nftables e iptables en esta práctica.** El filtrado de R1 se escribe en `nftables`; la NAT de salida y el DNAT de demostración usan la interfaz `iptables`. Comprueba qué backend utiliza `iptables` dentro del namespace:
+
+```bash
+sudo ip netns exec R1 iptables --version
+sudo ip netns exec R1 iptables-save
+sudo ip netns exec R1 nft list ruleset
+```
+
+Si `iptables --version` termina en `(nf_tables)`, `iptables` traduce sus reglas al backend nftables; ambas vistas pertenecen al mismo framework, aunque `iptables-save` sigue siendo la vista más directa de las reglas administradas por esa interfaz. Si termina en `(legacy)`, usa el backend xtables antiguo, separado del ruleset nftables y no visible como reglas nft nativas. Mezclar backends puede complicar el orden y el diagnóstico. Aquí se conserva deliberadamente para mostrar compatibilidad; en un despliegue real elige y administra un único backend, evita reglas duplicadas y verifica siempre las reglas efectivas en ambos planos.
+
 ### Verificar segmentación y políticas
 
 ```bash
@@ -625,6 +635,8 @@ R2 se une al switch de servidores y R1 pasa a usar una IP propia distinta (`10.0
 ```bash
 # R2 en el segmento de servidores
 sudo ip link add veth-r2srv type veth peer name veth-sw-r2
+sudo ip link set veth-r2srv alias networking-lab-lab-15
+sudo ip link set veth-sw-r2 alias networking-lab-lab-15
 sudo ip link set veth-r2srv netns R2
 sudo ip link set veth-sw-r2 netns SWsrv
 sudo ip netns exec SWsrv ip link set veth-sw-r2 master br0
@@ -669,8 +681,26 @@ sleep 5
 sudo ip netns exec R1 ip -4 addr show dev veth-r1srv     # R1 tiene 10.0.0.1 como IP virtual
 sudo ip netns exec srv ping -c 2 10.0.0.1
 
-# Falla R1 (se detiene su VRRP): la IP virtual pasa a R2
-sudo kill $(cat /tmp/lab15/ka-r1.vrrp.pid) $(cat /tmp/lab15/ka-r1.pid)
+# Falla R1: detener solo los dos procesos keepalived registrados de R1.
+for pf in /tmp/lab15/ka-r1.vrrp.pid /tmp/lab15/ka-r1.pid; do
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || { echo "PID inválido en $pf; aborta el failover."; exit 1; }
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
+  if [[ "$cmdline" == *keepalived* && "$cmdline" == *"/tmp/lab15/ka-r1.conf"* ]]; then
+    sudo kill -TERM "$pid"
+  else
+    echo "PID $pid no coincide con keepalived de ka-r1.conf; no se detiene ningún proceso."
+    exit 1
+  fi
+done
+sleep 2
+for pf in /tmp/lab15/ka-r1.vrrp.pid /tmp/lab15/ka-r1.pid; do
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  if [[ "$cmdline" == *keepalived* && "$cmdline" == *"/tmp/lab15/ka-r1.conf"* ]]; then sudo kill -KILL "$pid" 2>/dev/null || true; fi
+done
 sleep 5
 sudo ip netns exec R2 ip -4 addr show dev veth-r2srv     # ahora R2 tiene 10.0.0.1
 sudo ip netns exec srv ping -c 3 10.0.0.1                # el gateway sigue respondiendo
@@ -766,13 +796,14 @@ fi
 # Alternativa dinámica (elige clamp-mss-to-pmtu en lugar de set-mss, no ambas).
 ```
 
-### Caso: agotamiento de la tabla ARP
+### Caso: presión sobre la tabla de vecinos IPv4 (ARP)
 
-A diferencia del resto del libro, estas órdenes actúan sobre el **host** (`sysctl` y `/etc/sysctl.d`), no sobre un namespace: es un caso de ejemplo para entender el diagnóstico, no una receta para ejecutar tal cual en un equipo de producción.
+Estas órdenes actúan sobre el **host** (`sysctl` y `/etc/sysctl.d`), no sobre un namespace. El ejercicio inspecciona el número de vecinos IPv4 y muestra cómo se ajustan los umbrales de recolección; **no genera ni simula un agotamiento real** de la tabla. No lo ejecutes en un equipo de producción.
 
 ```bash
 dmesg | grep -i neighbour
-ip neigh show | wc -l
+ip -4 neigh show nud all | awk 'NF {n++} END {print "Vecinos IPv4 actuales:", n+0}'
+sysctl net.ipv4.neigh.default.gc_thresh2
 sysctl net.ipv4.neigh.default.gc_thresh3
 # Guarda los valores originales: la limpieza los restaura
 sysctl -n net.ipv4.neigh.default.gc_thresh2 > /tmp/lab15/gc_thresh2.orig
@@ -780,30 +811,45 @@ sysctl -n net.ipv4.neigh.default.gc_thresh3 > /tmp/lab15/gc_thresh3.orig
 sudo sysctl -w net.ipv4.neigh.default.gc_thresh3=8192
 sudo sysctl -w net.ipv4.neigh.default.gc_thresh2=4096
 # ⚠ CAMBIO PERSISTENTE EN EL HOST: sobrevive a reinicios (reversión en «Limpieza del laboratorio»)
-# Si 99-arp.conf ya existe es tuyo: no lo toques; elige otro nombre o cancela
-[ -e /etc/sysctl.d/99-arp.conf ] && echo "99-arp.conf ya existe: no continúes" || {
-  echo 'net.ipv4.neigh.default.gc_thresh3=8192' | sudo tee /etc/sysctl.d/99-arp.conf
-  echo 'net.ipv4.neigh.default.gc_thresh2=4096' | sudo tee -a /etc/sysctl.d/99-arp.conf
+# Si 99-networking-lab-arp.conf ya existe es tuyo: no lo toques; elige otro nombre o cancela
+[ -e /etc/sysctl.d/99-networking-lab-arp.conf ] && echo "99-networking-lab-arp.conf ya existe: no continúes" || {
+  echo 'net.ipv4.neigh.default.gc_thresh3=8192' | sudo tee /etc/sysctl.d/99-networking-lab-arp.conf
+  echo 'net.ipv4.neigh.default.gc_thresh2=4096' | sudo tee -a /etc/sysctl.d/99-networking-lab-arp.conf
   touch /tmp/lab15/creado-99-arp
 }
-sudo sysctl --system
+if [ -f /tmp/lab15/creado-99-arp ]; then
+  sudo sysctl -p /etc/sysctl.d/99-networking-lab-arp.conf
+fi
 ```
 
 ### Script de verificación ARP
 
 ```bash
-[ -e /usr/local/bin/check_arp.sh ] && echo "check_arp.sh ya existe: no se sobrescribe" || {
-sudo tee /usr/local/bin/check_arp.sh > /dev/null << 'EOF'
-#!/bin/bash
-THRESHOLD=7000
-CURRENT=$(ip neigh show | wc -l)
-if [ "$CURRENT" -gt "$THRESHOLD" ]; then
-    echo "WARNING: ARP table usage high: $CURRENT entries"
+cat > /tmp/lab15/check_arp.sh << 'EOF'
+#!/usr/bin/env bash
+# Diagnóstico orientativo: cuenta vecinos IPv4 y compara dos muestras.
+# No provoca agotamiento ni sustituye métricas del kernel.
+set -eu
+THRESHOLD=${THRESHOLD:-7000}   # umbral didáctico configurable, no universal
+INTERVAL=${INTERVAL:-10}
+count_ipv4_neigh() {
+  ip -4 neigh show nud all | awk 'NF {n++} END {print n+0}'
+}
+ANTES=$(count_ipv4_neigh)
+sleep "$INTERVAL"
+DESPUES=$(count_ipv4_neigh)
+DELTA=$((DESPUES - ANTES))
+printf 'Vecinos IPv4 antes=%s después=%s variación=%+d en %ss\n' "$ANTES" "$DESPUES" "$DELTA" "$INTERVAL"
+if [ "$DESPUES" -ge "$THRESHOLD" ]; then
+  echo "AVISO: el recuento alcanzó el umbral orientativo ($THRESHOLD); revisa tendencia, interfaces y gc_thresh2/3."
+elif [ "$DELTA" -ge 100 ]; then
+  echo "AVISO: crecimiento rápido de vecinos IPv4; confirma si es esperado."
+else
+  echo "Sin alerta según estos umbrales orientativos."
 fi
 EOF
-sudo chmod +x /usr/local/bin/check_arp.sh
-touch /tmp/lab15/creado-check_arp
-}
+chmod 700 /tmp/lab15/check_arp.sh
+/tmp/lab15/check_arp.sh
 ```
 
 ## 15.9 Dependencias, fallos e incidencias
@@ -863,38 +909,83 @@ sudo ip netns exec R1 nft insert rule inet firewall input iifname '{ "veth-r1fin
 Al terminar, detén los demonios y elimina solo lo creado aquí. Un namespace **no desaparece del todo mientras tenga procesos dentro**, así que primero se detienen los procesos (todos usan archivos de `/tmp/lab15`):
 
 ```bash
-# Retirar TCPMSS dentro de R1 antes de eliminar el namespace, solo si esta práctica añadió la regla.
-if [ -f /tmp/lab15/tcpmss.added ]; then
-  sudo ip netns exec R1 iptables -t mangle -D FORWARD -s 10.0.0.0/22 -d 10.10.1.100/32 -o veth-r1-wan -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1360 2>/dev/null || true
-fi
-
-# Detener únicamente procesos con PID files de esta ejecución.
-for pf in /tmp/lab15/r1/zebra.pid /tmp/lab15/r1/ospfd.pid /tmp/lab15/r2/zebra.pid /tmp/lab15/r2/ospfd.pid /tmp/lab15/dhcp.pid /tmp/lab15/dns.pid /tmp/lab15/ka-r1.pid /tmp/lab15/ka-r2.pid /tmp/lab15/ka-r1.vrrp.pid /tmp/lab15/ka-r2.vrrp.pid /tmp/lab15/dhclient-fin.pid /tmp/lab15/dhclient-ven.pid; do
-  if [ -s "$pf" ]; then
-    pid=$(cat "$pf")
-    if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
-      sudo kill -TERM "$pid" 2>/dev/null || true
+# Detener demonios por PID file solo después de validar su línea de comandos.
+# Todos los procesos de esta práctica se arrancan con configuración o PID file bajo /tmp/lab15.
+PROC_LEFT=0
+PIDS_LAB15="/tmp/lab15/r1/zebra.pid /tmp/lab15/r1/ospfd.pid /tmp/lab15/r2/zebra.pid /tmp/lab15/r2/ospfd.pid /tmp/lab15/dhcp.pid /tmp/lab15/dns.pid /tmp/lab15/ka-r1.pid /tmp/lab15/ka-r2.pid /tmp/lab15/ka-r1.vrrp.pid /tmp/lab15/ka-r2.vrrp.pid /tmp/lab15/dhclient-fin.pid /tmp/lab15/dhclient-ven.pid"
+pid_matches_lab15() {
+  pf=$1; pid=$2
+  [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+  [ -r "/proc/$pid/cmdline" ] || return 2
+  CMDLINE=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  case "$pf" in
+    */r1/zebra.pid) [[ "$CMDLINE" == *zebra* && "$CMDLINE" == *"$pf"* ]] ;;
+    */r1/ospfd.pid) [[ "$CMDLINE" == *ospfd* && "$CMDLINE" == *"$pf"* ]] ;;
+    */r2/zebra.pid) [[ "$CMDLINE" == *zebra* && "$CMDLINE" == *"$pf"* ]] ;;
+    */r2/ospfd.pid) [[ "$CMDLINE" == *ospfd* && "$CMDLINE" == *"$pf"* ]] ;;
+    */dhcp.pid) [[ "$CMDLINE" == *dnsmasq* && "$CMDLINE" == *"/tmp/lab15/dhcp.conf"* ]] ;;
+    */dns.pid) [[ "$CMDLINE" == *dnsmasq* && "$CMDLINE" == *"/tmp/lab15/dns.conf"* ]] ;;
+    */ka-r1.pid|*/ka-r1.vrrp.pid) [[ "$CMDLINE" == *keepalived* && "$CMDLINE" == *"/tmp/lab15/ka-r1.conf"* ]] ;;
+    */ka-r2.pid|*/ka-r2.vrrp.pid) [[ "$CMDLINE" == *keepalived* && "$CMDLINE" == *"/tmp/lab15/ka-r2.conf"* ]] ;;
+    */dhclient-fin.pid) [[ "$CMDLINE" == *dhclient* && "$CMDLINE" == *"$pf"* && "$CMDLINE" == *veth-fin* ]] ;;
+    */dhclient-ven.pid) [[ "$CMDLINE" == *dhclient* && "$CMDLINE" == *"$pf"* && "$CMDLINE" == *veth-ven* ]] ;;
+    *) return 1 ;;
+  esac
+}
+for pf in $PIDS_LAB15; do
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf" 2>/dev/null || true)
+  if ! [[ "$pid" =~ ^[0-9]+$ ]]; then echo "PID inválido en $pf; se conserva el estado."; PROC_LEFT=1; continue; fi
+  [ -r "/proc/$pid/cmdline" ] || continue
+  if pid_matches_lab15 "$pf" "$pid"; then sudo kill -TERM "$pid" 2>/dev/null || true
+  else echo "PID $pid no coincide con el servicio esperado para $pf; no se detiene."; PROC_LEFT=1
+  fi
+done
+# Espera una salida normal; KILL solo se aplica si PID, proceso y configuración siguen coincidiendo.
+sleep 2
+for pf in $PIDS_LAB15; do
+  [ -s "$pf" ] || continue
+  pid=$(cat "$pf" 2>/dev/null || true)
+  [[ "$pid" =~ ^[0-9]+$ ]] || continue
+  [ -r "/proc/$pid/cmdline" ] || continue
+  if pid_matches_lab15 "$pf" "$pid"; then sudo kill -KILL "$pid" 2>/dev/null || true; fi
+done
+# Eliminar namespaces propios solo cuando ya no contienen procesos no registrados.
+NS_LEFT=0
+for ns in R1 R2 SWsrv fin ven ges srv suc; do
+  if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then
+    if [ "$(sudo ip netns exec "$ns" cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-15 ]; then echo "Se conserva $ns: no tiene la marca exclusiva de Lab15."; NS_LEFT=1
+    else
+      PIDS=$(sudo ip netns pids "$ns" 2>/dev/null || true)
+      if [ -n "$PIDS" ]; then echo "Se conserva $ns: quedan procesos no registrados ($PIDS)."; NS_LEFT=1; fi
     fi
   fi
 done
-# Respaldo acotado: procesos que aún pertenezcan a los namespaces exclusivos del laboratorio.
-for ns in R1 R2 SWsrv fin ven ges srv suc; do
-  sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-  sudo ip netns del "$ns" 2>/dev/null || true
-done
-sudo ip link del veth-wan-r1 2>/dev/null || true
-# /etc/netns/fin y /etc/netns/ven: se borran solo si NO existían antes del laboratorio
-# (si no existe el registro del Paso 0, no se borra nada)
-if [ -f /tmp/lab15/netns.preexistente ]; then
-  for ns in fin ven; do
-    grep -qx "$ns" /tmp/lab15/netns.preexistente || sudo rm -rf /etc/netns/$ns
+if [ "$NS_LEFT" = 0 ] && [ "$PROC_LEFT" = 0 ]; then
+  # Retirar TCPMSS dentro de R1 solo si Lab15 añadió la regla.
+  if [ -f /tmp/lab15/tcpmss.added ]; then
+    sudo ip netns exec R1 iptables -t mangle -D FORWARD -s 10.0.0.0/22 -d 10.10.1.100/32 -o veth-r1-wan -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1360 2>/dev/null || true
+  fi
+  for ns in R1 R2 SWsrv fin ven ges srv suc; do
+    if sudo ip netns list | awk '{print $1}' | grep -Fxq "$ns"; then sudo ip netns del "$ns" 2>/dev/null || true; fi
   done
-fi
+  if [ "$(cat /sys/class/net/veth-wan-r1/ifalias 2>/dev/null)" = networking-lab-lab-15 ]; then sudo ip link del veth-wan-r1; fi
+  # /etc/netns/fin y /etc/netns/ven: borrar solo si no existían antes del laboratorio.
+  if [ -f /tmp/lab15/netns.preexistente ]; then
+    for ns in fin ven; do grep -qx "$ns" /tmp/lab15/netns.preexistente || sudo rm -rf "/etc/netns/$ns"; done
+  fi
+else echo "Se conservan interfaces y /etc/netns: hay namespaces o PID que requieren revisión."; fi
 # Restaura ip_forward al valor original (no se asume 0)
+if [ -f /tmp/lab15/host-forward-out.added ]; then
+  sudo iptables -D FORWARD -i veth-wan-r1 -o eth0 -s 192.168.100.0/24 -j ACCEPT 2>/dev/null || true
+fi
+if [ -f /tmp/lab15/host-forward-in.added ]; then
+  sudo iptables -D FORWARD -i eth0 -o veth-wan-r1 -d 192.168.100.0/24 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+fi
 [ -f /tmp/lab15/ip_forward.orig ] && sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab15/ip_forward.orig)"
 # Archivos persistentes del caso ARP: solo si los creó este laboratorio
-[ -f /tmp/lab15/creado-99-arp ] && sudo rm -f /etc/sysctl.d/99-arp.conf && sudo sysctl --system
-[ -f /tmp/lab15/creado-check_arp ] && sudo rm -f /usr/local/bin/check_arp.sh
+[ -f /tmp/lab15/creado-99-arp ] && sudo rm -f /etc/sysctl.d/99-networking-lab-arp.conf
+
 # Restaura los umbrales ARP originales
 for n in 2 3; do
   [ -f /tmp/lab15/gc_thresh$n.orig ] && sudo sysctl -w net.ipv4.neigh.default.gc_thresh$n="$(cat /tmp/lab15/gc_thresh$n.orig)"
@@ -903,11 +994,18 @@ if [ -f /tmp/lab15-host-nat.added ]; then
   sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
   rm -f /tmp/lab15-host-nat.added
 fi
-# Solo eliminar el bridge OVS si el marcador demuestra que lo creó esta práctica.
-if [ -f /tmp/lab15/ovs-sw.created ]; then
-  sudo ovs-vsctl --if-exists del-br ovs-sw
-fi
-sudo rm -rf /tmp/lab15
+if [ "$NS_LEFT" = 0 ] && [ "$PROC_LEFT" = 0 ]; then
+  # Solo eliminar el bridge OVS si el marcador demuestra que lo creó esta práctica.
+  if [ -f /tmp/lab15/ovs-sw.created ]; then sudo ovs-vsctl --if-exists del-br ovs-sw; fi
+  # Retirar solo interfaces huérfanas en el host con la marca de este laboratorio.
+  for f in /sys/class/net/*/ifalias; do
+    [ -r "$f" ] || continue
+    [ "$(cat "$f")" = networking-lab-lab-15 ] || continue
+    dev=${f%/ifalias}; dev=${dev##*/}
+    sudo ip link del "$dev" 2>/dev/null || true
+  done
+else echo "Se conservan OVS y enlaces host mientras existan namespaces o PID que requieren revisión."; fi
+if [ "$NS_LEFT" = 0 ] && [ "$PROC_LEFT" = 0 ]; then sudo rm -rf /tmp/lab15; else echo "Se conserva /tmp/lab15 para inspección y limpieza posterior."; fi
 ```
 
 ### Revertir lo que se hizo en el host
@@ -917,9 +1015,9 @@ sudo rm -rf /tmp/lab15
 | `net.ipv4.ip_forward=1` | Lo restaura el bloque de limpieza con el valor guardado en `/tmp/lab15/ip_forward.orig`; sin ese archivo, usa el valor que anotaste |
 | Regla `MASQUERADE` del host | La línea `iptables -t nat -D …` de arriba |
 | Interfaz `veth-wan-r1` | La línea `ip link del veth-wan-r1` de arriba |
-| **Persistente:** `/etc/sysctl.d/99-arp.conf` (caso de agotamiento ARP) | Lo elimina el bloque de limpieza, solo si lo creó el laboratorio (si ya existía, no se toca) |
+| **Persistente:** `/etc/sysctl.d/99-networking-lab-arp.conf` (ajuste opcional de umbrales) | Lo elimina el bloque de limpieza, solo si lo creó el laboratorio (si ya existía, no se toca) |
 | `gc_thresh2` y `gc_thresh3` cambiados con `sysctl -w` | Los restaura el bloque de limpieza con los valores guardados en `/tmp/lab15/gc_thresh2.orig` y `gc_thresh3.orig` |
-| `/usr/local/bin/check_arp.sh` (si lo creó el laboratorio) | Lo elimina el bloque de limpieza, solo si lo creó el laboratorio |
+| `/tmp/lab15/check_arp.sh` | Se elimina al retirar el directorio temporal `/tmp/lab15` |
 
 Comprueba al final: `sysctl net.ipv4.ip_forward`, `iptables -t nat -S POSTROUTING` y `ls /etc/sysctl.d/`.
 
@@ -980,12 +1078,7 @@ VRRP se ejecuta solo en la red de servidores en el escenario descrito. Finanzas,
 
 **Procesos:** evita `pkill -f` como mecanismo general de limpieza. Guarda PID de `zebra`, `ospfd`, `dnsmasq`, `keepalived` y `dhclient` al iniciarlos; valida que el proceso pertenece a `/tmp/lab15` o a la configuración del laboratorio antes de enviar TERM. Espera su salida y usa KILL solo como último recurso sobre esos PID validados.
 
-**ARP:** el ajuste de `gc_thresh2/3` modifica umbrales del host; no demuestra por sí mismo agotamiento de la tabla. Describe el ejercicio como inspección/ajuste de umbrales, mide entradas IPv4 de vecinos y su evolución temporal, y no lo denomines “simulación de agotamiento” si no se genera una carga controlada y segura que lo reproduzca.
-
-### Proyecto final evaluable
-
-El recorrido de 15 laboratorios necesita una evidencia de competencia que no dependa de ejecutar todo en una única topología. El proyecto final debe entregar: diagrama lógico; plan VLSM; matriz VLAN/zonas; plan de routing; matriz DHCP/DNS/NAT; política de seguridad; matriz de disponibilidad; plan de monitoreo; informe de pruebas y fallos; memoria técnica con decisiones, limitaciones y reversión. Rúbrica recomendada: diseño 15%, routing 15%, servicios 10%, seguridad 15%, disponibilidad 10%, monitoreo/diagnóstico 15%, pruebas/reversión 10%, documentación/justificación 10%.
-
+**ARP:** el ajuste de `gc_thresh2/3` modifica umbrales del host; no demuestra por sí mismo agotamiento de la tabla. El ejercicio se limita a inspección y ajuste de umbrales, cuenta vecinos IPv4 y compara dos muestras temporales. No se denomina “simulación de agotamiento”.
 
 ## Preguntas de reflexión
 

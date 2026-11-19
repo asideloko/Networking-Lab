@@ -7,7 +7,7 @@
 - Controles estáticos de propiedad de recursos y cambios globales conocidos.
 - Rechazo de patrones de limpieza/seguridad peligrosos detectados en la auditoría.
 """
-import re, sys, pathlib, subprocess
+import re, sys, pathlib, subprocess, tomllib
 
 docs = pathlib.Path(__file__).resolve().parent.parent / "docs"
 errores = []
@@ -118,13 +118,18 @@ for md in sorted((docs / "labs").glob("lab-*/index.md")):
 # Regresiones concretas de la auditoría por laboratorio.
 checks = {
     "lab-02": ["/tmp/lab02-ip_forward.orig", "sysctl -w net.ipv4.ip_forward=\"$(cat /tmp/lab02-ip_forward.orig)\""] ,
-    "lab-04": ["veth-v1 veth-v2 veth-v3 veth-v4", "veth-i1 veth-i2 veth-i3"],
+    "lab-04": ["veth-v1", "veth-v2", "veth-v3", "veth-v4", "veth-i1", "veth-i2", "veth-i3", "/tmp/lab04-forward-out.added", "/tmp/lab04-forward-in.added", "networking-lab-lab-04"],
     "lab-05": ["/tmp/lab05-forward-out.added", "/tmp/lab05-forward-in.added", "iptables -D FORWARD -i veth-host"],
-    "lab-07": ["ip link del br-lan", "ip addr replace 10.0.0.1/24 dev veth-r1c"],
-    "lab-08": ["/tmp/lab08-nf_log_all_netns.orig", "ip route replace default via 192.168.100.2 dev veth-wan", "StrictHostKeyChecking=yes", "subjectAltName=DNS:servidorWeb"],
-    "lab-09": ["ip xfrm state delete", "ip xfrm policy delete", "ip tunnel del"],
-    "lab-12": ["/tmp/lab12-pids", "echo $! >> /tmp/lab12-pids"],
-    "lab-15": ["ovs-sw.created", "/tmp/lab15/tcpmss.added", "/tmp/lab15/r1/zebra.pid", "dnsmasq --conf-file=/tmp/lab15/dns.conf", "dhcp-option=tag:fin,option:dns-server,10.0.1.1"],
+    "lab-07": ["/tmp/lab07-forward-out.added", "/tmp/lab07-forward-in.added", "networking-lab-lab-07", "ip link del br-lan", "ip addr replace 10.0.0.1/24 dev veth-r1c"],
+    "lab-12": ["/tmp/lab12-pids", "echo \"$! 8080\" >> /tmp/lab12-pids", "tr '\\0' ' ' < \"/proc/$pid/cmdline\""],
+    "lab-15": ["ovs-sw.created", "/tmp/lab15/tcpmss.added", "/tmp/lab15/r1/zebra.pid", "dnsmasq --conf-file=/tmp/lab15/dns.conf", "dhcp-option=tag:fin,option:dns-server,10.0.1.1", "ip -4 neigh show nud all", "cmdline=$(tr '\\0' ' ' < \"/proc/$pid/cmdline\")", "/tmp/lab15/host-forward-out.added", "networking-lab-lab-15"],
+    "lab-08": ["/tmp/lab08-nf_log_all_netns.orig", "/tmp/lab08/R1-default.before", "R1-nat-removed.added", "StrictHostKeyChecking=yes", "subjectAltName=DNS:servidorWeb", "/tmp/lab08-forward-out.added", "/tmp/lab08-forward-in.added", "networking-lab-lab-08"],
+    "lab-09": ["ip xfrm state delete", "ip xfrm policy delete", "ip tunnel del", "Noise_IK", "--allow-deprecated-insecure-static-crypto", "fw-dnat.added", "networking-lab-lab-09"],
+    "lab-10": ["VETH_WAN_CVPN_OWNED", "networking-lab-lab-09"],
+    "lab-11": ["keepalived-dist1.conf", "virtual_router_id 110", "stp_state 1", "/tmp/lab11-forward-out.added", "remote-drop.added"],
+    "lab-12": ["PDP (Policy Decision Point)", "PEP (Policy Enforcement Point)", "Device posture", "/tmp/lab12-pids"],
+    "lab-13": ["/tmp/lab13-forward-out.added", "/tmp/lab13-forward-in.added", "networking-lab-lab-13", "ping -c 2 -W 1 -M do -s 1472", "Fragmentation Needed", "PIDS_ONPREMISE"],
+    "lab-14": ["/tmp/lab14-forward-out.added", "/tmp/lab14-forward-in.added", "networking-lab-lab-14"],
 }
 for lab, required in checks.items():
     md = docs / "labs" / lab / "index.md"
@@ -132,6 +137,36 @@ for lab, required in checks.items():
     for token in required:
         if token not in content:
             errores.append(f"{md.relative_to(docs)}: falta control de auditoría: {token}")
+
+# Cada namespace nuevo debe llevar una marca en lo para que la limpieza no actúe por nombre solamente.
+for n in (1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15):
+    md = docs / "labs" / f"lab-{n:02d}" / "index.md"
+    content = md.read_text(encoding="utf-8")
+    if "ip netns add" in content and not re.search(r"ip link set lo alias networking-lab-(?:owned|lab-\d{2})", content):
+        errores.append(f"{md.relative_to(docs)}: crea namespaces sin marca de propiedad")
+
+# La navegación debe apuntar a destinos internos existentes (evita enlaces rotos en el menú).
+config_path = docs.parent / "zensical.toml"
+try:
+    config = tomllib.loads(config_path.read_text(encoding="utf-8"))
+    nav = config.get("project", {}).get("nav", [])
+    def validar_nav(items):
+        for item in items:
+            for label, target in item.items():
+                if isinstance(target, str):
+                    if not re.match(r"^(https?:|mailto:)", target) and not (docs / target).is_file():
+                        errores.append(f"zensical.toml: destino inexistente en navegación: {label} -> {target}")
+                elif isinstance(target, list):
+                    validar_nav(target)
+    validar_nav(nav)
+except (OSError, tomllib.TOMLDecodeError, AttributeError, TypeError) as exc:
+    errores.append(f"zensical.toml: no se pudo validar la navegación: {exc}")
+
+# No debe publicarse un registro interno de auditoría no solicitado.
+if (docs / "referencia" / "auditoria-atendida.md").exists():
+    errores.append("docs/referencia/auditoria-atendida.md: documento interno no solicitado en la documentación pública")
+if "auditoria-atendida.md" in (docs.parent / "zensical.toml").read_text(encoding="utf-8"):
+    errores.append("zensical.toml: contiene una entrada de navegación al registro interno de auditoría")
 
 # Sintaxis de bloques Bash completos (sin ejecutar comandos ni modificar el sistema).
 for md in sorted(docs.rglob("*.md")):
