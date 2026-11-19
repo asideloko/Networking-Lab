@@ -101,7 +101,7 @@ graph LR
 ```
 
 !!! info "MAC frente a IP"
-    La **MAC** identifica la interfaz en el enlace y solo tiene sentido dentro de él: se reescribe en cada salto. La **IP** identifica el destino lógico y se conserva de extremo a extremo. Cuando dos equipos están en la misma subred, el emisor usa la **MAC del destino**; cuando no lo están, usa la **MAC del *gateway*** (se verá en el laboratorio 02). El subnetting en profundidad llega en el laboratorio 04.
+    La **MAC** identifica la interfaz en el enlace y solo tiene sentido dentro de él: un **router** la sustituye al reenviar el paquete al siguiente enlace, mientras que un **switch o bridge** conserva las MAC de la trama. La **IP** identifica el destino lógico y se conserva de extremo a extremo. Cuando dos equipos están en la misma subred, el emisor usa la **MAC del destino**; cuando no lo están, usa la **MAC del *gateway*** (se verá en el laboratorio 02). El subnetting en profundidad llega en el laboratorio 04.
 
 ## Construcción de la red
 

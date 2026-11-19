@@ -330,6 +330,25 @@ ip netns exec router ping -c 2 10.0.99.2
 
 **Resultado esperado:** 0 % de pérdida en todas. Comprueba también el aislamiento de capa 2: Ventas 1 **no** puede alcanzar a IT 1 por ARP (`ip netns exec ventas1 ping -c 1 10.0.20.2` solo funciona porque pasa por el router; si le configurases una IP de `10.0.20.0/24` y quitaras el gateway, no llegaría).
 
+### Comprobar las VLAN permitidas en el trunk
+
+Un trunk solo transporta las VLAN que se le han asignado. Consulta qué admite cada puerto:
+
+```bash
+ip netns exec switch bridge vlan show
+```
+
+`veth-sr` debe listar las VLAN 10, 20, 30 y 99 (sin `PVID` ni `Egress Untagged`: viajan etiquetadas). Retira una y observa el efecto:
+
+```bash
+ip netns exec switch bridge vlan del dev veth-sr vid 30
+ip netns exec admin1 ping -c 2 -W 1 10.0.30.1      # sin respuesta: la VLAN 30 ya no llega al router
+ip netns exec ventas1 ping -c 2 10.0.20.2          # las demás VLAN siguen funcionando
+ip netns exec switch bridge vlan add dev veth-sr vid 30   # restaurar
+```
+
+Una VLAN que existe en los puertos de acceso pero **no** está permitida en el trunk queda aislada: los equipos se ven entre sí en el switch, pero no pueden salir hacia el router.
+
 ### Seguridad entre VLAN
 
 Con la política por defecto del router (`FORWARD` en `ACCEPT`), **cualquier VLAN puede comunicarse con cualquier otra**: el ping de Ventas a IT lo demuestra. La separación de VLAN no es, por tanto, una barrera de seguridad suficiente. Para aplicar una política, el filtrado se hace en el router. Por ejemplo, impedir que Ventas llegue a Administración:

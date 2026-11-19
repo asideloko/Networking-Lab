@@ -126,6 +126,8 @@ sudo ip netns exec R1 ip route add default via 192.168.100.2
 sudo ip netns exec R1 iptables -t nat -A POSTROUTING -o veth-r1-wan -j MASQUERADE
 
 # El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)
+# Guarda el valor original de ip_forward: la limpieza lo restaura
+sysctl -n net.ipv4.ip_forward > /tmp/lab15/ip_forward.orig
 sudo sysctl -w net.ipv4.ip_forward=1
 sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || \
   sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE
@@ -510,6 +512,10 @@ sudo ip netns exec R1 dnsmasq --conf-file=/tmp/lab15/dhcp.conf --pid-file=/tmp/l
 Los clientes piden dirección en lugar de tener una fija. Para que `dhclient` no toque el `resolv.conf` de tu equipo, damos a cada namespace el suyo:
 
 ```bash
+# Registra qué existía antes: la limpieza borra solo lo que creó este laboratorio
+for ns in fin ven; do
+  [ -e /etc/netns/$ns ] && echo "$ns" >> /tmp/lab15/netns.preexistente
+done
 for ns in fin ven; do
   sudo mkdir -p /etc/netns/$ns
   sudo touch /etc/netns/$ns/resolv.conf
@@ -704,14 +710,19 @@ sysctl net.ipv4.neigh.default.gc_thresh3
 sudo sysctl -w net.ipv4.neigh.default.gc_thresh3=8192
 sudo sysctl -w net.ipv4.neigh.default.gc_thresh2=4096
 # ⚠ CAMBIO PERSISTENTE EN EL HOST: sobrevive a reinicios (reversión en «Limpieza del laboratorio»)
-echo 'net.ipv4.neigh.default.gc_thresh3=8192' | sudo tee -a /etc/sysctl.d/99-arp.conf
-echo 'net.ipv4.neigh.default.gc_thresh2=4096' | sudo tee -a /etc/sysctl.d/99-arp.conf
+# Si 99-arp.conf ya existe es tuyo: no lo toques; elige otro nombre o cancela
+[ -e /etc/sysctl.d/99-arp.conf ] && echo "99-arp.conf ya existe: no continúes" || {
+  echo 'net.ipv4.neigh.default.gc_thresh3=8192' | sudo tee /etc/sysctl.d/99-arp.conf
+  echo 'net.ipv4.neigh.default.gc_thresh2=4096' | sudo tee -a /etc/sysctl.d/99-arp.conf
+  touch /tmp/lab15/creado-99-arp
+}
 sudo sysctl --system
 ```
 
 ### Script de verificación ARP
 
 ```bash
+[ -e /usr/local/bin/check_arp.sh ] && echo "check_arp.sh ya existe: no se sobrescribe" || {
 sudo tee /usr/local/bin/check_arp.sh > /dev/null << 'EOF'
 #!/bin/bash
 THRESHOLD=7000
@@ -721,6 +732,8 @@ if [ "$CURRENT" -gt "$THRESHOLD" ]; then
 fi
 EOF
 sudo chmod +x /usr/local/bin/check_arp.sh
+touch /tmp/lab15/creado-check_arp
+}
 ```
 
 ## 15.9 Dependencias, fallos e incidencias
@@ -783,8 +796,15 @@ Al terminar, detén los demonios y elimina solo lo creado aquí. Un namespace **
 sudo pkill -f '[/]tmp/lab15'    # zebra, ospfd, dnsmasq, keepalived y dhclient de este laboratorio
 for ns in R1 R2 SWsrv fin ven ges srv suc; do sudo ip netns del $ns 2>/dev/null || true; done
 sudo ip link del veth-wan-r1 2>/dev/null || true
-# /etc/netns/fin y /etc/netns/ven los creó este laboratorio: bórralos solo si NO existían antes (`ls /etc/netns/`)
-sudo rm -rf /etc/netns/fin /etc/netns/ven
+# /etc/netns/fin y /etc/netns/ven: se borran solo si NO existían antes del laboratorio
+for ns in fin ven; do
+  grep -qx "$ns" /tmp/lab15/netns.preexistente 2>/dev/null || sudo rm -rf /etc/netns/$ns
+done
+# Restaura ip_forward al valor original (no se asume 0)
+[ -f /tmp/lab15/ip_forward.orig ] && sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab15/ip_forward.orig)"
+# Archivos persistentes del caso ARP: solo si los creó este laboratorio
+[ -f /tmp/lab15/creado-99-arp ] && sudo rm -f /etc/sysctl.d/99-arp.conf && sudo sysctl --system
+[ -f /tmp/lab15/creado-check_arp ] && sudo rm -f /usr/local/bin/check_arp.sh
 sudo rm -rf /tmp/lab15
 sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true   # ajusta eth0
 # Solo si ejecutaste el bloque conceptual de Open vSwitch:
@@ -795,12 +815,12 @@ sudo ovs-vsctl --if-exists del-br ovs-sw
 
 | Cambio | Reversión |
 |--------|-----------|
-| `net.ipv4.ip_forward=1` | `sudo sysctl -w net.ipv4.ip_forward=0` (solo si estaba en 0 antes) |
+| `net.ipv4.ip_forward=1` | Lo restaura el bloque de limpieza con el valor guardado en `/tmp/lab15/ip_forward.orig`; sin ese archivo, usa el valor que anotaste |
 | Regla `MASQUERADE` del host | La línea `iptables -t nat -D …` de arriba |
 | Interfaz `veth-wan-r1` | La línea `ip link del veth-wan-r1` de arriba |
-| **Persistente:** `/etc/sysctl.d/99-arp.conf` (caso de agotamiento ARP) | `sudo rm -f /etc/sysctl.d/99-arp.conf && sudo sysctl --system` |
+| **Persistente:** `/etc/sysctl.d/99-arp.conf` (caso de agotamiento ARP) | Lo elimina el bloque de limpieza, solo si lo creó el laboratorio (si ya existía, no se toca) |
 | `gc_thresh2` y `gc_thresh3` cambiados con `sysctl -w` | Se restauran al reiniciar o con `sudo sysctl --system` tras eliminar el archivo; si no, vuelve a escribir los valores que anotaste |
-| `/usr/local/bin/check_arp.sh` (si lo creaste) | `sudo rm -f /usr/local/bin/check_arp.sh` |
+| `/usr/local/bin/check_arp.sh` (si lo creó el laboratorio) | Lo elimina el bloque de limpieza, solo si lo creó el laboratorio |
 
 Comprueba al final: `sysctl net.ipv4.ip_forward`, `iptables -t nat -S POSTROUTING` y `ls /etc/sysctl.d/`.
 

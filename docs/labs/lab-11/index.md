@@ -392,6 +392,20 @@ for v in 10 20 30; do
 done
 ```
 
+### Medir la convergencia
+
+«Funciona tras el fallo» no basta: importa **cuánto tiempo** se interrumpe el servicio. Lanza un ping continuo con marcas de tiempo, provoca el fallo de Core1 y cuenta los paquetes perdidos:
+
+```bash
+sudo ip netns exec ventas ping -D -i 0.2 -c 100 10.0.99.10 > /tmp/lab11-conv.txt &
+sleep 5
+# Aquí repite el bucle que baja los enlaces de Core1 (apartado anterior)
+wait
+tail -3 /tmp/lab11-conv.txt          # paquetes enviados, recibidos y % de pérdida
+```
+
+Cada paquete perdido equivale a unos 0,2 s sin servicio. Con rutas estáticas y fallo local, la conmutación al camino de respaldo es casi inmediata; con un fallo **remoto** (que el router no detecta en su propia interfaz) no habría conmutación y la pérdida sería total hasta intervenir. Esa diferencia es la razón de usar OSPF y VRRP (laboratorio 15). Restaura Core1 con el bloque de recuperación anterior y vuelve a medir para confirmar que la red recupera su estado original.
+
 ## Segmentación VLAN
 
 | VLAN | ID | Subred | Propósito |

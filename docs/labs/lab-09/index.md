@@ -500,6 +500,26 @@ Este *overhead* reduce la MTU efectiva del túnel (véase el laboratorio 15 para
 
 Estas simplificaciones **muestran el funcionamiento interno** y no deben tomarse como configuración empresarial.
 
+### Paso 16: Comprobar la MTU y la fragmentación en el túnel
+
+La encapsulación reduce la MTU útil. Compruébalo con el túnel GRE R1–R2:
+
+```bash
+# MTU de la interfaz del túnel (1476 = 1500 - 24)
+sudo ip netns exec R1 ip link show gre1 | grep -o 'mtu [0-9]*'
+
+# Con DF activado: 1448 bytes de datos + 28 de cabeceras ICMP/IP = 1476, cabe
+sudo ip netns exec clienteSede ping -c 2 -M do -s 1448 10.0.2.10
+
+# 1472 + 28 = 1500: cabe en el cliente, pero no en el túnel
+sudo ip netns exec clienteSede ping -c 2 -M do -s 1472 10.0.2.10   # «Frag needed and DF set (mtu = 1476)»
+
+# Sin DF, el paquete se fragmenta y llega
+sudo ip netns exec clienteSede ping -c 2 -M dont -s 1472 10.0.2.10
+```
+
+Con DF activado, el router descarta el paquete grande y avisa con ICMP «fragmentación necesaria»; sin DF lo fragmenta, con un coste de rendimiento. Si esos avisos ICMP se filtran, las conexiones TCP con paquetes grandes se quedan colgadas aunque los pings pequeños funcionen. La solución habitual es ajustar la MSS de TCP, tal como se hace en el laboratorio 15.
+
 ## Ejercicios prácticos
 
 ### Ejercicio 1: Agregar un nuevo túnel GRE

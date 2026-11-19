@@ -285,6 +285,19 @@ Un diagnóstico puntual responde a un problema que **ya ocurrió**; la supervisi
 
 Un umbral sin línea base genera ruido: primero se mide lo normal.
 
+### Interpretar alertas y falsos positivos
+
+No toda alerta indica un problema real, ni todo problema genera una alerta:
+
+| Resultado | Significado | Ejemplo | Consecuencia |
+|-----------|-------------|---------|--------------|
+| **Verdadero positivo** | Alerta y problema real | Pérdida > 1 % sostenida por un enlace caído | Se actúa |
+| **Falso positivo** | Alerta sin problema | Un pico de latencia durante un respaldo programado | Ruido; con el tiempo se ignoran las alertas |
+| **Falso negativo** | Problema sin alerta | Fallo real en una métrica que nadie vigila | Se detecta tarde, o por quejas de usuarios |
+| **Verdadero negativo** | Sin alerta y sin problema | Operación normal | Nada que hacer |
+
+Antes de actuar sobre una alerta: (1) confirma con una segunda fuente (`mtr`, otro punto de medición, el registro del colector); (2) comprueba si coincide con un evento esperado (mantenimiento, copia de seguridad, despliegue); (3) valora si el umbral es adecuado con respecto a la línea base. Ajustar el umbral o exigir que se mantenga varios minutos reduce falsos positivos, pero un umbral demasiado holgado produce falsos negativos: hay que buscar equilibrio, no eliminar uno a costa del otro.
+
 ### Correlación de eventos: lo que un SIEM aporta más allá de guardar logs
 
 Guardar registros no es correlacionarlos. Ejemplo conceptual: un solo intento de SSH fallido es normal; **veinte fallos desde una misma IP en un minuto, seguidos de un acceso correcto**, es un patrón. Un colector con `rsyslog` reúne los eventos; un SIEM los **normaliza, relaciona entre fuentes y alerta**. Aquí solo se construye la primera parte.

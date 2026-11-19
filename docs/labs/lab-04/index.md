@@ -343,6 +343,23 @@ Si `curl` no resuelve el nombre, consulta la nota «DNS dentro de un namespace»
 
 **Resultado esperado:** Respuestas exitosas (si el host tiene salida real a Internet).
 
+### Paso 11b: Pruebas negativas
+
+Comprobar lo que **debe fallar** confirma que el diseño funciona por las razones correctas.
+
+```bash
+# 1. Sin gateway no hay camino hacia otra subred
+ip netns exec ventas1 ip route del default
+ip netns exec ventas1 ping -c 2 -W 1 10.0.0.17      # Network is unreachable
+ip netns exec ventas1 ping -c 2 10.0.0.2            # sigue funcionando: misma subred, no necesita gateway
+ip netns exec ventas1 ip route add default via 10.0.0.14   # restaurar
+
+# 2. Dirección válida de la subred IT, pero sin ningún equipo
+ip netns exec ventas1 ping -c 2 -W 1 10.0.0.20      # Destination Host Unreachable
+```
+
+**Por qué ocurre:** en la prueba 1 el kernel no tiene ninguna ruta hacia `10.0.0.17` (queda fuera de `10.0.0.0/28`), por eso falla de inmediato y sin enviar nada; dentro de la propia subred no hace falta gateway. En la prueba 2 el paquete sí llega al router, pero este no obtiene respuesta ARP de `10.0.0.20` y devuelve un ICMP *host unreachable*: la subred existe, el equipo no.
+
 ## Observación y análisis
 
 ### Paso 12: Ver las tablas de enrutamiento

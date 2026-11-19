@@ -527,6 +527,23 @@ sudo ip route del 10.0.99.0/24 via 192.168.100.1
 
 Para comprobar que el tráfico **va cifrado**, captura mientras haces la conexión: verás el *handshake* TLS y datos ilegibles en lugar de texto en claro (`sudo ip netns exec firewall tcpdump -i br-dmz -n -A port 443`).
 
+### Cifrado frente a validación de identidad
+
+TLS aporta dos cosas distintas: **cifrado** del canal y **autenticación** del servidor mediante su certificado. Que la conexión se cifre no implica que el cliente haya comprobado con quién habla. Pide al cliente que **exija** la validación:
+
+```bash
+# 1. Validación obligatoria sin confiar en el certificado: falla (autofirmado, sin cadena de confianza)
+sudo ip netns exec clienteSede sh -c 'openssl s_client -connect 10.0.99.10:443 -verify_return_error -brief </dev/null'
+
+# 2. Confiando explícitamente en este certificado y comprobando el nombre: funciona
+sudo ip netns exec clienteSede sh -c 'openssl s_client -connect 10.0.99.10:443 -CAfile /tmp/lab08/cert.pem -verify_hostname servidorWeb -verify_return_error -brief </dev/null'
+
+# 3. Mismo certificado, pero esperando otro nombre de servidor: falla por nombre incorrecto
+sudo ip netns exec clienteSede sh -c 'openssl s_client -connect 10.0.99.10:443 -CAfile /tmp/lab08/cert.pem -verify_hostname otro.ejemplo -verify_return_error -brief </dev/null'
+```
+
+En las tres pruebas el canal **se cifra**; solo en la segunda el cliente ha verificado la identidad del servidor (cadena de confianza y nombre). En producción, el certificado lo emite una autoridad en la que el cliente ya confía, o una PKI propia, y el nombre consultado debe figurar en el certificado.
+
 ### Registro (*logs*) de firewall
 
 Un firewall que descarta sin dejar rastro es difícil de auditar. Añade una regla `LOG` **antes** del `DROP` final para registrar los intentos Internet → LAN:

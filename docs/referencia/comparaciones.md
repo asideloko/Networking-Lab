@@ -24,7 +24,7 @@ Hay conceptos que se aprenden juntos y se confunden con facilidad. Cada comparac
 |--|-----|----|
 | **Definición** | Identificador de una **interfaz** en el enlace. | Dirección **lógica** de un equipo en una red. |
 | **Función** | Entregar la trama al siguiente equipo del enlace. | Hacer llegar el paquete a su destino de extremo a extremo. |
-| **Diferencias** | Solo vale en el enlace local; **cambia en cada salto**. | Se conserva de origen a destino (salvo NAT). |
+| **Diferencias** | Solo vale en el enlace local; **un router la sustituye** en cada salto de capa 3, mientras que switches y bridges la conservan. | Se conserva de origen a destino (salvo NAT). |
 | **Ejemplo** | `tcpdump -e` en el laboratorio 01. | `10.0.1.2 → 10.0.1.3`. |
 
 ## 3. Subred frente a VLAN

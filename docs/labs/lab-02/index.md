@@ -119,12 +119,15 @@ ip netns exec router ip route add default via 192.168.1.1
 El host también debe reenviar y traducir el tráfico del enlace de laboratorio hacia tu red real. Sustituye `eth0` por la interfaz con la que sales a Internet (`ip route get 8.8.8.8` te la muestra):
 
 ```bash
+# Guarda el valor original: la reversión lo restaura tal cual
+sysctl -n net.ipv4.ip_forward > /tmp/lab02-ip_forward.orig
+
 sysctl -w net.ipv4.ip_forward=1
 iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
 ```
 
 !!! danger "Cambio en el host (no en un namespace)"
-    Los dos comandos anteriores **no se ejecutan dentro de un namespace**: modifican el **equipo real**. Antes de ejecutarlos anota el estado actual y ten a mano la reversión (sección «Revertir los cambios del host», al final del laboratorio).
+    Los dos comandos anteriores **no se ejecutan dentro de un namespace**: modifican el **equipo real**. Antes de ejecutarlos guarda el estado actual (el bloque anterior ya conserva `ip_forward` en `/tmp/lab02-ip_forward.orig`) y ten a mano la reversión (sección «Revertir los cambios del host», al final del laboratorio).
 
     | Cambio | Dónde | ¿Persiste tras reiniciar? |
     |--------|-------|---------------------------|
@@ -203,6 +206,21 @@ ip netns exec cliente1 curl -I http://google.com
     ```
 
     Repite este paso con cada cliente que necesite resolver nombres en los laboratorios siguientes. (Alternativa rápida: `nslookup google.com 8.8.8.8`.)
+
+!!! warning "El firewall del host también filtra el tráfico reenviado"
+    El tráfico del laboratorio **atraviesa el equipo real** (de `veth-host` a `eth0`), así que lo evalúa el *firewall* del host. Si el NAT está bien y aun así no hay salida a Internet, revisa su política de reenvío: Docker, `ufw` y algunas distribuciones dejan la cadena `FORWARD` en `DROP` por defecto.
+
+    ```bash
+    iptables -S FORWARD | head -5      # política (-P FORWARD ...) y reglas
+    ufw status 2>/dev/null             # si usas ufw
+    ```
+
+    Si la política es `DROP`, permite **solo** este enlace y retíralo al terminar (la reversión al final del laboratorio lo incluye):
+
+    ```bash
+    iptables -I FORWARD -i veth-host -o eth0 -j ACCEPT
+    iptables -I FORWARD -i eth0 -o veth-host -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+    ```
 
 ## Observación de la transmisión de datos
 
@@ -367,8 +385,13 @@ Al terminar, deshaz **solo lo que hiciste aquí** (no borres reglas ajenas):
 # 1. Regla NAT del host (usa la misma interfaz que pusiste en el Paso 4)
 iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
 
-# 2. Reenvío: vuelve al valor que anotaste (normalmente 0 en un equipo que no es router)
-sysctl -w net.ipv4.ip_forward=0
+# 2. Reenvío: restaura el valor original guardado (no se asume que fuera 0)
+sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab02-ip_forward.orig 2>/dev/null || echo 0)"
+rm -f /tmp/lab02-ip_forward.orig
+
+# 2b. Reglas de FORWARD del host (solo si las añadiste; si no existen, el error se ignora)
+iptables -D FORWARD -i veth-host -o eth0 -j ACCEPT 2>/dev/null || true
+iptables -D FORWARD -i eth0 -o veth-host -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
 
 # 3. Enlace virtual y namespaces del laboratorio
 ip link del veth-host 2>/dev/null || true
@@ -376,7 +399,7 @@ for ns in cliente1 cliente2 router; do ip netns del $ns 2>/dev/null || true; don
 rm -rf /etc/netns/cliente1 /etc/netns/cliente2
 ```
 
-Si tu equipo ya tenía `ip_forward=1` antes del laboratorio, **no lo cambies** en el paso 2. Comprueba el resultado con `iptables -t nat -S POSTROUTING` y `sysctl net.ipv4.ip_forward`.
+Si tu equipo ya tenía `ip_forward=1`, el paso 2 lo deja en 1, que es su valor original. Si borraste `/tmp/lab02-ip_forward.orig` o abriste otra sesión, consulta el valor que anotaste antes de empezar. Comprueba el resultado con `iptables -t nat -S POSTROUTING` y `sysctl net.ipv4.ip_forward`.
 
 ## Preguntas de reflexión
 
