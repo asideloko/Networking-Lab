@@ -302,14 +302,57 @@ ip netns exec "$DHC" ip link set "dhcl_${SUF}" name eth0
 ip netns exec "$DHS" ip addr add 10.30.0.1/24 dev eth0
 ip netns exec "$DHS" ip link set eth0 up
 ip netns exec "$DHC" ip link set eth0 up
-DNS_PID="/tmp/nlci-dnsmasq-${SUF}.pid"; DNS_LOG="/tmp/nlci-dnsmasq-${SUF}.log"
-DHCP_PID="/tmp/nlci-dhclient-${SUF}.pid"; DHCP_LEASES="/tmp/nlci-dhclient-${SUF}.leases"; DHCP_LOG="/tmp/nlci-dhclient-${SUF}.log"
-DHCLIENT_SCRIPT="/tmp/nlci-dhclient-${SUF}.sh"; DHCP_EVENT="/tmp/nlci-dhclient-${SUF}.event"
+DNS_PID="/tmp/nlci-dnsmasq-${SUF}.pid"
+DNS_LOG="/tmp/nlci-dnsmasq-${SUF}.log"
+DNS_LEASES="/tmp/nlci-dnsmasq-${SUF}.leases"
+
+DHCP_PID="/tmp/nlci-dhclient-${SUF}.pid"
+DHCP_LEASES="/tmp/nlci-dhclient-${SUF}.leases"
+DHCP_LOG="/tmp/nlci-dhclient-${SUF}.log"
+DHCLIENT_SCRIPT="/tmp/nlci-dhclient-${SUF}.sh"
+DHCP_EVENT="/tmp/nlci-dhclient-${SUF}.event"
+
 PID_FILES+=("$DNS_PID" "$DHCP_PID")
-TEMP_FILES+=("$DNS_LOG" "$DHCP_LEASES" "$DHCP_LOG" "$DHCLIENT_SCRIPT" "$DHCP_EVENT")
-ip netns exec "$DHS" dnsmasq --no-daemon --no-resolv --no-hosts --bind-interfaces --interface=eth0 --listen-address=10.30.0.1 --port=53 --dhcp-range=10.30.0.100,10.30.0.120,255.255.255.0,1h --dhcp-option=option:router,10.30.0.1 --dhcp-option=option:dns-server,10.30.0.1 --address=/app.lab.test/10.30.0.10 --pid-file="$DNS_PID" --log-facility="$DNS_LOG" >/dev/null 2>&1 &
-for _ in $(seq 1 10); do [ -s "$DNS_PID" ] && break; sleep 1; done
-[ -s "$DNS_PID" ] || { echo "FALLO: dnsmasq no inició" >&2; exit 1; }
+TEMP_FILES+=("$DNS_LOG" "$DNS_LEASES" "$DHCP_LEASES" "$DHCP_LOG" "$DHCLIENT_SCRIPT" "$DHCP_EVENT")
+
+ip netns exec "$DHS" dnsmasq \
+  --no-daemon \
+  --conf-file=/dev/null \
+  --user=root \
+  --no-resolv \
+  --no-hosts \
+  --bind-interfaces \
+  --interface=eth0 \
+  --listen-address=10.30.0.1 \
+  --port=53 \
+  --dhcp-range=10.30.0.100,10.30.0.120,255.255.255.0,1h \
+  --dhcp-option=option:router,10.30.0.1 \
+  --dhcp-option=option:dns-server,10.30.0.1 \
+  --dhcp-leasefile="$DNS_LEASES" \
+  --address=/app.lab.test/10.30.0.10 \
+  --pid-file="$DNS_PID" \
+  --log-facility=- >"$DNS_LOG" 2>&1 &
+
+DNS_LAUNCHER_PID=$!
+DNS_STARTED=0
+
+for _ in $(seq 1 10); do
+  if [ -s "$DNS_PID" ] && kill -0 "$(cat "$DNS_PID")" 2>/dev/null; then
+    DNS_STARTED=1
+    break
+  fi
+  if ! kill -0 "$DNS_LAUNCHER_PID" 2>/dev/null; then
+    break
+  fi
+  sleep 1
+done
+
+if [[ "$DNS_STARTED" != 1 ]]; then
+  echo "FALLO: dnsmasq no inició. Diagnóstico:" >&2
+  cat "$DNS_LOG" >&2 || true
+  exit 1
+fi
+
 # Script DHCP acotado: registra opciones y no toca /etc/resolv.conf ni archivos del host.
 cat > "$DHCLIENT_SCRIPT" <<'EOF'
 #!/bin/sh
