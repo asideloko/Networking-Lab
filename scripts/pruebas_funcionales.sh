@@ -61,7 +61,7 @@ cleanup() {
     [[ "$pid" =~ ^[0-9]+$ ]] || continue
     [ -r "/proc/$pid/cmdline" ] || continue
     cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
-    if [[ "$cmdline" == *"/tmp/nlci-"*"$SUF"* || "$cmdline" == *"/run/nlci-dhclient-${SUF}.pid"* ]]; then kill -TERM "$pid" 2>/dev/null || true; fi
+    if [[ "$cmdline" == *"/tmp/nlci-"*"$SUF"* || "$cmdline" == *"/run/dhclient-nlci-${SUF}.pid"* ]]; then kill -TERM "$pid" 2>/dev/null || true; fi
   done
   sleep 1
   for pf in "${PID_FILES[@]}"; do
@@ -70,7 +70,7 @@ cleanup() {
     [[ "$pid" =~ ^[0-9]+$ ]] || continue
     [ -r "/proc/$pid/cmdline" ] || continue
     cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
-    if [[ "$cmdline" == *"/tmp/nlci-"*"$SUF"* || "$cmdline" == *"/run/nlci-dhclient-${SUF}.pid"* ]]; then kill -KILL "$pid" 2>/dev/null || true; fi
+    if [[ "$cmdline" == *"/tmp/nlci-"*"$SUF"* || "$cmdline" == *"/run/dhclient-nlci-${SUF}.pid"* ]]; then kill -KILL "$pid" 2>/dev/null || true; fi
   done
   for ns in "${NAMESPACES[@]}"; do ip netns del "$ns" 2>/dev/null || true; done
   for dev in "${HOST_LINKS[@]}"; do ip link del "$dev" 2>/dev/null || true; done
@@ -351,7 +351,7 @@ if [[ ! -x /sbin/dhclient-script ]]; then
   echo "FALLO: no está disponible /sbin/dhclient-script" >&2
   exit 1
 fi
-if timeout --signal=TERM --kill-after=5s 25s ip netns exec "$DHC" dhclient -4 -1 -d \
+if timeout --signal=TERM --kill-after=5s 25s ip netns exec "$DHC" dhclient -4 -1 \
   -sf /sbin/dhclient-script \
   -pf "$DHCP_PID" -lf "$DHCP_LEASES" eth0 >"$DHCP_LOG" 2>&1; then
   :
