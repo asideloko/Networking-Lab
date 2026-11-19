@@ -81,24 +81,28 @@ NS_SERIE="cliente1 cliente2 cliente3 cliente4 router switch ventas1 ventas2 vent
 
 # Muestra cuáles de esos namespaces existen ahora mismo
 EXISTENTES=$(ip netns list | awk '{print $1}' | grep -xF -f <(echo $NS_SERIE | tr ' ' '\n'))
+VETH_WAN_FW=$(sudo ip -o link show veth-wan-fw 2>/dev/null | head -1)
 echo "Se eliminarán: ${EXISTENTES:-(ninguno)}"
-read -r -p "¿Son todos de laboratorios anteriores? (s/N) " R
+echo "Interfaz veth-wan-fw: ${VETH_WAN_FW:-(ausente)}"
+read -r -p "¿Son todos recursos de laboratorios anteriores? (s/N) " R
 
 if [ "$R" != s ]; then
   echo "Cancelado: renombra tus namespaces o usa una máquina virtual limpia"
 elif pgrep -f '[/]tmp/lab15' >/dev/null; then
   echo "Hay procesos de una ejecución anterior de este laboratorio: aplica primero «Limpieza del laboratorio»"
-elif [ -e /tmp/lab15 ]; then
-  echo "/tmp/lab15 ya existe: revísalo, muévelo o bórralo tú antes de continuar"
 else
   # Solo se llega aquí si todo lo anterior se ha confirmado
-  for ns in $EXISTENTES; do sudo ip netns del $ns 2>/dev/null || true; done
+  for ns in $EXISTENTES; do
+    sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
+    sudo ip netns del "$ns" 2>/dev/null || true
+  done
+  [ -n "$VETH_WAN_FW" ] && sudo ip link del veth-wan-fw 2>/dev/null || true
   [ "$(cat /sys/class/net/br-wan/ifalias 2>/dev/null)" = networking-lab ] && ip -4 -o addr show dev br-wan | grep -q '192\.168\.100\.2/24' && sudo ip link del br-wan   # solo el bridge de esta serie (marca + dirección)
   sudo apt-get install -y frr keepalived dnsmasq-base isc-dhcp-client nftables netcat-openbsd
 
   for ns in R1 R2 SWsrv fin ven ges srv suc; do sudo ip netns add $ns; done
   for r in R1 R2; do sudo ip netns exec $r sysctl -qw net.ipv4.ip_forward=1; done
-  mkdir /tmp/lab15
+  mkdir -p /tmp/lab15
 
   # Registra ahora qué directorios DNS existían antes: la limpieza borra solo los que cree el laboratorio
   touch /tmp/lab15/netns.preexistente
@@ -141,10 +145,12 @@ sudo ip netns exec R1 iptables -t nat -A POSTROUTING -o veth-r1-wan -j MASQUERAD
 
 # El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)
 # Guarda el valor original de ip_forward: la limpieza lo restaura
+mkdir -p /tmp/lab15
 sysctl -n net.ipv4.ip_forward > /tmp/lab15/ip_forward.orig
 sudo sysctl -w net.ipv4.ip_forward=1
-sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || \
-  sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE
+if ! sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE; then
+  sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab15-host-nat.added
+fi
 
 # Primera LAN: Finanzas (10.0.1.0/25)
 enlace R1 veth-r1fin 10.0.1.1/25 fin veth-fin 10.0.1.10/25
@@ -152,9 +158,9 @@ sudo ip netns exec fin ip route add default via 10.0.1.1
 ```
 
 !!! danger "Cambio en el host en este apartado"
-    Los comandos `sudo ip addr add … dev veth-wan-r1`, `sudo sysctl -w net.ipv4.ip_forward=1` e `iptables -t nat … -o eth0 -j MASQUERADE` **se ejecutan en el equipo real**, no dentro de un namespace (los de `ip netns exec R1 …` sí están aislados). Anota antes el valor de `sysctl net.ipv4.ip_forward` y revierte al terminar.
+    Los comandos `sudo ip addr add … dev veth-wan-r1`, `sudo sysctl -w net.ipv4.ip_forward=1` e `iptables -t nat … -o eth0 -j MASQUERADE` **se ejecutan en el equipo real**, no dentro de un namespace (los de `ip netns exec R1 …` sí están aislados). El valor original de `ip_forward` y la creación de la regla NAT quedan registrados para revertirlos al terminar.
 
-### Verificar
+### Verificar conectividad WAN
 
 ```bash
 sudo ip netns exec fin ping -c 3 10.0.1.1
@@ -480,7 +486,7 @@ El protocolo OSPF (número 89) debe aceptarse en `input`, o R1 dejaría de ver a
 
     Sin la regla de `PREROUTING`, el host no alcanzaría el servidor aunque la política de `forward` lo permitiera.
 
-### Verificar
+### Verificar segmentación y políticas
 
 ```bash
 sudo ip netns exec fin ping -c 2 192.168.100.2     # salida a "Internet": permitida
@@ -825,8 +831,11 @@ fi
 for n in 2 3; do
   [ -f /tmp/lab15/gc_thresh$n.orig ] && sudo sysctl -w net.ipv4.neigh.default.gc_thresh$n="$(cat /tmp/lab15/gc_thresh$n.orig)"
 done
+if [ -f /tmp/lab15-host-nat.added ]; then
+  sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
+  rm -f /tmp/lab15-host-nat.added
+fi
 sudo rm -rf /tmp/lab15
-sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true   # ajusta eth0
 # Solo si ejecutaste el bloque conceptual de Open vSwitch:
 sudo ovs-vsctl --if-exists del-br ovs-sw
 ```

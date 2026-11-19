@@ -55,10 +55,21 @@ graph TB
 Elimina únicamente los *namespaces* que crea este laboratorio, por nombre. **No** uses un bucle que borre todos los de `ip netns list`: un usuario puede tener otros entornos virtuales, laboratorios o servicios que utilicen *namespaces*, y esa orden los eliminaría. Esta limpieza solo afecta a los cuatro nombres de este escenario (`Router`, `Host1`, `Host2` y `ServidorDMZ`, con esa capitalización; son distintos de `router` o `host1` de laboratorios anteriores).
 
 ```bash
-for ns in Router Host1 Host2 ServidorDMZ; do
-  sudo ip netns del $ns 2>/dev/null || true
-done
-sudo ip link del veth-wan-r 2>/dev/null || true   # extremo en el host, si quedó de un intento anterior
+NS_LAB="Router Host1 Host2 ServidorDMZ"
+EXISTENTES=$(sudo ip netns list | awk '{print $1}' | while read -r ns; do
+  for esperado in $NS_LAB; do [ "$ns" = "$esperado" ] && echo "$ns"; done
+done)
+VETH_WAN=$(sudo ip -o link show veth-wan-r 2>/dev/null | head -1)
+printf 'Namespaces existentes: %s\nInterfaz veth-wan-r: %s\n' "${EXISTENTES:-(ninguno)}" "${VETH_WAN:-(ausente)}"
+if [ -n "$EXISTENTES$VETH_WAN" ]; then
+  read -r -p "¿Eliminar únicamente estos recursos del laboratorio 14? (s/N) " CONFIRMAR
+  if [ "$CONFIRMAR" != s ]; then echo "Cancelado"; exit 1; fi
+  for ns in $EXISTENTES; do
+    sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
+    sudo ip netns del "$ns" 2>/dev/null || true
+  done
+  [ -n "$VETH_WAN" ] && sudo ip link del veth-wan-r 2>/dev/null || true
+fi
 sudo apt-get install -y ethtool traceroute tcpdump netcat-openbsd nftables
 ```
 
@@ -136,10 +147,14 @@ sudo ip netns exec Router ip route show
 sudo ip netns exec Router iptables -t nat -A POSTROUTING -o veth-r-wan -j MASQUERADE
 
 # (Opcional, para salir de verdad a Internet) El host reenvía y traduce.
-# Cambia eth0 por tu interfaz de salida:
+# Cambia eth0 por tu interfaz de salida. El valor original de ip_forward y la creación de la regla NAT quedan registrados para revertirlos:
+if [ ! -e /tmp/lab14-ip_forward.orig ]; then
+  sudo sysctl -n net.ipv4.ip_forward | sudo tee /tmp/lab14-ip_forward.orig >/dev/null
+fi
 sudo sysctl -w net.ipv4.ip_forward=1
-sudo iptables -t nat -C POSTROUTING -s 203.0.113.0/30 -o eth0 -j MASQUERADE 2>/dev/null || \
-  sudo iptables -t nat -A POSTROUTING -s 203.0.113.0/30 -o eth0 -j MASQUERADE
+if ! sudo iptables -t nat -C POSTROUTING -s 203.0.113.0/30 -o eth0 -j MASQUERADE; then
+  sudo iptables -t nat -A POSTROUTING -s 203.0.113.0/30 -o eth0 -j MASQUERADE && touch /tmp/lab14-host-nat.added
+fi
 ```
 
 Comprueba la conectividad básica:
@@ -278,8 +293,14 @@ for f in /tmp/lab14-nc9000.pid /tmp/lab14-nc8443.pid; do
 done
 for ns in Router Host1 Host2 ServidorDMZ; do sudo ip netns del $ns 2>/dev/null || true; done
 sudo ip link del veth-wan-r 2>/dev/null || true
-sudo iptables -t nat -D POSTROUTING -s 203.0.113.0/30 -o eth0 -j MASQUERADE 2>/dev/null || true   # solo si lo añadiste (ajusta eth0)
-sudo sysctl -w net.ipv4.ip_forward=0   # solo si estaba en 0 antes de empezar (lo anotaste en el Paso 2)
+if [ -f /tmp/lab14-host-nat.added ]; then
+  sudo iptables -t nat -D POSTROUTING -s 203.0.113.0/30 -o eth0 -j MASQUERADE 2>/dev/null || true
+  rm -f /tmp/lab14-host-nat.added
+fi
+if [ -f /tmp/lab14-ip_forward.orig ]; then
+  sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab14-ip_forward.orig)"
+  sudo rm -f /tmp/lab14-ip_forward.orig
+fi
 ```
 
 Eliminar un *namespace* borra también sus interfaces y sus reglas de `nft`/`iptables`; las órdenes que tocaron el **host** (`veth-wan-r`, la regla de `MASQUERADE` y `net.ipv4.ip_forward`) hay que revertirlas aparte.

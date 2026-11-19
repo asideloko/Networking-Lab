@@ -123,9 +123,15 @@ sudo ip netns exec clienteDHCP ip -4 addr show dev veth-dhcpcl
 sudo ip netns exec clienteDHCP ping -c 2 10.0.1.10
 ```
 
-Si el cliente perdió su concesión DHCP, renuévala con `sudo ip netns exec clienteDHCP dhclient -pf /tmp/lab07/dhclient.pid -lf /tmp/lab07/dhclient.leases veth-dhcpcl`. Instala las herramientas de este laboratorio (en el host):
+Si el cliente perdió su concesión DHCP, renuévala con `sudo ip netns exec clienteDHCP dhclient -pf /tmp/lab07/dhclient.pid -lf /tmp/lab07/dhclient.leases veth-dhcpcl`. Comprueba que no existan namespaces de una ejecución anterior del laboratorio 08:
 
 ```bash
+for ns in firewall servidorWeb servidorDNS_PUB servidorInterno; do
+  if sudo ip netns list | awk '{print $1}' | grep -qx "$ns"; then
+    echo "El namespace $ns ya existe: ejecuta la limpieza del laboratorio 08 antes de repetirlo"
+    exit 1
+  fi
+done
 sudo apt-get install -y openssh-server openssh-client openssl conntrack
 ```
 
@@ -175,10 +181,15 @@ sudo ip link set veth-wan-fw master br-wan
 sudo ip link set veth-wan-fw up
 sudo ip netns exec firewall ip route add default via 192.168.100.2
 
-# El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)
+# El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida).
+# El valor original de ip_forward y la creación de la regla NAT quedan registrados para revertirlos.
+if [ ! -e /tmp/lab08-ip_forward.orig ]; then
+  sudo sysctl -n net.ipv4.ip_forward | sudo tee /tmp/lab08-ip_forward.orig >/dev/null
+fi
 sudo sysctl -w net.ipv4.ip_forward=1
-sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || \
-  sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE
+if ! sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE; then
+  sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab08-host-nat.added
+fi
 ```
 
 ### Paso 5: Crear la DMZ (un único segmento con los dos servidores)
@@ -623,9 +634,15 @@ sudo ip netns exec firewall conntrack -L
 sudo ip route del 10.0.99.0/24 via 192.168.100.1 2>/dev/null || true
 sudo ip route del 10.0.0.0/22 via 192.168.100.1 2>/dev/null || true
 
-# 2. NAT y reenvío del host (ajusta eth0)
-sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
-sudo sysctl -w net.ipv4.ip_forward=0        # solo si estaba en 0 antes de empezar
+# 2. NAT y reenvío del host (ajusta eth0); se restaura el estado original.
+if [ -f /tmp/lab08-host-nat.added ]; then
+  sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
+  rm -f /tmp/lab08-host-nat.added
+fi
+if [ -f /tmp/lab08-ip_forward.orig ]; then
+  sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab08-ip_forward.orig)"
+  sudo rm -f /tmp/lab08-ip_forward.orig
+fi
 
 # 3. Bridge y enlace del host
 sudo ip link del veth-wan-fw 2>/dev/null || true
@@ -637,9 +654,8 @@ for ns in servidorDNS_PUB servidorWeb servidorInterno firewall; do
   sudo ip netns del $ns 2>/dev/null || true
 done
 
-# 5. Archivos temporales y directorio de sshd
+# 5. Archivos temporales del laboratorio
 sudo rm -rf /tmp/lab08
-sudo rmdir /run/sshd 2>/dev/null || true    # solo se borra si está vacío
 ```
 
 `ip netns pids` limita la parada a procesos que viven **dentro** de cada namespace, sin tocar el `sshd` del equipo.

@@ -130,6 +130,13 @@ sudo apt-get install -y dnsmasq-base isc-dhcp-client dnsutils netcat-openbsd con
 ### Paso 2: Crear namespaces para servicios
 
 ```bash
+for ns in servidorDNS servidorDHCP clienteDHCP; do
+  if sudo ip netns list | awk '{print $1}' | grep -qx "$ns"; then
+    echo "El namespace $ns ya existe: ejecuta la limpieza del laboratorio 07 antes de repetirlo"
+    exit 1
+  fi
+done
+
 # Servidores de servicios
 sudo ip netns add servidorDNS
 sudo ip netns add servidorDHCP
@@ -199,7 +206,7 @@ Comprueba que el segmento es único: `sudo ip netns exec servidorDNS ping -c 2 1
 ### Paso 5: Salida a Internet para toda la red (NAT en R1)
 
 !!! danger "Cambio en el host (no en un namespace)"
-    Las líneas con `veth-host`, `sysctl -w net.ipv4.ip_forward=1` e `iptables -t nat` **sin** `ip netns exec` actúan sobre el equipo real. Las de `ip netns exec R1 …` están aisladas. Antes de ejecutar este paso anota el estado previo del equipo: `sysctl net.ipv4.ip_forward` y `iptables -t nat -S POSTROUTING`. La reversión está en la sección «Revertir los cambios del host» de este laboratorio.
+    Las líneas con `veth-host`, `sysctl -w net.ipv4.ip_forward=1` e `iptables -t nat` **sin** `ip netns exec` actúan sobre el equipo real. Las de `ip netns exec R1 …` están aisladas. El bloque conserva el valor original de `ip_forward` y registra si añadió la regla NAT. La reversión está en la sección «Revertir los cambios del host».
 
 R1 será la única puerta de salida de la sede **y** de las sucursales. Su interfaz WAN se conecta al host (que hace de "Internet"):
 
@@ -222,9 +229,13 @@ sudo ip netns exec R2 ip route add default via 192.168.1.1
 sudo ip netns exec R3 ip route add default via 192.168.2.1
 
 # El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)
+if [ ! -e /tmp/lab07-ip_forward.orig ]; then
+  sudo sysctl -n net.ipv4.ip_forward | sudo tee /tmp/lab07-ip_forward.orig >/dev/null
+fi
 sudo sysctl -w net.ipv4.ip_forward=1
-sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || \
-  sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE
+if ! sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE; then
+  sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab07-host-nat.added
+fi
 ```
 
 Conviene distinguir dos términos: **NAT** (traducción de direcciones) cambia la IP de origen o destino; **PAT** (traducción de direcciones y puertos; en Linux se logra con `MASQUERADE` o `SNAT`, que reasignan el puerto de origen cuando hay colisión) permite que **múltiples conexiones privadas compartan una dirección de salida** (`192.168.100.1`), diferenciándolas por la información de transporte (puerto de origen TCP/UDP o identificador ICMP). La tabla `conntrack` recuerda qué conexión corresponde a cada traducción.
@@ -518,8 +529,14 @@ Si responde `10.0.0.20`, la consulta UDP/53 atravesó los routers hasta `10.0.0.
 
 ```bash
 # 1. Regla NAT y reenvío del host (ajusta eth0)
-sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
-sudo sysctl -w net.ipv4.ip_forward=0        # solo si estaba en 0 antes de empezar
+if [ -f /tmp/lab07-host-nat.added ]; then
+  sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
+  rm -f /tmp/lab07-host-nat.added
+fi
+if [ -f /tmp/lab07-ip_forward.orig ]; then
+  sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab07-ip_forward.orig)"
+  sudo rm -f /tmp/lab07-ip_forward.orig
+fi
 
 # 2. Interfaz del host
 sudo ip link del veth-host 2>/dev/null || true

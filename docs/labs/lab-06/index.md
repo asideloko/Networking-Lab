@@ -92,13 +92,24 @@ Además, cada router tiene conectada su propia LAN (`10.0.0.0/24`, `10.0.1.0/24`
 
 ### Paso 0: Limpiar el laboratorio anterior
 
-Este laboratorio construye una topología nueva. Eliminamos lo que dejó el Laboratorio 05 (al borrar un namespace desaparecen también sus interfaces y el extremo `veth-host` del host):
+Este laboratorio construye una topología nueva. El bloque detecta los recursos de los laboratorios 05 y 06 y solicita confirmación antes de eliminarlos:
 
 ```bash
-for ns in ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 router switch; do
-  sudo ip netns del $ns 2>/dev/null || true
-done
-sudo ip link del veth-host 2>/dev/null || true
+NS_LAB="ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 router switch R1 R2 R3 clienteSede clienteSucA clienteSucB"
+EXISTENTES=$(sudo ip netns list | awk '{print $1}' | while read -r ns; do
+  for esperado in $NS_LAB; do [ "$ns" = "$esperado" ] && echo "$ns"; done
+done)
+VETH_HOST=$(sudo ip -o link show veth-host 2>/dev/null | head -1)
+printf 'Namespaces existentes: %s\nInterfaz veth-host: %s\n' "${EXISTENTES:-(ninguno)}" "${VETH_HOST:-(ausente)}"
+if [ -n "$EXISTENTES$VETH_HOST" ]; then
+  read -r -p "¿Eliminar únicamente los recursos detectados de los laboratorios 05 y 06? (s/N) " CONFIRMAR
+  if [ "$CONFIRMAR" != s ]; then echo "Cancelado"; exit 1; fi
+  for ns in $EXISTENTES; do
+    sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
+    sudo ip netns del "$ns" 2>/dev/null || true
+  done
+  [ -n "$VETH_HOST" ] && sudo ip link del veth-host 2>/dev/null || true
+fi
 ```
 
 ### Paso 1: Crear namespaces y enlaces

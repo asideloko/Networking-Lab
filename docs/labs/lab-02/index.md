@@ -135,7 +135,9 @@ if [ -e /tmp/lab02-ip_forward.orig ]; then
 else
   sysctl -n net.ipv4.ip_forward > /tmp/lab02-ip_forward.orig
   sysctl -w net.ipv4.ip_forward=1
-  iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
+  if ! iptables -t nat -C POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE; then
+    iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab02-host-nat.added
+  fi
 fi
 ```
 
@@ -186,7 +188,9 @@ ip netns exec cliente2 ip route add default via 10.0.1.1
 En este laboratorio hay **doble NAT** (router y host, véase el paso 10), de modo que el host solo ve la dirección `192.168.1.2` y las respuestas vuelven por la tabla de conexiones, no por una ruta hacia `10.0.1.0/24`. Por eso esta ruta **no es imprescindible** para la salida a Internet; resulta útil si quieres alcanzar `10.0.1.0/24` desde el propio host (por ejemplo, para hacer `ping 10.0.1.2`):
 
 ```bash
-ip route add 10.0.1.0/24 via 192.168.1.2
+if ! ip route show 10.0.1.0/24 | grep -q 'via 192.168.1.2'; then
+  ip route add 10.0.1.0/24 via 192.168.1.2 && touch /tmp/lab02-host-route.added
+fi
 ```
 
 ### Paso 8: Verificar conectividad a Internet
@@ -231,8 +235,12 @@ ip netns exec cliente1 curl -I http://google.com
     Si la política es `DROP`, permite **solo** este enlace y retíralo al terminar (la reversión al final del laboratorio lo incluye):
 
     ```bash
-    iptables -I FORWARD -i veth-host -o eth0 -j ACCEPT
-    iptables -I FORWARD -i eth0 -o veth-host -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+    if ! iptables -C FORWARD -i veth-host -o eth0 -j ACCEPT; then
+      iptables -I FORWARD -i veth-host -o eth0 -j ACCEPT && touch /tmp/lab02-forward-out.added
+    fi
+    if ! iptables -C FORWARD -i eth0 -o veth-host -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; then
+      iptables -I FORWARD -i eth0 -o veth-host -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT && touch /tmp/lab02-forward-in.added
+    fi
     ```
 
 ## Observación de la transmisión de datos
@@ -396,7 +404,10 @@ Al terminar, deshaz **solo lo que hiciste aquí** (no borres reglas ajenas):
 
 ```bash
 # 1. Regla NAT del host (usa la misma interfaz que pusiste en el Paso 4)
-iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
+if [ -f /tmp/lab02-host-nat.added ]; then
+  iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
+  rm -f /tmp/lab02-host-nat.added
+fi
 
 # 2. Reenvío: restaura el valor original guardado (no se asume que fuera 0)
 if [ -f /tmp/lab02-ip_forward.orig ]; then
@@ -406,9 +417,19 @@ else
   echo "Sin copia del valor original: no se modifica ip_forward; usa el valor que anotaste"
 fi
 
-# 2b. Reglas de FORWARD del host (solo si las añadiste; si no existen, el error se ignora)
-iptables -D FORWARD -i veth-host -o eth0 -j ACCEPT 2>/dev/null || true
-iptables -D FORWARD -i eth0 -o veth-host -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+# 2b. Reglas de FORWARD del host: elimina solo las que añadió este laboratorio
+if [ -f /tmp/lab02-forward-out.added ]; then
+  iptables -D FORWARD -i veth-host -o eth0 -j ACCEPT 2>/dev/null || true
+  rm -f /tmp/lab02-forward-out.added
+fi
+if [ -f /tmp/lab02-forward-in.added ]; then
+  iptables -D FORWARD -i eth0 -o veth-host -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+  rm -f /tmp/lab02-forward-in.added
+fi
+if [ -f /tmp/lab02-host-route.added ]; then
+  ip route del 10.0.1.0/24 via 192.168.1.2 2>/dev/null || true
+  rm -f /tmp/lab02-host-route.added
+fi
 
 # 3. Enlace virtual y namespaces del laboratorio
 ip link del veth-host 2>/dev/null || true
