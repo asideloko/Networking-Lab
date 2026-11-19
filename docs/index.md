@@ -7,7 +7,7 @@ hide:
 
 <div class="sx-hero"><p><img alt="SecOpsMX" class="sx-hero__logo off-glb" src="assets/logo.png"/></p><h1 id="networking-lab">NETWORKING Lab</h1><p class="sx-hero__sub">Laboratorios de explicación<br/>y simulación de redes.</p><p class="sx-hero__lead">Material práctico complementario del libro NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico.</p><p class="sx-hero__cta"><a class="md-button md-button--primary" href="02-LABORATORIOS/lab-01/index.html">Comenzar por el laboratorio 01</a><a class="md-button" href="https://leanpub.com/networking-fundamentos">Obtener el libro</a></p><p class="sx-hero__meta">Material complementario · Guillermo Castillo · SecOpsMX</p></div>
 
-<div class="sx-stats"><div><b>15</b><span>laboratorios</span></div><div><b>41</b><span>diagramas de laboratorio</span></div><div><b>275</b><span>bloques de comandos</span></div></div>
+<div class="sx-stats"><div><b>15</b><span>laboratorios</span></div><div><b>46</b><span>diagramas catalogados</span></div><div><b>275</b><span>bloques de comandos</span></div></div>
 
 NETWORKING Lab acompaña al libro **NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico**. El recorrido combina explicación conceptual, escenarios reproducibles, comandos comentados y evidencias para relacionar los fundamentos con el comportamiento observable de una red.
 
@@ -47,6 +47,7 @@ El proyecto final reúne direccionamiento, routing, servicios, seguridad, alta d
 - [Guía de uso, alcance y convenciones](05-ANEXOS/guia-de-uso.md)
 - [Diagramación y topologías](05-ANEXOS/diagramacion-y-topologias.md)
 - [Justificación y criterios editoriales](05-ANEXOS/justificacion-y-criterios.md)
+- [Derechos de autor](05-ANEXOS/derechos-de-autor.md)
 
 ## 5. Entorno y requisitos
 

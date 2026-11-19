@@ -44,8 +44,8 @@ function mermaidTema() {
   var lila = color("--cv-lila", "#cbbcff");
   var tinta = oscuro ? "#e8e6fa" : "#14142b";
   return {
-    background: "transparent", primaryColor: "transparent", secondaryColor: "transparent",
-    tertiaryColor: "transparent", clusterBkg: "transparent", edgeLabelBackground: "transparent",
+    background: "transparent", primaryColor: violeta, secondaryColor: indigo,
+    tertiaryColor: acento, clusterBkg: "transparent", edgeLabelBackground: "transparent",
     primaryTextColor: tinta, textColor: tinta, lineColor: oscuro ? lila : indigo,
     primaryBorderColor: violeta, clusterBorder: oscuro ? acento : violeta,
     fontFamily: "Chakra Petch, sans-serif"
@@ -84,12 +84,22 @@ function aplicarColoresFuncionales(nodos) {
     { tipo: "proceso", re: /paquete|trama|encapsul|prerouting|postrouting|discover|offer|request|ack|syn|fin\b|push|swap|pop|consulta|respuesta|flujo|negociaci[oó]n|\bacl\b|iptables|nftables|regla|pol[ií]tica|permitir|denegar|bloque|nat\b|routing|enrutamiento|m[eé]trica|failover/i },
     { tipo: "dispositivo", re: /router|switch|gateway|host|cliente|firewall|core|dist|access|\bpe\b|\bce\b|\br[0-9]+\b|\bsw[0-9]+\b|veth|bridge|equipo|nodo|internet|wan|lan|vlan|vpc|subred|segmento|nube|cloud|sede|sucursal|zona/i }
   ];
+  // Rellenos con la paleta institucional original.
   var tonos = {
-  dispositivo: oscuro ? "#263B61" : "#DCEBFF",
-  servicio: oscuro ? "#174B3B" : "#DDF5E8",
-  proceso: oscuro ? "#634514" : "#FFF0CC",
-  decision: oscuro ? "#633044" : "#FCE1E8"
+    dispositivo: paleta.dispositivo,
+    servicio: paleta.servicio,
+    proceso: paleta.proceso,
+    decision: paleta.decision
   };
+  function textoContraste(hex) {
+    var h = hex.replace("#", "");
+    var rgb = [0, 2, 4].map(function (i) {
+      var v = parseInt(h.slice(i, i + 2), 16) / 255;
+      return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    var l = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+    return l > 0.42 ? "#171329" : "#ffffff";
+  }
   nodos.forEach(function (contenedor) {
     contenedor.querySelectorAll("g.node").forEach(function (node) {
       var label = (node.textContent || "").replace(/\s+/g, " ").trim();
@@ -105,7 +115,7 @@ function aplicarColoresFuncionales(nodos) {
         shape.style.strokeWidth = tipo === "decision" ? "2.2px" : "2px";
       });
       node.querySelectorAll("text, tspan").forEach(function (el) {
-        el.style.fill = paleta.texto;
+        el.style.setProperty("fill", textoContraste(tonos[tipo]), "important");
         el.style.fontWeight = "600";
       });
     });
