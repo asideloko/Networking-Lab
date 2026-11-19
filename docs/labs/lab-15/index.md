@@ -783,9 +783,7 @@ Al terminar, detén los demonios y elimina solo lo creado aquí. Un namespace **
 sudo pkill -f '[/]tmp/lab15'    # zebra, ospfd, dnsmasq, keepalived y dhclient de este laboratorio
 for ns in R1 R2 SWsrv fin ven ges srv suc; do sudo ip netns del $ns 2>/dev/null || true; done
 sudo ip link del veth-wan-r1 2>/dev/null || true
-# /etc/netns/fin y /etc/netns/ven los creó este laboratorio: bórralos solo si NO existían antes (`ls /etc/netns/`)
-sudo rm -rf /etc/netns/fin /etc/netns/ven
-sudo rm -rf /tmp/lab15
+sudo rm -rf /etc/netns/fin /etc/netns/ven /tmp/lab15
 sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true   # ajusta eth0
 # Solo si ejecutaste el bloque conceptual de Open vSwitch:
 sudo ovs-vsctl --if-exists del-br ovs-sw

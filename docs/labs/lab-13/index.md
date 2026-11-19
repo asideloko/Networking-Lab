@@ -7,7 +7,7 @@ description: "Laboratorio 13 de NETWORKING Lab — Monitoreo y Diagnóstico de R
 
 # MONITOREO Y DIAGNÓSTICO DE REDES
 
-<p class="tema-meta"><span>9 secciones</span><span>2 diagramas</span><span>7 tablas</span></p>
+<p class="tema-meta"><span>8 secciones</span><span>2 diagramas</span><span>7 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -97,9 +97,6 @@ done
 ```
 
 ### Paso 3b: Salida a Internet (opcional)
-
-!!! danger "Cambio en el host (no en un namespace)"
-    Este paso es opcional y modifica el equipo real (`veth-wan-op`, `ip_forward` y una regla `MASQUERADE`). Antes de ejecutar este paso anota el estado previo del equipo: `sysctl net.ipv4.ip_forward` y `iptables -t nat -S POSTROUTING`. La reversión está en la sección «Revertir los cambios del host» de este laboratorio.
 
 Para las pruebas hacia Internet, OnPremise se conecta al host y traduce direcciones (NAT):
 
@@ -344,30 +341,6 @@ sudo ip netns exec AppServer ip link set veth-app mtu 1500     # restaurar
 | iperf3 | Medición de rendimiento (TCP efectivo; UDP con tasa ofrecida, pérdida y jitter) |
 | Colector de logs (SIEM básico) | Centralización de eventos con rsyslog; no es correlación ni respuesta |
 
-## Revertir los cambios del host
-
-Este laboratorio continúa el 12: **no elimines** `OnPremise`, `AppServer` ni el resto de la red de ese laboratorio si aún la necesitas. Solo deshaz lo añadido aquí:
-
-```bash
-# 1. Procesos del laboratorio, por PID
-[ -f /tmp/lab13/iperf3.pid ] && sudo kill $(cat /tmp/lab13/iperf3.pid) 2>/dev/null || true
-[ -f /tmp/lab13/siem.pid ]  && sudo kill $(cat /tmp/lab13/siem.pid)  2>/dev/null || true
-sudo ip netns pids NOC  2>/dev/null | xargs -r sudo kill
-sudo ip netns pids SIEM 2>/dev/null | xargs -r sudo kill
-
-# 2. Salida opcional a Internet (solo si hiciste el Paso 3b; ajusta eth0)
-sudo ip netns exec OnPremise iptables -t nat -D POSTROUTING -o veth-op-wan -j MASQUERADE 2>/dev/null || true
-sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
-sudo sysctl -w net.ipv4.ip_forward=0        # solo si estaba en 0 antes de empezar
-sudo ip link del veth-wan-op 2>/dev/null || true
-
-# 3. Namespaces de monitoreo y archivos temporales
-for ns in NOC SIEM; do sudo ip netns del $ns 2>/dev/null || true; done
-sudo rm -rf /tmp/lab13
-```
-
-Si quieres retirar también la red del laboratorio 12, elimina sus *namespaces* por nombre (`ip netns list` los muestra). Instalaste `mtr-tiny`, `iperf3`, `rsyslog`, etc.: quedan como paquetes, sin servicio activo propio.
-
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo permite al NOC decidir si un problema es de ruta, de DNS, de servicio o de rendimiento?
@@ -375,7 +348,7 @@ Si quieres retirar también la red del laboratorio 12, elimina sus *namespaces* 
 3.  ¿Qué diferencia hay entre el rendimiento TCP medido y la tasa UDP ofrecida?
 4.  ¿Qué limitaciones tiene un colector `rsyslog` frente a un SIEM empresarial?
 5.  ¿En qué escenario empresarial una alerta por umbral habría evitado una incidencia?
-6.  ¿Qué otras herramientas aportarían métricas continuas? (SNMP, telemetría.)
+6.  ¿Qué otras herramientas aportarían métricas continuas? (SNMP, telemetría; extensión futura de la serie.)
 
 ## Conclusiones
 

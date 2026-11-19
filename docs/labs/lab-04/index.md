@@ -7,7 +7,7 @@ description: "Laboratorio 04 de NETWORKING Lab — Direccionamiento IP y Subrede
 
 # DIRECCIONAMIENTO IP Y SUBREDES
 
-<p class="tema-meta"><span>14 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>13 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -52,6 +52,7 @@ La red actual (todos los clientes en una sola subred `10.0.1.0/24`) ya no es suf
 **Red base:** `10.0.0.0/24`. Las tres subredes se calculan **dentro** de este bloque. La asignación es un **ejemplo de reparto de direcciones**, no una arquitectura obligatoria para todas las empresas.
 
 **Requisitos:**
+
 -   Subred 1: Ventas → 10 hosts + 1 *gateway* = 11 direcciones (mínimo /28 → 14 hosts útiles).
 -   Subred 2: IT → 5 hosts + 1 *gateway* = 6 direcciones (mínimo /29 → 6 hosts útiles).
 -   Subred 3: Enlace de gestión router-switch → 2 direcciones, router y switch (mínimo /30 → 2 hosts útiles).
@@ -279,8 +280,6 @@ ip netns exec router sysctl -w net.ipv4.ip_forward=1
 # Las subredes de Ventas, IT y el enlace /30 ya son redes conectadas al router
 # (por las IP de veth-rs): no necesitan rutas estáticas.
 
-# ⚠ CAMBIO EN EL HOST (no en un namespace): veth-host, ruta, ip_forward y NAT.
-#   Anota antes `sysctl net.ipv4.ip_forward`; reversión en «Revertir los cambios del host».
 # Configurar NAT (asumiendo que el host tiene una interfaz con Internet)
 # En este laboratorio, simulamos Internet con el host
 ip link add veth-host type veth peer name veth-wan
@@ -355,6 +354,7 @@ ip netns exec router ip route show
 ```
 
 **Análisis:**
+
 - Los clientes tienen una ruta por defecto hacia su gateway.
 - El router tiene una ruta *conectada* por cada subred (por las IP de `veth-rs`) y una ruta por defecto hacia el host.
 
@@ -372,9 +372,10 @@ ip netns exec ventas1 ping -c 1 10.0.0.17
 ```
 
 **Interpretación:**
+
 1.  El paquete sale de Ventas 1 con origen 10.0.0.1 y destino 10.0.0.17.
 2.  **Es Ventas 1 quien decide** que 10.0.0.17 no está en su subred (`10.0.0.0/28`) y, por su ruta por defecto, envía la trama con IP destino 10.0.0.17 pero **MAC destino = la del gateway** (`10.0.0.14`, resuelta por ARP). El switch no examina direcciones IP: conmuta la trama por la MAC.
-3.  El router recibe el paquete, consulta su tabla de enrutamiento (10.0.0.17 pertenece a la red conectada `10.0.0.16/29`) y lo reenvía **por la misma interfaz** con una nueva trama (MAC origen: la del router; MAC destino: la de IT 1). Por entrar y salir por la misma interfaz, Linux puede enviar a Ventas 1 un *ICMP redirect*, aviso de que existe un camino directo; los clientes de este laboratorio no lo aplican porque no comparten subred IP.
+3.  El router recibe el paquete, consulta su tabla de enrutamiento (10.0.0.17 pertenece a la red conectada `10.0.0.16/29`) y lo reenvía **por la misma interfaz** con una nueva trama (MAC origen: la del router; MAC destino: la de IT 1). Por entrar y salir por la misma interfaz, Linux puede enviar a Ventas 1 un *ICMP redirect* (aviso de que existe un camino más directo). Si el cliente lo acepta, que es lo habitual por defecto, los paquetes siguientes pueden ir directamente a IT 1 sin pasar por el router; por eso este rebote se observa con claridad en el primer `ping` (`-c 1`) tras vaciar la caché ARP.
 4.  El switch conmuta esa trama hacia el puerto de IT 1.
 
 En la captura verás cada ICMP **dos veces** (entrada y salida del router por `veth-rs`), con distintas MAC pero las mismas IP: es la huella de un router que reenvía por una sola interfaz (*router-on-a-stick* sin VLAN).
@@ -386,6 +387,7 @@ En la captura verás cada ICMP **dos veces** (entrada y salida del router por `v
 Si necesitáramos una tercera subred para **Administración** con 4 hosts, ¿qué máscara usarías y qué rango de direcciones asignarías?
 
 **Solución:**
+
 - 4 hosts + 1 *gateway* = 5 direcciones → /29 (8 direcciones, 6 hosts útiles).
 - Las direcciones `10.0.0.0`–`10.0.0.27` ya están asignadas. Un /29 debe empezar en un múltiplo de 8, y `10.0.0.28` no lo es (a partir de ahí solo cabe un /30). El siguiente bloque /29 libre es `10.0.0.32/29` (hosts `.33`–`.38`, broadcast `.39`).
 
@@ -452,28 +454,6 @@ Ventas tiene **25** equipos y prevé crecer un **50 %** en dos años. ¿Qué má
 | Clientes en diferentes subredes no pueden hacer ping | El router no tiene una IP de *gateway* en cada subred, o `ip_forward` vale 0. | Verificar `ip addr show dev veth-rs` en el router y `sysctl net.ipv4.ip_forward`. |
 | `ping: connect: Network is unreachable` | Máscara de subred incorrecta. | Verificar `ip addr show` en el cliente. |
 | No sale a Internet | NAT no configurado. | Verificar reglas de iptables y `ip_forward=1`. |
-
-## Revertir los cambios del host
-
-Los *namespaces* aíslan la red, pero la salida a Internet de este laboratorio modificó el **equipo real**. Deshaz solo lo que hiciste aquí:
-
-```bash
-# 1. Regla NAT y ruta del host (ajusta eth0 a tu interfaz de salida)
-iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
-ip route del 10.0.0.0/24 via 192.168.1.2 2>/dev/null || true
-
-# 2. Reenvío: vuelve al valor que anotaste (normalmente 0). Si ya era 1 antes, no lo cambies.
-sysctl -w net.ipv4.ip_forward=0
-
-# 3. Enlace virtual del host y namespaces del laboratorio
-ip link del veth-host 2>/dev/null || true
-for ns in router switch ventas1 ventas2 ventas3 ventas4 it1 it2 it3; do
-  ip netns pids $ns 2>/dev/null | xargs -r kill     # solo procesos DENTRO de ese namespace
-  ip netns del $ns 2>/dev/null || true
-done
-```
-
-Comprueba el resultado: `ip netns list`, `ip link show veth-host`, `sysctl net.ipv4.ip_forward` e `iptables -t nat -S POSTROUTING`.
 
 ## Preguntas de reflexión
 
