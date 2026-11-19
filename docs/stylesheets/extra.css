@@ -302,97 +302,71 @@
 .md-typeset .md-clipboard { color: rgba(239, 240, 241, 0.55); }
 .md-typeset .md-clipboard:hover { color: #ffffff; }
 
-/* --- Admoniciones (notas técnicas) --- */
+/* --- Admoniciones: sistema semántico de información, riesgo y seguridad --- */
 .md-typeset .admonition,
 .md-typeset details {
-  border-radius: 6px;
-  box-shadow: none;
-  font-size: 0.78rem;
-  transition: all 0.3s ease;
+  --callout-color: var(--cv-violeta);
+  --callout-soft: rgba(91, 24, 204, .075);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--callout-color) 24%, transparent) !important;
+  border-left: 5px solid var(--callout-color) !important;
+  border-radius: 10px;
+  background: var(--callout-soft) !important;
+  box-shadow: 0 5px 18px rgba(20, 12, 45, .07);
+  font-size: .82rem;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
-
+.md-typeset .admonition:hover,
+.md-typeset details:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 9px 24px rgba(20, 12, 45, .11);
+}
 .md-typeset .admonition-title,
 .md-typeset summary {
-  font-weight: 600;
-  padding-bottom: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin: 0 0 .55rem !important;
+  padding: .72rem .9rem .55rem 1rem !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--callout-color) 18%, transparent);
+  background: transparent !important;
+  color: var(--callout-color) !important;
+  font-weight: 700;
 }
-
-/* =========================================
-   MODO CLARO (Caja blanca, borde izq color, título color)
-   ========================================= */
-[data-md-color-scheme="default"] .md-typeset .admonition {
-  background-color: #ffffff !important;
-  border: 1px solid #e5e7eb !important; /* Borde gris sutil alrededor */
-  border-left-width: 4px !important;    /* Borde grueso a la izquierda */
+.md-typeset .admonition > :not(.admonition-title),
+.md-typeset details > :not(summary) {
+  margin-left: 1rem;
+  margin-right: 1rem;
 }
-[data-md-color-scheme="default"] .md-typeset .admonition-title {
-  background-color: transparent !important;
-  border-bottom: 1px solid #e5e7eb; /* Línea divisoria sutil */
+.md-typeset .admonition p,
+.md-typeset details p { color: var(--md-typeset-color) !important; }
+.md-typeset .admonition.note,
+.md-typeset details.note { --callout-color: #0284c7; --callout-soft: rgba(56,189,248,.11); }
+.md-typeset .admonition.warning,
+.md-typeset details.warning { --callout-color: #d97706; --callout-soft: rgba(245,158,11,.12); }
+.md-typeset .admonition.tip,
+.md-typeset .admonition.info,
+.md-typeset details.tip,
+.md-typeset details.info { --callout-color: #059669; --callout-soft: rgba(16,185,129,.11); }
+.md-typeset .admonition.danger,
+.md-typeset .admonition.failure,
+.md-typeset details.danger,
+.md-typeset details.failure { --callout-color: #dc2626; --callout-soft: rgba(239,68,68,.11); }
+
+[data-md-color-scheme="slate"] .md-typeset .admonition,
+[data-md-color-scheme="slate"] .md-typeset details {
+  box-shadow: 0 6px 22px rgba(0,0,0,.20);
 }
-[data-md-color-scheme="default"] .md-typeset .admonition p {
-  color: #4b5563 !important; /* Texto gris oscuro legible */
-}
-
-/* =========================================
-   MODO OSCURO (Caja tintada, borde color, título color)
-   ========================================= */
-[data-md-color-scheme="slate"] .md-typeset .admonition {
-  background-color: transparent !important; /* El fondo se define por tipo abajo */
-  border: 1px solid !important;
-  border-left-width: 4px !important;
-}
-[data-md-color-scheme="slate"] .md-typeset .admonition-title {
-  background-color: transparent !important;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-[data-md-color-scheme="slate"] .md-typeset .admonition p {
-  color: #d1d5db !important; /* Texto gris claro legible */
-}
-
-/* =========================================
-   COLORES ESPECÍFICOS Y DISTINCIÓN DE CAJAS
-   ========================================= */
-
-/* 1. NOTA / AVISO (Cian) */
-.md-typeset .admonition.note { border-left-color: #38bdf8 !important; }
-[data-md-color-scheme="default"] .md-typeset .admonition.note { border-left-color: #0284c7 !important; }
-[data-md-color-scheme="slate"] .md-typeset .admonition.note { border-color: rgba(56, 189, 248, 0.3) !important; background-color: rgba(56, 189, 248, 0.1) !important; }
-
-.md-typeset .note > .admonition-title { color: #38bdf8 !important; }
-[data-md-color-scheme="default"] .md-typeset .note > .admonition-title { color: #0284c7 !important; }
-.md-typeset .note > .admonition-title::before { background-color: #38bdf8 !important; }
-[data-md-color-scheme="default"] .md-typeset .note > .admonition-title::before { background-color: #0284c7 !important; }
-
-/* 2. ADVERTENCIA (Ámbar) */
-.md-typeset .admonition.warning { border-left-color: #fbbf24 !important; }
-[data-md-color-scheme="default"] .md-typeset .admonition.warning { border-left-color: #d97706 !important; }
-[data-md-color-scheme="slate"] .md-typeset .admonition.warning { border-color: rgba(251, 191, 36, 0.3) !important; background-color: rgba(251, 191, 36, 0.1) !important; }
-
-.md-typeset .warning > .admonition-title { color: #fbbf24 !important; }
-[data-md-color-scheme="default"] .md-typeset .warning > .admonition-title { color: #d97706 !important; }
-.md-typeset .warning > .admonition-title::before { background-color: #fbbf24 !important; }
-[data-md-color-scheme="default"] .md-typeset .warning > .admonition-title::before { background-color: #d97706 !important; }
-
-/* 3. DATO / TIP / INFO (Verde Menta) */
-.md-typeset .admonition.tip, .md-typeset .admonition.info { border-left-color: #34d399 !important; }
-[data-md-color-scheme="default"] .md-typeset .admonition.tip, [data-md-color-scheme="default"] .md-typeset .admonition.info { border-left-color: #059669 !important; }
-[data-md-color-scheme="slate"] .md-typeset .admonition.tip, [data-md-color-scheme="slate"] .md-typeset .admonition.info { border-color: rgba(52, 211, 153, 0.3) !important; background-color: rgba(52, 211, 153, 0.1) !important; }
-
-.md-typeset .tip > .admonition-title, .md-typeset .info > .admonition-title { color: #34d399 !important; }
-[data-md-color-scheme="default"] .md-typeset .tip > .admonition-title, [data-md-color-scheme="default"] .md-typeset .info > .admonition-title { color: #059669 !important; }
-.md-typeset .tip > .admonition-title::before, .md-typeset .info > .admonition-title::before { background-color: #34d399 !important; }
-[data-md-color-scheme="default"] .md-typeset .tip > .admonition-title::before, [data-md-color-scheme="default"] .md-typeset .info > .admonition-title::before { background-color: #059669 !important; }
-
-/* 4. PELIGRO / ERROR (Rojo Coral) */
-.md-typeset .admonition.danger { border-left-color: #f87171 !important; }
-[data-md-color-scheme="default"] .md-typeset .admonition.danger { border-left-color: #dc2626 !important; }
-[data-md-color-scheme="slate"] .md-typeset .admonition.danger { border-color: rgba(248, 113, 113, 0.3) !important; background-color: rgba(248, 113, 113, 0.1) !important; }
-
-.md-typeset .danger > .admonition-title { color: #f87171 !important; }
-[data-md-color-scheme="default"] .md-typeset .danger > .admonition-title { color: #dc2626 !important; }
-.md-typeset .danger > .admonition-title::before { background-color: #f87171 !important; }
-[data-md-color-scheme="default"] .md-typeset .danger > .admonition-title::before { background-color: #dc2626 !important; }
+[data-md-color-scheme="slate"] .md-typeset .admonition.note,
+[data-md-color-scheme="slate"] .md-typeset details.note { --callout-color: #38bdf8; --callout-soft: rgba(56,189,248,.13); }
+[data-md-color-scheme="slate"] .md-typeset .admonition.warning,
+[data-md-color-scheme="slate"] .md-typeset details.warning { --callout-color: #fbbf24; --callout-soft: rgba(251,191,36,.13); }
+[data-md-color-scheme="slate"] .md-typeset .admonition.tip,
+[data-md-color-scheme="slate"] .md-typeset .admonition.info,
+[data-md-color-scheme="slate"] .md-typeset details.tip,
+[data-md-color-scheme="slate"] .md-typeset details.info { --callout-color: #34d399; --callout-soft: rgba(52,211,153,.13); }
+[data-md-color-scheme="slate"] .md-typeset .admonition.danger,
+[data-md-color-scheme="slate"] .md-typeset .admonition.failure,
+[data-md-color-scheme="slate"] .md-typeset details.danger,
+[data-md-color-scheme="slate"] .md-typeset details.failure { --callout-color: #f87171; --callout-soft: rgba(248,113,113,.14); }
 
 /* --- Navegación lateral --- */
 .md-nav { font-size: 0.7rem; }
@@ -1109,3 +1083,34 @@ body[data-md-color-scheme="slate"] {
 [data-md-color-scheme="default"] .md-typeset div.mermaid svg .cluster-label text { fill: #14142b; }
 [data-md-color-scheme="slate"] .md-typeset div.mermaid svg .node text,
 [data-md-color-scheme="slate"] .md-typeset div.mermaid svg .cluster-label text { fill: #e8e6fa; }
+
+/* --- Leyenda funcional de Diagramación y topologías --- */
+.sx-dot { display:inline-block; width:.72rem; height:.72rem; margin-right:.3rem; border-radius:50%; vertical-align:middle; }
+.sx-device { background:#5b18cc; }
+.sx-service { background:#29187a; }
+.sx-process { background:#8b5cf6; }
+.sx-decision { background:#cbbcff; }
+.md-typeset .mermaid { overflow-x:auto; padding:1rem .4rem; border:1px solid var(--fig-line); border-radius:10px; background:var(--fig-card); }
+.md-typeset .mermaid svg { max-width:100%; }
+
+/* Derechos de autor - SecOpsMX */
+.copyright-footer {
+  margin-top: 2rem;
+  padding: 1.2rem;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+  text-align: center;
+  font-size: .75rem;
+  opacity: .9;
+}
+
+.copyright-footer img {
+  width: 88px;
+  height: 31px;
+  margin: .6rem auto;
+  display: block;
+}
+
+.copyright-footer a {
+  color: var(--md-primary-fg-color);
+  font-weight: 600;
+}

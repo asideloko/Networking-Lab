@@ -45,7 +45,7 @@ El proyecto final reúne direccionamiento, routing, servicios, seguridad, alta d
 ## 4. Anexos y convenciones
 
 - [Guía de uso, alcance y convenciones](05-ANEXOS/guia-de-uso.md)
-- [Atlas de diagramas Mermaid](05-ANEXOS/atlas-diagramas.md)
+- [Diagramación y topologías](05-ANEXOS/diagramacion-y-topologias.md)
 - [Justificación y criterios editoriales](05-ANEXOS/justificacion-y-criterios.md)
 
 ## 5. Entorno y requisitos

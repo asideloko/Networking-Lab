@@ -139,7 +139,7 @@ La tabla anterior documenta una decisión de diseño del proyecto, no una corres
 ## 8. Referencias y recursos de consulta
 
 - [Justificación y criterios editoriales](justificacion-y-criterios.md): propósito de la serie, decisiones de simplificación, organización y fundamento de la convención cromática.
-- [Atlas integral de diagramas Mermaid](atlas-diagramas.md): código fuente, descripción y vínculo al contexto original de los diagramas de laboratorios, proyecto y referencias.
+- [Diagramación y topologías](diagramacion-y-topologias.md): código fuente, descripción y vínculo al contexto original de los diagramas de laboratorios, proyecto y referencias.
 - [Servicios, protocolos y puertos](../04-REFERENCIA/servicios-puertos.md): matriz común de la serie.
 - [Comparaciones conceptuales](../04-REFERENCIA/comparaciones.md): bridge/router, MAC/IP, subred/VLAN, GRE/IPsec y otras distinciones.
 - [Método de diagnóstico](../04-REFERENCIA/diagnostico.md): secuencia de análisis desde el síntoma hasta la causa.

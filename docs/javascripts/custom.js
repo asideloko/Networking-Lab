@@ -72,37 +72,46 @@ function aplicarColoresFuncionales(nodos) {
     dispositivo: color("--cv-violeta", "#5b18cc"),
     servicio: color("--cv-indigo", "#29187a"),
     proceso: color("--cv-acento", "#8b5cf6"),
-    decision: oscuro ? color("--cv-lila", "#cbbcff") : color("--cv-violeta", "#5b18cc"),
-    linea: oscuro ? color("--cv-lila", "#cbbcff") : color("--cv-indigo", "#29187a"),
-    grupo: oscuro ? color("--cv-acento", "#8b5cf6") : color("--cv-violeta", "#5b18cc"),
-    texto: oscuro ? "#e8e6fa" : "#14142b"
+    decision: color("--cv-lila", "#cbbcff"),
+    linea: oscuro ? "#cbbcff" : "#55418a",
+    grupo: oscuro ? "#8b5cf6" : "#5b18cc",
+    texto: oscuro ? "#f1edff" : "#171329",
+    fondo: oscuro ? "#171329" : "#ffffff"
   };
   var reglas = [
-    { re: /\?|¿|decisi[oó]n|selecci[oó]n|condici[oó]n|\b(si|sí|no|verdadero|falso)\b|\b(cumple|existe|alcanza|responde|disponible)\?/i, stroke: paleta.decision },
-    { re: /dhcp|dns|ntp|siem|syslog|snmp|http|https|servicio|servidor|database|base de datos|aplicaci[oó]n|broker|idp|monitor|noc/i, stroke: paleta.servicio },
-    { re: /paquete|trama|encapsul|proceso|input|output|forward|prerouting|postrouting|discover|offer|request|ack|syn|push|swap|pop|consulta|respuesta|flujo|negociaci[oó]n|\bacl\b|iptables|nftables|regla|pol[ií]tica|permitir|denegar|bloque/i, stroke: paleta.proceso },
-    { re: /router|switch|gateway|host|cliente|firewall|core|dist|access|pe\b|ce\b|r[0-9]+\b|sw[0-9]+\b|veth|bridge|equipo|nodo|internet|wan|lan|vlan|vpc|subred|red |segmento|nube|cloud|sede|sucursal|zona/i, stroke: paleta.dispositivo }
+    { tipo: "decision", re: /¿|\?|decisi[oó]n|selecci[oó]n|condici[oó]n|verdadero|falso|cumple|no cumple|existe\?/i },
+    { tipo: "servicio", re: /\bdhcp\b|\bdns\b|\bntp\b|\bsiem\b|syslog|snmp|https?|servidor|servicio|database|base de datos|aplicaci[oó]n|broker|\bidp\b|monitor|noc/i },
+    { tipo: "proceso", re: /paquete|trama|encapsul|prerouting|postrouting|discover|offer|request|ack|syn|fin\b|push|swap|pop|consulta|respuesta|flujo|negociaci[oó]n|\bacl\b|iptables|nftables|regla|pol[ií]tica|permitir|denegar|bloque|nat\b|routing|enrutamiento|m[eé]trica|failover/i },
+    { tipo: "dispositivo", re: /router|switch|gateway|host|cliente|firewall|core|dist|access|\bpe\b|\bce\b|\br[0-9]+\b|\bsw[0-9]+\b|veth|bridge|equipo|nodo|internet|wan|lan|vlan|vpc|subred|segmento|nube|cloud|sede|sucursal|zona/i }
   ];
+  var tonos = {
+    dispositivo: oscuro ? "rgba(139,92,246,.18)" : "rgba(91,24,204,.09)",
+    servicio: oscuro ? "rgba(99,102,241,.22)" : "rgba(41,24,122,.09)",
+    proceso: oscuro ? "rgba(139,92,246,.22)" : "rgba(139,92,246,.12)",
+    decision: oscuro ? "rgba(203,188,255,.20)" : "rgba(203,188,255,.34)"
+  };
   nodos.forEach(function (contenedor) {
     contenedor.querySelectorAll("g.node").forEach(function (node) {
       var label = (node.textContent || "").replace(/\s+/g, " ").trim();
       var regla = reglas.find(function (r) { return r.re.test(label); });
-      var stroke = regla ? regla.stroke : paleta.dispositivo;
+      var tipo = regla ? regla.tipo : "dispositivo";
+      var stroke = paleta[tipo];
+      node.setAttribute("data-funcion", tipo);
       node.querySelectorAll("rect, polygon, path, circle, ellipse").forEach(function (shape) {
         if (shape.closest("defs")) return;
-        shape.style.fill = "transparent";
-        shape.style.fillOpacity = "0";
+        shape.style.fill = tonos[tipo];
+        shape.style.fillOpacity = "1";
         shape.style.stroke = stroke;
-        shape.style.strokeWidth = "1.9px";
+        shape.style.strokeWidth = tipo === "decision" ? "2.2px" : "2px";
       });
       node.querySelectorAll("text, tspan").forEach(function (el) {
         el.style.fill = paleta.texto;
         el.style.fontWeight = "600";
       });
     });
-    contenedor.querySelectorAll(".edgePath path.path, .flowchart-link, .messageLine0, .messageLine1").forEach(function (line) {
+    contenedor.querySelectorAll(".edgePath path.path, .flowchart-link, .messageLine0, .messageLine1, .loopLine").forEach(function (line) {
       line.style.stroke = paleta.linea;
-      line.style.strokeWidth = "1.8px";
+      line.style.strokeWidth = "1.9px";
       line.style.fill = "none";
     });
     contenedor.querySelectorAll(".arrowheadPath").forEach(function (arrow) {
@@ -110,10 +119,18 @@ function aplicarColoresFuncionales(nodos) {
       arrow.style.stroke = paleta.linea;
     });
     contenedor.querySelectorAll(".cluster rect").forEach(function (shape) {
-      shape.style.fill = "transparent";
-      shape.style.fillOpacity = "0";
+      shape.style.fill = oscuro ? "rgba(139,92,246,.06)" : "rgba(91,24,204,.035)";
+      shape.style.fillOpacity = "1";
       shape.style.stroke = paleta.grupo;
-      shape.style.strokeWidth = "1.6px";
+      shape.style.strokeWidth = "1.7px";
+      shape.style.strokeDasharray = "5 3";
+    });
+    contenedor.querySelectorAll(".actor rect, .actor-man line, .actor-man circle").forEach(function (shape) {
+      shape.style.fill = tonos.servicio;
+      shape.style.stroke = paleta.servicio;
+    });
+    contenedor.querySelectorAll(".messageText, .noteText, .labelText").forEach(function (el) {
+      el.style.fill = paleta.texto;
     });
   });
 }

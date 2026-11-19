@@ -6,14 +6,13 @@
 site_name        = "NETWORKING LAB"
 site_description = "Laboratorios de explicación y simulación de redes, complementarios del libro NETWORKING · Guillermo Castillo · SecOpsMX"
 site_author      = "Guillermo Castillo · SecOpsMX"
-copyright        = "Material complementario gratuito del libro NETWORKING · Uso educativo; no se autoriza su redistribución con fines comerciales."
 
 docs_dir = "docs"
 site_dir = "site"
 use_directory_urls = false
 
 extra_css        = ["stylesheets/extra.css"]
-extra_javascript = ["javascripts/mermaid.min.js", "javascripts/custom.js"]
+extra_javascript = ["javascripts/mermaid.min.js", "javascripts/custom.js", "javascripts/copyright.js"]
 dev_addr = "localhost:8000"
 
 nav = [
@@ -53,7 +52,8 @@ nav = [
   { "04 · ANEXOS Y CONVENCIONES" = [
     { "GUÍA DE USO" = "05-ANEXOS/guia-de-uso.md" },
     { "JUSTIFICACIÓN Y CRITERIOS EDITORIALES" = "05-ANEXOS/justificacion-y-criterios.md" },
-    { "ATLAS DE DIAGRAMAS MERMAID" = "05-ANEXOS/atlas-diagramas.md" },
+    { "DIAGRAMACIÓN Y TOPOLOGÍAS" = "05-ANEXOS/diagramacion-y-topologias.md" },
+    { "DERECHOS DE AUTOR" = "05-ANEXOS/derechos-de-autor.md" },
   ] },
 ]
 

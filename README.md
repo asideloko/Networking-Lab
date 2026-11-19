@@ -202,7 +202,7 @@ Networking-Lab/
 │   ├── 05-ANEXOS/
 │   │   ├── guia-de-uso.md
 │   │   ├── justificacion-y-criterios.md
-│   │   └── atlas-diagramas.md
+│   │   └── diagramacion-y-topologias.md
 │   ├── assets/
 │   ├── javascripts/
 │   └── stylesheets/
@@ -246,6 +246,6 @@ Material complementario gratuito del libro NETWORKING. Uso educativo; no se auto
 
 ## Referencias visuales y enlaces técnicos
 
-- `docs/05-ANEXOS/atlas-diagramas.md` reúne los diagramas Mermaid de los laboratorios, el proyecto final y las referencias, con descripción y código fuente.
+- `docs/05-ANEXOS/diagramacion-y-topologias.md` reúne los diagramas Mermaid de los laboratorios, el proyecto final y las referencias, con descripción y código fuente.
 - `docs/04-REFERENCIA/glosario.md` enlaza términos y acrónimos a RFC, estándares IEEE y documentación oficial. La primera aparición de cada término reconocido también enlaza a su fuente técnica.
 - `docs/stylesheets/extra.css` contiene la identidad visual del proyecto y los estilos de lectura; `docs/javascripts/custom.js` aplica colores semánticos a los nodos Mermaid (infraestructura, procesos, servicios, decisiones y seguridad).

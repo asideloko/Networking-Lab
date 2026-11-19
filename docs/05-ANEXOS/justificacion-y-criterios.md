@@ -31,7 +31,7 @@ El contenido se organiza en cinco secciones principales, con una progresión des
 
 Los quince laboratorios se agrupan en tres bloques de cinco para facilitar la navegación, no para afirmar que cada bloque sea una fase rígida o que todas las tecnologías se implementen de forma acumulativa. Cada laboratorio declara su propia topología y sus recursos; no se presupone que namespaces, interfaces, direcciones o procesos sobrevivan entre prácticas.
 
-La sección de referencia separa los contenidos de consulta frecuente —glosario, puertos, comparaciones, diagnóstico, arquitectura y competencias— del contenido procedimental de los laboratorios. El atlas de diagramas y esta guía se mantienen como anexos porque describen recursos y convenciones comunes a toda la serie.
+La sección de referencia separa los contenidos de consulta frecuente —glosario, puertos, comparaciones, diagnóstico, arquitectura y competencias— del contenido procedimental de los laboratorios. El sección de diagramación y topologías y esta guía se mantienen como anexos porque describen recursos y convenciones comunes a toda la serie.
 
 ## 3. Justificación de las simplificaciones técnicas
 
