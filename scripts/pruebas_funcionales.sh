@@ -351,10 +351,17 @@ if [[ ! -x /sbin/dhclient-script ]]; then
   echo "FALLO: no está disponible /sbin/dhclient-script" >&2
   exit 1
 fi
-if ! ip netns exec "$DHC" dhclient -4 -1 -d \
+if timeout --signal=TERM --kill-after=5s 25s ip netns exec "$DHC" dhclient -4 -1 -d \
   -sf /sbin/dhclient-script \
   -pf "$DHCP_PID" -lf "$DHCP_LEASES" eth0 >"$DHCP_LOG" 2>&1; then
-  echo "FALLO: el cliente DHCP no completó la concesión" >&2
+  :
+else
+  DHCP_STATUS=$?
+  if [[ "$DHCP_STATUS" -eq 124 || "$DHCP_STATUS" -eq 137 ]]; then
+    echo "FALLO: tiempo agotado esperando la concesión DHCP (25 segundos)" >&2
+  else
+    echo "FALLO: el cliente DHCP terminó con código $DHCP_STATUS" >&2
+  fi
   cat "$DHCP_LOG" >&2 || true
   exit 1
 fi
