@@ -1114,3 +1114,34 @@ body[data-md-color-scheme="slate"] {
   color: var(--md-primary-fg-color);
   font-weight: 600;
 }
+
+
+/* PALETA FUNCIONAL OFICIAL */
+:root {
+  --color-nota-aviso: #2196D2;
+  --color-advertencia: #F59E0B;
+  --color-dato-tecnico: #10B981;
+  --color-peligro-critico: #EF4444;
+}
+
+.mermaid .node.nota rect,
+.mermaid .node.aviso rect {
+  fill: var(--color-nota-aviso) !important;
+  stroke: var(--color-nota-aviso) !important;
+}
+
+.mermaid .node.advertencia rect {
+  fill: var(--color-advertencia) !important;
+  stroke: var(--color-advertencia) !important;
+}
+
+.mermaid .node.dato-tecnico rect {
+  fill: var(--color-dato-tecnico) !important;
+  stroke: var(--color-dato-tecnico) !important;
+}
+
+.mermaid .node.peligro rect,
+.mermaid .node.error-critico rect {
+  fill: var(--color-peligro-critico) !important;
+  stroke: var(--color-peligro-critico) !important;
+}

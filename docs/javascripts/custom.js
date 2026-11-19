@@ -64,97 +64,40 @@ function renderMermaid() {
   mermaid.run({ nodes: nodos }).then(function () { aplicarColoresFuncionales(nodos); });
 }
 
-function aplicarColoresFuncionales(nodos) {
-  var oscuro = document.body.getAttribute("data-md-color-scheme") === "slate";
-  var C = {
-    aviso: "#2196D2",
-    advertencia: "#F59E0B",
-    tecnico: "#10B981",
-    peligro: "#EF4444"
+function aplicarColoresFuncionales() {
+  const colores = {
+    azul: "#2196D2",
+    amarillo: "#F59E0B",
+    verde: "#10B981",
+    rojo: "#EF4444"
   };
-  var reglas = [
-    ["peligro", /peligro|error crítico|error critico|crítico|critico|fatal|fallo crítico|fallo critico|denegado|bloqueado|daño|dano|riesgo/i],
-    ["advertencia", /advertencia|precaución|precaucion|cuidado|alerta|atención|atencion|borrar|eliminar|sobrescribir|respaldo|inseguro/i],
-    ["tecnico", /dato técnico|dato tecnico|información técnica|informacion tecnica|parámetro|parametro|dirección ip|direccion ip|máscara|mascara|gateway|protocolo|configuración|configuracion|comando|interfaz|router|switch|servidor|vlan|subred/i],
-    ["aviso", /nota|aviso|información|informacion|referencia|observación|observacion|importante|recomendación|recomendacion/i]
-  ];
 
-  function tipo(texto) {
-    for (var i = 0; i < reglas.length; i++) {
-      if (reglas[i][1].test(texto)) return reglas[i][0];
-    }
-    return "aviso";
-  }
+  document.querySelectorAll(".mermaid svg").forEach(svg => {
+    svg.querySelectorAll(".node").forEach(node => {
+      const texto = (node.textContent || "").toLowerCase();
+      let color = null;
 
-  function tinta(hex) {
-    var h = hex.slice(1);
-    var rgb = [0,2,4].map(function(i) {
-      var v = parseInt(h.slice(i,i+2),16)/255;
-      return v <= .04045 ? v/12.92 : Math.pow((v+.055)/1.055,2.4);
-    });
-    return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2] > .42
-      ? "#172033" : "#F8FAFC";
-  }
+      if (/peligro|error crítico|error critico|crítico|critico/.test(texto)) {
+        color = colores.rojo;
+      } else if (/advertencia|precaución|precaucion|riesgo/.test(texto)) {
+        color = colores.amarillo;
+      } else if (/dato técnico|dato tecnico|información técnica|informacion tecnica/.test(texto)) {
+        color = colores.verde;
+      } else if (/nota|aviso/.test(texto)) {
+        color = colores.azul;
+      }
 
-  nodos.forEach(function(root) {
-    root.querySelectorAll("g.node").forEach(function(node) {
-      var texto = (node.textContent || "").replace(/\s+/g," ").trim();
-      var categoria = tipo(texto);
-      var fondo = C[categoria];
-      var frente = tinta(fondo);
-      node.setAttribute("data-funcion",categoria);
+      if (!color) return;
 
-      node.querySelectorAll("rect,polygon,path,circle,ellipse").forEach(function(el) {
-        if (el.closest("defs")) return;
-        el.style.setProperty("fill",fondo,"important");
-        el.style.setProperty("fill-opacity","1","important");
-        el.style.setProperty("stroke",fondo,"important");
-        el.style.setProperty("stroke-width","2px","important");
+      node.querySelectorAll("rect, polygon, circle, ellipse").forEach(shape => {
+        shape.style.fill = color;
+        shape.style.stroke = color;
       });
-      node.querySelectorAll("text,tspan").forEach(function(el) {
-        el.style.setProperty("fill",frente,"important");
+
+      node.querySelectorAll("text, .label").forEach(label => {
+        label.style.fill = "#ffffff";
+        label.style.color = "#ffffff";
       });
-      node.querySelectorAll("foreignObject div,foreignObject span,foreignObject p").forEach(function(el) {
-        el.style.setProperty("color",frente,"important");
-        el.style.setProperty("background","transparent","important");
-      });
-    });
-
-    root.querySelectorAll(".cluster rect").forEach(function(el) {
-      el.style.setProperty("fill",oscuro ? "#172033" : "#F1F5F9","important");
-      el.style.setProperty("stroke",C.aviso,"important");
-      el.style.setProperty("stroke-width","2px","important");
-    });
-
-    root.querySelectorAll("g.note rect,g.note polygon").forEach(function(el) {
-      el.style.setProperty("fill",C.aviso,"important");
-      el.style.setProperty("stroke",C.aviso,"important");
-    });
-
-    root.querySelectorAll(".actor rect").forEach(function(el) {
-      el.style.setProperty("fill",C.tecnico,"important");
-      el.style.setProperty("stroke",C.tecnico,"important");
-    });
-
-    root.querySelectorAll(".edgeLabel rect,.labelBox").forEach(function(el) {
-      el.style.setProperty("fill",C.advertencia,"important");
-      el.style.setProperty("stroke",C.advertencia,"important");
-    });
-
-    root.querySelectorAll(".edgePath path,.flowchart-link,.messageLine0,.messageLine1,.loopLine,.actor-line").forEach(function(el) {
-      el.style.setProperty("stroke",C.aviso,"important");
-      el.style.setProperty("fill","none","important");
-    });
-
-    root.querySelectorAll(".arrowheadPath").forEach(function(el) {
-      el.style.setProperty("fill",C.aviso,"important");
-      el.style.setProperty("stroke",C.aviso,"important");
-    });
-
-    root.querySelectorAll(".messageText,.noteText,.labelText").forEach(function(el) {
-      el.style.setProperty("fill",oscuro ? "#F8FAFC" : "#172033","important");
     });
   });
 }
-new MutationObserver(function () { renderMermaid(); })
-  .observe(document.body, { attributes: true, attributeFilter: ["data-md-color-scheme"] });
