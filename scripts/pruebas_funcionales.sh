@@ -457,12 +457,51 @@ ip netns exec "$VR1" keepalived -n -l -P -f "$VR1_CONF" -p "$VR1_PID" -r "$VR1_V
 TEMP_FILES+=("/tmp/nlci-vrrp1-${SUF}.log")
 ip netns exec "$VR2" keepalived -n -l -P -f "$VR2_CONF" -p "$VR2_PID" -r "$VR2_VPID" >/tmp/nlci-vrrp2-${SUF}.log 2>&1 &
 TEMP_FILES+=("/tmp/nlci-vrrp2-${SUF}.log")
+dump_vrrp_diagnostics() {
+  local reason="$1"
+  local base="${RUNNER_TEMP:-/tmp}/networking-lab-vrrp-${GITHUB_RUN_ID:-local}-${SUF}"
+  local report="$base/${reason}.txt"
+  mkdir -p "$base"
+  {
+    echo "=== DIAGNOSTICO VRRP: $reason ==="
+    date -Is
+    keepalived --version 2>&1 || true
+    echo "=== Configuración Dist1 ==="
+    cat "$VR1_CONF" 2>&1 || true
+    echo "=== Configuración Dist2 ==="
+    cat "$VR2_CONF" 2>&1 || true
+    for ns in "$VR1" "$VR2" "$VC" "$VSW"; do
+      echo "=== Namespace: $ns ==="
+      ip netns exec "$ns" ip -details -statistics link show 2>&1 || true
+      ip netns exec "$ns" ip -details addr show 2>&1 || true
+      ip netns exec "$ns" ip route show table all 2>&1 || true
+      ip netns exec "$ns" ip neigh show 2>&1 || true
+      ip netns exec "$ns" sysctl net.ipv4.conf.all.rp_filter net.ipv4.conf.default.rp_filter 2>&1 || true
+    done
+    echo "=== Procesos Keepalived ==="
+    ps -ef | grep '[k]eepalived' || true
+    echo "=== Log Dist1 ==="
+    cat "/tmp/nlci-vrrp1-${SUF}.log" 2>&1 || true
+    echo "=== Log Dist2 ==="
+    cat "/tmp/nlci-vrrp2-${SUF}.log" 2>&1 || true
+  } | tee "$report" >&2
+  cp "$VR1_CONF" "$base/" 2>/dev/null || true
+  cp "$VR2_CONF" "$base/" 2>/dev/null || true
+  cp "/tmp/nlci-vrrp1-${SUF}.log" "$base/" 2>/dev/null || true
+  cp "/tmp/nlci-vrrp2-${SUF}.log" "$base/" 2>/dev/null || true
+  echo "Diagnóstico VRRP guardado en: $base" >&2
+}
+
 VIP_MASTER=0
 for _ in $(seq 1 12); do
   if ip netns exec "$VR1" ip -4 -o addr show dev lan0 | grep -q '10\.40\.0\.1/24'; then VIP_MASTER=1; break; fi
   sleep 1
 done
-[ "$VIP_MASTER" = 1 ] || { echo "FALLO: Dist1 no adquirió la VIP VRRP" >&2; exit 1; }
+if [ "$VIP_MASTER" != 1 ]; then
+  echo "FALLO: Dist1 no adquirió la VIP VRRP" >&2
+  dump_vrrp_diagnostics "dist1-sin-vip"
+  exit 1
+fi
 ip netns exec "$VC" ping -c 2 -W 2 10.40.0.1 >/dev/null
 VR1_PID_VALUE=$(cat "$VR1_PID")
 VR1_CMDLINE=$(tr '\0' ' ' < "/proc/$VR1_PID_VALUE/cmdline" 2>/dev/null || true)
@@ -473,7 +512,11 @@ for _ in $(seq 1 12); do
   if ip netns exec "$VR2" ip -4 -o addr show dev lan0 | grep -q '10\.40\.0\.1/24'; then VIP_BACKUP=1; break; fi
   sleep 1
 done
-[ "$VIP_BACKUP" = 1 ] || { echo "FALLO: Dist2 no tomó la VIP tras la caída de Dist1" >&2; exit 1; }
+if [ "$VIP_BACKUP" != 1 ]; then
+  echo "FALLO: Dist2 no tomó la VIP tras la caída de Dist1" >&2
+  dump_vrrp_diagnostics "dist2-sin-vip"
+  exit 1
+fi
 ip netns exec "$VC" ping -c 2 -W 2 10.40.0.1 >/dev/null
 cleanup
 
