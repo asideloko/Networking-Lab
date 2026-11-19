@@ -1060,7 +1060,7 @@ body[data-md-color-scheme="slate"] {
   border: 1px solid var(--fig-line);
   color: var(--md-typeset-color);
 }
-.md-typeset div.mermaid svg { background: transparent !important; }
+/* .md-typeset div.mermaid svg { background: transparent !important; }
 .md-typeset div.mermaid svg .node rect,
 .md-typeset div.mermaid svg .node polygon,
 .md-typeset div.mermaid svg .node circle,
@@ -1069,7 +1069,7 @@ body[data-md-color-scheme="slate"] {
   fill: transparent !important;
   fill-opacity: 0 !important;
   stroke-width: 1.8px;
-}
+}*/
 .md-typeset div.mermaid svg .edgePath path,
 .md-typeset div.mermaid svg .flowchart-link {
   fill: none !important;
