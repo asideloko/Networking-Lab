@@ -4,7 +4,7 @@
 
 > Del fundamento teórico a la comprensión técnica mediante escenarios de red, topologías y demostraciones prácticas.
 
-**🌐 Acceder a NETWORKING Lab · 💻 [Código fuente](https://github.com/asideloko/Networking-Lab.git)**
+**🌐 [Acceder a NETWORKING Lab](https://asideloko.github.io/Networking-Lab/) · 💻 [Código fuente](https://github.com/asideloko/Networking-Lab)**
 
 ---
 
@@ -187,6 +187,9 @@ Networking-Lab/
 │   ├── main.html
 │   └── partials/
 │
+├── scripts/
+│   └── validar.py
+│
 ├── README.md
 ├── requirements.txt
 └── zensical.toml
@@ -202,15 +205,13 @@ Networking-Lab/
 - **Editorial / proyecto:** SecOpsMX
 - **Edición:** 2026
 
-Consultar y obtener el libro en **Leanpub**.
+Consultar y obtener el libro en [**Leanpub**](https://leanpub.com/networking-fundamentos).
 
 ---
 
 ## Licencia y uso
 
-El material se proporciona con fines educativos como complemento del libro de referencia.
-
-Consulta los avisos de licencia y las condiciones de uso aplicables a los materiales de este repositorio antes de reproducirlos o distribuirlos.
+Material complementario gratuito del libro NETWORKING. Uso educativo; no se autoriza su redistribución con fines comerciales.
 
 ---
 

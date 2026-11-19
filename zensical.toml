@@ -1,19 +1,16 @@
 # =============================================================================
 # ZENSICAL.TOML — NETWORKING Lab · Laboratorios de explicación y simulación de redes
-# Misma base, tema, paleta y estilos que el sitio del libro (Networking-Fundamentos); cambian identidad y navegación.
 # =============================================================================
 
 [project]
 site_name        = "NETWORKING LAB"
-# site_url: déjalo sin definir. Con una ruta (p. ej. /networking/) el servidor local redirige «/» a esa ruta y la portada no carga.
-# Al publicar en GitHub Pages los enlaces son relativos y funcionan sin site_url.
 site_description = "Laboratorios de explicación y simulación de redes, complementarios del libro NETWORKING · Guillermo Castillo · SecOpsMX"
 site_author      = "Guillermo Castillo · SecOpsMX"
 copyright        = "Material complementario gratuito del libro NETWORKING · Uso educativo; no se autoriza su redistribución con fines comerciales."
 
 docs_dir = "docs"
 site_dir = "site"
-use_directory_urls = false   # el sitio se publica como archivos .html (coincide con los enlaces de la portada y la galería)
+use_directory_urls = false
 
 extra_css        = ["stylesheets/extra.css"]
 extra_javascript = ["javascripts/mermaid.min.js", "javascripts/custom.js"]
@@ -67,8 +64,6 @@ language   = "es"
 logo       = "assets/logo.png"
 favicon    = "assets/favicon.png"
 custom_dir = "overrides"
-# Tipografía: Chakra Petch se sirve desde docs/assets/fonts (ver stylesheets/extra.css);
-# se desactiva Google Fonts para que el sitio funcione sin conexión.
 font = false
 
 features = [
@@ -137,10 +132,8 @@ pymdownx.mark  = {}
 pymdownx.keys  = {}
 pymdownx.arithmatex = { generic = true }
 
-# Configuración de emojis e iconos (formato de tabla anidada)
 pymdownx.emoji.emoji_generator = "zensical.extensions.emoji.to_svg"
 pymdownx.emoji.emoji_index     = "zensical.extensions.emoji.twemoji"
-pymdownx.emoji.options.custom_icons = ["overrides/.icons"]
 
 # =============================================================================
 # PLUGINS (solo los que usa el sitio de laboratorios)
@@ -151,6 +144,6 @@ lang    = "es"
 
 [project.plugins.minify]
 enabled     = true
-minify_html = false   # el HTML minificado colapsa los saltos de línea de los diagramas Mermaid
+minify_html = false
 minify_css  = true
-minify_js   = false   # mermaid.min.js ya viene minificado
+minify_js   = false

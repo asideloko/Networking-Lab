@@ -447,7 +447,7 @@ sequenceDiagram
 
 ```mermaid
 graph LR
-    C["Cliente 10.9.0.2"] -- "AllowedIPs = 10.0.0.0/24" --> G["VPN Gateway"]
+    C["Cliente 10.9.0.2"] -- "AllowedIPs = 10.0.0.0/22" --> G["VPN Gateway"]
     G -- "AllowedIPs = 10.9.0.2/32" --> C
 ```
 

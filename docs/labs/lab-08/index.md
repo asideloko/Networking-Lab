@@ -531,7 +531,13 @@ Para comprobar que el tráfico **va cifrado**, captura mientras haces la conexi�
 
 Un firewall que descarta sin dejar rastro es difícil de auditar. Añade una regla `LOG` **antes** del `DROP` final para registrar los intentos Internet → LAN:
 
+Por defecto, el kernel solo permite registrar con `LOG` desde el espacio de nombres principal. Para que el *namespace* `firewall` escriba en el registro del sistema hace falta activarlo en el host:
+
+!!! warning "Cambio en el host"
+    `sudo sysctl -w net.netfilter.nf_log_all_netns=1` es temporal (se pierde al reiniciar). Para revertirlo: `sudo sysctl -w net.netfilter.nf_log_all_netns=0`.
+
 ```bash
+sudo sysctl -w net.netfilter.nf_log_all_netns=1
 sudo ip netns exec firewall iptables -I FORWARD 1 -i veth-fw-wan -o veth-fw-lan -m limit --limit 5/min -j LOG --log-prefix "FW-DENY-WAN-LAN: "
 sudo dmesg | grep FW-DENY | tail
 ```
