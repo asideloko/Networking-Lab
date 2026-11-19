@@ -83,36 +83,37 @@ NS_SERIE="cliente1 cliente2 cliente3 cliente4 router switch ventas1 ventas2 vent
 EXISTENTES=$(ip netns list | awk '{print $1}' | grep -xF -f <(echo $NS_SERIE | tr ' ' '\n'))
 echo "Se eliminarán: ${EXISTENTES:-(ninguno)}"
 read -r -p "¿Son todos de laboratorios anteriores? (s/N) " R
-if [ "$R" = s ]; then
-  for ns in $EXISTENTES; do sudo ip netns del $ns 2>/dev/null || true; done
-  sudo ip link del br-wan 2>/dev/null || true
-else
+
+if [ "$R" != s ]; then
   echo "Cancelado: renombra tus namespaces o usa una máquina virtual limpia"
-fi
-sudo apt-get install -y frr keepalived dnsmasq-base isc-dhcp-client nftables netcat-openbsd
-
-for ns in R1 R2 SWsrv fin ven ges srv suc; do sudo ip netns add $ns; done
-for r in R1 R2; do sudo ip netns exec $r sysctl -qw net.ipv4.ip_forward=1; done
-
-# enlace NS_A IF_A IP_A NS_B IF_B IP_B
-enlace() {
-  sudo ip link add $2 type veth peer name $5
-  sudo ip link set $2 netns $1
-  sudo ip link set $5 netns $4
-  sudo ip netns exec $1 ip addr add $3 dev $2
-  sudo ip netns exec $1 ip link set $2 up
-  sudo ip netns exec $4 ip addr add $6 dev $5
-  sudo ip netns exec $4 ip link set $5 up
-}
-# Directorio de trabajo del laboratorio: no se reutiliza uno ajeno
-if [ -e /tmp/lab15 ]; then
+elif pgrep -f '[/]tmp/lab15' >/dev/null; then
+  echo "Hay procesos de una ejecución anterior de este laboratorio: aplica primero «Limpieza del laboratorio»"
+elif [ -e /tmp/lab15 ]; then
   echo "/tmp/lab15 ya existe: revísalo, muévelo o bórralo tú antes de continuar"
 else
+  # Solo se llega aquí si todo lo anterior se ha confirmado
+  for ns in $EXISTENTES; do sudo ip netns del $ns 2>/dev/null || true; done
+  sudo ip link del br-wan 2>/dev/null || true
+  sudo apt-get install -y frr keepalived dnsmasq-base isc-dhcp-client nftables netcat-openbsd
+
+  for ns in R1 R2 SWsrv fin ven ges srv suc; do sudo ip netns add $ns; done
+  for r in R1 R2; do sudo ip netns exec $r sysctl -qw net.ipv4.ip_forward=1; done
   mkdir /tmp/lab15
+
+  # enlace NS_A IF_A IP_A NS_B IF_B IP_B
+  enlace() {
+    sudo ip link add $2 type veth peer name $5
+    sudo ip link set $2 netns $1
+    sudo ip link set $5 netns $4
+    sudo ip netns exec $1 ip addr add $3 dev $2
+    sudo ip netns exec $1 ip link set $2 up
+    sudo ip netns exec $4 ip addr add $6 dev $5
+    sudo ip netns exec $4 ip link set $5 up
+  }
 fi
 ```
 
-Si cancelaste la confirmación o `/tmp/lab15` ya existía, **detente aquí**: los bloques siguientes asumen un entorno limpio.
+Si aparece cualquiera de los mensajes de cancelación o aviso, **detente aquí**: no se ha creado nada y los apartados siguientes asumen el entorno preparado.
 
 ## 15.1 Configuración de red básica
 

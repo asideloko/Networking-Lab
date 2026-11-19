@@ -119,8 +119,12 @@ ip netns exec router ip route add default via 192.168.1.1
 El host también debe reenviar y traducir el tráfico del enlace de laboratorio hacia tu red real. Sustituye `eth0` por la interfaz con la que sales a Internet (`ip route get 8.8.8.8` te la muestra):
 
 ```bash
-# Guarda el valor original: la reversión lo restaura tal cual
-sysctl -n net.ipv4.ip_forward > /tmp/lab02-ip_forward.orig
+# Guarda el valor original: la reversión lo restaura tal cual (no sobrescribe una copia anterior)
+if [ -e /tmp/lab02-ip_forward.orig ]; then
+  echo "/tmp/lab02-ip_forward.orig ya existe: revisa su valor y bórralo antes de continuar"
+else
+  sysctl -n net.ipv4.ip_forward > /tmp/lab02-ip_forward.orig
+fi
 
 sysctl -w net.ipv4.ip_forward=1
 iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
@@ -390,8 +394,12 @@ Al terminar, deshaz **solo lo que hiciste aquí** (no borres reglas ajenas):
 iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
 
 # 2. Reenvío: restaura el valor original guardado (no se asume que fuera 0)
-sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab02-ip_forward.orig 2>/dev/null || echo 0)"
-rm -f /tmp/lab02-ip_forward.orig
+if [ -f /tmp/lab02-ip_forward.orig ]; then
+  sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab02-ip_forward.orig)"
+  rm -f /tmp/lab02-ip_forward.orig
+else
+  echo "Sin copia del valor original: no se modifica ip_forward; usa el valor que anotaste"
+fi
 
 # 2b. Reglas de FORWARD del host (solo si las añadiste; si no existen, el error se ignora)
 iptables -D FORWARD -i veth-host -o eth0 -j ACCEPT 2>/dev/null || true
