@@ -24,6 +24,7 @@ NAMESPACES=("$A" "$B" "$SW" "$R" "$C")
 HOST_LINKS=("nlci_a_${SUF}" "nlci_b_${SUF}" "nlci_sw_${SUF}" "nlci_r_${SUF}" "nlci_c_${SUF}")
 PID_FILES=()
 TEMP_FILES=()
+NETNS_CONFIG_DIRS=()
 HOST_IP_FORWARD_ORIG=""
 HOST_IP_FORWARD_CHANGED=0
 HOST_NFT_TABLE=""
@@ -60,7 +61,7 @@ cleanup() {
     [[ "$pid" =~ ^[0-9]+$ ]] || continue
     [ -r "/proc/$pid/cmdline" ] || continue
     cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
-    if [[ "$cmdline" == *"/tmp/nlci-"*"$SUF"* ]]; then kill -TERM "$pid" 2>/dev/null || true; fi
+    if [[ "$cmdline" == *"/tmp/nlci-"*"$SUF"* || "$cmdline" == *"/run/nlci-dhclient-${SUF}.pid"* ]]; then kill -TERM "$pid" 2>/dev/null || true; fi
   done
   sleep 1
   for pf in "${PID_FILES[@]}"; do
@@ -69,11 +70,12 @@ cleanup() {
     [[ "$pid" =~ ^[0-9]+$ ]] || continue
     [ -r "/proc/$pid/cmdline" ] || continue
     cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
-    if [[ "$cmdline" == *"/tmp/nlci-"*"$SUF"* ]]; then kill -KILL "$pid" 2>/dev/null || true; fi
+    if [[ "$cmdline" == *"/tmp/nlci-"*"$SUF"* || "$cmdline" == *"/run/nlci-dhclient-${SUF}.pid"* ]]; then kill -KILL "$pid" 2>/dev/null || true; fi
   done
   for ns in "${NAMESPACES[@]}"; do ip netns del "$ns" 2>/dev/null || true; done
   for dev in "${HOST_LINKS[@]}"; do ip link del "$dev" 2>/dev/null || true; done
   for f in "${PID_FILES[@]}" "${TEMP_FILES[@]}"; do rm -f "$f" 2>/dev/null || true; done
+  for dir in "${NETNS_CONFIG_DIRS[@]}"; do rmdir "$dir" 2>/dev/null || true; done
 }
 trap cleanup EXIT INT TERM
 
@@ -296,10 +298,22 @@ ip netns exec "$DHS" ip addr add 10.30.0.1/24 dev eth0
 ip netns exec "$DHS" ip link set eth0 up
 ip netns exec "$DHC" ip link set eth0 up
 DNS_PID="/tmp/nlci-dnsmasq-${SUF}.pid"; DNS_LOG="/tmp/nlci-dnsmasq-${SUF}.log"
-DHCP_PID="/tmp/nlci-dhclient-${SUF}.pid"; DHCP_LEASES="/tmp/nlci-dhclient-${SUF}.leases"; DHCP_LOG="/tmp/nlci-dhclient-${SUF}.log"
-DHCLIENT_SCRIPT="/tmp/nlci-dhclient-${SUF}.sh"; DHCP_EVENT="/tmp/nlci-dhclient-${SUF}.event"
+DHCP_PID="/run/nlci-dhclient-${SUF}.pid"
+DHCP_LEASES="/var/lib/dhcp/nlci-dhclient-${SUF}.leases"
+DHCP_LOG="/tmp/nlci-dhclient-${SUF}.log"
 PID_FILES+=("$DNS_PID" "$DHCP_PID")
-TEMP_FILES+=("$DNS_LOG" "$DHCP_LEASES" "$DHCP_LOG" "$DHCLIENT_SCRIPT" "$DHCP_EVENT")
+TEMP_FILES+=("$DNS_LOG" "$DHCP_LEASES" "$DHCP_LOG")
+
+# Aislar resolv.conf: el script estándar DHCP no debe modificar el del host.
+NETNS_CONFIG_DIR="/etc/netns/$DHC"
+if [[ -e "$NETNS_CONFIG_DIR" ]]; then
+  echo "FALLO: ya existe configuración de red para $DHC; no se modificará" >&2
+  exit 1
+fi
+mkdir -p "$NETNS_CONFIG_DIR"
+NETNS_CONFIG_DIRS+=("$NETNS_CONFIG_DIR")
+printf 'nameserver 10.30.0.1\n' > "$NETNS_CONFIG_DIR/resolv.conf"
+TEMP_FILES+=("$NETNS_CONFIG_DIR/resolv.conf")
 ip netns exec "$DHS" dnsmasq \
   --no-daemon --no-resolv --no-hosts \
   --bind-interfaces --interface=eth0 \
@@ -332,34 +346,42 @@ if [ "$DNS_OK" != 1 ]; then
   cat "$DNS_LOG" >&2 || true
   exit 1
 fi
-# Script DHCP acotado: registra opciones y no toca /etc/resolv.conf ni archivos del host.
-cat > "$DHCLIENT_SCRIPT" <<'EOF'
-#!/bin/sh
-{
-  printf 'reason=%s\n' "$reason"
-  printf 'ip=%s\n' "$new_ip_address"
-  printf 'mask=%s\n' "$new_subnet_mask"
-  printf 'routers=%s\n' "$new_routers"
-  printf 'dns=%s\n' "$new_domain_name_servers"
-} >> "$DHCP_EVENT_FILE"
-exit 0
-EOF
-chmod 700 "$DHCLIENT_SCRIPT"
-DHCP_EVENT_FILE="$DHCP_EVENT" ip netns exec "$DHC" dhclient -4 -1 -d -sf "$DHCLIENT_SCRIPT" -pf "$DHCP_PID" -lf "$DHCP_LEASES" eth0 >"$DHCP_LOG" 2>&1 &
-LEASE_OK=0
-for _ in $(seq 1 15); do
-  if [ -s "$DHCP_EVENT" ] && grep -q '^reason=BOUND$' "$DHCP_EVENT"; then LEASE_OK=1; break; fi
-  sleep 1
-done
-[ "$LEASE_OK" = 1 ] || { echo "FALLO: el cliente no obtuvo una concesión DHCP" >&2; cat "$DHCP_LOG" >&2 || true; exit 1; }
-LEASE_IP=$(sed -n 's/^ip=//p' "$DHCP_EVENT" | tail -1)
-LEASE_ROUTER=$(sed -n 's/^routers=//p' "$DHCP_EVENT" | tail -1)
-LEASE_DNS=$(sed -n 's/^dns=//p' "$DHCP_EVENT" | tail -1)
-[[ "$LEASE_IP" =~ ^10\.30\.0\.(10[0-9]|11[0-9]|120)$ ]] || { echo "FALLO: dirección DHCP inesperada: $LEASE_IP" >&2; exit 1; }
-[[ "$LEASE_ROUTER" == 10.30.0.1* && "$LEASE_DNS" == 10.30.0.1* ]] || { echo "FALLO: opciones DHCP de gateway/DNS incorrectas" >&2; exit 1; }
-# La configuración IP se aplica dentro del namespace cliente, sin ejecutar el script de host de dhclient.
-ip netns exec "$DHC" ip addr add "$LEASE_IP/24" dev eth0
-ip netns exec "$DHC" ip route add default via "$LEASE_ROUTER" dev eth0
+# Cliente ISC DHCP con script estándar y archivos en rutas permitidas por el sistema.
+if [[ ! -x /sbin/dhclient-script ]]; then
+  echo "FALLO: no está disponible /sbin/dhclient-script" >&2
+  exit 1
+fi
+if ! ip netns exec "$DHC" dhclient -4 -1 -d \
+  -sf /sbin/dhclient-script \
+  -pf "$DHCP_PID" -lf "$DHCP_LEASES" eth0 >"$DHCP_LOG" 2>&1; then
+  echo "FALLO: el cliente DHCP no completó la concesión" >&2
+  cat "$DHCP_LOG" >&2 || true
+  exit 1
+fi
+
+LEASE_IP=$(sed -n 's/^[[:space:]]*fixed-address[[:space:]]\+\([^;]*\);.*/\1/p' "$DHCP_LEASES" | tail -1)
+LEASE_ROUTER=$(sed -n 's/^[[:space:]]*option routers[[:space:]]\+\([^;]*\);.*/\1/p' "$DHCP_LEASES" | tail -1)
+LEASE_DNS=$(sed -n 's/^[[:space:]]*option domain-name-servers[[:space:]]\+\([^;]*\);.*/\1/p' "$DHCP_LEASES" | tail -1)
+
+[[ "$LEASE_IP" =~ ^10\.30\.0\.(10[0-9]|11[0-9]|120)$ ]] || {
+  echo "FALLO: dirección DHCP inesperada: $LEASE_IP" >&2
+  cat "$DHCP_LOG" >&2 || true
+  exit 1
+}
+[[ "$LEASE_ROUTER" == 10.30.0.1* && "$LEASE_DNS" == 10.30.0.1* ]] || {
+  echo "FALLO: opciones DHCP de gateway/DNS incorrectas: router=$LEASE_ROUTER dns=$LEASE_DNS" >&2
+  cat "$DHCP_LOG" >&2 || true
+  exit 1
+}
+
+ip netns exec "$DHC" ip -4 -o addr show dev eth0 | grep -Fq "inet $LEASE_IP/24" || {
+  echo "FALLO: dhclient no aplicó la dirección recibida" >&2
+  exit 1
+}
+ip netns exec "$DHC" ip route show default | grep -Fq "via $LEASE_ROUTER" || {
+  echo "FALLO: dhclient no aplicó la ruta predeterminada" >&2
+  exit 1
+}
 ip netns exec "$DHC" dig +time=2 +tries=1 +short @10.30.0.1 app.lab.test | grep -qx '10.30.0.10'
 
 cleanup
