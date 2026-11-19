@@ -85,10 +85,10 @@ function aplicarColoresFuncionales(nodos) {
     { tipo: "dispositivo", re: /router|switch|gateway|host|cliente|firewall|core|dist|access|\bpe\b|\bce\b|\br[0-9]+\b|\bsw[0-9]+\b|veth|bridge|equipo|nodo|internet|wan|lan|vlan|vpc|subred|segmento|nube|cloud|sede|sucursal|zona/i }
   ];
   var tonos = {
-    dispositivo: oscuro ? "rgba(139,92,246,.18)" : "rgba(91,24,204,.09)",
-    servicio: oscuro ? "rgba(99,102,241,.22)" : "rgba(41,24,122,.09)",
-    proceso: oscuro ? "rgba(139,92,246,.22)" : "rgba(139,92,246,.12)",
-    decision: oscuro ? "rgba(203,188,255,.20)" : "rgba(203,188,255,.34)"
+  dispositivo: oscuro ? "#263B61" : "#DCEBFF",
+  servicio: oscuro ? "#174B3B" : "#DDF5E8",
+  proceso: oscuro ? "#634514" : "#FFF0CC",
+  decision: oscuro ? "#633044" : "#FCE1E8"
   };
   nodos.forEach(function (contenedor) {
     contenedor.querySelectorAll("g.node").forEach(function (node) {
