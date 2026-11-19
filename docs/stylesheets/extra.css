@@ -1145,3 +1145,72 @@ body[data-md-color-scheme="slate"] {
   fill: var(--color-peligro-critico) !important;
   stroke: var(--color-peligro-critico) !important;
 }
+
+
+/* PALETA FUNCIONAL OFICIAL */
+:root {
+  --color-nota-aviso: #2196D2;
+  --color-advertencia: #F59E0B;
+  --color-dato-tecnico: #10B981;
+  --color-peligro-critico: #EF4444;
+}
+
+.mermaid .node.nota rect,
+.mermaid .node.aviso rect {
+  fill: var(--color-nota-aviso) !important;
+  stroke: var(--color-nota-aviso) !important;
+}
+
+.mermaid .node.advertencia rect {
+  fill: var(--color-advertencia) !important;
+  stroke: var(--color-advertencia) !important;
+}
+
+.mermaid .node.dato-tecnico rect {
+  fill: var(--color-dato-tecnico) !important;
+  stroke: var(--color-dato-tecnico) !important;
+}
+
+.mermaid .node.peligro rect,
+.mermaid .node.error-critico rect {
+  fill: var(--color-peligro-critico) !important;
+  stroke: var(--color-peligro-critico) !important;
+}
+
+/* PALETA FUNCIONAL MERMAID */
+.md-typeset .mermaid g.node[data-funcion="aviso"] rect,
+.md-typeset .mermaid g.node[data-funcion="aviso"] polygon,
+.md-typeset .mermaid g.node[data-funcion="aviso"] circle {
+  fill: #2196D2 !important;
+  stroke: #2196D2 !important;
+}
+
+.md-typeset .mermaid g.node[data-funcion="advertencia"] rect,
+.md-typeset .mermaid g.node[data-funcion="advertencia"] polygon,
+.md-typeset .mermaid g.node[data-funcion="advertencia"] circle {
+  fill: #F59E0B !important;
+  stroke: #F59E0B !important;
+}
+
+.md-typeset .mermaid g.node[data-funcion="tecnico"] rect,
+.md-typeset .mermaid g.node[data-funcion="tecnico"] polygon,
+.md-typeset .mermaid g.node[data-funcion="tecnico"] circle {
+  fill: #10B981 !important;
+  stroke: #10B981 !important;
+}
+
+.md-typeset .mermaid g.node[data-funcion="peligro"] rect,
+.md-typeset .mermaid g.node[data-funcion="peligro"] polygon,
+.md-typeset .mermaid g.node[data-funcion="peligro"] circle {
+  fill: #EF4444 !important;
+  stroke: #EF4444 !important;
+}
+
+.md-typeset .mermaid .edgePath path,
+.md-typeset .mermaid .flowchart-link {
+  stroke: #64748B;
+}
+
+.md-typeset .mermaid .edgeLabel {
+  background: transparent;
+}
