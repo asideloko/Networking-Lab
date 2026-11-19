@@ -201,6 +201,10 @@ ip netns exec cliente1 curl -I http://google.com
     Un namespace aísla la **red**, no el sistema de archivos: dentro de él se ve el `/etc/resolv.conf` **del host**, que en muchas distribuciones apunta a `127.0.0.53` (*systemd-resolved*). Esa dirección no existe en el namespace (su `127.0.0.1` es otro), así que `nslookup` o `curl` por nombre pueden fallar aunque `ping 8.8.8.8` funcione. **No** escribas en `/etc/resolv.conf`: sería el del host. En su lugar, da a cada namespace su propio archivo; `ip netns exec` lo monta como `/etc/resolv.conf` solo dentro de ese namespace:
 
     ```bash
+    # Anota cuáles existían antes: la reversión borra solo los que crea este laboratorio
+    for ns in cliente1 cliente2; do
+      [ -e /etc/netns/$ns ] && echo "$ns" >> /tmp/lab02-netns.preexistente
+    done
     sudo mkdir -p /etc/netns/cliente1 /etc/netns/cliente2
     echo 'nameserver 8.8.8.8' | sudo tee /etc/netns/cliente1/resolv.conf /etc/netns/cliente2/resolv.conf
     ```
@@ -396,7 +400,11 @@ iptables -D FORWARD -i eth0 -o veth-host -m conntrack --ctstate RELATED,ESTABLIS
 # 3. Enlace virtual y namespaces del laboratorio
 ip link del veth-host 2>/dev/null || true
 for ns in cliente1 cliente2 router; do ip netns del $ns 2>/dev/null || true; done
-rm -rf /etc/netns/cliente1 /etc/netns/cliente2
+# Archivos DNS por namespace: solo los que creó este laboratorio
+for ns in cliente1 cliente2; do
+  grep -qx "$ns" /tmp/lab02-netns.preexistente 2>/dev/null || rm -rf /etc/netns/$ns
+done
+rm -f /tmp/lab02-netns.preexistente
 ```
 
 Si tu equipo ya tenía `ip_forward=1`, el paso 2 lo deja en 1, que es su valor original. Si borraste `/tmp/lab02-ip_forward.orig` o abriste otra sesión, consulta el valor que anotaste antes de empezar. Comprueba el resultado con `iptables -t nat -S POSTROUTING` y `sysctl net.ipv4.ip_forward`.

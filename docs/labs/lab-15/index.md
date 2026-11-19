@@ -74,21 +74,21 @@ Tres ideas para leerlo: (1) la **única salida a Internet** es la WAN de R1 (R2 
 
 ### Paso 0: Limpiar y preparar
 
-Elimina **solo los namespaces de los laboratorios anteriores, por nombre** (un bucle que borrara todos los de `ip netns list` afectaría también a otros entornos de tu equipo):
+Elimina **solo los namespaces de los laboratorios anteriores, por nombre** (un bucle que borrara todos los de `ip netns list` afectaría también a otros entornos de tu equipo). Estos nombres (`R1`, `R2`, `host1`…) se reutilizan en toda la serie: si tu equipo tiene un entorno propio con alguno de ellos, **no continúes**; el bloque siguiente muestra cuáles existen y pide confirmación antes de borrar.
 
 ```bash
-for ns in cliente1 cliente2 cliente3 cliente4 router switch \
-          ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 \
-          R1 R2 R3 clienteSede clienteSucA clienteSucB \
-          servidorDNS servidorDHCP clienteDHCP \
-          firewall servidorWeb servidorDNS_PUB servidorInterno VPN_GW clienteVPN \
-          PE1 PE2 PE3 P1 P2 P3 host1 host2 host3 \
-          Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin \
-          OnPremise AppServer DBServer AWS_VPC EC2_Server RDS_Server ZTNA_Broker IDP User1 User2 NOC SIEM \
-          Router Host1 Host2 ServidorDMZ SWsrv fin ven ges srv suc; do
-  sudo ip netns del $ns 2>/dev/null || true
-done
-sudo ip link del br-wan 2>/dev/null || true
+NS_SERIE="cliente1 cliente2 cliente3 cliente4 router switch ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 R1 R2 R3 clienteSede clienteSucA clienteSucB servidorDNS servidorDHCP clienteDHCP firewall servidorWeb servidorDNS_PUB servidorInterno VPN_GW clienteVPN PE1 PE2 PE3 P1 P2 P3 host1 host2 host3 Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin OnPremise AppServer DBServer AWS_VPC EC2_Server RDS_Server ZTNA_Broker IDP User1 User2 NOC SIEM Router Host1 Host2 ServidorDMZ SWsrv fin ven ges srv suc"
+
+# Muestra cuáles de esos namespaces existen ahora mismo
+EXISTENTES=$(ip netns list | awk '{print $1}' | grep -xF -f <(echo $NS_SERIE | tr ' ' '\n'))
+echo "Se eliminarán: ${EXISTENTES:-(ninguno)}"
+read -r -p "¿Son todos de laboratorios anteriores? (s/N) " R
+if [ "$R" = s ]; then
+  for ns in $EXISTENTES; do sudo ip netns del $ns 2>/dev/null || true; done
+  sudo ip link del br-wan 2>/dev/null || true
+else
+  echo "Cancelado: renombra tus namespaces o usa una máquina virtual limpia"
+fi
 sudo apt-get install -y frr keepalived dnsmasq-base isc-dhcp-client nftables netcat-openbsd
 
 for ns in R1 R2 SWsrv fin ven ges srv suc; do sudo ip netns add $ns; done
@@ -104,8 +104,15 @@ enlace() {
   sudo ip netns exec $4 ip addr add $6 dev $5
   sudo ip netns exec $4 ip link set $5 up
 }
-mkdir -p /tmp/lab15
+# Directorio de trabajo del laboratorio: no se reutiliza uno ajeno
+if [ -e /tmp/lab15 ]; then
+  echo "/tmp/lab15 ya existe: revísalo, muévelo o bórralo tú antes de continuar"
+else
+  mkdir /tmp/lab15
+fi
 ```
+
+Si cancelaste la confirmación o `/tmp/lab15` ya existía, **detente aquí**: los bloques siguientes asumen un entorno limpio.
 
 ## 15.1 Configuración de red básica
 
@@ -707,6 +714,9 @@ A diferencia del resto del libro, estas órdenes actúan sobre el **host** (`sys
 dmesg | grep -i neighbour
 ip neigh show | wc -l
 sysctl net.ipv4.neigh.default.gc_thresh3
+# Guarda los valores originales: la limpieza los restaura
+sysctl -n net.ipv4.neigh.default.gc_thresh2 > /tmp/lab15/gc_thresh2.orig
+sysctl -n net.ipv4.neigh.default.gc_thresh3 > /tmp/lab15/gc_thresh3.orig
 sudo sysctl -w net.ipv4.neigh.default.gc_thresh3=8192
 sudo sysctl -w net.ipv4.neigh.default.gc_thresh2=4096
 # ⚠ CAMBIO PERSISTENTE EN EL HOST: sobrevive a reinicios (reversión en «Limpieza del laboratorio»)
@@ -805,6 +815,10 @@ done
 # Archivos persistentes del caso ARP: solo si los creó este laboratorio
 [ -f /tmp/lab15/creado-99-arp ] && sudo rm -f /etc/sysctl.d/99-arp.conf && sudo sysctl --system
 [ -f /tmp/lab15/creado-check_arp ] && sudo rm -f /usr/local/bin/check_arp.sh
+# Restaura los umbrales ARP originales
+for n in 2 3; do
+  [ -f /tmp/lab15/gc_thresh$n.orig ] && sudo sysctl -w net.ipv4.neigh.default.gc_thresh$n="$(cat /tmp/lab15/gc_thresh$n.orig)"
+done
 sudo rm -rf /tmp/lab15
 sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true   # ajusta eth0
 # Solo si ejecutaste el bloque conceptual de Open vSwitch:
@@ -819,7 +833,7 @@ sudo ovs-vsctl --if-exists del-br ovs-sw
 | Regla `MASQUERADE` del host | La línea `iptables -t nat -D …` de arriba |
 | Interfaz `veth-wan-r1` | La línea `ip link del veth-wan-r1` de arriba |
 | **Persistente:** `/etc/sysctl.d/99-arp.conf` (caso de agotamiento ARP) | Lo elimina el bloque de limpieza, solo si lo creó el laboratorio (si ya existía, no se toca) |
-| `gc_thresh2` y `gc_thresh3` cambiados con `sysctl -w` | Se restauran al reiniciar o con `sudo sysctl --system` tras eliminar el archivo; si no, vuelve a escribir los valores que anotaste |
+| `gc_thresh2` y `gc_thresh3` cambiados con `sysctl -w` | Los restaura el bloque de limpieza con los valores guardados en `/tmp/lab15/gc_thresh2.orig` y `gc_thresh3.orig` |
 | `/usr/local/bin/check_arp.sh` (si lo creó el laboratorio) | Lo elimina el bloque de limpieza, solo si lo creó el laboratorio |
 
 Comprueba al final: `sysctl net.ipv4.ip_forward`, `iptables -t nat -S POSTROUTING` y `ls /etc/sysctl.d/`.

@@ -8,7 +8,7 @@ hide:
 
 <div class="sx-hero"><p><img alt="SecOpsMX" class="sx-hero__logo off-glb" src="assets/logo.png"/></p><h1 id="networking-lab">NETWORKING Lab</h1><p class="sx-hero__sub">Laboratorios de explicación<br/>y simulación de redes.</p><p class="sx-hero__lead">Material práctico complementario del libro NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico.</p><p class="sx-hero__cta"><a class="md-button md-button--primary" href="labs/lab-01/index.html">Comenzar por el laboratorio 01</a><a class="md-button" href="https://leanpub.com/networking-fundamentos">Obtener el libro</a></p><p class="sx-hero__meta">Material complementario · Guillermo Castillo · SecOpsMX</p></div>
 
-<div class="sx-stats"><div><b>15</b><span>laboratorios</span></div><div><b>41</b><span>diagramas</span></div><div><b>267</b><span>bloques de comandos</span></div></div>
+<div class="sx-stats"><div><b>15</b><span>laboratorios</span></div><div><b>41</b><span>diagramas</span></div><div><b>275</b><span>bloques de comandos</span></div></div>
 
 Cada laboratorio presenta **escenarios ilustrativos** para comprender protocolos, tecnologías, arquitecturas y procesos de comunicación, y lleva la teoría a la terminal mediante comandos de demostración.
 
