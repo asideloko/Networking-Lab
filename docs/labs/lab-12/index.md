@@ -82,7 +82,7 @@ for ns in cliente1 cliente2 cliente3 cliente4 router switch \
           Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin; do
   sudo ip netns del $ns 2>/dev/null || true
 done
-ip -4 -o addr show dev br-wan 2>/dev/null | grep -q '192\.168\.100\.2/24' && sudo ip link del br-wan   # solo el bridge de esta serie
+[ "$(cat /sys/class/net/br-wan/ifalias 2>/dev/null)" = networking-lab ] && ip -4 -o addr show dev br-wan | grep -q '192\.168\.100\.2/24' && sudo ip link del br-wan   # solo el bridge de esta serie (marca + dirección)
 ```
 
 ### Paso 1: Crear namespaces y la función auxiliar

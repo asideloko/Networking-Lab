@@ -164,6 +164,7 @@ El host hace de "Internet". Su lado de la WAN será un bridge (`br-wan`) para po
 sudo ip link add br-wan type bridge
 sudo ip link set br-wan up
 sudo ip addr add 192.168.100.2/24 dev br-wan
+sudo ip link set br-wan alias networking-lab   # marca: los laboratorios 10 a 15 solo eliminan un br-wan con esta marca
 
 # Enlace firewall <-> Internet
 sudo ip link add veth-fw-wan type veth peer name veth-wan-fw
