@@ -33,19 +33,25 @@ document$.subscribe(function () {
   renderMermaid();
 });
 
-// ---- Mermaid: se dibuja desde el código fuente y se vuelve a dibujar al cambiar el tema ----
+// ---- Mermaid: cuatro tonos institucionales, fondo transparente y adaptación claro/oscuro ----
 function mermaidTema() {
   var oscuro = document.body.getAttribute("data-md-color-scheme") === "slate";
-  return oscuro ? {
-    background: "#1e1e1e", primaryColor: "#2a2a2a", primaryTextColor: "#ffffff", primaryBorderColor: "#7c4dd6",
-    lineColor: "#c9b8ee", secondaryColor: "#2a2a2a", tertiaryColor: "#1e1e1e", clusterBkg: "#1e1e1e",
-    clusterBorder: "#7c4dd6", edgeLabelBackground: "#1e1e1e", textColor: "#e5e5e5"
-  } : {
-    background: "#ffffff", primaryColor: "#ede7fa", primaryTextColor: "#181818", primaryBorderColor: "#5b18cc",
-    lineColor: "#5b18cc", secondaryColor: "#f5f5f5", tertiaryColor: "#ffffff", clusterBkg: "#faf8ff",
-    clusterBorder: "#5b18cc", edgeLabelBackground: "#ffffff", textColor: "#181818"
+  var css = getComputedStyle(document.documentElement);
+  var color = function (name, fallback) { return css.getPropertyValue(name).trim() || fallback; };
+  var violeta = color("--cv-violeta", "#5b18cc");
+  var indigo = color("--cv-indigo", "#29187a");
+  var acento = color("--cv-acento", "#8b5cf6");
+  var lila = color("--cv-lila", "#cbbcff");
+  var tinta = oscuro ? "#e8e6fa" : "#14142b";
+  return {
+    background: "transparent", primaryColor: "transparent", secondaryColor: "transparent",
+    tertiaryColor: "transparent", clusterBkg: "transparent", edgeLabelBackground: "transparent",
+    primaryTextColor: tinta, textColor: tinta, lineColor: oscuro ? lila : indigo,
+    primaryBorderColor: violeta, clusterBorder: oscuro ? acento : violeta,
+    fontFamily: "Chakra Petch, sans-serif"
   };
 }
+
 function renderMermaid() {
   if (typeof mermaid === "undefined") return;
   var nodos = document.querySelectorAll(".md-typeset div.mermaid");
@@ -54,11 +60,63 @@ function renderMermaid() {
     if (!n.dataset.fuente) n.dataset.fuente = n.textContent;
     else { n.textContent = n.dataset.fuente; n.removeAttribute("data-processed"); }
   });
-  mermaid.initialize({
-    startOnLoad: false, securityLevel: "loose", theme: "base",
-    themeVariables: Object.assign({ fontFamily: "Chakra Petch, sans-serif" }, mermaidTema())
-  });
-  mermaid.run({ nodes: nodos });
+  mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: "base", themeVariables: mermaidTema() });
+  mermaid.run({ nodes: nodos }).then(function () { aplicarColoresFuncionales(nodos); });
 }
+
+function aplicarColoresFuncionales(nodos) {
+  var oscuro = document.body.getAttribute("data-md-color-scheme") === "slate";
+  var css = getComputedStyle(document.documentElement);
+  var color = function (name, fallback) { return css.getPropertyValue(name).trim() || fallback; };
+  var paleta = {
+    dispositivo: color("--cv-violeta", "#5b18cc"),
+    servicio: color("--cv-indigo", "#29187a"),
+    proceso: color("--cv-acento", "#8b5cf6"),
+    decision: oscuro ? color("--cv-lila", "#cbbcff") : color("--cv-violeta", "#5b18cc"),
+    linea: oscuro ? color("--cv-lila", "#cbbcff") : color("--cv-indigo", "#29187a"),
+    grupo: oscuro ? color("--cv-acento", "#8b5cf6") : color("--cv-violeta", "#5b18cc"),
+    texto: oscuro ? "#e8e6fa" : "#14142b"
+  };
+  var reglas = [
+    { re: /\?|¿|decisi[oó]n|selecci[oó]n|condici[oó]n|\b(si|sí|no|verdadero|falso)\b|\b(cumple|existe|alcanza|responde|disponible)\?/i, stroke: paleta.decision },
+    { re: /dhcp|dns|ntp|siem|syslog|snmp|http|https|servicio|servidor|database|base de datos|aplicaci[oó]n|broker|idp|monitor|noc/i, stroke: paleta.servicio },
+    { re: /paquete|trama|encapsul|proceso|input|output|forward|prerouting|postrouting|discover|offer|request|ack|syn|push|swap|pop|consulta|respuesta|flujo|negociaci[oó]n|\bacl\b|iptables|nftables|regla|pol[ií]tica|permitir|denegar|bloque/i, stroke: paleta.proceso },
+    { re: /router|switch|gateway|host|cliente|firewall|core|dist|access|pe\b|ce\b|r[0-9]+\b|sw[0-9]+\b|veth|bridge|equipo|nodo|internet|wan|lan|vlan|vpc|subred|red |segmento|nube|cloud|sede|sucursal|zona/i, stroke: paleta.dispositivo }
+  ];
+  nodos.forEach(function (contenedor) {
+    contenedor.querySelectorAll("g.node").forEach(function (node) {
+      var label = (node.textContent || "").replace(/\s+/g, " ").trim();
+      var regla = reglas.find(function (r) { return r.re.test(label); });
+      var stroke = regla ? regla.stroke : paleta.dispositivo;
+      node.querySelectorAll("rect, polygon, path, circle, ellipse").forEach(function (shape) {
+        if (shape.closest("defs")) return;
+        shape.style.fill = "transparent";
+        shape.style.fillOpacity = "0";
+        shape.style.stroke = stroke;
+        shape.style.strokeWidth = "1.9px";
+      });
+      node.querySelectorAll("text, tspan").forEach(function (el) {
+        el.style.fill = paleta.texto;
+        el.style.fontWeight = "600";
+      });
+    });
+    contenedor.querySelectorAll(".edgePath path.path, .flowchart-link, .messageLine0, .messageLine1").forEach(function (line) {
+      line.style.stroke = paleta.linea;
+      line.style.strokeWidth = "1.8px";
+      line.style.fill = "none";
+    });
+    contenedor.querySelectorAll(".arrowheadPath").forEach(function (arrow) {
+      arrow.style.fill = paleta.linea;
+      arrow.style.stroke = paleta.linea;
+    });
+    contenedor.querySelectorAll(".cluster rect").forEach(function (shape) {
+      shape.style.fill = "transparent";
+      shape.style.fillOpacity = "0";
+      shape.style.stroke = paleta.grupo;
+      shape.style.strokeWidth = "1.6px";
+    });
+  });
+}
+
 new MutationObserver(function () { renderMermaid(); })
   .observe(document.body, { attributes: true, attributeFilter: ["data-md-color-scheme"] });

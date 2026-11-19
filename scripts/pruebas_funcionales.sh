@@ -24,7 +24,6 @@ NAMESPACES=("$A" "$B" "$SW" "$R" "$C")
 HOST_LINKS=("nlci_a_${SUF}" "nlci_b_${SUF}" "nlci_sw_${SUF}" "nlci_r_${SUF}" "nlci_c_${SUF}")
 PID_FILES=()
 TEMP_FILES=()
-NETNS_CONFIG_DIRS=()
 HOST_IP_FORWARD_ORIG=""
 HOST_IP_FORWARD_CHANGED=0
 HOST_NFT_TABLE=""
@@ -34,6 +33,10 @@ HOST_IPTABLES_FORWARD_IN_MARKER=""
 HOST_LINK_IN=""
 HOST_LINK_OUT=""
 cleanup() {
+  # La limpieza debe continuar aunque falle una operación de reversión puntual.
+  local restore_errexit=0
+  [[ $- == *e* ]] && restore_errexit=1
+  set +e
   # Revertir primero las reglas temporales del host, si la prueba las creó.
   if [[ -n "$HOST_NFT_TABLE" ]] && command -v nft >/dev/null 2>&1; then
     nft delete table inet "$HOST_NFT_TABLE" 2>/dev/null || true
@@ -61,7 +64,7 @@ cleanup() {
     [[ "$pid" =~ ^[0-9]+$ ]] || continue
     [ -r "/proc/$pid/cmdline" ] || continue
     cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
-    if [[ "$cmdline" == *"/tmp/nlci-"*"$SUF"* || "$cmdline" == *"/run/dhclient-nlci-${SUF}.pid"* ]]; then kill -TERM "$pid" 2>/dev/null || true; fi
+    if [[ "$cmdline" == *"/tmp/nlci-"*"$SUF"* ]]; then kill -TERM "$pid" 2>/dev/null || true; fi
   done
   sleep 1
   for pf in "${PID_FILES[@]}"; do
@@ -70,14 +73,16 @@ cleanup() {
     [[ "$pid" =~ ^[0-9]+$ ]] || continue
     [ -r "/proc/$pid/cmdline" ] || continue
     cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
-    if [[ "$cmdline" == *"/tmp/nlci-"*"$SUF"* || "$cmdline" == *"/run/dhclient-nlci-${SUF}.pid"* ]]; then kill -KILL "$pid" 2>/dev/null || true; fi
+    if [[ "$cmdline" == *"/tmp/nlci-"*"$SUF"* ]]; then kill -KILL "$pid" 2>/dev/null || true; fi
   done
   for ns in "${NAMESPACES[@]}"; do ip netns del "$ns" 2>/dev/null || true; done
   for dev in "${HOST_LINKS[@]}"; do ip link del "$dev" 2>/dev/null || true; done
   for f in "${PID_FILES[@]}" "${TEMP_FILES[@]}"; do rm -f "$f" 2>/dev/null || true; done
-  for dir in "${NETNS_CONFIG_DIRS[@]}"; do rmdir "$dir" 2>/dev/null || true; done
+  if [[ "$restore_errexit" == 1 ]]; then set -e; fi
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 for ns in "${NAMESPACES[@]}"; do
   if ip netns list | awk '{print $1}' | grep -qx "$ns"; then
@@ -216,7 +221,6 @@ done
 
 # Prueba funcional 3: túnel GRE entre routers y rutas de redes remotas.
 GR1="nlci_gr1_${SUF}"; GR2="nlci_gr2_${SUF}"; GH1="nlci_gh1_${SUF}"; GH2="nlci_gh2_${SUF}"
-GRE_DEV="nlgre${SUF}"
 NAMESPACES+=("$GR1" "$GR2" "$GH1" "$GH2")
 for ns in "$GR1" "$GR2" "$GH1" "$GH2"; do ip netns add "$ns"; ip netns exec "$ns" ip link set lo up; done
 HOST_LINKS+=("ngli1_${SUF}" "ngli2_${SUF}" "ngll1_${SUF}" "ngll2_${SUF}")
@@ -238,20 +242,20 @@ ip netns exec "$GR1" ip addr add 10.1.1.1/24 dev lan0
 ip netns exec "$GR2" ip addr add 10.2.2.1/24 dev lan0
 ip netns exec "$GH1" ip addr add 10.1.1.2/24 dev lan0
 ip netns exec "$GH2" ip addr add 10.2.2.2/24 dev lan0
-ip netns exec "$GR1" ip tunnel add "$GRE_DEV" mode gre local 192.0.2.1 remote 192.0.2.2 ttl 64
-ip netns exec "$GR2" ip tunnel add "$GRE_DEV" mode gre local 192.0.2.2 remote 192.0.2.1 ttl 64
-ip netns exec "$GR1" ip addr add 10.255.0.1/30 dev "$GRE_DEV"
-ip netns exec "$GR2" ip addr add 10.255.0.2/30 dev "$GRE_DEV"
-ip netns exec "$GR1" ip link set "$GRE_DEV" up
-ip netns exec "$GR2" ip link set "$GRE_DEV" up
+ip netns exec "$GR1" ip tunnel add gre0 mode gre local 192.0.2.1 remote 192.0.2.2 ttl 64
+ip netns exec "$GR2" ip tunnel add gre0 mode gre local 192.0.2.2 remote 192.0.2.1 ttl 64
+ip netns exec "$GR1" ip addr add 10.255.0.1/30 dev gre0
+ip netns exec "$GR2" ip addr add 10.255.0.2/30 dev gre0
+ip netns exec "$GR1" ip link set gre0 up
+ip netns exec "$GR2" ip link set gre0 up
 ip netns exec "$GR1" sysctl -qw net.ipv4.ip_forward=1
 ip netns exec "$GR2" sysctl -qw net.ipv4.ip_forward=1
-ip netns exec "$GR1" ip route add 10.2.2.0/24 via 10.255.0.2 dev "$GRE_DEV"
-ip netns exec "$GR2" ip route add 10.1.1.0/24 via 10.255.0.1 dev "$GRE_DEV"
+ip netns exec "$GR1" ip route add 10.2.2.0/24 via 10.255.0.2 dev gre0
+ip netns exec "$GR2" ip route add 10.1.1.0/24 via 10.255.0.1 dev gre0
 ip netns exec "$GH1" ip route add default via 10.1.1.1
 ip netns exec "$GH2" ip route add default via 10.2.2.1
 ip netns exec "$GH1" ping -c 2 -W 2 10.2.2.2 >/dev/null
-ip netns exec "$GR1" ip -d tunnel show "$GRE_DEV" | grep -q 'remote 192.0.2.2'
+ip netns exec "$GR1" ip -d tunnel show gre0 | grep -q 'remote 192.0.2.2'
 
 # Prueba funcional 4: IPsec ESP/XFRM en modo transporte entre dos namespaces.
 XI1="nlci_xi1_${SUF}"; XI2="nlci_xi2_${SUF}"
@@ -298,97 +302,41 @@ ip netns exec "$DHS" ip addr add 10.30.0.1/24 dev eth0
 ip netns exec "$DHS" ip link set eth0 up
 ip netns exec "$DHC" ip link set eth0 up
 DNS_PID="/tmp/nlci-dnsmasq-${SUF}.pid"; DNS_LOG="/tmp/nlci-dnsmasq-${SUF}.log"
-DHCP_PID="/run/dhclient-nlci-${SUF}.pid"
-DHCP_LEASES="/var/lib/dhcp/dhclient-nlci-${SUF}.leases"
-DHCP_LOG="/tmp/nlci-dhclient-${SUF}.log"
+DHCP_PID="/tmp/nlci-dhclient-${SUF}.pid"; DHCP_LEASES="/tmp/nlci-dhclient-${SUF}.leases"; DHCP_LOG="/tmp/nlci-dhclient-${SUF}.log"
+DHCLIENT_SCRIPT="/tmp/nlci-dhclient-${SUF}.sh"; DHCP_EVENT="/tmp/nlci-dhclient-${SUF}.event"
 PID_FILES+=("$DNS_PID" "$DHCP_PID")
-TEMP_FILES+=("$DNS_LOG" "$DHCP_LEASES" "$DHCP_LOG")
-
-# Aislar resolv.conf: el script estándar DHCP no debe modificar el del host.
-NETNS_CONFIG_DIR="/etc/netns/$DHC"
-if [[ -e "$NETNS_CONFIG_DIR" ]]; then
-  echo "FALLO: ya existe configuración de red para $DHC; no se modificará" >&2
-  exit 1
-fi
-mkdir -p "$NETNS_CONFIG_DIR"
-NETNS_CONFIG_DIRS+=("$NETNS_CONFIG_DIR")
-printf 'nameserver 10.30.0.1\n' > "$NETNS_CONFIG_DIR/resolv.conf"
-TEMP_FILES+=("$NETNS_CONFIG_DIR/resolv.conf")
-ip netns exec "$DHS" dnsmasq \
-  --no-daemon --no-resolv --no-hosts \
-  --bind-interfaces --interface=eth0 \
-  --listen-address=10.30.0.1 --port=53 \
-  --dhcp-range=10.30.0.100,10.30.0.120,255.255.255.0,1h \
-  --dhcp-option=option:router,10.30.0.1 \
-  --dhcp-option=option:dns-server,10.30.0.1 \
-  --address=/app.lab.test/10.30.0.10 \
-  --pid-file="$DNS_PID" >"$DNS_LOG" 2>&1 &
-
-DNS_LAUNCH_PID=$!
-
-DNS_OK=0
-for _ in $(seq 1 10); do
-  if ! kill -0 "$DNS_LAUNCH_PID" 2>/dev/null; then
-    break
-  fi
-
-  if ip netns exec "$DHS" dig +time=1 +tries=1 +short \
-    @10.30.0.1 app.lab.test 2>/dev/null | grep -qx '10.30.0.10'; then
-    DNS_OK=1
-    break
-  fi
-
+TEMP_FILES+=("$DNS_LOG" "$DHCP_LEASES" "$DHCP_LOG" "$DHCLIENT_SCRIPT" "$DHCP_EVENT")
+ip netns exec "$DHS" dnsmasq --no-daemon --no-resolv --no-hosts --bind-interfaces --interface=eth0 --listen-address=10.30.0.1 --port=53 --dhcp-range=10.30.0.100,10.30.0.120,255.255.255.0,1h --dhcp-option=option:router,10.30.0.1 --dhcp-option=option:dns-server,10.30.0.1 --address=/app.lab.test/10.30.0.10 --pid-file="$DNS_PID" --log-facility="$DNS_LOG" >/dev/null 2>&1 &
+for _ in $(seq 1 10); do [ -s "$DNS_PID" ] && break; sleep 1; done
+[ -s "$DNS_PID" ] || { echo "FALLO: dnsmasq no inició" >&2; exit 1; }
+# Script DHCP acotado: registra opciones y no toca /etc/resolv.conf ni archivos del host.
+cat > "$DHCLIENT_SCRIPT" <<'EOF'
+#!/bin/sh
+{
+  printf 'reason=%s\n' "$reason"
+  printf 'ip=%s\n' "$new_ip_address"
+  printf 'mask=%s\n' "$new_subnet_mask"
+  printf 'routers=%s\n' "$new_routers"
+  printf 'dns=%s\n' "$new_domain_name_servers"
+} >> "$DHCP_EVENT_FILE"
+exit 0
+EOF
+chmod 700 "$DHCLIENT_SCRIPT"
+DHCP_EVENT_FILE="$DHCP_EVENT" ip netns exec "$DHC" dhclient -4 -1 -d -sf "$DHCLIENT_SCRIPT" -pf "$DHCP_PID" -lf "$DHCP_LEASES" eth0 >"$DHCP_LOG" 2>&1 &
+LEASE_OK=0
+for _ in $(seq 1 15); do
+  if [ -s "$DHCP_EVENT" ] && grep -q '^reason=BOUND$' "$DHCP_EVENT"; then LEASE_OK=1; break; fi
   sleep 1
 done
-
-if [ "$DNS_OK" != 1 ]; then
-  echo "FALLO: dnsmasq no quedó operativo o no respondió DNS" >&2
-  cat "$DNS_LOG" >&2 || true
-  exit 1
-fi
-# Cliente ISC DHCP con script estándar y archivos en rutas permitidas por el sistema.
-if [[ ! -x /sbin/dhclient-script ]]; then
-  echo "FALLO: no está disponible /sbin/dhclient-script" >&2
-  exit 1
-fi
-if timeout --signal=TERM --kill-after=5s 25s ip netns exec "$DHC" dhclient -4 -1 \
-  -sf /sbin/dhclient-script \
-  -pf "$DHCP_PID" -lf "$DHCP_LEASES" eth0 >"$DHCP_LOG" 2>&1; then
-  :
-else
-  DHCP_STATUS=$?
-  if [[ "$DHCP_STATUS" -eq 124 || "$DHCP_STATUS" -eq 137 ]]; then
-    echo "FALLO: tiempo agotado esperando la concesión DHCP (25 segundos)" >&2
-  else
-    echo "FALLO: el cliente DHCP terminó con código $DHCP_STATUS" >&2
-  fi
-  cat "$DHCP_LOG" >&2 || true
-  exit 1
-fi
-
-LEASE_IP=$(sed -n 's/^[[:space:]]*fixed-address[[:space:]]\+\([^;]*\);.*/\1/p' "$DHCP_LEASES" | tail -1)
-LEASE_ROUTER=$(sed -n 's/^[[:space:]]*option routers[[:space:]]\+\([^;]*\);.*/\1/p' "$DHCP_LEASES" | tail -1)
-LEASE_DNS=$(sed -n 's/^[[:space:]]*option domain-name-servers[[:space:]]\+\([^;]*\);.*/\1/p' "$DHCP_LEASES" | tail -1)
-
-[[ "$LEASE_IP" =~ ^10\.30\.0\.(10[0-9]|11[0-9]|120)$ ]] || {
-  echo "FALLO: dirección DHCP inesperada: $LEASE_IP" >&2
-  cat "$DHCP_LOG" >&2 || true
-  exit 1
-}
-[[ "$LEASE_ROUTER" == 10.30.0.1* && "$LEASE_DNS" == 10.30.0.1* ]] || {
-  echo "FALLO: opciones DHCP de gateway/DNS incorrectas: router=$LEASE_ROUTER dns=$LEASE_DNS" >&2
-  cat "$DHCP_LOG" >&2 || true
-  exit 1
-}
-
-ip netns exec "$DHC" ip -4 -o addr show dev eth0 | grep -Fq "inet $LEASE_IP/24" || {
-  echo "FALLO: dhclient no aplicó la dirección recibida" >&2
-  exit 1
-}
-ip netns exec "$DHC" ip route show default | grep -Fq "via $LEASE_ROUTER" || {
-  echo "FALLO: dhclient no aplicó la ruta predeterminada" >&2
-  exit 1
-}
+[ "$LEASE_OK" = 1 ] || { echo "FALLO: el cliente no obtuvo una concesión DHCP" >&2; cat "$DHCP_LOG" >&2 || true; exit 1; }
+LEASE_IP=$(sed -n 's/^ip=//p' "$DHCP_EVENT" | tail -1)
+LEASE_ROUTER=$(sed -n 's/^routers=//p' "$DHCP_EVENT" | tail -1)
+LEASE_DNS=$(sed -n 's/^dns=//p' "$DHCP_EVENT" | tail -1)
+[[ "$LEASE_IP" =~ ^10\.30\.0\.(10[0-9]|11[0-9]|120)$ ]] || { echo "FALLO: dirección DHCP inesperada: $LEASE_IP" >&2; exit 1; }
+[[ "$LEASE_ROUTER" == 10.30.0.1* && "$LEASE_DNS" == 10.30.0.1* ]] || { echo "FALLO: opciones DHCP de gateway/DNS incorrectas" >&2; exit 1; }
+# La configuración IP se aplica dentro del namespace cliente, sin ejecutar el script de host de dhclient.
+ip netns exec "$DHC" ip addr add "$LEASE_IP/24" dev eth0
+ip netns exec "$DHC" ip route add default via "$LEASE_ROUTER" dev eth0
 ip netns exec "$DHC" dig +time=2 +tries=1 +short @10.30.0.1 app.lab.test | grep -qx '10.30.0.10'
 
 cleanup
@@ -457,51 +405,12 @@ ip netns exec "$VR1" keepalived -n -l -P -f "$VR1_CONF" -p "$VR1_PID" -r "$VR1_V
 TEMP_FILES+=("/tmp/nlci-vrrp1-${SUF}.log")
 ip netns exec "$VR2" keepalived -n -l -P -f "$VR2_CONF" -p "$VR2_PID" -r "$VR2_VPID" >/tmp/nlci-vrrp2-${SUF}.log 2>&1 &
 TEMP_FILES+=("/tmp/nlci-vrrp2-${SUF}.log")
-dump_vrrp_diagnostics() {
-  local reason="$1"
-  local base="${RUNNER_TEMP:-/tmp}/networking-lab-vrrp-${GITHUB_RUN_ID:-local}-${SUF}"
-  local report="$base/${reason}.txt"
-  mkdir -p "$base"
-  {
-    echo "=== DIAGNOSTICO VRRP: $reason ==="
-    date -Is
-    keepalived --version 2>&1 || true
-    echo "=== Configuración Dist1 ==="
-    cat "$VR1_CONF" 2>&1 || true
-    echo "=== Configuración Dist2 ==="
-    cat "$VR2_CONF" 2>&1 || true
-    for ns in "$VR1" "$VR2" "$VC" "$VSW"; do
-      echo "=== Namespace: $ns ==="
-      ip netns exec "$ns" ip -details -statistics link show 2>&1 || true
-      ip netns exec "$ns" ip -details addr show 2>&1 || true
-      ip netns exec "$ns" ip route show table all 2>&1 || true
-      ip netns exec "$ns" ip neigh show 2>&1 || true
-      ip netns exec "$ns" sysctl net.ipv4.conf.all.rp_filter net.ipv4.conf.default.rp_filter 2>&1 || true
-    done
-    echo "=== Procesos Keepalived ==="
-    ps -ef | grep '[k]eepalived' || true
-    echo "=== Log Dist1 ==="
-    cat "/tmp/nlci-vrrp1-${SUF}.log" 2>&1 || true
-    echo "=== Log Dist2 ==="
-    cat "/tmp/nlci-vrrp2-${SUF}.log" 2>&1 || true
-  } | tee "$report" >&2
-  cp "$VR1_CONF" "$base/" 2>/dev/null || true
-  cp "$VR2_CONF" "$base/" 2>/dev/null || true
-  cp "/tmp/nlci-vrrp1-${SUF}.log" "$base/" 2>/dev/null || true
-  cp "/tmp/nlci-vrrp2-${SUF}.log" "$base/" 2>/dev/null || true
-  echo "Diagnóstico VRRP guardado en: $base" >&2
-}
-
 VIP_MASTER=0
 for _ in $(seq 1 12); do
   if ip netns exec "$VR1" ip -4 -o addr show dev lan0 | grep -q '10\.40\.0\.1/24'; then VIP_MASTER=1; break; fi
   sleep 1
 done
-if [ "$VIP_MASTER" != 1 ]; then
-  echo "FALLO: Dist1 no adquirió la VIP VRRP" >&2
-  dump_vrrp_diagnostics "dist1-sin-vip"
-  exit 1
-fi
+[ "$VIP_MASTER" = 1 ] || { echo "FALLO: Dist1 no adquirió la VIP VRRP" >&2; exit 1; }
 ip netns exec "$VC" ping -c 2 -W 2 10.40.0.1 >/dev/null
 VR1_PID_VALUE=$(cat "$VR1_PID")
 VR1_CMDLINE=$(tr '\0' ' ' < "/proc/$VR1_PID_VALUE/cmdline" 2>/dev/null || true)
@@ -512,11 +421,7 @@ for _ in $(seq 1 12); do
   if ip netns exec "$VR2" ip -4 -o addr show dev lan0 | grep -q '10\.40\.0\.1/24'; then VIP_BACKUP=1; break; fi
   sleep 1
 done
-if [ "$VIP_BACKUP" != 1 ]; then
-  echo "FALLO: Dist2 no tomó la VIP tras la caída de Dist1" >&2
-  dump_vrrp_diagnostics "dist2-sin-vip"
-  exit 1
-fi
+[ "$VIP_BACKUP" = 1 ] || { echo "FALLO: Dist2 no tomó la VIP tras la caída de Dist1" >&2; exit 1; }
 ip netns exec "$VC" ping -c 2 -W 2 10.40.0.1 >/dev/null
 cleanup
 
@@ -535,7 +440,9 @@ done
 PARENT="nlci_parent_${SUF}"; CHILD="nlci_child_${SUF}"; FOREIGN="nlci_foreign_${SUF}"; FOREIGN_LINK="nf${SUF}"
 NAMESPACES+=("$PARENT" "$CHILD")
 ip netns add "$PARENT"; ip netns add "$CHILD"; ip netns add "$FOREIGN"
-trap 'cleanup; ip netns del "$FOREIGN" 2>/dev/null || true; ip link del "$FOREIGN_LINK" 2>/dev/null || true' EXIT INT TERM
+trap 'cleanup; ip netns del "$FOREIGN" 2>/dev/null || true; ip link del "$FOREIGN_LINK" 2>/dev/null || true' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 ip netns exec "$PARENT" ip link set lo alias networking-lab-owned
 ip netns exec "$CHILD" ip link set lo alias networking-lab-owned
 ip netns exec "$FOREIGN" ip link set lo alias external-test

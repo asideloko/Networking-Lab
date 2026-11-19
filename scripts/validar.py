@@ -43,7 +43,7 @@ for md in sorted(docs.rglob("*.md")):
         errores.append(f"{rel}: falta front matter")
     if sum(1 for l in txt.splitlines() if l.startswith("```")) % 2:
         errores.append(f"{rel}: bloque de código sin cerrar")
-    if rel.parts[0] == "labs" and rel.parts[1].startswith("lab-"):
+    if rel.parts[0] == "02-LABORATORIOS" and rel.parts[1].startswith("lab-"):
         if not re.search(r"^##+ .*?(?:Limpieza|Revertir los cambios del host)", txt, re.M):
             errores.append(f"{rel}: falta una sección explícita de limpieza o reversión")
     for l in sin_codigo(txt):
@@ -59,7 +59,7 @@ for md in sorted(docs.rglob("*.md")):
     # Los cambios del host deben conservar y restaurar el estado previo.
     host_forward = any("sysctl -w net.ipv4.ip_forward=1" in l and "netns exec" not in l
                        for l in sin_codigo_y_bloques(txt))
-    if rel.parts[0] == "labs" and host_forward:
+    if rel.parts[0] == "02-LABORATORIOS" and host_forward:
         if not re.search(r"^##+ (Revertir los cambios del host|.*Limpieza)", txt, re.M):
             errores.append(f"{rel}: modifica ip_forward en el host y no tiene sección de reversión/limpieza")
         guardado = re.search(r"sysctl -n net\.ipv4\.ip_forward[^\n]*(?:>\s*|tee\s+)(/tmp/[^\s]+)", txt)
@@ -74,12 +74,12 @@ for md in sorted(docs.rglob("*.md")):
     # Las reglas NAT del host solo se eliminan si el laboratorio las añadió.
     nat_host = [l for l in sin_codigo_y_bloques(txt)
                 if "iptables -t nat -A POSTROUTING" in l and "netns exec" not in l]
-    if rel.parts[0] == "labs" and nat_host:
+    if rel.parts[0] == "02-LABORATORIOS" and nat_host:
         if not re.search(r"/tmp/[^\s]+host-nat\.added", txt):
             errores.append(f"{rel}: no registra si añadió la regla NAT del host")
 
 # Controles estáticos de seguridad y reversibilidad identificados en la auditoría.
-for md in sorted((docs / "labs").glob("lab-*/index.md")):
+for md in sorted((docs / "02-LABORATORIOS").glob("lab-*/index.md")):
     txt = md.read_text(encoding="utf-8")
     rel = md.relative_to(docs)
 
@@ -132,15 +132,18 @@ checks = {
     "lab-14": ["/tmp/lab14-forward-out.added", "/tmp/lab14-forward-in.added", "networking-lab-lab-14"],
 }
 for lab, required in checks.items():
-    md = docs / "labs" / lab / "index.md"
+    md = docs / "02-LABORATORIOS" / lab / "index.md"
     content = md.read_text(encoding="utf-8")
+    # Los enlaces Markdown no deben invalidar una comprobación de contenido:
+    # [PDP](URL) se compara como PDP, conservando el texto visible.
+    contenido_visible = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", content)
     for token in required:
-        if token not in content:
+        if token not in contenido_visible:
             errores.append(f"{md.relative_to(docs)}: falta control de auditoría: {token}")
 
 # Cada namespace nuevo debe llevar una marca en lo para que la limpieza no actúe por nombre solamente.
 for n in (1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15):
-    md = docs / "labs" / f"lab-{n:02d}" / "index.md"
+    md = docs / "02-LABORATORIOS" / f"lab-{n:02d}" / "index.md"
     content = md.read_text(encoding="utf-8")
     if "ip netns add" in content and not re.search(r"ip link set lo alias networking-lab-(?:owned|lab-\d{2})", content):
         errores.append(f"{md.relative_to(docs)}: crea namespaces sin marca de propiedad")
@@ -163,7 +166,7 @@ except (OSError, tomllib.TOMLDecodeError, AttributeError, TypeError) as exc:
     errores.append(f"zensical.toml: no se pudo validar la navegación: {exc}")
 
 # No debe publicarse un registro interno de auditoría no solicitado.
-if (docs / "referencia" / "auditoria-atendida.md").exists():
+if (docs / "04-REFERENCIA" / "auditoria-atendida.md").exists():
     errores.append("docs/referencia/auditoria-atendida.md: documento interno no solicitado en la documentación pública")
 if "auditoria-atendida.md" in (docs.parent / "zensical.toml").read_text(encoding="utf-8"):
     errores.append("zensical.toml: contiene una entrada de navegación al registro interno de auditoría")

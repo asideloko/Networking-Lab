@@ -18,35 +18,42 @@ dev_addr = "localhost:8000"
 
 nav = [
   { "INICIO" = "index.md" },
-  { "LIBRO" = "https://leanpub.com/networking-fundamentos" },
-  { "LABORATORIOS 1–5" = [
-    { "01 · FUNDAMENTOS DE REDES Y ENCAPSULACIÓN" = "labs/lab-01/index.md" },
-    { "02 · TRANSMISIÓN DE DATOS Y CAPA FÍSICA" = "labs/lab-02/index.md" },
-    { "03 · COMPONENTES DE RED Y CONMUTACIÓN" = "labs/lab-03/index.md" },
-    { "04 · DIRECCIONAMIENTO IP Y SUBREDES" = "labs/lab-04/index.md" },
-    { "05 · CONMUTACIÓN Y SEGMENTACIÓN DE RED" = "labs/lab-05/index.md" },
+  { "01 · LABORATORIOS" = [
+    { "01–05 · FUNDAMENTOS E INFRAESTRUCTURA" = [
+      { "01 · FUNDAMENTOS DE REDES Y ENCAPSULACIÓN" = "02-LABORATORIOS/lab-01/index.md" },
+      { "02 · TRANSMISIÓN DE DATOS Y CAPA FÍSICA" = "02-LABORATORIOS/lab-02/index.md" },
+      { "03 · COMPONENTES DE RED Y CONMUTACIÓN" = "02-LABORATORIOS/lab-03/index.md" },
+      { "04 · DIRECCIONAMIENTO IP Y SUBREDES" = "02-LABORATORIOS/lab-04/index.md" },
+      { "05 · CONMUTACIÓN Y SEGMENTACIÓN DE RED" = "02-LABORATORIOS/lab-05/index.md" },
+    ] },
+    { "06–10 · CONECTIVIDAD, SERVICIOS Y SEGURIDAD" = [
+      { "06 · ENRUTAMIENTO Y CONECTIVIDAD ENTRE REDES" = "02-LABORATORIOS/lab-06/index.md" },
+      { "07 · PROTOCOLOS Y SERVICIOS DE RED" = "02-LABORATORIOS/lab-07/index.md" },
+      { "08 · SEGURIDAD EN REDES" = "02-LABORATORIOS/lab-08/index.md" },
+      { "09 · VPN Y TUNELIZACIÓN" = "02-LABORATORIOS/lab-09/index.md" },
+      { "10 · INFRAESTRUCTURA WAN Y CORE" = "02-LABORATORIOS/lab-10/index.md" },
+    ] },
+    { "11–15 · ARQUITECTURA Y OPERACIÓN" = [
+      { "11 · ARQUITECTURA DE RED EMPRESARIAL" = "02-LABORATORIOS/lab-11/index.md" },
+      { "12 · ARQUITECTURAS MODERNAS DE RED" = "02-LABORATORIOS/lab-12/index.md" },
+      { "13 · MONITOREO Y DIAGNÓSTICO DE REDES" = "02-LABORATORIOS/lab-13/index.md" },
+      { "14 · HERRAMIENTAS LINUX AVANZADAS" = "02-LABORATORIOS/lab-14/index.md" },
+      { "15 · IMPLEMENTACIÓN PRÁCTICA INTEGRAL" = "02-LABORATORIOS/lab-15/index.md" },
+    ] },
   ] },
-  { "LABORATORIOS 6–10" = [
-    { "06 · ENRUTAMIENTO Y CONECTIVIDAD ENTRE REDES" = "labs/lab-06/index.md" },
-    { "07 · PROTOCOLOS Y SERVICIOS DE RED" = "labs/lab-07/index.md" },
-    { "08 · SEGURIDAD EN REDES" = "labs/lab-08/index.md" },
-    { "09 · VPN Y TUNELIZACIÓN" = "labs/lab-09/index.md" },
-    { "10 · INFRAESTRUCTURA WAN Y CORE" = "labs/lab-10/index.md" },
+  { "02 · PROYECTO FINAL" = "03-PROYECTO-FINAL/index.md" },
+  { "03 · REFERENCIA TÉCNICA" = [
+    { "COMPETENCIAS Y CASOS INTEGRADORES" = "04-REFERENCIA/competencias.md" },
+    { "COMPARACIONES CONCEPTUALES" = "04-REFERENCIA/comparaciones.md" },
+    { "MÉTODO DE DIAGNÓSTICO" = "04-REFERENCIA/diagnostico.md" },
+    { "SERVICIOS, PROTOCOLOS Y PUERTOS" = "04-REFERENCIA/servicios-puertos.md" },
+    { "ARQUITECTURA INTEGRAL" = "04-REFERENCIA/arquitectura-integral.md" },
+    { "GLOSARIO" = "04-REFERENCIA/glosario.md" },
   ] },
-  { "LABORATORIOS 11–15" = [
-    { "11 · ARQUITECTURA DE RED EMPRESARIAL" = "labs/lab-11/index.md" },
-    { "12 · ARQUITECTURAS MODERNAS DE RED" = "labs/lab-12/index.md" },
-    { "13 · MONITOREO Y DIAGNÓSTICO DE REDES" = "labs/lab-13/index.md" },
-    { "14 · HERRAMIENTAS LINUX AVANZADAS" = "labs/lab-14/index.md" },
-    { "15 · IMPLEMENTACIÓN PRÁCTICA INTEGRAL" = "labs/lab-15/index.md" },
-  ] },
-  { "REFERENCIA" = [
-    { "SERVICIOS, PROTOCOLOS Y PUERTOS" = "referencia/servicios-puertos.md" },
-    { "COMPARACIONES CONCEPTUALES" = "referencia/comparaciones.md" },
-    { "MÉTODO DE DIAGNÓSTICO" = "referencia/diagnostico.md" },
-    { "ARQUITECTURA INTEGRAL" = "referencia/arquitectura-integral.md" },
-    { "GLOSARIO" = "referencia/glosario.md" },
-    { "COMPETENCIAS Y CASOS INTEGRADORES" = "referencia/competencias.md" },
+  { "04 · ANEXOS Y CONVENCIONES" = [
+    { "GUÍA DE USO" = "05-ANEXOS/guia-de-uso.md" },
+    { "JUSTIFICACIÓN Y CRITERIOS EDITORIALES" = "05-ANEXOS/justificacion-y-criterios.md" },
+    { "ATLAS DE DIAGRAMAS MERMAID" = "05-ANEXOS/atlas-diagramas.md" },
   ] },
 ]
 

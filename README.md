@@ -21,7 +21,7 @@ El objetivo es comprender cómo funcionan las redes, cómo interactúan sus comp
 
 ## Contenido
 
-El entorno está organizado en **15 laboratorios**, distribuidos en tres bloques temáticos.
+El entorno está organizado en **15 laboratorios**, distribuidos en tres bloques temáticos, además de un proyecto final, una sección de referencia técnica y anexos comunes.
 
 ### Laboratorios 01–05 · Fundamentos e infraestructura
 
@@ -187,15 +187,25 @@ Networking-Lab/
 │       └── docs.yml
 │
 ├── docs/
+│   ├── index.md
+│   ├── 02-LABORATORIOS/
+│   │   ├── lab-01/ ... lab-15/
+│   ├── 03-PROYECTO-FINAL/
+│   │   └── index.md
+│   ├── 04-REFERENCIA/
+│   │   ├── competencias.md
+│   │   ├── comparaciones.md
+│   │   ├── diagnostico.md
+│   │   ├── servicios-puertos.md
+│   │   ├── arquitectura-integral.md
+│   │   └── glosario.md
+│   ├── 05-ANEXOS/
+│   │   ├── guia-de-uso.md
+│   │   ├── justificacion-y-criterios.md
+│   │   └── atlas-diagramas.md
 │   ├── assets/
 │   ├── javascripts/
-│   ├── stylesheets/
-│   ├── labs/
-│   │   ├── lab-01/
-│   │   ├── lab-02/
-│   │   ├── ...
-│   │   └── lab-15/
-│   └── index.md
+│   └── stylesheets/
 │
 ├── overrides/
 │   ├── main.html
@@ -232,3 +242,10 @@ Material complementario gratuito del libro NETWORKING. Uso educativo; no se auto
 **Desarrollado por Guillermo Castillo · SecOpsMX**
 
 **NETWORKING Lab** — *Comprender las redes desde sus fundamentos hasta su implementación técnica.*
+
+
+## Referencias visuales y enlaces técnicos
+
+- `docs/05-ANEXOS/atlas-diagramas.md` reúne los diagramas Mermaid de los laboratorios, el proyecto final y las referencias, con descripción y código fuente.
+- `docs/04-REFERENCIA/glosario.md` enlaza términos y acrónimos a RFC, estándares IEEE y documentación oficial. La primera aparición de cada término reconocido también enlaza a su fuente técnica.
+- `docs/stylesheets/extra.css` contiene la identidad visual del proyecto y los estilos de lectura; `docs/javascripts/custom.js` aplica colores semánticos a los nodos Mermaid (infraestructura, procesos, servicios, decisiones y seguridad).

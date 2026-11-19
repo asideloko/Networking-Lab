@@ -305,24 +305,94 @@
 /* --- Admoniciones (notas técnicas) --- */
 .md-typeset .admonition,
 .md-typeset details {
-  border: none;
-  border-left: 4px solid var(--sx-violet-2);
-  border-radius: 0 4px 4px 0;
-  background: var(--sx-card-bg);
+  border-radius: 6px;
   box-shadow: none;
   font-size: 0.78rem;
+  transition: all 0.3s ease;
 }
+
 .md-typeset .admonition-title,
 .md-typeset summary {
-  background: var(--sx-lilac);
-  color: var(--sx-violet);
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
 }
-[data-md-color-scheme="slate"] .md-typeset .admonition-title,
-[data-md-color-scheme="slate"] .md-typeset summary { background: #2a2a2a; color: #ffffff; }
-.md-typeset .admonition-title::before,
-.md-typeset summary::before { background-color: var(--sx-violet-2); }
+
+/* =========================================
+   MODO CLARO (Caja blanca, borde izq color, título color)
+   ========================================= */
+[data-md-color-scheme="default"] .md-typeset .admonition {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb !important; /* Borde gris sutil alrededor */
+  border-left-width: 4px !important;    /* Borde grueso a la izquierda */
+}
+[data-md-color-scheme="default"] .md-typeset .admonition-title {
+  background-color: transparent !important;
+  border-bottom: 1px solid #e5e7eb; /* Línea divisoria sutil */
+}
+[data-md-color-scheme="default"] .md-typeset .admonition p {
+  color: #4b5563 !important; /* Texto gris oscuro legible */
+}
+
+/* =========================================
+   MODO OSCURO (Caja tintada, borde color, título color)
+   ========================================= */
+[data-md-color-scheme="slate"] .md-typeset .admonition {
+  background-color: transparent !important; /* El fondo se define por tipo abajo */
+  border: 1px solid !important;
+  border-left-width: 4px !important;
+}
+[data-md-color-scheme="slate"] .md-typeset .admonition-title {
+  background-color: transparent !important;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+[data-md-color-scheme="slate"] .md-typeset .admonition p {
+  color: #d1d5db !important; /* Texto gris claro legible */
+}
+
+/* =========================================
+   COLORES ESPECÍFICOS Y DISTINCIÓN DE CAJAS
+   ========================================= */
+
+/* 1. NOTA / AVISO (Cian) */
+.md-typeset .admonition.note { border-left-color: #38bdf8 !important; }
+[data-md-color-scheme="default"] .md-typeset .admonition.note { border-left-color: #0284c7 !important; }
+[data-md-color-scheme="slate"] .md-typeset .admonition.note { border-color: rgba(56, 189, 248, 0.3) !important; background-color: rgba(56, 189, 248, 0.1) !important; }
+
+.md-typeset .note > .admonition-title { color: #38bdf8 !important; }
+[data-md-color-scheme="default"] .md-typeset .note > .admonition-title { color: #0284c7 !important; }
+.md-typeset .note > .admonition-title::before { background-color: #38bdf8 !important; }
+[data-md-color-scheme="default"] .md-typeset .note > .admonition-title::before { background-color: #0284c7 !important; }
+
+/* 2. ADVERTENCIA (Ámbar) */
+.md-typeset .admonition.warning { border-left-color: #fbbf24 !important; }
+[data-md-color-scheme="default"] .md-typeset .admonition.warning { border-left-color: #d97706 !important; }
+[data-md-color-scheme="slate"] .md-typeset .admonition.warning { border-color: rgba(251, 191, 36, 0.3) !important; background-color: rgba(251, 191, 36, 0.1) !important; }
+
+.md-typeset .warning > .admonition-title { color: #fbbf24 !important; }
+[data-md-color-scheme="default"] .md-typeset .warning > .admonition-title { color: #d97706 !important; }
+.md-typeset .warning > .admonition-title::before { background-color: #fbbf24 !important; }
+[data-md-color-scheme="default"] .md-typeset .warning > .admonition-title::before { background-color: #d97706 !important; }
+
+/* 3. DATO / TIP / INFO (Verde Menta) */
+.md-typeset .admonition.tip, .md-typeset .admonition.info { border-left-color: #34d399 !important; }
+[data-md-color-scheme="default"] .md-typeset .admonition.tip, [data-md-color-scheme="default"] .md-typeset .admonition.info { border-left-color: #059669 !important; }
+[data-md-color-scheme="slate"] .md-typeset .admonition.tip, [data-md-color-scheme="slate"] .md-typeset .admonition.info { border-color: rgba(52, 211, 153, 0.3) !important; background-color: rgba(52, 211, 153, 0.1) !important; }
+
+.md-typeset .tip > .admonition-title, .md-typeset .info > .admonition-title { color: #34d399 !important; }
+[data-md-color-scheme="default"] .md-typeset .tip > .admonition-title, [data-md-color-scheme="default"] .md-typeset .info > .admonition-title { color: #059669 !important; }
+.md-typeset .tip > .admonition-title::before, .md-typeset .info > .admonition-title::before { background-color: #34d399 !important; }
+[data-md-color-scheme="default"] .md-typeset .tip > .admonition-title::before, [data-md-color-scheme="default"] .md-typeset .info > .admonition-title::before { background-color: #059669 !important; }
+
+/* 4. PELIGRO / ERROR (Rojo Coral) */
+.md-typeset .admonition.danger { border-left-color: #f87171 !important; }
+[data-md-color-scheme="default"] .md-typeset .admonition.danger { border-left-color: #dc2626 !important; }
+[data-md-color-scheme="slate"] .md-typeset .admonition.danger { border-color: rgba(248, 113, 113, 0.3) !important; background-color: rgba(248, 113, 113, 0.1) !important; }
+
+.md-typeset .danger > .admonition-title { color: #f87171 !important; }
+[data-md-color-scheme="default"] .md-typeset .danger > .admonition-title { color: #dc2626 !important; }
+.md-typeset .danger > .admonition-title::before { background-color: #f87171 !important; }
+[data-md-color-scheme="default"] .md-typeset .danger > .admonition-title::before { background-color: #dc2626 !important; }
 
 /* --- Navegación lateral --- */
 .md-nav { font-size: 0.7rem; }
@@ -989,3 +1059,53 @@ body[data-md-color-scheme="slate"] {
 /* Hero: el botón secundario conserva texto claro y contorno visible sobre el morado */
 .md-typeset .sx-hero .md-button:not(.md-button--primary) { background: transparent; color: #ffffff; border-color: #ffffff; }
 .md-typeset .sx-hero .md-button:not(.md-button--primary):hover { background: #ffffff; color: #5b18cc; border-color: #ffffff; }
+
+
+/* Leyenda de convenciones Mermaid: muestras transparentes, solo contorno */
+.md-typeset .mermaid-legend-swatch {
+  display: inline-block;
+  width: .8rem;
+  height: .8rem;
+  margin: 0 .35rem 0 0;
+  vertical-align: -.08rem;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  background: transparent;
+}
+.md-typeset .mermaid-legend-violeta { color: var(--cv-violeta); }
+.md-typeset .mermaid-legend-indigo { color: var(--cv-indigo); }
+.md-typeset .mermaid-legend-acento { color: var(--cv-acento); }
+.md-typeset .mermaid-legend-lila { color: var(--cv-lila-2); }
+[data-md-color-scheme="default"] .md-typeset .mermaid-legend-lila { color: var(--cv-violeta); }
+
+/* ==========================================================================
+   MERMAID — paleta institucional reducida, superficies transparentes
+   ========================================================================== */
+.md-typeset div.mermaid {
+  background: transparent !important;
+  border: 1px solid var(--fig-line);
+  color: var(--md-typeset-color);
+}
+.md-typeset div.mermaid svg { background: transparent !important; }
+.md-typeset div.mermaid svg .node rect,
+.md-typeset div.mermaid svg .node polygon,
+.md-typeset div.mermaid svg .node circle,
+.md-typeset div.mermaid svg .node ellipse,
+.md-typeset div.mermaid svg .cluster rect {
+  fill: transparent !important;
+  fill-opacity: 0 !important;
+  stroke-width: 1.8px;
+}
+.md-typeset div.mermaid svg .edgePath path,
+.md-typeset div.mermaid svg .flowchart-link {
+  fill: none !important;
+  stroke-width: 1.7px;
+}
+.md-typeset div.mermaid svg text,
+.md-typeset div.mermaid svg tspan {
+  fill: var(--md-typeset-color);
+}
+[data-md-color-scheme="default"] .md-typeset div.mermaid svg .node text,
+[data-md-color-scheme="default"] .md-typeset div.mermaid svg .cluster-label text { fill: #14142b; }
+[data-md-color-scheme="slate"] .md-typeset div.mermaid svg .node text,
+[data-md-color-scheme="slate"] .md-typeset div.mermaid svg .cluster-label text { fill: #e8e6fa; }

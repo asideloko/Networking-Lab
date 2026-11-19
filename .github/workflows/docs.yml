@@ -1,36 +1,86 @@
-name: Publicar documentación
+name: Validar y publicar documentación
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Evita acumular ejecuciones obsoletas cuando llegan varios commits seguidos.
+# Una ejecución nueva de la misma referencia cancela la anterior.
+concurrency:
+  group: docs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
   build:
+    name: Validar documentación y laboratorios
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Obtener el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
-      - run: pip install "zensical==0.1.2"
-      - run: zensical build
-      - name: Validar documentación, sintaxis Bash y reversión de cambios en el host
-        run: python3 scripts/validar.py
-      - uses: actions/upload-pages-artifact@v3
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Instalar dependencias de documentación
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements.txt
+        timeout-minutes: 5
+
+      - name: Validar estructura, enlaces, navegación y sintaxis
+        run: python scripts/validar.py
+        timeout-minutes: 2
+
+      - name: Construir el sitio
+        run: zensical build
+        timeout-minutes: 5
+
+      - name: Comprobar artefacto generado
+        run: test -s site/index.html
+        timeout-minutes: 1
+
+      - name: Instalar herramientas de pruebas de red
+        run: |
+          sudo apt-get update
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
+            iproute2 iputils-ping nftables iptables dnsmasq-base \
+            isc-dhcp-client dnsutils keepalived
+        timeout-minutes: 8
+
+      - name: Ejecutar pruebas funcionales aisladas con límite estricto
+        run: >-
+          sudo env CI=true timeout --signal=TERM --kill-after=15s 180s
+          bash scripts/pruebas_funcionales.sh
+        timeout-minutes: 4
+
+      - name: Publicar artefacto de Pages
+        uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy:
+    name: Publicar en GitHub Pages
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
+      - name: Desplegar sitio
+        id: deployment
         uses: actions/deploy-pages@v4
+        timeout-minutes: 8
