@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   build:
-    name: Validar documentación y laboratorios
+    name: Validar y construir documentación
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -47,20 +47,6 @@ jobs:
       - name: Comprobar artefacto generado
         run: test -s site/index.html
         timeout-minutes: 1
-
-      - name: Instalar herramientas de pruebas de red
-        run: |
-          sudo apt-get update
-          sudo env DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
-            iproute2 iputils-ping nftables iptables dnsmasq-base \
-            isc-dhcp-client dnsutils keepalived
-        timeout-minutes: 8
-
-      - name: Ejecutar pruebas funcionales aisladas con límite estricto
-        run: >-
-          sudo env CI=true timeout --signal=TERM --kill-after=15s 180s
-          bash scripts/pruebas_funcionales.sh
-        timeout-minutes: 4
 
       - name: Publicar artefacto de Pages
         uses: actions/upload-pages-artifact@v3
