@@ -2,13 +2,12 @@
 title: "NETWORKING Lab"
 description: "Laboratorios de explicación y simulación de redes, complementarios del libro NETWORKING."
 hide:
-
   - toc
 ---
 
 <div class="sx-hero"><p><img alt="SecOpsMX" class="sx-hero__logo off-glb" src="assets/logo.png"/></p><h1 id="networking-lab">NETWORKING Lab</h1><p class="sx-hero__sub">Laboratorios de explicación<br/>y simulación de redes.</p><p class="sx-hero__lead">Material práctico complementario del libro NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico.</p><p class="sx-hero__cta"><a class="md-button md-button--primary" href="labs/lab-01/index.html">Comenzar por el laboratorio 01</a><a class="md-button" href="https://leanpub.com/networking-fundamentos">Obtener el libro</a></p><p class="sx-hero__meta">Material complementario · Guillermo Castillo · SecOpsMX</p></div>
 
-<div class="sx-stats"><div><b>15</b><span>laboratorios</span></div><div><b>41</b><span>diagramas</span></div><div><b>261</b><span>bloques de comandos</span></div></div>
+<div class="sx-stats"><div><b>15</b><span>laboratorios</span></div><div><b>41</b><span>diagramas</span></div><div><b>266</b><span>bloques de comandos</span></div></div>
 
 Cada laboratorio presenta **escenarios ilustrativos** para comprender protocolos, tecnologías, arquitecturas y procesos de comunicación, y lleva la teoría a la terminal mediante comandos de demostración.
 
@@ -76,7 +75,7 @@ Realízalos en orden: **comienza por el laboratorio 01**. No todos usan la misma
 
 ## Operaciones que afectan al equipo anfitrión
 
-Un *namespace* aísla la **red**, no el equipo. Los pasos que modifican el **host** (reenvío IPv4, reglas NAT, `/etc/sysctl.d`, rutas temporales) aparecen siempre bajo el aviso **«Cambio en el host»**, y cada laboratorio que los usa (02, 11 y 15) incluye su sección de **reversión**. Antes de empezar anota `sysctl net.ipv4.ip_forward` y `iptables -t nat -S POSTROUTING`; así sabrás a qué estado volver.
+Un *namespace* aísla la **red**, no el equipo. Los pasos que modifican el **host** (reenvío IPv4, reglas NAT, `/etc/sysctl.d`, rutas temporales) aparecen siempre bajo el aviso **«Cambio en el host»**, y cada laboratorio que los usa (02, 04, 05, 07, 08, 11, 13, 14 y 15) incluye su sección de **reversión**. Las paradas de procesos se hacen por PID o con `ip netns pids <namespace>`, nunca con `pkill` sobre el sistema completo. Antes de empezar anota `sysctl net.ipv4.ip_forward` y `iptables -t nat -S POSTROUTING`; así sabrás a qué estado volver.
 
 ## Material de referencia
 
@@ -87,6 +86,6 @@ Además de los laboratorios, el sitio incluye páginas de síntesis para consult
 -   [Método de diagnóstico](referencia/diagnostico.md): del síntoma a la causa.
 -   [Arquitectura integral](referencia/arquitectura-integral.md): mapas de síntesis y matriz de disponibilidad.
 -   [Glosario](referencia/glosario.md).
--   [Competencias y casos integradores](referencia/competencias.md): qué se espera al terminar y criterios de ampliación.
+-   [Competencias y casos integradores](referencia/competencias.md): qué se espera al terminar y casos para repasar la serie.
 
-Cada laboratorio termina con **preguntas de reflexión**: qué mecanismo se demuestra, qué pasa si se elimina un componente, qué limitaciones tiene y dónde se usaría en una empresa.
+Cada laboratorio termina ahora con **preguntas de reflexión**: qué mecanismo se demuestra, qué pasa si se elimina un componente, qué limitaciones tiene y dónde se usaría en una empresa.

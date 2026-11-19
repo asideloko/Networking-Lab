@@ -7,7 +7,7 @@ description: "Laboratorio 07 de NETWORKING Lab — Protocolos y Servicios de Red
 
 # PROTOCOLOS Y SERVICIOS DE RED
 
-<p class="tema-meta"><span>13 secciones</span><span>5 diagramas</span><span>5 tablas</span></p>
+<p class="tema-meta"><span>14 secciones</span><span>5 diagramas</span><span>5 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -197,6 +197,9 @@ sudo ip netns exec clienteDHCP ip link set lo up
 Comprueba que el segmento es único: `sudo ip netns exec servidorDNS ping -c 2 10.0.0.1` y `sudo ip netns exec servidorDNS ping -c 2 10.0.0.10` deben responder.
 
 ### Paso 5: Salida a Internet para toda la red (NAT en R1)
+
+!!! danger "Cambio en el host (no en un namespace)"
+    Las líneas con `veth-host`, `sysctl -w net.ipv4.ip_forward=1` e `iptables -t nat` **sin** `ip netns exec` actúan sobre el equipo real. Las de `ip netns exec R1 …` están aisladas. Antes de ejecutar este paso anota el estado previo del equipo: `sysctl net.ipv4.ip_forward` y `iptables -t nat -S POSTROUTING`. La reversión está en la sección «Revertir los cambios del host» de este laboratorio.
 
 R1 será la única puerta de salida de la sede **y** de las sucursales. Su interfaz WAN se conecta al host (que hace de "Internet"):
 
@@ -510,6 +513,30 @@ Si responde `10.0.0.20`, la consulta UDP/53 atravesó los routers hasta `10.0.0.
 | DNS | Resolución de nombres con dnsmasq |
 | DHCP | Asignación automática de IPs |
 | NAT/PAT | Traducción de direcciones (y puertos) para salida a Internet |
+
+## Revertir los cambios del host
+
+```bash
+# 1. Regla NAT y reenvío del host (ajusta eth0)
+sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
+sudo sysctl -w net.ipv4.ip_forward=0        # solo si estaba en 0 antes de empezar
+
+# 2. Interfaz del host
+sudo ip link del veth-host 2>/dev/null || true
+
+# 3. Servicios y namespaces creados en este laboratorio (no los de laboratorios anteriores)
+for ns in servidorDNS servidorDHCP clienteDHCP; do
+  sudo ip netns pids $ns 2>/dev/null | xargs -r sudo kill     # solo procesos DENTRO de ese namespace
+  sudo ip netns del $ns 2>/dev/null || true
+done
+
+# 4. Archivos del laboratorio
+sudo rm -rf /tmp/lab07
+```
+
+**`/etc/netns/clienteDHCP`:** el laboratorio lo crea para aislar su `resolv.conf`. Antes de borrarlo, comprueba que **no existía de antes** (`ls /etc/netns/`); si solo contiene el `resolv.conf` vacío que creó el laboratorio, elimínalo con `sudo rm -rf /etc/netns/clienteDHCP`. Si tenías otros directorios en `/etc/netns/`, no los toques.
+
+`dnsmasq-base`, `isc-dhcp-client`, `dnsutils`, `netcat-openbsd` y `conntrack` quedan **instalados** en el equipo: son paquetes, no configuración activa, y puedes desinstalarlos con `apt remove` si no los usabas antes.
 
 ## Preguntas de reflexión
 

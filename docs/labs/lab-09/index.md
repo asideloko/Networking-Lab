@@ -7,7 +7,7 @@ description: "Laboratorio 09 de NETWORKING Lab — VPN y Tunelización."
 
 # VPN Y TUNELIZACIÓN
 
-<p class="tema-meta"><span>16 secciones</span><span>4 diagramas</span><span>8 tablas</span></p>
+<p class="tema-meta"><span>17 secciones</span><span>4 diagramas</span><span>8 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -447,7 +447,7 @@ sequenceDiagram
 
 ```mermaid
 graph LR
-    C["Cliente 10.9.0.2"] -- "AllowedIPs = 10.0.0.0/22" --> G["VPN Gateway"]
+    C["Cliente 10.9.0.2"] -- "AllowedIPs = 10.0.0.0/24" --> G["VPN Gateway"]
     G -- "AllowedIPs = 10.9.0.2/32" --> C
 ```
 
@@ -549,6 +549,21 @@ Implementa WireGuard entre R2 y R3 como alternativa.
 | OpenVPN | Acceso remoto basado en TLS (aquí, clave estática simplificada) |
 | WireGuard | VPN ligera de pares con claves públicas |
 | Tunelización | Encapsulación de tráfico (no equivale a cifrado) |
+
+## Revertir los cambios del host
+
+Este laboratorio deja un extremo de `veth` **en el host** (`veth-wan-cvpn`, unido al bridge `br-wan` del laboratorio 08) y procesos de VPN dentro de los *namespaces*:
+
+```bash
+for ns in VPN_GW clienteVPN; do
+  sudo ip netns pids $ns 2>/dev/null | xargs -r sudo kill     # solo procesos dentro de ese namespace
+  sudo ip netns del $ns 2>/dev/null || true
+done
+sudo ip link del veth-wan-cvpn 2>/dev/null || true
+sudo rm -rf /tmp/lab09
+```
+
+El bridge `br-wan`, la regla NAT y `ip_forward` pertenecen al laboratorio 08: se revierten con su sección «Revertir los cambios del host».
 
 ## Preguntas de reflexión
 

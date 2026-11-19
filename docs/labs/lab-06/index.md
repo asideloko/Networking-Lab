@@ -452,7 +452,6 @@ sudo ip netns exec R1 ip route show
 ```
 
 **Interpretación de la salida:**
-
 - Las rutas conectadas directamente (directas) aparecen con `dev` y `scope link`.
 - Las rutas estáticas aparecen con `via` (el siguiente salto) y, si se indicó, `metric`.
 - La ruta por defecto (si existe) aparece como `default via …` (equivale a `0.0.0.0/0`); en R1 no hay ninguna.
