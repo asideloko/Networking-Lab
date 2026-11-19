@@ -100,6 +100,12 @@ else
   for r in R1 R2; do sudo ip netns exec $r sysctl -qw net.ipv4.ip_forward=1; done
   mkdir /tmp/lab15
 
+  # Registra ahora qué directorios DNS existían antes: la limpieza borra solo los que cree el laboratorio
+  touch /tmp/lab15/netns.preexistente
+  for ns in fin ven; do
+    [ -e /etc/netns/$ns ] && echo "$ns" >> /tmp/lab15/netns.preexistente
+  done
+
   # enlace NS_A IF_A IP_A NS_B IF_B IP_B
   enlace() {
     sudo ip link add $2 type veth peer name $5
@@ -520,10 +526,6 @@ sudo ip netns exec R1 dnsmasq --conf-file=/tmp/lab15/dhcp.conf --pid-file=/tmp/l
 Los clientes piden dirección en lugar de tener una fija. Para que `dhclient` no toque el `resolv.conf` de tu equipo, damos a cada namespace el suyo:
 
 ```bash
-# Registra qué existía antes: la limpieza borra solo lo que creó este laboratorio
-for ns in fin ven; do
-  [ -e /etc/netns/$ns ] && echo "$ns" >> /tmp/lab15/netns.preexistente
-done
 for ns in fin ven; do
   sudo mkdir -p /etc/netns/$ns
   sudo touch /etc/netns/$ns/resolv.conf
@@ -808,9 +810,12 @@ sudo pkill -f '[/]tmp/lab15'    # zebra, ospfd, dnsmasq, keepalived y dhclient d
 for ns in R1 R2 SWsrv fin ven ges srv suc; do sudo ip netns del $ns 2>/dev/null || true; done
 sudo ip link del veth-wan-r1 2>/dev/null || true
 # /etc/netns/fin y /etc/netns/ven: se borran solo si NO existían antes del laboratorio
-for ns in fin ven; do
-  grep -qx "$ns" /tmp/lab15/netns.preexistente 2>/dev/null || sudo rm -rf /etc/netns/$ns
-done
+# (si no existe el registro del Paso 0, no se borra nada)
+if [ -f /tmp/lab15/netns.preexistente ]; then
+  for ns in fin ven; do
+    grep -qx "$ns" /tmp/lab15/netns.preexistente || sudo rm -rf /etc/netns/$ns
+  done
+fi
 # Restaura ip_forward al valor original (no se asume 0)
 [ -f /tmp/lab15/ip_forward.orig ] && sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab15/ip_forward.orig)"
 # Archivos persistentes del caso ARP: solo si los creó este laboratorio
