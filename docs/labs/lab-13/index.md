@@ -73,17 +73,6 @@ sudo apt-get install -y mtr-tiny traceroute tcpdump iperf3 rsyslog dnsutils netc
 ### Paso 2: Crear servidores de monitoreo
 
 ```bash
-for ns in NOC SIEM; do
-  if sudo ip netns list | awk '{print $1}' | grep -qx "$ns"; then
-    echo "El namespace $ns ya existe: ejecuta la limpieza del laboratorio 13 antes de repetirlo"
-    exit 1
-  fi
-done
-VETH_WAN_OP=$(sudo ip -o link show veth-wan-op 2>/dev/null | head -1)
-if [ -e /tmp/lab13 ] || [ -n "$VETH_WAN_OP" ] || [ -e /tmp/lab13-ip_forward.orig ] || [ -e /tmp/lab13-host-nat.added ]; then
-  echo "Hay recursos de una ejecución anterior: ejecuta la limpieza del laboratorio 13 antes de repetirlo"
-  exit 1
-fi
 sudo ip netns add NOC
 sudo ip netns add SIEM
 ```
@@ -124,14 +113,15 @@ sudo ip link set veth-wan-op up
 sudo ip netns exec OnPremise ip route add default via 192.168.100.2
 sudo ip netns exec OnPremise iptables -t nat -A POSTROUTING -o veth-op-wan -j MASQUERADE
 
-# El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida).
-# El valor original de ip_forward y la creación de la regla NAT quedan registrados para revertirlos.
-if [ ! -e /tmp/lab13-ip_forward.orig ]; then
-  sudo sysctl -n net.ipv4.ip_forward | sudo tee /tmp/lab13-ip_forward.orig >/dev/null
-fi
+# El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)
+# Estado original del host: se guarda una sola vez en toda la serie
+mkdir -p /tmp/netlab-host
+[ -f /tmp/netlab-host/ip_forward.orig ] || sysctl -n net.ipv4.ip_forward > /tmp/netlab-host/ip_forward.orig
 sudo sysctl -w net.ipv4.ip_forward=1
-if ! sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE; then
-  sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab13-host-nat.added
+# Si la regla NAT no existía, la añade y deja una marca: la reversión borra solo lo que añadió el laboratorio
+if ! sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null; then
+  sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE
+  touch /tmp/netlab-host/nat-192.168.100.0_24
 fi
 ```
 
@@ -386,13 +376,14 @@ sudo ip netns pids SIEM 2>/dev/null | xargs -r sudo kill
 
 # 2. Salida opcional a Internet (solo si hiciste el Paso 3b; ajusta eth0)
 sudo ip netns exec OnPremise iptables -t nat -D POSTROUTING -o veth-op-wan -j MASQUERADE 2>/dev/null || true
-if [ -f /tmp/lab13-host-nat.added ]; then
-  sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
-  rm -f /tmp/lab13-host-nat.added
+# Regla NAT del host: solo si la añadió el laboratorio (ajusta eth0 a tu interfaz de salida)
+if [ -f /tmp/netlab-host/nat-192.168.100.0_24 ]; then
+  sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE && rm -f /tmp/netlab-host/nat-192.168.100.0_24
 fi
-if [ -f /tmp/lab13-ip_forward.orig ]; then
-  sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab13-ip_forward.orig)"
-  sudo rm -f /tmp/lab13-ip_forward.orig
+# Reenvío: restaura el valor original guardado (no se asume 0)
+if [ -f /tmp/netlab-host/ip_forward.orig ]; then
+  sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/netlab-host/ip_forward.orig)"
+  rm -f /tmp/netlab-host/ip_forward.orig
 fi
 sudo ip link del veth-wan-op 2>/dev/null || true
 

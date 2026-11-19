@@ -405,21 +405,6 @@ Ahora un ping con `-s 8972` (8972 + 8 + 20 = 9000) y `-M do` entre Cliente 1 y C
 | El switch no aprende MAC | La interfaz está down. | Verificar `ip link set ... up`. |
 | No sale a Internet | El router no tiene ruta al switch. | Verificar IP en `veth-rs` y que el switch esté conectado al router. |
 
-## Limpieza del laboratorio
-
-El laboratorio 03 transforma la topología creada en los laboratorios 01 y 02. Para revertir también los cambios que el laboratorio 02 hizo en el **host** (reenvío, NAT, reglas `FORWARD`, ruta y `veth-host`), ejecuta primero su sección **«Revertir los cambios del host»**. Esa sección también elimina `cliente1`, `cliente2` y `router`.
-
-Después elimina los tres namespaces exclusivos de esta práctica:
-
-```bash
-for ns in switch cliente3 cliente4; do
-  sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-  sudo ip netns del "$ns" 2>/dev/null || true
-done
-```
-
-**Comprobación:** `sudo ip netns list` no debe mostrar `switch`, `cliente3` ni `cliente4`. Si vas a repetir el laboratorio 03, vuelve a ejecutar desde cero los laboratorios 01 y 02 antes de comenzar.
-
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo permite que el *switch* envíe una trama solo al puerto correcto tras aprender una MAC?

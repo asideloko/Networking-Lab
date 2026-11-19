@@ -73,26 +73,16 @@ La red `10.8.0.0/24` es una **red virtual de acceso de los usuarios del escenari
 Este laboratorio es un **escenario nuevo** (otros equipos y direccionamiento). Elimina **solo los namespaces de los laboratorios anteriores, por nombre**:
 
 ```bash
-NS_LAB="cliente1 cliente2 cliente3 cliente4 router switch ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 R1 R2 R3 clienteSede clienteSucA clienteSucB servidorDNS servidorDHCP clienteDHCP firewall servidorWeb servidorDNS_PUB servidorInterno VPN_GW clienteVPN PE1 PE2 PE3 P1 P2 P3 host1 host2 host3 Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin OnPremise AppServer DBServer AWS_VPC EC2_Server RDS_Server ZTNA_Broker IDP User1 User2"
-EXISTENTES=$(sudo ip netns list | awk '{print $1}' | while read -r ns; do
-  for esperado in $NS_LAB; do [ "$ns" = "$esperado" ] && echo "$ns"; done
-done)
-VETH_HOST=$(sudo ip -o link show veth-host 2>/dev/null | head -1)
-VETH_WAN_FW=$(sudo ip -o link show veth-wan-fw 2>/dev/null | head -1)
-BR_WAN_OWNED=0
-if [ "$(cat /sys/class/net/br-wan/ifalias 2>/dev/null)" = networking-lab ] && sudo ip -4 -o addr show dev br-wan | grep -q '192\.168\.100\.2/24'; then
-  BR_WAN_OWNED=1
-fi
-printf 'Namespaces existentes: %s\nInterfaz veth-host: %s\nInterfaz veth-wan-fw: %s\nBridge br-wan del proyecto: %s\n' "${EXISTENTES:-(ninguno)}" "${VETH_HOST:-(ausente)}" "${VETH_WAN_FW:-(ausente)}" "$BR_WAN_OWNED"
-if [ -n "$EXISTENTES$VETH_HOST$VETH_WAN_FW" ] || [ "$BR_WAN_OWNED" = 1 ]; then
-  read -r -p "¿Eliminar únicamente los recursos detectados de los laboratorios anteriores? (s/N) " CONFIRMAR
-  if [ "$CONFIRMAR" != s ]; then echo "Cancelado"; exit 1; fi
-  for ns in $EXISTENTES; do
-    sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-    sudo ip netns del "$ns" 2>/dev/null || true
-  done
-  [ "$BR_WAN_OWNED" = 1 ] && sudo ip link del br-wan 2>/dev/null || true
-fi
+for ns in cliente1 cliente2 cliente3 cliente4 router switch \
+          ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 \
+          R1 R2 R3 clienteSede clienteSucA clienteSucB \
+          servidorDNS servidorDHCP clienteDHCP \
+          firewall servidorWeb servidorDNS_PUB servidorInterno VPN_GW clienteVPN \
+          PE1 PE2 PE3 P1 P2 P3 host1 host2 host3 \
+          Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin; do
+  sudo ip netns del $ns 2>/dev/null || true
+done
+[ "$(cat /sys/class/net/br-wan/ifalias 2>/dev/null)" = networking-lab ] && ip -4 -o addr show dev br-wan | grep -q '192\.168\.100\.2/24' && sudo ip link del br-wan   # solo el bridge de esta serie (marca + dirección)
 ```
 
 ### Paso 1: Crear namespaces y la función auxiliar
@@ -388,19 +378,6 @@ Redacta (sin implementarlas) las políticas que un SASE aplicaría al tráfico d
 | ZTNA | Acceso remoto por aplicación (broker) |
 | SASE | SD-WAN + SWG + CASB (conceptual) |
 | Microsegmentación | Políticas granulares entre servidores |
-
-## Limpieza del laboratorio
-
-La práctica crea diez *namespaces*; las interfaces, rutas, reglas `iptables` y parámetros de reenvío configurados dentro de ellos quedan aislados del host. La limpieza detiene los procesos que permanezcan dentro de esos espacios y elimina únicamente los nombres de esta topología.
-
-```bash
-for ns in OnPremise AppServer DBServer AWS_VPC EC2_Server RDS_Server ZTNA_Broker IDP User1 User2; do
-  sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-  sudo ip netns del "$ns" 2>/dev/null || true
-done
-```
-
-**Comprobación:** `sudo ip netns list` no debe mostrar ninguno de esos diez nombres. Para repetir el laboratorio, vuelve a ejecutar desde el Paso 0.
 
 ## Preguntas de reflexión
 

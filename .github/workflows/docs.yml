@@ -19,7 +19,7 @@ jobs:
           python-version: "3.x"
       - run: pip install "zensical==0.1.2"
       - run: zensical build
-      - name: Validar documentación, sintaxis Bash y reversión de cambios en el host
+      - name: Validar estructura (enlaces, bloques de código, front matter)
         run: python3 scripts/validar.py
       - uses: actions/upload-pages-artifact@v3
         with:

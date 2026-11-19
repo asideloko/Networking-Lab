@@ -118,26 +118,16 @@ graph TB
 Este laboratorio es un **escenario nuevo**: reutiliza nombres como `Firewall` o `ServidorWeb` con otra función y otro direccionamiento. Elimina **solo los namespaces de los laboratorios anteriores, por nombre** (no todos los namespaces del equipo):
 
 ```bash
-NS_LAB="cliente1 cliente2 cliente3 cliente4 router switch ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 R1 R2 R3 clienteSede clienteSucA clienteSucB servidorDNS servidorDHCP clienteDHCP firewall servidorWeb servidorDNS_PUB servidorInterno VPN_GW clienteVPN PE1 PE2 PE3 P1 P2 P3 host1 host2 host3 Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin"
-EXISTENTES=$(sudo ip netns list | awk '{print $1}' | while read -r ns; do
-  for esperado in $NS_LAB; do [ "$ns" = "$esperado" ] && echo "$ns"; done
-done)
-VETH_HOST=$(sudo ip -o link show veth-host 2>/dev/null | head -1)
-VETH_WAN_FW=$(sudo ip -o link show veth-wan-fw 2>/dev/null | head -1)
-BR_WAN_OWNED=0
-if [ "$(cat /sys/class/net/br-wan/ifalias 2>/dev/null)" = networking-lab ] && sudo ip -4 -o addr show dev br-wan | grep -q '192\.168\.100\.2/24'; then
-  BR_WAN_OWNED=1
-fi
-printf 'Namespaces existentes: %s\nInterfaz veth-host: %s\nInterfaz veth-wan-fw: %s\nBridge br-wan del proyecto: %s\n' "${EXISTENTES:-(ninguno)}" "${VETH_HOST:-(ausente)}" "${VETH_WAN_FW:-(ausente)}" "$BR_WAN_OWNED"
-if [ -n "$EXISTENTES$VETH_HOST$VETH_WAN_FW" ] || [ "$BR_WAN_OWNED" = 1 ]; then
-  read -r -p "¿Eliminar únicamente los recursos detectados de los laboratorios anteriores? (s/N) " CONFIRMAR
-  if [ "$CONFIRMAR" != s ]; then echo "Cancelado"; exit 1; fi
-  for ns in $EXISTENTES; do
-    sudo ip netns pids "$ns" 2>/dev/null | xargs -r sudo kill
-    sudo ip netns del "$ns" 2>/dev/null || true
-  done
-  [ "$BR_WAN_OWNED" = 1 ] && sudo ip link del br-wan 2>/dev/null || true
-fi
+for ns in cliente1 cliente2 cliente3 cliente4 router switch \
+          ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 \
+          R1 R2 R3 clienteSede clienteSucA clienteSucB \
+          servidorDNS servidorDHCP clienteDHCP \
+          firewall servidorWeb servidorDNS_PUB servidorInterno VPN_GW clienteVPN \
+          PE1 PE2 PE3 P1 P2 P3 host1 host2 host3 \
+          Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin; do
+  sudo ip netns del $ns 2>/dev/null || true
+done
+[ "$(cat /sys/class/net/br-wan/ifalias 2>/dev/null)" = networking-lab ] && ip -4 -o addr show dev br-wan | grep -q '192\.168\.100\.2/24' && sudo ip link del br-wan   # solo el bridge de esta serie (marca + dirección)
 ```
 
 ### Paso 1: Crear namespaces y una función auxiliar
@@ -189,12 +179,14 @@ sudo ip link set veth-wan-fw up
 sudo ip netns exec Firewall ip route add default via 192.168.100.2
 
 # El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)
-if [ ! -e /tmp/lab11-ip_forward.orig ]; then
-  sudo sysctl -n net.ipv4.ip_forward | sudo tee /tmp/lab11-ip_forward.orig >/dev/null
-fi
+# Estado original del host: se guarda una sola vez en toda la serie
+mkdir -p /tmp/netlab-host
+[ -f /tmp/netlab-host/ip_forward.orig ] || sysctl -n net.ipv4.ip_forward > /tmp/netlab-host/ip_forward.orig
 sudo sysctl -w net.ipv4.ip_forward=1
-if ! sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE; then
-  sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab11-host-nat.added
+# Si la regla NAT no existía, la añade y deja una marca: la reversión borra solo lo que añadió el laboratorio
+if ! sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null; then
+  sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE
+  touch /tmp/netlab-host/nat-192.168.100.0_24
 fi
 
 # DMZ: un bridge en el firewall con los dos servidores públicos
@@ -216,7 +208,7 @@ done
 ```
 
 !!! danger "Cambio en el host en el Paso 3"
-    Dentro del bloque anterior, **estas líneas actúan sobre el equipo real, no sobre un namespace**: `ip addr add 192.168.100.2/24 dev veth-wan-fw`, `sysctl -w net.ipv4.ip_forward=1` y la regla `iptables -t nat … MASQUERADE`. El bloque conserva el valor original de `ip_forward` y registra si añadió la regla NAT. Los cambios afectan al host hasta ejecutar «Revertir los cambios del host».
+    Dentro del bloque anterior, **estas líneas actúan sobre el equipo real, no sobre un namespace**: `ip addr add 192.168.100.2/24 dev veth-wan-fw`, `sysctl -w net.ipv4.ip_forward=1` y la regla `iptables -t nat … MASQUERADE`. Anota antes `sysctl net.ipv4.ip_forward` y `iptables -t nat -S POSTROUTING`. Ninguna es persistente, pero sí afectan al host hasta que las reviertas (sección «Revertir los cambios del host»).
 
 ### Paso 4: Rutas estáticas con métrica (camino principal y de respaldo)
 
@@ -457,13 +449,14 @@ Crea `Access2` y `Access3` siguiendo el Paso 6 y comprueba que los equipos de la
 ## Revertir los cambios del host
 
 ```bash
-if [ -f /tmp/lab11-host-nat.added ]; then
-  sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
-  rm -f /tmp/lab11-host-nat.added
+# Regla NAT del host: solo si la añadió el laboratorio (ajusta eth0 a tu interfaz de salida)
+if [ -f /tmp/netlab-host/nat-192.168.100.0_24 ]; then
+  sudo iptables -t nat -D POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE && rm -f /tmp/netlab-host/nat-192.168.100.0_24
 fi
-if [ -f /tmp/lab11-ip_forward.orig ]; then
-  sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab11-ip_forward.orig)"
-  sudo rm -f /tmp/lab11-ip_forward.orig
+# Reenvío: restaura el valor original guardado (no se asume 0)
+if [ -f /tmp/netlab-host/ip_forward.orig ]; then
+  sudo sysctl -w net.ipv4.ip_forward="$(cat /tmp/netlab-host/ip_forward.orig)"
+  rm -f /tmp/netlab-host/ip_forward.orig
 fi
 sudo ip link del veth-wan-fw 2>/dev/null || true
 for ns in Core1 Core2 Dist1 Dist2 Access1 Firewall ServidorWeb ServidorDNS ventas it admin; do

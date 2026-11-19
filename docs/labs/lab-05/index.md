@@ -101,29 +101,19 @@ graph TB
 
 ## Construcción de la red
 
-### Paso 1: Preparar el entorno
-
-El bloque detecta los nombres que utiliza este laboratorio, muestra los recursos existentes y solicita confirmación antes de eliminarlos.
+### Paso 1: Limpiar configuración anterior
 
 ```bash
-NS_LAB="ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2 router switch"
-IF_LAB="veth-host veth-wan"
-EXISTENTES=$(ip netns list | awk '{print $1}' | while read -r ns; do
-  for esperado in $NS_LAB; do [ "$ns" = "$esperado" ] && echo "$ns"; done
-done)
-IF_EXISTENTES=$(ip -o link show | awk -F': ' '{print $2}' | cut -d@ -f1 | while read -r dev; do
-  for esperado in $IF_LAB; do [ "$dev" = "$esperado" ] && echo "$dev"; done
-done)
-printf 'Namespaces existentes: %s\nInterfaces existentes: %s\n' "${EXISTENTES:-(ninguno)}" "${IF_EXISTENTES:-(ninguna)}"
-if [ -n "$EXISTENTES$IF_EXISTENTES" ]; then
-  read -r -p "¿Eliminar únicamente estos recursos del laboratorio 05? (s/N) " CONFIRMAR
-  if [ "$CONFIRMAR" != s ]; then echo "Cancelado"; exit 1; fi
-  for ns in $EXISTENTES; do
-    ip netns pids "$ns" 2>/dev/null | xargs -r kill
-    ip netns del "$ns" 2>/dev/null || true
-  done
-  for dev in $IF_EXISTENTES; do ip link del "$dev" 2>/dev/null || true; done
-fi
+ip netns del ventas1 2>/dev/null || true
+ip netns del ventas2 2>/dev/null || true
+ip netns del ventas3 2>/dev/null || true
+ip netns del it1 2>/dev/null || true
+ip netns del it2 2>/dev/null || true
+ip netns del it3 2>/dev/null || true
+ip netns del admin1 2>/dev/null || true
+ip netns del admin2 2>/dev/null || true
+ip netns del router 2>/dev/null || true
+ip netns del switch 2>/dev/null || true
 ```
 
 ### Paso 2: Crear namespaces
@@ -298,7 +288,7 @@ Cada subinterfaz recibe solo las tramas etiquetadas con su VLAN y se convierte e
 ### Paso 9: Configurar NAT y salida a Internet
 
 !!! danger "Cambio en el host (no en un namespace)"
-    Este paso crea `veth-host` en el equipo real, activa `net.ipv4.ip_forward` y añade una regla `MASQUERADE` en el host. El bloque guarda el valor original de `ip_forward` y registra si añadió la regla NAT; la reversión está en la sección «Revertir los cambios del host».
+    Este paso crea `veth-host` en el equipo real, activa `net.ipv4.ip_forward` y añade una regla `MASQUERADE` en el host. Antes de ejecutar este paso anota el estado previo del equipo: `sysctl net.ipv4.ip_forward` y `iptables -t nat -S POSTROUTING`. La reversión está en la sección «Revertir los cambios del host» de este laboratorio.
 
 ```bash
 ip link add veth-host type veth peer name veth-wan
@@ -315,12 +305,14 @@ ip netns exec router iptables -A FORWARD -i 'veth-rs.+' -o veth-wan -j ACCEPT
 ip netns exec router iptables -A FORWARD -i veth-wan -o 'veth-rs.+' -m state --state RELATED,ESTABLISHED -j ACCEPT
 
 # El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)
-if [ ! -e /tmp/lab05-ip_forward.orig ]; then
-  sysctl -n net.ipv4.ip_forward > /tmp/lab05-ip_forward.orig
-fi
+# Estado original del host: se guarda una sola vez en toda la serie
+mkdir -p /tmp/netlab-host
+[ -f /tmp/netlab-host/ip_forward.orig ] || sysctl -n net.ipv4.ip_forward > /tmp/netlab-host/ip_forward.orig
 sysctl -w net.ipv4.ip_forward=1
-if ! iptables -t nat -C POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE; then
-  iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE && touch /tmp/lab05-host-nat.added
+# Si la regla NAT no existía, la añade y deja una marca: la reversión borra solo lo que añadió el laboratorio
+if ! iptables -t nat -C POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE 2>/dev/null; then
+  iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE
+  touch /tmp/netlab-host/nat-192.168.1.0_24
 fi
 ```
 
@@ -418,19 +410,19 @@ En `bridge vlan show` verás `veth-sv1` con `10 PVID Egress Untagged` (acceso VL
 ## Revertir los cambios del host
 
 ```bash
-# 1. Regla NAT del host (ajusta eth0 a tu interfaz de salida)
-if [ -f /tmp/lab05-host-nat.added ]; then
-  iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE 2>/dev/null || true
-  rm -f /tmp/lab05-host-nat.added
+# 1. Regla NAT y reenvío del host
+# Regla NAT del host: solo si la añadió el laboratorio (ajusta eth0 a tu interfaz de salida)
+if [ -f /tmp/netlab-host/nat-192.168.1.0_24 ]; then
+  iptables -t nat -D POSTROUTING -s 192.168.1.0/24 -o eth0 -j MASQUERADE && rm -f /tmp/netlab-host/nat-192.168.1.0_24
+fi
+# Reenvío: restaura el valor original guardado (no se asume 0)
+if [ -f /tmp/netlab-host/ip_forward.orig ]; then
+  sysctl -w net.ipv4.ip_forward="$(cat /tmp/netlab-host/ip_forward.orig)"
+  rm -f /tmp/netlab-host/ip_forward.orig
 fi
 
-# 2. Reenvío: restaura el valor original guardado antes del laboratorio.
-if [ -f /tmp/lab05-ip_forward.orig ]; then
-  sysctl -w net.ipv4.ip_forward="$(cat /tmp/lab05-ip_forward.orig)"
-  rm -f /tmp/lab05-ip_forward.orig
-fi
 
-# 3. Enlace virtual del host y namespaces del laboratorio
+# 2. Enlace virtual del host y namespaces del laboratorio
 ip link del veth-host 2>/dev/null || true
 for ns in router switch ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2; do
   ip netns pids $ns 2>/dev/null | xargs -r kill     # solo procesos DENTRO de ese namespace
@@ -438,7 +430,7 @@ for ns in router switch ventas1 ventas2 ventas3 it1 it2 it3 admin1 admin2; do
 done
 ```
 
-Si el host ya tenía `ip_forward=1`, **omite** el paso 2. Comprueba con `ip netns list` y `iptables -t nat -S POSTROUTING`.
+El reenvío vuelve a su valor original y la regla NAT solo se elimina si la añadió este laboratorio. Comprueba con `ip netns list` y `iptables -t nat -S POSTROUTING`.
 
 ## Preguntas de reflexión
 
