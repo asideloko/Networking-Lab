@@ -1222,7 +1222,7 @@ sequenceDiagram
 
 ## Diagrama 42. 3. Arquitectura de referencia { #diagrama-42 }
 
-**Documento de origen:** [`03-PROYECTO-FINAL`](../03-PROYECTO-FINAL/index.md)
+**Documento de origen:** `03-PROYECTO-FINAL` (sección retirada)
 
 **Función:** Equipos e infraestructura · Servicios y software · Procesos y protocolos · Decisiones y flujos · Topologías y arquitectura
 

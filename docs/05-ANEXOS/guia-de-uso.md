@@ -155,7 +155,7 @@ La clasificación depende de la función en contexto: un firewall como equipo de
 - [Arquitectura integral](../04-REFERENCIA/arquitectura-integral.md): mapas de síntesis y matriz de disponibilidad.
 - [Glosario](../04-REFERENCIA/glosario.md): términos y acrónimos.
 - [Competencias y casos integradores](../04-REFERENCIA/competencias.md): resultados esperados y ejercicios de repaso.
-- [Proyecto final integrador](../03-PROYECTO-FINAL/index.md): diseño, servicios, seguridad, alta disponibilidad, monitoreo, pruebas y memoria técnica.
+- La documentación de diseño, servicios, seguridad, alta disponibilidad, monitoreo y pruebas se consulta en los laboratorios y documentos de referencia vigentes.
 
 ## 9. Criterio de cierre
 
