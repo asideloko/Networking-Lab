@@ -1,17 +1,17 @@
 # NETWORKING LAB
 
-**Laboratorios prácticos de redes | SecOpsMX**
+**Documentación técnica de redes | SecOpsMX**
 
-> Del fundamento teórico a la comprensión técnica mediante escenarios de red, topologías y demostraciones prácticas.
+> Fundamentos, arquitecturas, servicios, seguridad y operación de redes mediante escenarios reproducibles.
 
 **🌐 [Acceder a NETWORKING Lab](https://asideloko.github.io/Networking-Lab/) · 💻 [Código fuente](https://github.com/asideloko/Networking-Lab)**
 
 ---
 
 
-**NETWORKING Lab** es un entorno de aprendizaje práctico que complementa el libro **NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico**, de **Guillermo Castillo (SecOpsMX)**.
+**NETWORKING Lab** es una documentación técnica complementaria el libro **NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico**, de **Guillermo Castillo (SecOpsMX)**.
 
-El proyecto transforma los conceptos fundamentales de las redes de computadoras en escenarios didácticos que permiten comprender el funcionamiento de protocolos, tecnologías, arquitecturas y servicios de red.
+El sitio reúne escenarios reproducibles, topologías, configuraciones, comandos y resultados técnicos para documentar el funcionamiento de protocolos, tecnologías, arquitecturas y servicios de red.
 
 A través de **15 laboratorios**, se presentan topologías, esquemas de comunicación, direccionamiento, configuraciones ilustrativas, comandos y resultados que permiten relacionar los fundamentos teóricos con su representación técnica.
 
@@ -21,7 +21,7 @@ El objetivo es comprender cómo funcionan las redes, cómo interactúan sus comp
 
 ## Contenido
 
-El entorno está organizado en **15 laboratorios**, distribuidos en tres bloques temáticos, además de un proyecto final, una sección de referencia técnica y anexos comunes.
+El contenido está organizado en **15 laboratorios**, una sección de referencia técnica y anexos.
 
 ### Laboratorios 01–05 · Fundamentos e infraestructura
 
@@ -94,9 +94,9 @@ El contenido aborda diferentes componentes del networking:
 
 Los laboratorios utilizan escenarios ilustrativos basados en tecnologías de **Linux**, incluidos **network namespaces**, interfaces virtuales y herramientas de red.
 
-> **Importante:** este proyecto tiene una finalidad educativa. Sus escenarios permiten comprender y representar procesos de comunicación, pero no constituyen implementaciones completas de infraestructuras empresariales ni sustituyen equipos físicos o plataformas especializadas de simulación.
+> **Alcance:** los escenarios permiten verificar mecanismos de red en entornos controlados. No deben confundirse con implementaciones empresariales completas ni con equipos físicos.
 
-Cuando una representación simplifica una tecnología, se documentan sus alcances y limitaciones para evitar confundir un modelo didáctico con una implementación real.
+Las simplificaciones, dependencias y limitaciones de cada representación se indican junto al escenario correspondiente.
 
 ---
 
@@ -143,7 +143,7 @@ Entre sus componentes se encuentran:
 
 ---
 
-## Desarrollo local
+## Entorno de documentación
 
 Para ejecutar el proyecto en un entorno compatible con **Python**:
 
@@ -234,7 +234,7 @@ Consultar y obtener el libro en [**Leanpub**](https://leanpub.com/networking-fun
 
 ## Licencia y uso
 
-Material complementario gratuito del libro NETWORKING. Uso educativo; no se autoriza su redistribución con fines comerciales.
+Material complementario del libro NETWORKING. No se autoriza su redistribución con fines comerciales.
 
 ---
 
