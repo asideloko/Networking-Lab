@@ -1,6 +1,6 @@
 ---
 title: "NETWORKING Lab"
-description: "Inicio, recorrido de laboratorios, proyecto integrador y recursos de consulta."
+description: "Inicio, recorrido de laboratorios y recursos de consulta."
 hide:
   - toc
 ---
@@ -29,13 +29,7 @@ Los quince laboratorios están agrupados por progresión temática. Cada prácti
 
 <div class="sx-cards"><a class="sx-card" href="02-LABORATORIOS/lab-11/index.html"><span class="sx-card__n">11</span><span class="sx-card__t">ARQUITECTURA DE RED EMPRESARIAL</span></a><a class="sx-card" href="02-LABORATORIOS/lab-12/index.html"><span class="sx-card__n">12</span><span class="sx-card__t">ARQUITECTURAS MODERNAS DE RED</span></a><a class="sx-card" href="02-LABORATORIOS/lab-13/index.html"><span class="sx-card__n">13</span><span class="sx-card__t">MONITOREO Y DIAGNÓSTICO DE REDES</span></a><a class="sx-card" href="02-LABORATORIOS/lab-14/index.html"><span class="sx-card__n">14</span><span class="sx-card__t">HERRAMIENTAS LINUX AVANZADAS</span></a><a class="sx-card" href="02-LABORATORIOS/lab-15/index.html"><span class="sx-card__n">15</span><span class="sx-card__t">IMPLEMENTACIÓN PRÁCTICA INTEGRAL</span></a></div>
 
-## 2. Proyecto final integrador
-
-El proyecto final reúne direccionamiento, routing, servicios, seguridad, alta disponibilidad, monitoreo, pruebas y reversión en una arquitectura empresarial de referencia. Distingue expresamente lo implementado de lo conceptual.
-
-[Consultar el proyecto final](03-PROYECTO-FINAL/index.md).
-
-## 3. Referencia técnica
+## 2. Referencia técnica
 
 - [Competencias y casos integradores](04-REFERENCIA/competencias.md)
 - [Comparaciones conceptuales](04-REFERENCIA/comparaciones.md)
@@ -44,19 +38,19 @@ El proyecto final reúne direccionamiento, routing, servicios, seguridad, alta d
 - [Arquitectura integral](04-REFERENCIA/arquitectura-integral.md)
 - [Glosario](04-REFERENCIA/glosario.md)
 
-## 4. Anexos y convenciones
+## 3. Anexos y convenciones
 
 - [Guía de uso, alcance y convenciones](05-ANEXOS/guia-de-uso.md)
 - [Diagramación y topologías](05-ANEXOS/diagramacion-y-topologias.md)
 - [Derechos de autor](05-ANEXOS/derechos-de-autor.md)
 
-## 5. Entorno y requisitos
+## 4. Entorno y requisitos
 
 Las prácticas se basan principalmente en Linux, *network namespaces*, interfaces virtuales y herramientas de red. Se recomienda una máquina virtual dedicada con privilegios administrativos. Android/Termux no es un entorno de ejecución soportado; WSL2 puede servir para ejercicios básicos, sujeto a las capacidades de su kernel.
 
 Consulta los requisitos específicos y las precauciones en la [guía de uso](05-ANEXOS/guia-de-uso.md).
 
-## 6. Libro de referencia
+## 5. Libro de referencia
 
 **NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico**, Guillermo Castillo · SecOpsMX.
 
