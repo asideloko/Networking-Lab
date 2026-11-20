@@ -6,7 +6,7 @@ description: "Alcance, metodología, lectura de ejemplos, requisitos y seguridad
 # GUÍA DE USO, ALCANCE Y CONVENCIONES
 
 
-Esta guía reúne las instrucciones necesarias para interpretar y ejecutar las prácticas de NETWORKING Lab. Explica su alcance, metodología, convenciones de lectura, requisitos y medidas de seguridad. Las razones que sustentan la estructura editorial y las decisiones de diseño se documentan en la [sección de justificación y criterios editoriales](justificacion-y-criterios.md).
+Esta guía reúne las instrucciones necesarias para interpretar y ejecutar las prácticas de NETWORKING Lab. Explica su alcance, metodología, convenciones de lectura, requisitos y medidas de seguridad.
 
 ## 1. Alcance: qué son y qué no son
 
@@ -101,29 +101,39 @@ Los diagramas se escriben en Mermaid y se presentan con el tema claro u oscuro d
 
 **Límite normativo importante:** no se ha identificado una norma ISO, IEC, IEEE, ANSI o IETF que prescriba que los routers deban ser violetas, los servicios índigo, los procesos de un tercer color y las decisiones de un cuarto. Afirmar que esa asignación procede de ISO 5807, ANSI Z535.1 o ISO 3864 sería incorrecto. La asignación que sigue es una **convención editorial propia de NETWORKING Lab**, elegida para mantener consistencia visual con los cuatro tonos que ya existen en `stylesheets/extra.css`; no es una certificación ni una codificación normativa universal.
 
-### 7.2 Convención cromática del proyecto
+### 7.2 Paleta funcional de diagramas
 
-La paleta se limita a los cuatro tonos institucionales existentes. Su función es distinguir familias de elementos dentro de los diagramas; no representa severidad, riesgo, estado de salud, prioridad, permiso ni conformidad normativa.
+La paleta identifica la función principal que desempeña cada elemento en el diagrama. El contorno utiliza el color asignado; el fondo conserva un tinte translúcido de esa misma familia. La intensidad del fondo y del texto se adapta al tema claro u oscuro. Los colores institucionales existentes se reutilizan para segmentación, sistemas, usuarios y servicios.
 
-| Color y variable CSS | Uso editorial | Ejemplos |
-|---|---|---|
-| Violeta `#5b18cc` · `--cv-violeta` | **Infraestructura y dispositivos** | Router, switch, firewall como equipo, host, interfaz, bridge y enlaces. |
-| Índigo `#29187a` · `--cv-indigo` | **Servicios y software** | DNS, DHCP, NTP, HTTP/HTTPS, autenticación, monitoreo y aplicaciones. |
-| Acento `#8b5cf6` · `--cv-acento` | **Procesos y operaciones** | Encapsulación, encaminamiento como operación, intercambio de mensajes y procesamiento. |
-| Lila `#cbbcff` · `--cv-lila` | **Decisiones y condiciones** | Rombos, comprobaciones y bifurcaciones. En tema claro se usa violeta para conservar contraste. |
+| Familia funcional | Color de contorno | Aplicación habitual |
+|---|---:|---|
+| Infraestructura de red | `#5B14CC` · morado | Routers, switches, bridges, gateways, interfaces y puertos de red. |
+| Segmentación y zonas | `#059669` · verde | LAN, VLAN, subredes, DMZ, zonas y segmentos. |
+| Sistemas y servidores | `#D97706` · amarillo | Servidores DNS/DHCP, web, aplicaciones y bases de datos. |
+| Usuarios y terminales | `#DC2626` · rojo | Clientes, estaciones, usuarios, endpoints y terminales. |
+| Servicios y aplicaciones | `#0284C7` · azul | Protocolos y servicios identificados como funciones: DNS, DHCP, HTTP/HTTPS, SSH, NTP, TCP/UDP e ICMP. |
+| Seguridad | `#E65C9C` · rosa | Firewall como control, VPN/IPsec, IdP, ZTNA, ACL, autenticación y filtrado. |
+| Transporte y proveedor | `#F28E2B` · naranja | ISP, redes de tránsito y roles de proveedor PE/P/CE. |
+| Procesamiento y operaciones | `#00A6A6` · turquesa | NAT/PAT, routing, forwarding, encapsulación, STP, ECMP, VRRP y failover. |
+| Datos y estructuras | `#344F7A` · azul pizarra | Tramas, paquetes, segmentos, datagramas, cabeceras y etiquetas. |
+| Monitoreo y diagnóstico | `#8C5A3C` · marrón | NOC, logs, métricas, telemetría, tcpdump y colectores. |
+| Nube e infraestructura virtual | `#8AA61E` · oliva | AWS, VPC, EC2, RDS, namespaces, veth e interfaces virtuales. |
+| Elementos externos y referencia | `#737373` · gris | Internet, redes públicas y sistemas externos cuando actúan como referencia. |
 
-La tabla anterior documenta una decisión de diseño del proyecto, no una correspondencia tomada de una norma. Se eligieron cuatro categorías porque ya existen cuatro tonos en la hoja de estilos y porque permiten separar infraestructura, servicios, operaciones y decisiones sin introducir una paleta más amplia. Cuando un elemento pueda pertenecer a más de una familia, se colorea según la función que desempeña en ese diagrama y se aclara con una etiqueta; no se deduce su función exclusivamente por el color.
+Los códigos verde, amarillo, rojo y azul corresponden a los tonos ya presentes en las cajas y notas destacadas del proyecto (`#059669`, `#D97706`, `#DC2626` y `#0284C7`). La paleta es una convención editorial del proyecto, no una asignación cromática impuesta por ISO, IEEE, IETF o TIA.
+
+La clasificación depende de la función en contexto: un firewall como equipo de red puede representarse como infraestructura; cuando el diagrama destaca su función de control se clasifica como seguridad. Un servidor DNS se clasifica como sistema; una consulta DNS o el protocolo DNS, como servicio. Los nodos ambiguos o no reconocidos conservan el estilo neutro. Las decisiones se identifican por su rombo y condición, no por un color funcional.
 
 ### 7.3 Aplicación gráfica y adaptación de tema
 
-- **Fondos:** lienzo, nodos y agrupaciones permanecen transparentes; no se rellenan con bloques de color opaco.
-- **Contornos:** el tono funcional se aplica principalmente al contorno de los nodos. Se conserva un grosor suficiente para que la forma sea visible.
-- **Conectores:** las líneas y flechas utilizan el color de conexión definido para el tema; no se les asigna el color funcional del nodo de origen o destino. Las etiquetas identifican si la relación es física, lógica, túnel, ruta, dependencia o flujo de tráfico.
-- **Tema claro/oscuro:** los colores se obtienen de variables CSS; el texto y los trazos se ajustan al esquema activo. El significado de cada categoría no cambia al cambiar de tema. El lila se sustituye visualmente por violeta en tema claro cuando sea necesario para el contraste.
-- **Decisiones:** se representan con rombo y una condición explícita. La categoría no se determina por palabras como «firewall», «seguridad» o «ACL»: un firewall como dispositivo es infraestructura; una regla ACL es una operación/política; solo una bifurcación real es una decisión.
-- **Estados de seguridad:** no se reutiliza la paleta institucional como sustituto de señales de seguridad. Si el diagrama necesita comunicar peligro, prohibición, obligación, emergencia o condición segura, debe emplear la señalización aplicable de ISO 3864/ISO 7010 o ANSI Z535, según el contexto, y no reinterpretar estos cuatro tonos.
-- **Accesibilidad:** el significado debe seguir siendo comprensible sin color, mediante formas, etiquetas, flechas y una leyenda textual, conforme a WCAG 2.2, criterio 1.4.1.
-
+- **Contornos:** se aplica el color funcional de la familia asignada, con grosor suficiente para mantener la legibilidad.
+- **Fondos:** se utiliza un tinte translúcido visualmente ligero de la misma familia; no se rellenan los nodos con bloques saturados.
+- **Tema claro y oscuro:** el significado y el color de contorno se conservan. Cambian el tinte de fondo y el contraste del texto para adaptarse al esquema activo.
+- **Efecto cyberpunk:** se admite un resplandor sutil, principalmente en tema oscuro; nunca debe sustituir el contorno ni perjudicar la lectura.
+- **Conectores:** mantienen una codificación independiente de la identidad de los nodos. No heredan automáticamente el color del origen o destino.
+- **Estados y avisos:** las notas `note`, `warning`, `tip/info` y `danger/failure` conservan sus colores semánticos actuales. No se confunden con la identidad funcional de los elementos de red.
+- **Accesibilidad:** el significado también debe expresarse mediante etiquetas, formas, flechas y una leyenda textual; no depende exclusivamente del color.
+- **Conservación visual:** la paleta no modifica la geometría, la distribución, la tipografía ni la iconografía de los diagramas.
 
 ### 7.4 Reglas de revisión de cada diagrama
 
@@ -138,7 +148,6 @@ La tabla anterior documenta una decisión de diseño del proyecto, no una corres
 
 ## 8. Referencias y recursos de consulta
 
-- [Justificación y criterios editoriales](justificacion-y-criterios.md): propósito de la serie, decisiones de simplificación, organización y fundamento de la convención cromática.
 - [Diagramación y topologías](diagramacion-y-topologias.md): código fuente, descripción y vínculo al contexto original de los diagramas de laboratorios, proyecto y referencias.
 - [Servicios, protocolos y puertos](../04-REFERENCIA/servicios-puertos.md): matriz común de la serie.
 - [Comparaciones conceptuales](../04-REFERENCIA/comparaciones.md): bridge/router, MAC/IP, subred/VLAN, GRE/IPsec y otras distinciones.

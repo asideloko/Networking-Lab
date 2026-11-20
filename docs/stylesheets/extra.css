@@ -415,6 +415,7 @@
 .md-typeset .sx-hero__meta { display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem; margin: 0; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: #ffffff; }
 
 .sx-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin: 0 0 1rem; }
+.sx-stats__note { margin: -0.35rem 0 1.4rem; color: var(--sx-muted, var(--md-default-fg-color--light)); font-size: 0.76rem; line-height: 1.55; }
 .sx-stats > div { border: 1px solid var(--sx-card-line); background: var(--sx-card-bg); padding: 0.9rem 1rem; text-align: center; }
 .sx-stats b { display: block; font-size: 1.7rem; line-height: 1.1; color: var(--sx-h-accent); font-weight: 500; }
 .sx-stats span { font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; }
@@ -1116,101 +1117,141 @@ body[data-md-color-scheme="slate"] {
 }
 
 
-/* PALETA FUNCIONAL OFICIAL */
+/* ======================================================================
+   PALETA SEMÁNTICA DE CAJAS DE RESALTADO
+   Mantiene la forma, tipografía, espaciado y sombras del componente;
+   únicamente diferencia la función de cada aviso, en claro y oscuro.
+   ====================================================================== */
+.md-typeset .admonition.note,
+.md-typeset details.note,
+.md-typeset .admonition.abstract,
+.md-typeset details.abstract {
+  --callout-color: #0284c7;
+  --callout-soft: rgba(56, 189, 248, .16);
+}
+.md-typeset .admonition.warning,
+.md-typeset details.warning {
+  --callout-color: #d97706;
+  --callout-soft: rgba(245, 158, 11, .17);
+}
+.md-typeset .admonition.tip,
+.md-typeset .admonition.info,
+.md-typeset .admonition.success,
+.md-typeset details.tip,
+.md-typeset details.info,
+.md-typeset details.success {
+  --callout-color: #059669;
+  --callout-soft: rgba(16, 185, 129, .16);
+}
+.md-typeset .admonition.danger,
+.md-typeset .admonition.failure,
+.md-typeset .admonition.bug,
+.md-typeset details.danger,
+.md-typeset details.failure,
+.md-typeset details.bug {
+  --callout-color: #dc2626;
+  --callout-soft: rgba(239, 68, 68, .15);
+}
+
+body[data-md-color-scheme="slate"] .md-typeset .admonition.note,
+body[data-md-color-scheme="slate"] .md-typeset details.note,
+body[data-md-color-scheme="slate"] .md-typeset .admonition.abstract,
+body[data-md-color-scheme="slate"] .md-typeset details.abstract {
+  --callout-color: #38bdf8;
+  --callout-soft: rgba(56, 189, 248, .16);
+}
+body[data-md-color-scheme="slate"] .md-typeset .admonition.warning,
+body[data-md-color-scheme="slate"] .md-typeset details.warning {
+  --callout-color: #fbbf24;
+  --callout-soft: rgba(251, 191, 36, .15);
+}
+body[data-md-color-scheme="slate"] .md-typeset .admonition.tip,
+body[data-md-color-scheme="slate"] .md-typeset .admonition.info,
+body[data-md-color-scheme="slate"] .md-typeset .admonition.success,
+body[data-md-color-scheme="slate"] .md-typeset details.tip,
+body[data-md-color-scheme="slate"] .md-typeset details.info,
+body[data-md-color-scheme="slate"] .md-typeset details.success {
+  --callout-color: #34d399;
+  --callout-soft: rgba(52, 211, 153, .15);
+}
+body[data-md-color-scheme="slate"] .md-typeset .admonition.danger,
+body[data-md-color-scheme="slate"] .md-typeset .admonition.failure,
+body[data-md-color-scheme="slate"] .md-typeset .admonition.bug,
+body[data-md-color-scheme="slate"] .md-typeset details.danger,
+body[data-md-color-scheme="slate"] .md-typeset details.failure,
+body[data-md-color-scheme="slate"] .md-typeset details.bug {
+  --callout-color: #f87171;
+  --callout-soft: rgba(248, 113, 113, .15);
+}
+
+/* El icono y el título siguen el color semántico de su propia caja. */
+.md-typeset .admonition.note > .admonition-title::before,
+.md-typeset details.note > summary::before,
+.md-typeset .admonition.warning > .admonition-title::before,
+.md-typeset details.warning > summary::before,
+.md-typeset .admonition.tip > .admonition-title::before,
+.md-typeset .admonition.info > .admonition-title::before,
+.md-typeset .admonition.success > .admonition-title::before,
+.md-typeset details.tip > summary::before,
+.md-typeset details.info > summary::before,
+.md-typeset details.success > summary::before,
+.md-typeset .admonition.danger > .admonition-title::before,
+.md-typeset .admonition.failure > .admonition-title::before,
+.md-typeset .admonition.bug > .admonition-title::before,
+.md-typeset details.danger > summary::before,
+.md-typeset details.failure > summary::before,
+.md-typeset details.bug > summary::before {
+  background-color: var(--callout-color) !important;
+  color: var(--callout-color) !important;
+}
+
+/* ======================================================================
+   MERMAID — paleta funcional NETWORKING Lab (12 familias)
+   Contorno por función, fondo translúcido tintado y adaptación claro/oscuro.
+   Los conectores conservan su semántica independiente del color de los nodos.
+   ====================================================================== */
 :root {
-  --color-nota-aviso: #2196D2;
-  --color-advertencia: #F59E0B;
-  --color-dato-tecnico: #10B981;
-  --color-peligro-critico: #EF4444;
+  --sx-infra: #5B14CC; --sx-infra-bg: rgba(91, 20, 204, .10); --sx-infra-text: #35136E;
+  --sx-segment: #059669; --sx-segment-bg: rgba(5, 150, 105, .10); --sx-segment-text: #075B42;
+  --sx-systems: #D97706; --sx-systems-bg: rgba(217, 119, 6, .11); --sx-systems-text: #804400;
+  --sx-users: #DC2626; --sx-users-bg: rgba(220, 38, 38, .09); --sx-users-text: #941B25;
+  --sx-services: #0284C7; --sx-services-bg: rgba(2, 132, 199, .10); --sx-services-text: #07547D;
+  --sx-security: #E65C9C; --sx-security-bg: rgba(230, 92, 156, .10); --sx-security-text: #96335F;
+  --sx-transport: #F28E2B; --sx-transport-bg: rgba(242, 142, 43, .11); --sx-transport-text: #8A4708;
+  --sx-operations: #00A6A6; --sx-operations-bg: rgba(0, 166, 166, .10); --sx-operations-text: #006C6C;
+  --sx-data: #344F7A; --sx-data-bg: rgba(52, 79, 122, .10); --sx-data-text: #263D63;
+  --sx-monitor: #8C5A3C; --sx-monitor-bg: rgba(140, 90, 60, .10); --sx-monitor-text: #68402B;
+  --sx-cloud: #8AA61E; --sx-cloud-bg: rgba(138, 166, 30, .11); --sx-cloud-text: #566A0C;
+  --sx-external: #737373; --sx-external-bg: rgba(115, 115, 115, .09); --sx-external-text: #454545;
 }
-
-.mermaid .node.nota rect,
-.mermaid .node.aviso rect {
-  fill: var(--color-nota-aviso) !important;
-  stroke: var(--color-nota-aviso) !important;
+body[data-md-color-scheme="slate"] {
+  --sx-infra-bg: rgba(91, 20, 204, .20); --sx-infra-text: #E9D9FF;
+  --sx-segment-bg: rgba(5, 150, 105, .20); --sx-segment-text: #8CE5C3;
+  --sx-systems-bg: rgba(217, 119, 6, .20); --sx-systems-text: #FFD08A;
+  --sx-users-bg: rgba(220, 38, 38, .18); --sx-users-text: #FF9A9F;
+  --sx-services-bg: rgba(2, 132, 199, .20); --sx-services-text: #8BD5FA;
+  --sx-security-bg: rgba(230, 92, 156, .20); --sx-security-text: #FFABD2;
+  --sx-transport-bg: rgba(242, 142, 43, .20); --sx-transport-text: #FFC184;
+  --sx-operations-bg: rgba(0, 166, 166, .20); --sx-operations-text: #80E2DE;
+  --sx-data-bg: rgba(52, 79, 122, .22); --sx-data-text: #B8CBEA;
+  --sx-monitor-bg: rgba(140, 90, 60, .20); --sx-monitor-text: #DDB69D;
+  --sx-cloud-bg: rgba(138, 166, 30, .20); --sx-cloud-text: #D2E68B;
+  --sx-external-bg: rgba(115, 115, 115, .18); --sx-external-text: #D0D0D0;
 }
-
-.mermaid .node.advertencia rect {
-  fill: var(--color-advertencia) !important;
-  stroke: var(--color-advertencia) !important;
-}
-
-.mermaid .node.dato-tecnico rect {
-  fill: var(--color-dato-tecnico) !important;
-  stroke: var(--color-dato-tecnico) !important;
-}
-
-.mermaid .node.peligro rect,
-.mermaid .node.error-critico rect {
-  fill: var(--color-peligro-critico) !important;
-  stroke: var(--color-peligro-critico) !important;
-}
-
-
-/* PALETA FUNCIONAL OFICIAL */
-:root {
-  --color-nota-aviso: #2196D2;
-  --color-advertencia: #F59E0B;
-  --color-dato-tecnico: #10B981;
-  --color-peligro-critico: #EF4444;
-}
-
-.mermaid .node.nota rect,
-.mermaid .node.aviso rect {
-  fill: var(--color-nota-aviso) !important;
-  stroke: var(--color-nota-aviso) !important;
-}
-
-.mermaid .node.advertencia rect {
-  fill: var(--color-advertencia) !important;
-  stroke: var(--color-advertencia) !important;
-}
-
-.mermaid .node.dato-tecnico rect {
-  fill: var(--color-dato-tecnico) !important;
-  stroke: var(--color-dato-tecnico) !important;
-}
-
-.mermaid .node.peligro rect,
-.mermaid .node.error-critico rect {
-  fill: var(--color-peligro-critico) !important;
-  stroke: var(--color-peligro-critico) !important;
-}
-
-/* PALETA FUNCIONAL MERMAID */
-.md-typeset .mermaid g.node[data-funcion="aviso"] rect,
-.md-typeset .mermaid g.node[data-funcion="aviso"] polygon,
-.md-typeset .mermaid g.node[data-funcion="aviso"] circle {
-  fill: #2196D2 !important;
-  stroke: #2196D2 !important;
-}
-
-.md-typeset .mermaid g.node[data-funcion="advertencia"] rect,
-.md-typeset .mermaid g.node[data-funcion="advertencia"] polygon,
-.md-typeset .mermaid g.node[data-funcion="advertencia"] circle {
-  fill: #F59E0B !important;
-  stroke: #F59E0B !important;
-}
-
-.md-typeset .mermaid g.node[data-funcion="tecnico"] rect,
-.md-typeset .mermaid g.node[data-funcion="tecnico"] polygon,
-.md-typeset .mermaid g.node[data-funcion="tecnico"] circle {
-  fill: #10B981 !important;
-  stroke: #10B981 !important;
-}
-
-.md-typeset .mermaid g.node[data-funcion="peligro"] rect,
-.md-typeset .mermaid g.node[data-funcion="peligro"] polygon,
-.md-typeset .mermaid g.node[data-funcion="peligro"] circle {
-  fill: #EF4444 !important;
-  stroke: #EF4444 !important;
-}
-
-.md-typeset .mermaid .edgePath path,
-.md-typeset .mermaid .flowchart-link {
-  stroke: #64748B;
-}
-
-.md-typeset .mermaid .edgeLabel {
-  background: transparent;
-}
+.md-typeset .mermaid svg g.node.sxInfra :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxInfra rect { fill: var(--sx-infra-bg) !important; stroke: var(--sx-infra) !important; }
+.md-typeset .mermaid svg g.node.sxSegment :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxSegment rect { fill: var(--sx-segment-bg) !important; stroke: var(--sx-segment) !important; }
+.md-typeset .mermaid svg g.node.sxSystems :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxSystems rect { fill: var(--sx-systems-bg) !important; stroke: var(--sx-systems) !important; }
+.md-typeset .mermaid svg g.node.sxUsers :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxUsers rect { fill: var(--sx-users-bg) !important; stroke: var(--sx-users) !important; }
+.md-typeset .mermaid svg g.node.sxServices :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxServices rect { fill: var(--sx-services-bg) !important; stroke: var(--sx-services) !important; }
+.md-typeset .mermaid svg g.node.sxSecurity :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxSecurity rect { fill: var(--sx-security-bg) !important; stroke: var(--sx-security) !important; }
+.md-typeset .mermaid svg g.node.sxTransport :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxTransport rect { fill: var(--sx-transport-bg) !important; stroke: var(--sx-transport) !important; }
+.md-typeset .mermaid svg g.node.sxOperations :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxOperations rect { fill: var(--sx-operations-bg) !important; stroke: var(--sx-operations) !important; }
+.md-typeset .mermaid svg g.node.sxData :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxData rect { fill: var(--sx-data-bg) !important; stroke: var(--sx-data) !important; }
+.md-typeset .mermaid svg g.node.sxMonitor :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxMonitor rect { fill: var(--sx-monitor-bg) !important; stroke: var(--sx-monitor) !important; }
+.md-typeset .mermaid svg g.node.sxCloud :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxCloud rect { fill: var(--sx-cloud-bg) !important; stroke: var(--sx-cloud) !important; }
+.md-typeset .mermaid svg g.node.sxExternal :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxExternal rect { fill: var(--sx-external-bg) !important; stroke: var(--sx-external) !important; }
+.md-typeset .mermaid svg g.node:is(.sxInfra,.sxSegment,.sxSystems,.sxUsers,.sxServices,.sxSecurity,.sxTransport,.sxOperations,.sxData,.sxMonitor,.sxCloud,.sxExternal) :is(text,tspan),
+.md-typeset .mermaid svg g.actor:is(.sxInfra,.sxSegment,.sxSystems,.sxUsers,.sxServices,.sxSecurity,.sxTransport,.sxOperations,.sxData,.sxMonitor,.sxCloud,.sxExternal) text { fill: var(--md-typeset-color) !important; }
+.md-typeset .mermaid svg g.node:is(.sxInfra,.sxSegment,.sxSystems,.sxUsers,.sxServices,.sxSecurity,.sxTransport,.sxOperations,.sxData,.sxMonitor,.sxCloud,.sxExternal) .nodeLabel { color: var(--md-typeset-color) !important; }
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg g.node:is(.sxInfra,.sxSegment,.sxSystems,.sxUsers,.sxServices,.sxSecurity,.sxTransport,.sxOperations,.sxData,.sxMonitor,.sxCloud,.sxExternal) :is(rect,polygon,circle,ellipse,path),
+[data-md-color-scheme="slate"] .md-typeset .mermaid svg g.actor:is(.sxInfra,.sxSegment,.sxSystems,.sxUsers,.sxServices,.sxSecurity,.sxTransport,.sxOperations,.sxData,.sxMonitor,.sxCloud,.sxExternal) rect { filter: drop-shadow(0 0 2px currentColor); }

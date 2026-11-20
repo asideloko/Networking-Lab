@@ -18,6 +18,8 @@ La colorimetría es una **convención editorial propia del proyecto**. El color 
 | <span class="sx-dot" style="background:#10B981"></span> Verde `#10B981` | Dato Técnico | Parámetros, direcciones IP, configuraciones, características de equipos y datos técnicos de referencia. |
 | <span class="sx-dot" style="background:#EF4444"></span> Rojo `#EF4444` | Peligro / Error Crítico | Errores críticos, bloqueos, condiciones peligrosas, fallos graves y acciones que pueden causar daños. |
 
+**Colores funcionales de los nodos Mermaid:** los mismos cuatro colores de las cajas de resaltado se integran en los diagramas, con rellenos suaves y contornos definidos: **azul** para infraestructura y dispositivos; **verde** para servicios y datos técnicos; **amarillo** para procesos y operaciones; y **rojo** para decisiones críticas, errores o condiciones de riesgo. Las decisiones también se reconocen por su forma de rombo. Los conectores y la composición general conservan el estilo del tema; los elementos no reconocidos permanecen neutros.
+
 **Referencias de accesibilidad:** [WCAG 2.2, criterio 1.4.1](https://www.w3.org/TR/WCAG22/#use-of-color) establece que el color no debe ser el único medio de transmitir información. [ISO 5807:1985](https://www.iso.org/standard/11955.html) ofrece convenciones de símbolos para diagramas de flujo y sistemas; no prescribe esta paleta de red.
 
 ## Cómo consultar las fichas
