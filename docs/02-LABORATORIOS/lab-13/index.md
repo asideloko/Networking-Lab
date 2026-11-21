@@ -7,7 +7,7 @@ description: "Laboratorio 13 de NETWORKING Lab — Monitoreo y Diagnóstico de R
 
 # MONITOREO Y DIAGNÓSTICO DE REDES
 
-<p class="tema-meta"><span>9 secciones</span><span>2 diagramas</span><span>7 tablas</span></p>
+<p class="tema-meta"><span>13 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -17,8 +17,23 @@ La empresa **Networking SecOps** ha implementado su infraestructura de red compl
     - Los namespaces aíslan la **red**, no el sistema de archivos: un `tcpdump -w /tmp/captura.pcap` o un `rsyslog` dentro de un namespace escriben en el `/tmp` y el `/etc` **reales** del equipo. Por eso las capturas y el [SIEM](https://csrc.nist.gov/glossary/term/security_information_and_event_management) de este laboratorio usan rutas propias en `/tmp/lab13/` y los servicios se arrancan a mano (`systemctl` actuaría sobre el host).
     - El "SIEM" que se construye es un **colector central de logs** con `rsyslog`. Un SIEM real añade normalización, correlación de eventos, alertas y paneles. **No debe equipararse con un SIEM empresarial completo.**
 
-!!! note "[NOC](https://www.cisco.com/c/en/us/products/routers/what-is-network-operations-center-noc.html) y SIEM: dos funciones distintas"
+!!! info "[NOC](https://www.cisco.com/c/en/us/products/routers/what-is-network-operations-center-noc.html) y SIEM: dos funciones distintas"
     Un **NOC** (*Network Operations Center*) se ocupa de la **disponibilidad, el rendimiento y la operación** de la infraestructura (¿está caído el enlace? ¿qué latencia hay?). Un **SIEM** (*Security Information and Event Management*) se ocupa de **recolectar, correlacionar y analizar eventos relevantes para la seguridad** (¿hay un patrón de intentos de acceso anómalos?). En este laboratorio, el equipo `NOC` ejecuta herramientas de diagnóstico y el equipo `SIEM` hace de colector de registros; ambos comparten red, pero sirven a propósitos diferentes.
+
+## Problema inicial
+
+-   El equipo de operaciones solo sabe que la red falla cuando un usuario lo reporta: no tiene forma de **medir ni observar** su estado.
+-   Necesita ver el tráfico, medir el rendimiento y **centralizar los registros** de los equipos.
+-   Debe poder pasar de un síntoma («la aplicación va lenta») a una causa, con evidencias que otra persona pueda comprobar.
+
+## Objetivos del laboratorio
+
+1.  Distinguir las funciones de un **NOC** y de un **SIEM** y saber qué herramientas corresponden a cada uno.
+2.  Medir conectividad y camino con `ping`, `traceroute` y MTR, e interpretar los resultados.
+3.  Capturar tráfico con `tcpdump` e interpretar lo observado, incluidos sus límites en una LAN conmutada.
+4.  Medir rendimiento TCP y UDP con `iperf3` y explicar por qué esas cifras no certifican la capacidad de un enlace físico.
+5.  Centralizar registros con `rsyslog` y definir métricas, **umbrales** y alertas.
+6.  Aplicar un **método de diagnóstico por capas** y reproducir un fallo de MTU.
 
 ## Topología
 
@@ -38,6 +53,7 @@ graph TB
     R1 --- VPC
     EC2 --- VPC
     R1 --- Internet
+    class Internet sxExternal
 ```
 
 **Direccionamiento:**
@@ -377,6 +393,7 @@ flowchart TD
     P -- Sí --> Q{"¿Va lento? iperf3, mtr"}
     Q -- Sí --> PERF["Rendimiento: pérdida, MTU, congestión"]
     R --> LNK["Enlace, ruta o gateway"]
+    class DNS,FW,LNK,PERF sxMonitor
 ```
 
 | Síntoma | Capa o mecanismo | Herramientas | Causas posibles |
@@ -600,7 +617,6 @@ Una prueba `iperf3` sobre veth enseña cómo medir throughput, pérdida y jitter
 
 Ante un reporte de lentitud, entrega: síntoma y alcance; línea temporal con relojes sincronizados; hipótesis; evidencia de ping/MTR; métricas TCP/UDP; captura que muestre retransmisiones o pérdida; logs de cambios; causa probable y nivel de confianza; corrección; validación posterior y riesgos residuales. No atribuyas pérdida a un salto intermedio de MTR sin verificar si los saltos posteriores también muestran pérdida: algunos routers limitan respuestas ICMP de control.
 
-
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo permite al NOC decidir si un problema es de ruta, de DNS, de servicio o de rendimiento?
@@ -610,9 +626,13 @@ Ante un reporte de lentitud, entrega: síntoma y alcance; línea temporal con re
 5.  ¿En qué escenario empresarial una alerta por umbral habría evitado una incidencia?
 6.  ¿Qué otras herramientas aportarían métricas continuas? (SNMP, telemetría.)
 
-## Conclusiones
+## Conclusiones técnicas
 
 Las herramientas de monitoreo y diagnóstico permiten detectar y resolver incidentes de red de manera rápida y estructurada. Un colector de logs es el primer paso hacia un SIEM; la correlación y las alertas avanzadas requieren herramientas específicas. El monitoreo detecta; la prevención y la respuesta son medidas aparte.
+
+## Preparación para el siguiente laboratorio
+
+Observar y medir exige dominar las herramientas con las que se obtienen los datos. En el **Laboratorio 14** se estudian con calma las herramientas avanzadas de Linux (`ip`, `ss`, `nft`, `ethtool`, `tcpdump`) sobre una topología propia y sencilla, para saber **elegir la correcta según la pregunta** que se quiere responder.
 
 ---
 

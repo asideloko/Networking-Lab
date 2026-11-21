@@ -7,7 +7,7 @@ description: "Laboratorio 04 de NETWORKING Lab — Direccionamiento IP y Subrede
 
 # DIRECCIONAMIENTO IP Y SUBREDES
 
-<p class="tema-meta"><span>14 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>15 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -356,7 +356,7 @@ ip netns exec router ip addr add 10.0.0.14/28 dev veth-rs   # gateway de Ventas
 ip netns exec router ip addr add 10.0.0.22/29 dev veth-rs   # gateway de IT
 ```
 
-!!! note "Por qué el router tiene tres IP en una misma interfaz"
+!!! info "Por qué el router tiene tres IP en una misma interfaz"
     Todos los equipos cuelgan del mismo bridge (sin VLAN), así que el router debe tener, en esa única interfaz, una dirección dentro de cada subred para actuar como su *gateway*. Las VLAN del laboratorio 05 resolverán esto de forma limpia, con una subinterfaz por segmento.
 
 ### Paso 8: Configurar NAT y enrutamiento en el router
@@ -568,7 +568,7 @@ ip netns exec ventas4 ping -c 4 10.0.0.1
 
 Con el bloque `192.168.10.0/24`, diseña subredes para Ventas (**60** hosts), Soporte (**28**), Invitados (**12**) y dos enlaces punto a punto `/30`. Cuenta también la dirección del *gateway*.
 
-??? note "Solución"
+??? success "Solución"
     Se asigna de mayor a menor, sin solapar:
 
     | Segmento | Hosts + gateway | Máscara | Subred | Rango útil |
@@ -585,14 +585,14 @@ Con el bloque `192.168.10.0/24`, diseña subredes para Ventas (**60** hosts), So
 
 Ventas tiene **25** equipos y prevé crecer un **50 %** en dos años. ¿Qué máscara necesita (con gateway)? ¿Por qué no basta `/27`?
 
-??? note "Solución"
+??? success "Solución"
     25 × 1,5 ≈ 38 equipos + 1 gateway = 39 direcciones. `/27` ofrece 30 útiles (insuficiente); `/26` ofrece 62: **`/26`**. Dimensionar solo para hoy obliga a renumerar al crecer.
 
 ### Ejercicio 6: encontrar el solapamiento
 
 ¿Es válido este plan? `10.0.0.0/25` (Ventas) y `10.0.0.64/26` (IT).
 
-??? note "Solución"
+??? success "Solución"
     **No.** `10.0.0.0/25` abarca `10.0.0.0`–`10.0.0.127`, y `10.0.0.64/26` (`.64`–`.127`) queda **dentro**: se solapan. IT podría ir en `10.0.0.128/26`.
 
 ## Errores comunes y soluciones
@@ -665,7 +665,6 @@ sudo ip netns exec ventas1 ip neigh show
 El primer destino puede ser local según la máscara configurada; el segundo puede requerir gateway. Cambia temporalmente la máscara en un cliente de laboratorio y predice antes de probar: una máscara demasiado amplia puede hacer que el host intente ARP por un destino remoto; una demasiado estrecha puede enviar al gateway un destino que debería ser local. Restaura la máscara al terminar.
 
 **Evidencia:** cálculo binario de AND, tabla de subredes, `ip route get` antes/después y explicación de qué IP se resuelve por ARP (destino local o siguiente salto).
-
 
 ## Preguntas de reflexión
 

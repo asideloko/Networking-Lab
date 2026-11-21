@@ -7,7 +7,7 @@ description: "Competencias que desarrolla NETWORKING Lab y casos integradores pa
 
 # COMPETENCIAS Y CASOS INTEGRADORES
 
-Completar los 15 laboratorios te acerca un paso a convertirte en un administrador de redes, si bien no son una certificación, el set fue diseñado con un único fin: **enseñar**. Esta página lista las **competencias que el contenido pretende desarrollar**, así como el enfoque y temario que se trabajo.
+Completar los quince laboratorios te acerca a las tareas de un administrador de redes, pero **no es una certificación**: el material se diseñó con un único fin, **enseñar**. Esta página lista las **competencias que el contenido pretende desarrollar** y propone dos casos para repasarlas. Las competencias se demuestran por completo en el [Proyecto final](../03-PROYECTO-FINAL/index.md).
 
 ## Competencias esperadas al finalizar la serie
 
@@ -15,16 +15,16 @@ Completar los 15 laboratorios te acerca un paso a convertirte en un administrado
 | -------------------- | ----------------------------------------------------------------------------------- | -------------- |
 | **Fundamentos**      | Explicar cómo se comunican los dispositivos: Ethernet, ARP, IP y protocolos básicos | 01–03          |
 | **Direccionamiento** | Diseñar esquemas IPv4, calcular subredes y comprender la segmentación               | 04, 05, 15     |
-| **Infraestructura**  | Diferenciar las funciones de switches, routers, firewalls y componentes WAN         | 03, 05, 08, 10 |
+| **Infraestructura**  | Diferenciar las funciones de switches, routers, firewalls y componentes WAN         | 03, 05, 08, 10, 11 |
 | **Conectividad**     | Comprender rutas, enrutamiento estático y dinámico, túneles y VPN                   | 06, 09, 15     |
-| **Servicios**        | Explicar DNS, DHCP, TCP, UDP y NAT                                                  | 07             |
-| **Seguridad**        | Comprender filtrado, DMZ, cifrado, control de acceso y microsegmentación            | 08, 09, 12     |
+| **Servicios**        | Explicar DNS, DHCP, TCP, UDP y NAT                                                  | 07, 15         |
+| **Seguridad**        | Comprender filtrado, DMZ, cifrado, control de acceso y microsegmentación            | 08, 09, 11, 12 |
 | **Arquitectura**     | Interpretar arquitecturas empresariales, de nube e híbridas                         | 10, 11, 12     |
 | **Operación**        | Usar herramientas Linux para consultar, observar y diagnosticar redes               | 13, 14         |
 | **Disponibilidad**   | Comprender redundancia, ECMP, OSPF y VRRP, y reconocer sus límites                  | 06, 10, 11, 15 |
 | **Integración**      | Relacionar todos estos mecanismos en una infraestructura empresarial                | 15             |
 
-## Practica 1 
+## Práctica 1: una sucursal nueva
 
 Resuélvelo **con diagramas, tablas y razonamiento**; no hace falta construir otra topología.
 
@@ -32,7 +32,7 @@ Resuélvelo **con diagramas, tablas y razonamiento**; no hace falta construir ot
 
 Se deberá poder señalar, en cada paso, **qué mecanismo interviene** (rutas o túnel, DHCP y DNS, firewall, VPN) y **qué falla si ese mecanismo se omite**. Apóyate en el [mapa integral](arquitectura-integral.md) y en la [matriz de servicios y puertos](servicios-puertos.md).
 
-## Practica 2 
+## Práctica 2: informe de una empresa híbrida
 
 > Una empresa con **varias sedes**, **infraestructura híbrida** y **aplicaciones críticas** pide un informe.
 

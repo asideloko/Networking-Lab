@@ -7,11 +7,18 @@ description: "Laboratorio 10 de NETWORKING Lab — Infraestructura WAN y Core."
 
 # INFRAESTRUCTURA WAN Y CORE
 
-<p class="tema-meta"><span>11 secciones</span><span>4 diagramas</span><span>8 tablas</span></p>
+<p class="tema-meta"><span>14 secciones</span><span>4 diagramas</span><span>8 tablas</span></p>
 
 ## Contexto empresarial
 
 La empresa **Networking SecOps** ha implementado exitosamente su red con VPN y tunelización (Laboratorio 09). Ahora necesita expandir su infraestructura a nivel geográfico, conectando múltiples sucursales y centros de datos a través de una red WAN robusta y escalable.
+
+## Problema inicial
+
+-   Hasta ahora las sedes se interconectaron con rutas y túneles; falta entender **la red que transporta** ese tráfico.
+-   La empresa va a conectar varias sucursales y centros de datos, y debe saber cómo se organiza el núcleo de una WAN de proveedor (roles PE y P, malla parcial, caminos alternativos).
+-   Debe comprobar qué ocurre cuando falla un enlace del núcleo y cómo se reparte el tráfico entre caminos de igual preferencia.
+-   Antes de elegir una arquitectura WAN, necesita distinguir qué resuelve MPLS y qué resuelve SD-WAN.
 
 ## Objetivos del laboratorio
 
@@ -514,7 +521,6 @@ sudo ip -s link show
 
 MPLS es una tecnología/arquitectura de forwarding del proveedor; SD-WAN es una arquitectura de control, políticas y orquestación de conectividad WAN que puede utilizar MPLS, Internet o enlaces LTE como underlay. Evalúa SLA de aplicaciones con latencia, jitter y pérdida, y diferencia edge, controlador y orquestador.
 
-
 ## Preguntas de reflexión
 
 1.  ¿Qué distingue a un router PE de uno P en una arquitectura de proveedor?
@@ -523,7 +529,7 @@ MPLS es una tecnología/arquitectura de forwarding del proveedor; SD-WAN es una 
 4.  ¿Qué limitaciones tiene no disponer de un protocolo de enrutamiento dinámico en el núcleo?
 5.  ¿Cuándo preferiría una empresa SD-WAN a un servicio MPLS contratado?
 
-## Conclusiones
+## Conclusiones técnicas
 
 Hemos construido una **simulación de una topología WAN con roles PE/P** y rutas IP estáticas, y hemos explicado MPLS de forma conceptual: para que fuese un core MPLS faltarían la distribución de etiquetas (LDP) y las tablas de etiquetas. MPLS permite ingeniería de tráfico y QoS mediante el reenvío por etiquetas (la calidad no es automática: depende de cómo el proveedor la configure). SD-WAN es un enfoque de gestión por políticas que puede apoyarse en MPLS, banda ancha u otros transportes, y suele ofrecer flexibilidad y reducción de costos. Las arquitecturas híbridas combinan ambos.
 

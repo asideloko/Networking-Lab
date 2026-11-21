@@ -336,7 +336,7 @@
   margin-left: 1rem;
   margin-right: 1rem;
 }
-.md-typeset .admonition p,
+.md-typeset .admonition p:not(.admonition-title),
 .md-typeset details p { color: var(--md-typeset-color) !important; }
 .md-typeset .admonition.note,
 .md-typeset details.note { --callout-color: #0284c7; --callout-soft: rgba(56,189,248,.11); }
@@ -415,7 +415,6 @@
 .md-typeset .sx-hero__meta { display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem; margin: 0; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: #ffffff; }
 
 .sx-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin: 0 0 1rem; }
-.sx-stats__note { margin: -0.35rem 0 1.4rem; color: var(--sx-muted, var(--md-default-fg-color--light)); font-size: 0.76rem; line-height: 1.55; }
 .sx-stats > div { border: 1px solid var(--sx-card-line); background: var(--sx-card-bg); padding: 0.9rem 1rem; text-align: center; }
 .sx-stats b { display: block; font-size: 1.7rem; line-height: 1.1; color: var(--sx-h-accent); font-weight: 500; }
 .sx-stats span { font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; }
@@ -1206,52 +1205,86 @@ body[data-md-color-scheme="slate"] .md-typeset details.bug {
 }
 
 /* ======================================================================
-   MERMAID — paleta funcional NETWORKING Lab (12 familias)
-   Contorno por función, fondo translúcido tintado y adaptación claro/oscuro.
-   Los conectores conservan su semántica independiente del color de los nodos.
+   MERMAID — paleta «Cyberpunk» (12 categorías). Contorno luminoso, fondo
+   translúcido teñido del mismo color, adaptación automática claro/oscuro.
+   --sx-<cat>    color de identidad (tinte del fondo)
+   --sx-<cat>-l  color del contorno, ajustado por tema para tener >= 3:1 (WCAG 1.4.11)
+   Qué categoría recibe cada nodo: custom.js (SX_REGLAS). Justificación: Guía de uso, 7.2.
    ====================================================================== */
-:root {
-  --sx-infra: #5B14CC; --sx-infra-bg: rgba(91, 20, 204, .10); --sx-infra-text: #35136E;
-  --sx-segment: #059669; --sx-segment-bg: rgba(5, 150, 105, .10); --sx-segment-text: #075B42;
-  --sx-systems: #D97706; --sx-systems-bg: rgba(217, 119, 6, .11); --sx-systems-text: #804400;
-  --sx-users: #DC2626; --sx-users-bg: rgba(220, 38, 38, .09); --sx-users-text: #941B25;
-  --sx-services: #0284C7; --sx-services-bg: rgba(2, 132, 199, .10); --sx-services-text: #07547D;
-  --sx-security: #E65C9C; --sx-security-bg: rgba(230, 92, 156, .10); --sx-security-text: #96335F;
-  --sx-transport: #F28E2B; --sx-transport-bg: rgba(242, 142, 43, .11); --sx-transport-text: #8A4708;
-  --sx-operations: #00A6A6; --sx-operations-bg: rgba(0, 166, 166, .10); --sx-operations-text: #006C6C;
-  --sx-data: #344F7A; --sx-data-bg: rgba(52, 79, 122, .10); --sx-data-text: #263D63;
-  --sx-monitor: #8C5A3C; --sx-monitor-bg: rgba(140, 90, 60, .10); --sx-monitor-text: #68402B;
-  --sx-cloud: #8AA61E; --sx-cloud-bg: rgba(138, 166, 30, .11); --sx-cloud-text: #566A0C;
-  --sx-external: #737373; --sx-external-bg: rgba(115, 115, 115, .09); --sx-external-text: #454545;
+:root, [data-md-color-scheme="default"] {
+  --sx-infra: #5B14CC; --sx-infra-l: #5B14CC;
+  --sx-zone: #10B981; --sx-zone-l: #0EA674;
+  --sx-system: #F59E0B; --sx-system-l: #CE8509;
+  --sx-user: #EF4444; --sx-user-l: #EF4444;
+  --sx-service: #2196D2; --sx-service-l: #2196D2;
+  --sx-security: #E65C9C; --sx-security-l: #E65C9C;
+  --sx-transport: #F28E2B; --sx-transport-l: #D57D26;
+  --sx-process: #00A6A6; --sx-process-l: #00A3A3;
+  --sx-data: #344F7A; --sx-data-l: #344F7A;
+  --sx-monitor: #8C5A3C; --sx-monitor-l: #8C5A3C;
+  --sx-cloud: #8AA61E; --sx-cloud-l: #849F1D;
+  --sx-external: #737373; --sx-external-l: #737373;
+  --sx-neutral: #737373; --sx-neutral-l: #737373;
+  --sx-texto: #1B1B2F;
+  --sx-fondo-pct: 12%;
+  --sx-brillo: none;
 }
-body[data-md-color-scheme="slate"] {
-  --sx-infra-bg: rgba(91, 20, 204, .20); --sx-infra-text: #E9D9FF;
-  --sx-segment-bg: rgba(5, 150, 105, .20); --sx-segment-text: #8CE5C3;
-  --sx-systems-bg: rgba(217, 119, 6, .20); --sx-systems-text: #FFD08A;
-  --sx-users-bg: rgba(220, 38, 38, .18); --sx-users-text: #FF9A9F;
-  --sx-services-bg: rgba(2, 132, 199, .20); --sx-services-text: #8BD5FA;
-  --sx-security-bg: rgba(230, 92, 156, .20); --sx-security-text: #FFABD2;
-  --sx-transport-bg: rgba(242, 142, 43, .20); --sx-transport-text: #FFC184;
-  --sx-operations-bg: rgba(0, 166, 166, .20); --sx-operations-text: #80E2DE;
-  --sx-data-bg: rgba(52, 79, 122, .22); --sx-data-text: #B8CBEA;
-  --sx-monitor-bg: rgba(140, 90, 60, .20); --sx-monitor-text: #DDB69D;
-  --sx-cloud-bg: rgba(138, 166, 30, .20); --sx-cloud-text: #D2E68B;
-  --sx-external-bg: rgba(115, 115, 115, .18); --sx-external-text: #D0D0D0;
+[data-md-color-scheme="slate"] {
+  --sx-infra-l: #9364DD;
+  --sx-zone-l: #10B981;
+  --sx-system-l: #F59E0B;
+  --sx-user-l: #EF4444;
+  --sx-service-l: #2196D2;
+  --sx-security-l: #E65C9C;
+  --sx-transport-l: #F28E2B;
+  --sx-process-l: #00A6A6;
+  --sx-data-l: #6D809F;
+  --sx-monitor-l: #9E745B;
+  --sx-cloud-l: #8AA61E;
+  --sx-external-l: #7E7E7E;
+  --sx-neutral-l: #7E7E7E;
+  --sx-texto: #F3F4F6;
+  --sx-fondo-pct: 20%;
+  --sx-brillo: drop-shadow(0 0 3px color-mix(in srgb, var(--sx-l, #fff) 55%, transparent));
 }
-.md-typeset .mermaid svg g.node.sxInfra :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxInfra rect { fill: var(--sx-infra-bg) !important; stroke: var(--sx-infra) !important; }
-.md-typeset .mermaid svg g.node.sxSegment :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxSegment rect { fill: var(--sx-segment-bg) !important; stroke: var(--sx-segment) !important; }
-.md-typeset .mermaid svg g.node.sxSystems :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxSystems rect { fill: var(--sx-systems-bg) !important; stroke: var(--sx-systems) !important; }
-.md-typeset .mermaid svg g.node.sxUsers :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxUsers rect { fill: var(--sx-users-bg) !important; stroke: var(--sx-users) !important; }
-.md-typeset .mermaid svg g.node.sxServices :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxServices rect { fill: var(--sx-services-bg) !important; stroke: var(--sx-services) !important; }
-.md-typeset .mermaid svg g.node.sxSecurity :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxSecurity rect { fill: var(--sx-security-bg) !important; stroke: var(--sx-security) !important; }
-.md-typeset .mermaid svg g.node.sxTransport :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxTransport rect { fill: var(--sx-transport-bg) !important; stroke: var(--sx-transport) !important; }
-.md-typeset .mermaid svg g.node.sxOperations :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxOperations rect { fill: var(--sx-operations-bg) !important; stroke: var(--sx-operations) !important; }
-.md-typeset .mermaid svg g.node.sxData :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxData rect { fill: var(--sx-data-bg) !important; stroke: var(--sx-data) !important; }
-.md-typeset .mermaid svg g.node.sxMonitor :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxMonitor rect { fill: var(--sx-monitor-bg) !important; stroke: var(--sx-monitor) !important; }
-.md-typeset .mermaid svg g.node.sxCloud :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxCloud rect { fill: var(--sx-cloud-bg) !important; stroke: var(--sx-cloud) !important; }
-.md-typeset .mermaid svg g.node.sxExternal :is(rect, polygon, circle, ellipse, path), .md-typeset .mermaid svg g.actor.sxExternal rect { fill: var(--sx-external-bg) !important; stroke: var(--sx-external) !important; }
-.md-typeset .mermaid svg g.node:is(.sxInfra,.sxSegment,.sxSystems,.sxUsers,.sxServices,.sxSecurity,.sxTransport,.sxOperations,.sxData,.sxMonitor,.sxCloud,.sxExternal) :is(text,tspan),
-.md-typeset .mermaid svg g.actor:is(.sxInfra,.sxSegment,.sxSystems,.sxUsers,.sxServices,.sxSecurity,.sxTransport,.sxOperations,.sxData,.sxMonitor,.sxCloud,.sxExternal) text { fill: var(--md-typeset-color) !important; }
-.md-typeset .mermaid svg g.node:is(.sxInfra,.sxSegment,.sxSystems,.sxUsers,.sxServices,.sxSecurity,.sxTransport,.sxOperations,.sxData,.sxMonitor,.sxCloud,.sxExternal) .nodeLabel { color: var(--md-typeset-color) !important; }
-[data-md-color-scheme="slate"] .md-typeset .mermaid svg g.node:is(.sxInfra,.sxSegment,.sxSystems,.sxUsers,.sxServices,.sxSecurity,.sxTransport,.sxOperations,.sxData,.sxMonitor,.sxCloud,.sxExternal) :is(rect,polygon,circle,ellipse,path),
-[data-md-color-scheme="slate"] .md-typeset .mermaid svg g.actor:is(.sxInfra,.sxSegment,.sxSystems,.sxUsers,.sxServices,.sxSecurity,.sxTransport,.sxOperations,.sxData,.sxMonitor,.sxCloud,.sxExternal) rect { filter: drop-shadow(0 0 2px currentColor); }
+/* Sin categoría = neutro */
+.md-typeset .mermaid svg g.node :is(rect, polygon, circle, ellipse, path.basic) {
+  stroke: var(--sx-neutral-l) !important;
+  fill: color-mix(in srgb, var(--sx-neutral) 8%, transparent) !important;
+}
+.md-typeset .mermaid svg :is(.edgePath path, .flowchart-link) { stroke: var(--sx-neutral-l) !important; }
+.md-typeset .mermaid svg .marker { fill: var(--sx-neutral-l) !important; stroke: var(--sx-neutral-l) !important; }
+/* Cada categoría fija su contorno y su tinte */
+.md-typeset .mermaid svg :is(g.node, g.actor).sxInfra { --sx-b: var(--sx-infra); --sx-l: var(--sx-infra-l); }
+.md-typeset .mermaid svg :is(g.node, g.actor).sxZone { --sx-b: var(--sx-zone); --sx-l: var(--sx-zone-l); }
+.md-typeset .mermaid svg :is(g.node, g.actor).sxSystem { --sx-b: var(--sx-system); --sx-l: var(--sx-system-l); }
+.md-typeset .mermaid svg :is(g.node, g.actor).sxUser { --sx-b: var(--sx-user); --sx-l: var(--sx-user-l); }
+.md-typeset .mermaid svg :is(g.node, g.actor).sxService { --sx-b: var(--sx-service); --sx-l: var(--sx-service-l); }
+.md-typeset .mermaid svg :is(g.node, g.actor).sxSecurity { --sx-b: var(--sx-security); --sx-l: var(--sx-security-l); }
+.md-typeset .mermaid svg :is(g.node, g.actor).sxTransport { --sx-b: var(--sx-transport); --sx-l: var(--sx-transport-l); }
+.md-typeset .mermaid svg :is(g.node, g.actor).sxProcess { --sx-b: var(--sx-process); --sx-l: var(--sx-process-l); }
+.md-typeset .mermaid svg :is(g.node, g.actor).sxData { --sx-b: var(--sx-data); --sx-l: var(--sx-data-l); }
+.md-typeset .mermaid svg :is(g.node, g.actor).sxMonitor { --sx-b: var(--sx-monitor); --sx-l: var(--sx-monitor-l); }
+.md-typeset .mermaid svg :is(g.node, g.actor).sxCloud { --sx-b: var(--sx-cloud); --sx-l: var(--sx-cloud-l); }
+.md-typeset .mermaid svg :is(g.node, g.actor).sxExternal { --sx-b: var(--sx-external); --sx-l: var(--sx-external-l); }
+.md-typeset .mermaid svg :is(g.node, g.actor):is(.sxInfra,.sxZone,.sxSystem,.sxUser,.sxService,.sxSecurity,.sxTransport,.sxProcess,.sxData,.sxMonitor,.sxCloud,.sxExternal) { filter: var(--sx-brillo); }
+.md-typeset .mermaid svg :is(g.node, g.actor):is(.sxInfra,.sxZone,.sxSystem,.sxUser,.sxService,.sxSecurity,.sxTransport,.sxProcess,.sxData,.sxMonitor,.sxCloud,.sxExternal) :is(rect, polygon, circle, ellipse, path.basic, path) {
+  stroke: var(--sx-l) !important; stroke-width: 2px !important;
+  fill: color-mix(in srgb, var(--sx-b) var(--sx-fondo-pct), transparent) !important;
+}
+.md-typeset .mermaid svg :is(g.node, g.actor):is(.sxInfra,.sxZone,.sxSystem,.sxUser,.sxService,.sxSecurity,.sxTransport,.sxProcess,.sxData,.sxMonitor,.sxCloud,.sxExternal) :is(text, tspan) { fill: var(--sx-texto) !important; }
+.md-typeset .mermaid svg g.node:is(.sxInfra,.sxZone,.sxSystem,.sxUser,.sxService,.sxSecurity,.sxTransport,.sxProcess,.sxData,.sxMonitor,.sxCloud,.sxExternal) .nodeLabel { color: var(--sx-texto) !important; }
+/* Muestras de la leyenda */
+.sx-dot { display: inline-block; width: .8rem; height: .8rem; margin-right: .35rem; border-radius: 50%; vertical-align: -.1rem; border: 2px solid var(--c, #737373); background: color-mix(in srgb, var(--c, #737373) 30%, transparent); }
+.sx-dot.d-infra { --c: var(--sx-infra-l); }
+.sx-dot.d-zone { --c: var(--sx-zone-l); }
+.sx-dot.d-system { --c: var(--sx-system-l); }
+.sx-dot.d-user { --c: var(--sx-user-l); }
+.sx-dot.d-service { --c: var(--sx-service-l); }
+.sx-dot.d-security { --c: var(--sx-security-l); }
+.sx-dot.d-transport { --c: var(--sx-transport-l); }
+.sx-dot.d-process { --c: var(--sx-process-l); }
+.sx-dot.d-data { --c: var(--sx-data-l); }
+.sx-dot.d-monitor { --c: var(--sx-monitor-l); }
+.sx-dot.d-cloud { --c: var(--sx-cloud-l); }
+.sx-dot.d-external { --c: var(--sx-external-l); }

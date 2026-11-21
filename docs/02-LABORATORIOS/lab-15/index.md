@@ -7,17 +7,32 @@ description: "Laboratorio 15 de NETWORKING Lab — Implementación Práctica Int
 
 # IMPLEMENTACIÓN PRÁCTICA INTEGRAL
 
-<p class="tema-meta"><span>17 secciones</span><span>3 diagramas</span><span>13 tablas</span></p>
+<p class="tema-meta"><span>21 secciones</span><span>3 diagramas</span><span>14 tablas</span></p>
 
 ## Contexto empresarial
 
 La empresa **Networking SecOps** ha completado todos los laboratorios anteriores. Ahora debe integrar en una topología ejecutable los mecanismos centrales de este cierre: direccionamiento VLSM, enrutamiento dinámico con OSPF, firewall, DHCP/NAT y redundancia parcial de *gateway* con VRRP. **No es una única implementación de las quince tecnologías**: VLAN, DNS corporativo, VPN, MPLS, nube real, ZTNA y NOC/SIEM se estudian en escenarios previos, variantes o apartados conceptuales; el alcance se detalla en 15.10.
 
-!!! info "Mismo modelo que el resto de la serie"
+!!! note "Mismo modelo que el resto de la serie"
     Todo se construye con **namespaces de red**, igual que en los laboratorios anteriores (las interfaces de la práctica son virtuales). **Algunos pasos sí modifican el host**: el reenvío IPv4, una regla NAT y, en un caso de diagnóstico, un archivo persistente en `/etc/sysctl.d`. Están marcados como «Cambio en el host» y se revierten en la sección «Limpieza del laboratorio». Es un laboratorio de integración con una topología nueva, por lo que empieza limpiando el entorno. Requiere instalar `frr` (OSPF), `keepalived` (VRRP), `dnsmasq-base` (DHCP/DNS) y `dnsutils` para las pruebas con `dig`.
 
 !!! note "Este es un escenario nuevo"
     Los laboratorios 01–14 usaron topologías diferentes. Aquí **se reutilizan los nombres `R1` y `R2` con otra función y otro direccionamiento** (sede y respaldo/sucursal), y el escenario se construye desde cero. Cada apartado funciona por sí mismo, pero la coherencia global se comprueba en el apartado «Revisión de coherencia» al final: que cada bloque funcione aisladamente no garantiza que el conjunto sea coherente.
+
+## Problema inicial
+
+-   La empresa debe consolidar una sede y una sucursal en una red que funcione de forma coordinada: direcciones bien diseñadas, caminos que se recalculan solos, tráfico controlado, equipos que se configuran automáticamente y un *gateway* que no sea un punto único de fallo.
+-   Esa red debe poder **diagnosticarse** cuando falla, con evidencias y no por intuición.
+-   La empresa necesita saber **qué integra realmente** este cierre y qué se ha practicado solo en laboratorios previos.
+
+## Objetivos del laboratorio
+
+1.  Diseñar el direccionamiento con **VLSM** y comprobar que no hay solapamientos.
+2.  Interconectar sede y sucursal primero con **rutas estáticas** y después con **OSPF** (FRRouting).
+3.  Controlar el tráfico con **nftables** y dar salida a Internet con **NAT**.
+4.  Entregar configuración con **DHCP** y resolver nombres internos con **DNS**.
+5.  Redundar el *gateway* del segmento de servidores con **VRRP** y reconocer lo que **no** protege.
+6.  Diagnosticar fallos reales (MTU, vecinos ARP, rutas) y evaluar el alcance y los límites de la integración.
 
 ## Topología
 
@@ -482,7 +497,7 @@ El protocolo OSPF (número 89) debe aceptarse en `input`, o R1 dejaría de ver a
 | Gestión → Finanzas / Ventas | Solo ICMP y SSH (administración) |
 | Internet → Servidores | Solo TCP 80, 443 y 25 (si el servicio se publica; véase abajo) |
 
-!!! note "Permitir el reenvío no equivale a publicar el servicio"
+!!! info "Permitir el reenvío no equivale a publicar el servicio"
     La regla «Internet → Servidores en 80, 443 y 25» **solo permite el reenvío** si el paquete llega con un destino interno por la interfaz WAN. **No crea por sí sola la traducción de destino ni la accesibilidad exterior.** Para publicar un servicio privado hace falta normalmente **DNAT** (o direccionamiento público, o una arquitectura equivalente), además de rutas y políticas de seguridad. Ejemplo para publicar el puerto 80 del servidor `10.0.0.10` en la dirección WAN de R1:
 
     ```bash
@@ -884,7 +899,7 @@ Los servicios de red no son independientes: unos **necesitan** que otros funcion
 
 Dos síntomas distintos, ¿una causa o dos? Antes de abrir la solución, razona **qué comprobarías y en qué orden**. Dispones de `ping`, `tcpdump`, `nft -a list chain inet firewall input` y `vtysh -c "show ip ospf neighbor"`.
 
-??? note "Solución razonada"
+??? success "Solución razonada"
     1.  **Conectividad básica.** `ping` a R1 funciona: `input` acepta ICMP. Así que no es un problema de enlace ni de capa 2.
     2.  **Síntoma de rutas.** `show ip ospf neighbor` en R1 no muestra a R2 en estado *Full*. Con `tcpdump -i veth-r1r2a proto ospf` se ven los *Hello* de R2 **llegar** a R1, pero R1 no los procesa y nunca declara al vecino: los descarta el firewall.
     3.  **Síntoma de DHCP.** `tcpdump -i veth-r1fin port 67 or port 68` muestra los `DISCOVER` entrando y ningún `OFFER` saliendo: `dnsmasq` no llega a recibirlos.
@@ -1089,10 +1104,14 @@ VRRP se ejecuta solo en la red de servidores en el escenario descrito. Finanzas,
 5.  ¿En qué escenario empresarial priorizarías la redundancia de la salida WAN antes que la del *gateway* LAN?
 6.  ¿Qué otros mecanismos podrían resolver el caso B? (Segundo ISP con BGP, SD-WAN.)
 
-## Conclusiones
+## Conclusiones técnicas
 
-Este laboratorio integra los conceptos de la serie: direccionamiento IP, enrutamiento dinámico, firewall, servicios y alta disponibilidad de *gateway*, y cierra con técnicas de diagnóstico. La implementación práctica de una red empresarial completa requiere planificación, documentación y verificación continua.
+Este laboratorio integra los **mecanismos centrales** de la serie en una red de sede y sucursal: direccionamiento VLSM, enrutamiento dinámico con OSPF, firewall, servicios (DHCP, DNS y NAT) y redundancia parcial de *gateway* con VRRP, y cierra con técnicas de diagnóstico. **No integra las quince tecnologías**: VLAN, VPN, MPLS, nube, ZTNA y NOC/SIEM se practicaron en laboratorios anteriores, y VRRP solo protege el segmento de servidores. Una red empresarial completa exige además planificación, documentación y verificación continua, y ese es el trabajo del Proyecto final.
+
+## Preparación para el siguiente paso
+
+Con este laboratorio termina el recorrido práctico. El paso siguiente no es un laboratorio nuevo, sino el [Proyecto final](../../03-PROYECTO-FINAL/index.md): reunir los quince laboratorios en una arquitectura propia, defender las decisiones de diseño y demostrar su funcionamiento y sus límites.
 
 ---
 
-**¡Laboratorio 15 completado!** Has construido una red empresarial funcional.
+**¡Laboratorio 15 completado!** Has integrado los mecanismos centrales de una red de sede y sucursal. Continúa con el **Proyecto final**.

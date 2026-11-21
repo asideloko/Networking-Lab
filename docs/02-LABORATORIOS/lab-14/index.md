@@ -7,14 +7,29 @@ description: "Laboratorio 14 de NETWORKING Lab — Herramientas Linux Avanzadas.
 
 # HERRAMIENTAS LINUX AVANZADAS
 
-<p class="tema-meta"><span>8 secciones</span><span>2 diagramas</span><span>7 tablas</span></p>
+<p class="tema-meta"><span>11 secciones</span><span>2 diagramas</span><span>7 tablas</span></p>
 
 ## Contexto empresarial
 
 La empresa **Networking SecOps** ha implementado su infraestructura de red y sistemas de monitoreo (Laboratorio 13). Ahora el equipo de operaciones necesita dominar las herramientas avanzadas de Linux para administrar, diagnosticar y optimizar la red de manera eficiente.
 
-!!! info "Laboratorio independiente"
+!!! note "Laboratorio independiente"
     Este laboratorio monta su **propia** topología (un router Linux con LAN y DMZ) para practicar las herramientas con calma; no depende de los anteriores. Empieza limpiando **solo los recursos propios de este escenario** (no todo lo que haya en tu equipo).
+
+## Problema inicial
+
+-   Con la red y su monitoreo en marcha, el equipo debe **administrarla a diario** desde la línea de comandos.
+-   Debe saber qué herramienta responde cada pregunta: qué direcciones y rutas hay, quién escucha en un puerto, qué regla bloquea un paquete, qué ve el enlace.
+-   Debe elegir con criterio entre las herramientas modernas (`ip`, `ss`, `nft`) y las clásicas que todavía se encuentran en muchos sistemas.
+
+## Objetivos del laboratorio
+
+1.  Administrar interfaces, direcciones, rutas, reglas de política y vecinos con `ip` (iproute2).
+2.  Inspeccionar sockets con `ss` y distinguirlos de las conexiones que solo **atraviesan** un router (`conntrack`).
+3.  Filtrar tráfico con `nftables` distinguiendo las cadenas `input`, `forward` y `output`.
+4.  Consultar y ajustar la MTU, y entender el alcance de `ethtool` sobre interfaces virtuales.
+5.  Usar `tcpdump` para obtener evidencia de dónde desaparece un paquete.
+6.  **Elegir la herramienta adecuada** según la pregunta técnica que se quiere responder.
 
 ## Topología
 
@@ -573,7 +588,6 @@ done
 
 Si el servicio escucha (`ss`), la ruta existe (`ip route get`) y la conexión falla, captura en ambos extremos (`tcpdump`) y revisa reglas/contadores (`nft list ruleset`). El punto donde desaparece el paquete y el contador que aumenta sustentan el diagnóstico; no basta con que una regla parezca sospechosa.
 
-
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo decide por qué interfaz sale un paquete, y con qué comando lo compruebas?
@@ -582,7 +596,7 @@ Si el servicio escucha (`ss`), la ruta existe (`ip route get`) y la conexión fa
 4.  ¿Qué limitaciones tiene diagnosticar solo con `ping`?
 5.  ¿Qué comando elegirías primero para cada síntoma de la tabla de objetivos operativos?
 
-## Conclusiones
+## Conclusiones técnicas
 
 Las herramientas avanzadas de Linux (`ip`, `ss`, `nft`) permiten administrar y diagnosticar redes de manera eficiente y han sustituido en gran medida a las tradicionales (`ifconfig`, `netstat`), y `nft` va reemplazando a `iptables` en las distribuciones recientes; las clásicas siguen existiendo en muchos sistemas. Entender **dónde engancha cada regla** (`input`, `forward`, `output`) es clave para comprender un firewall.
 

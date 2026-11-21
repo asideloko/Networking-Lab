@@ -7,7 +7,7 @@ description: "Laboratorio 05 de NETWORKING Lab — Conmutación y Segmentación 
 
 # CONMUTACIÓN Y SEGMENTACIÓN DE RED
 
-<p class="tema-meta"><span>12 secciones</span><span>2 diagramas</span><span>2 tablas</span></p>
+<p class="tema-meta"><span>13 secciones</span><span>2 diagramas</span><span>4 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -553,7 +553,6 @@ Ejecuta un ping entre VLAN permitidas y compara dónde aparece el encabezado 802
 | Regla FORWARD bloqueante | Ruta y ARP correctos, tráfico inter-VLAN descartado | Contadores del firewall y captura a ambos lados |
 
 No dejes reglas temporales ni cambios de PVID al terminar; restaura la configuración de la topología siguiendo la limpieza del laboratorio.
-
 
 ## Preguntas de reflexión
 

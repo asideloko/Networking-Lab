@@ -40,7 +40,8 @@ nav = [
       { "15 · IMPLEMENTACIÓN PRÁCTICA INTEGRAL" = "02-LABORATORIOS/lab-15/index.md" },
     ] },
   ] },
-  { "02 · REFERENCIA TÉCNICA" = [
+  { "02 · PROYECTO FINAL" = "03-PROYECTO-FINAL/index.md" },
+  { "03 · REFERENCIA TÉCNICA" = [
     { "COMPETENCIAS Y CASOS INTEGRADORES" = "04-REFERENCIA/competencias.md" },
     { "COMPARACIONES CONCEPTUALES" = "04-REFERENCIA/comparaciones.md" },
     { "MÉTODO DE DIAGNÓSTICO" = "04-REFERENCIA/diagnostico.md" },
@@ -48,7 +49,7 @@ nav = [
     { "ARQUITECTURA INTEGRAL" = "04-REFERENCIA/arquitectura-integral.md" },
     { "GLOSARIO" = "04-REFERENCIA/glosario.md" },
   ] },
-  { "03 · ANEXOS Y CONVENCIONES" = [
+  { "04 · ANEXOS Y CONVENCIONES" = [
     { "GUÍA DE USO" = "05-ANEXOS/guia-de-uso.md" },
     { "DIAGRAMACIÓN Y TOPOLOGÍAS" = "05-ANEXOS/diagramacion-y-topologias.md" },
     { "DERECHOS DE AUTOR" = "05-ANEXOS/derechos-de-autor.md" },

@@ -15,7 +15,7 @@ Son **representaciones didácticas** construidas principalmente con *namespaces*
 
 ## 2. Organización y metodología de los laboratorios
 
-El proyecto consta de **15 laboratorios**, relacionados con los temas del libro. Cada práctica sigue, cuando corresponde, este recorrido:
+El proyecto consta de **15 laboratorios**, relacionados con los temas del libro. Cada práctica sigue, cuando corresponde, este recorrido didáctico:
 
 1. Presentar el contexto y el objetivo técnico.
 2. Identificar los conceptos y mecanismos que se van a observar.
@@ -27,6 +27,25 @@ El proyecto consta de **15 laboratorios**, relacionados con los temas del libro.
 8. Distinguir la salida real, la salida representativa y el resultado esperado.
 9. Explicar limitaciones, limpieza y reversión cuando proceda.
 10. Cerrar con conclusiones y preguntas de reflexión.
+
+Ese recorrido se traduce en una **estructura de secciones** común a los quince laboratorios. Conocerla permite saber qué esperar de cada parte y dónde buscar una respuesta:
+
+| Sección | Qué responde | Presencia |
+|---|---|---|
+| **Contexto empresarial** | ¿Qué necesita la empresa Networking SecOps y por qué ahora? Continúa la historia del laboratorio anterior. | Todos |
+| **Problema inicial** | ¿Qué falta o qué falla hoy? | Todos |
+| **Objetivos del laboratorio** | ¿Qué sabrás hacer al terminar? | Todos |
+| **Conceptos previos** y **Herramientas necesarias** | ¿Qué debo saber e instalar antes de empezar? | Cuando corresponde |
+| **Topología** | ¿Qué se construye, con qué dispositivos y direcciones? | Todos |
+| **Construcción** (pasos y verificación) | ¿Cómo se construye y cómo compruebo cada etapa? | Todos |
+| **Análisis**, **observación** y **profundización** | ¿Por qué funciona así y dónde están sus límites? | Según el laboratorio |
+| **Ejercicios** | ¿Puedo aplicarlo a otro caso? | Según el laboratorio |
+| **Errores comunes y soluciones** | ¿Qué suele fallar y cómo se resuelve? | Según el laboratorio |
+| **Conceptos clave** | ¿Cuáles son las ideas que debo retener? | Según el laboratorio |
+| **Preguntas de reflexión** | ¿Puedo razonar sobre lo aprendido sin los comandos? | Todos |
+| **Conclusiones técnicas** | ¿Qué se demostró y qué limita a la representación? | Todos |
+| **Limpieza** o **Revertir los cambios del host** | ¿Cómo dejo el equipo como estaba? | Todos (en el laboratorio 14 es el último paso de la construcción) |
+| **Preparación para el siguiente laboratorio** | ¿Cómo continúa la historia? | Todos; el 15 apunta al Proyecto final |
 
 Los laboratorios pueden montar escenarios independientes. No debe suponerse que un dispositivo, interfaz, dirección o namespace conserva el mismo significado entre prácticas: cada laboratorio declara su propia topología y sus recursos.
 
@@ -94,46 +113,58 @@ Los diagramas se escriben en Mermaid y se presentan con el tema claro u oscuro d
 
 ### 7.1 Normas y referencias aplicables
 
-1. **[ISO 5807:1985 — Information processing: Documentation symbols and conventions for data, program and system flowcharts, program network charts and system resources charts](https://www.iso.org/standard/11955.html).** Es la referencia para seleccionar y utilizar símbolos en diagramas de flujo de datos, programas, sistemas, redes de programas y recursos de sistema. La ficha oficial de ISO indica que fue confirmada en 2019 y continúa vigente. Se aplica a la notación de los flujos cuando el tipo de diagrama corresponde; no establece los cuatro colores institucionales de este proyecto ni una taxonomía cromática de dispositivos de red.
+1. **[ISO 5807:1985 — Information processing: Documentation symbols and conventions for data, program and system flowcharts, program network charts and system resources charts](https://www.iso.org/standard/11955.html).** Es la referencia para seleccionar y utilizar símbolos en diagramas de flujo de datos, programas, sistemas, redes de programas y recursos de sistema. La ficha oficial de ISO indica que fue confirmada en 2019 y continúa vigente. Se aplica a la notación de los flujos cuando el tipo de diagrama corresponde; no establece la paleta de este proyecto ni una taxonomía cromática de dispositivos de red.
 2. **[W3C — Web Content Accessibility Guidelines (WCAG) 2.2, criterio 1.4.1 «Use of Color»](https://www.w3.org/TR/WCAG22/#use-of-color).** Es el criterio de accesibilidad aplicable a la presentación web: el color no puede ser el único medio visual para transmitir información o distinguir elementos. Por eso cada categoría también debe reconocerse mediante texto, forma, flechas o leyenda.
 3. **[ANSI/NEMA Z535.1-2022 — Safety Colors](https://webstore.ansi.org/standards/nema/ansiz5352022-2475871).** Especifica colores de seguridad y sus tolerancias. Su alcance es la señalización y comunicación de seguridad; no asigna violeta a infraestructura, índigo a servicios ni otros colores a categorías de diagramas de redes. Por tanto, no se presenta como fundamento de la paleta funcional del proyecto.
 4. **[ISO 3864-1:2011](https://www.iso.org/standard/51021.html) e [ISO 3864-4:2011](https://www.iso.org/standard/51000.html).** Tratan los principios de diseño y las propiedades colorimétricas/fotométricas de colores y señales de seguridad. Son pertinentes cuando un gráfico incorpora señalización de seguridad normalizada; no definen la codificación cromática de los componentes de una arquitectura de red.
 
-**Límite normativo importante:** no se ha identificado una norma ISO, IEC, IEEE, ANSI o IETF que prescriba que los routers deban ser violetas, los servicios índigo, los procesos de un tercer color y las decisiones de un cuarto. Afirmar que esa asignación procede de ISO 5807, ANSI Z535.1 o ISO 3864 sería incorrecto. La asignación que sigue es una **convención editorial propia de NETWORKING Lab**, elegida para mantener consistencia visual con los cuatro tonos que ya existen en `stylesheets/extra.css`; no es una certificación ni una codificación normativa universal.
+**Límite normativo importante:** no se ha identificado una norma ISO, IEC, IEEE, ANSI o IETF que prescriba un color para los routers, los servidores, los firewalls o los procesos de un diagrama de red. Afirmar que la asignación de este proyecto procede de ISO 5807, ANSI Z535.1 o ISO 3864 sería incorrecto. La asignación que sigue es una **convención editorial propia de NETWORKING Lab**: las cajas de resaltado usan cuatro colores por la gravedad del aviso y los diagramas usan doce categorías por la función del elemento. No es una certificación ni una codificación normativa universal.
 
-### 7.2 Paleta funcional de diagramas
+### 7.2 Convención cromática del proyecto
 
-La paleta identifica la función principal que desempeña cada elemento en el diagrama. El contorno utiliza el color asignado; el fondo conserva un tinte translúcido de esa misma familia. La intensidad del fondo y del texto se adapta al tema claro u oscuro. Los colores institucionales existentes se reutilizan para segmentación, sistemas, usuarios y servicios.
+La paleta tiene **dos capas**. Cada color tiene **una única función**, y todo se define en un solo lugar (`stylesheets/extra.css`; las reglas de asignación, en `javascripts/custom.js`).
 
-| Familia funcional | Color de contorno | Aplicación habitual |
-|---|---:|---|
-| Infraestructura de red | `#5B14CC` · morado | Routers, switches, bridges, gateways, interfaces y puertos de red. |
-| Segmentación y zonas | `#059669` · verde | LAN, VLAN, subredes, DMZ, zonas y segmentos. |
-| Sistemas y servidores | `#D97706` · amarillo | Servidores DNS/DHCP, web, aplicaciones y bases de datos. |
-| Usuarios y terminales | `#DC2626` · rojo | Clientes, estaciones, usuarios, endpoints y terminales. |
-| Servicios y aplicaciones | `#0284C7` · azul | Protocolos y servicios identificados como funciones: DNS, DHCP, HTTP/HTTPS, SSH, NTP, TCP/UDP e ICMP. |
-| Seguridad | `#E65C9C` · rosa | Firewall como control, VPN/IPsec, IdP, ZTNA, ACL, autenticación y filtrado. |
-| Transporte y proveedor | `#F28E2B` · naranja | ISP, redes de tránsito y roles de proveedor PE/P/CE. |
-| Procesamiento y operaciones | `#00A6A6` · turquesa | NAT/PAT, routing, forwarding, encapsulación, STP, ECMP, VRRP y failover. |
-| Datos y estructuras | `#344F7A` · azul pizarra | Tramas, paquetes, segmentos, datagramas, cabeceras y etiquetas. |
-| Monitoreo y diagnóstico | `#8C5A3C` · marrón | NOC, logs, métricas, telemetría, tcpdump y colectores. |
-| Nube e infraestructura virtual | `#8AA61E` · oliva | AWS, VPC, EC2, RDS, namespaces, veth e interfaces virtuales. |
-| Elementos externos y referencia | `#737373` · gris | Internet, redes públicas y sistemas externos cuando actúan como referencia. |
+**A. Cajas de resaltado: cuatro colores.** El tipo de caja fija el color.
 
-Los códigos verde, amarillo, rojo y azul corresponden a los tonos ya presentes en las cajas y notas destacadas del proyecto (`#059669`, `#D97706`, `#DC2626` y `#0284C7`). La paleta es una convención editorial del proyecto, no una asignación cromática impuesta por ISO, IEEE, IETF o TIA.
+| Color | Función | Se escribe | Cuándo se usa | Ejemplo |
+|---|---|---|---|---|
+| <span class="sx-dot" style="background:#2196D2"></span> Azul | **Nota / Aviso** | `note` | Contexto, alcance, continuidad entre laboratorios. Ignorarlo no tiene consecuencias. | «Continuidad con el laboratorio 04» |
+| <span class="sx-dot" style="background:#10B981"></span> Verde | **Dato técnico** | `info`, `tip`, `success` | Hecho técnico que hay que retener y soluciones razonadas de los ejercicios. | «MAC frente a IP» |
+| <span class="sx-dot" style="background:#F59E0B"></span> Amarillo | **Advertencia** | `warning` | Limitación, simplificación didáctica o malentendido frecuente. Puede inducir a error. | «Habilitar SSH no equivale a asegurar el servicio» |
+| <span class="sx-dot" style="background:#EF4444"></span> Rojo | **Peligro / Error crítico** | `danger` | Cambios en el host fuera de un *namespace* y todo lo que no debe llevarse a producción. Puede causar daño o pérdida. | «Cambio en el host» |
 
-La clasificación depende de la función en contexto: un firewall como equipo de red puede representarse como infraestructura; cuando el diagrama destaca su función de control se clasifica como seguridad. Un servidor DNS se clasifica como sistema; una consulta DNS o el protocolo DNS, como servicio. Los nodos ambiguos o no reconocidos conservan el estilo neutro. Las decisiones se identifican por su rombo y condición, no por un color funcional.
+**B. Diagramas: paleta «Cyberpunk» de doce categorías.** En un diagrama el color identifica la **función del elemento**. El estilo es el mismo en todos: **contorno luminoso** del color de la categoría y **fondo translúcido teñido** del mismo color.
+
+| Categoría y color | Clase | Representa | Justificación |
+|---|---|---|---|
+| <span class="sx-dot d-infra"></span> 01 · Infraestructura de red `#5B14CC` | `sxInfra` | Router, switch, bridge, núcleo, distribución, acceso, gateway | Es el esqueleto de toda topología y la categoría más frecuente; conserva el violeta de la marca del libro. |
+| <span class="sx-dot d-zone"></span> 02 · Segmentación y zonas `#10B981` | `sxZone` | LAN, VLAN, subredes, DMZ, segmentos | La red es el medio y la frontera de confianza, no un equipo. |
+| <span class="sx-dot d-system"></span> 03 · Sistemas y servidores `#F59E0B` | `sxSystem` | Servidor web, servidor de aplicaciones, servidor DNS (la máquina) | Separa la máquina que aloja del servicio que presta. |
+| <span class="sx-dot d-user"></span> 04 · Usuarios y terminales `#EF4444` | `sxUser` | Clientes, PC, usuarios remotos, hosts de ventas o administración | Quien consume la red. Se usa un rojo propio de la paleta; en los diagramas no significa peligro. |
+| <span class="sx-dot d-service"></span> 05 · Servicios y aplicaciones `#2196D2` | `sxService` | DNS, DHCP, NTP, web, aplicaciones | El servicio concreto que corre sobre un sistema. |
+| <span class="sx-dot d-security"></span> 06 · Seguridad `#E65C9C` | `sxSecurity` | Firewall, VPN Gateway, ZTNA, proveedor de identidad, tráfico cifrado | Color propio para que un control de seguridad no se lea como fallo ni como equipo común. |
+| <span class="sx-dot d-transport"></span> 07 · Transporte y proveedor `#F28E2B` | `sxTransport` | PE, P, CE, WAN, ISP, GRE, túneles, TCP/UDP | Lo que lleva el tráfico entre sedes y la frontera con el proveedor. |
+| <span class="sx-dot d-process"></span> 08 · Procesamiento y operaciones `#00A6A6` | `sxProcess` | NAT, cadenas de filtrado, rutas, encapsulación, push/swap/pop y **decisiones (rombos)** | Algo que ocurre, no algo que existe. Un rombo es siempre una decisión. |
+| <span class="sx-dot d-data"></span> 09 · Datos y estructuras `#344F7A` | `sxData` | Bases de datos, cabeceras, tramas, paquetes, tablas | Información y su formato, no quien la procesa. |
+| <span class="sx-dot d-monitor"></span> 10 · Monitoreo y diagnóstico `#8C5A3C` | `sxMonitor` | NOC, SIEM, registros, síntomas, causas halladas, fallos | Lo que observa la red y lo que se encuentra al diagnosticarla. |
+| <span class="sx-dot d-cloud"></span> 11 · Nube e infraestructura virtual `#8AA61E` | `sxCloud` | VPC, AWS, EC2, RDS, puerta de enlace de Internet | Infraestructura que no es física ni propia. |
+| <span class="sx-dot d-external"></span> 12 · Elementos externos y referencia `#737373` | `sxExternal` | Internet, red externa | Lo que está fuera de la organización; también es el gris de lo no clasificado. |
+
+**Por qué doce.** Son las funciones que un lector distingue en una topología, desde el equipo hasta el dato y el diagnóstico. Lo que queda fuera se distingue con la **forma** (círculo = Internet o nube, rombo = decisión) y con el **estilo de línea** (continua = física, discontinua = lógica o de respaldo, gruesa = troncal o preferida), no con un color más. Los túneles y las VPN son una **relación**, no un elemento: se dibujan con línea discontinua y se rotulan.
+
+**Cómo se asigna.** `custom.js` evalúa las reglas en orden y gana la primera coincidencia: primero interfaces (neutro), monitoreo y fallos, operaciones concretas (NAT, cadenas), nube y externos, seguridad, datos, transporte, sistemas, servicios, infraestructura, usuarios, zonas y, por último, procesos. Un rombo es siempre procesamiento. En los casos ambiguos se escribe a mano, al final del diagrama, una línea `class ID sxMonitor` (o la clase que corresponda); **esa línea manda sobre la regla automática**. Ejemplo: en el árbol de diagnóstico, las causas halladas pertenecen a «Monitoreo y diagnóstico» aunque su texto diga «DNS» o «Firewall».
 
 ### 7.3 Aplicación gráfica y adaptación de tema
 
-- **Contornos:** se aplica el color funcional de la familia asignada, con grosor suficiente para mantener la legibilidad.
-- **Fondos:** se utiliza un tinte translúcido visualmente ligero de la misma familia; no se rellenan los nodos con bloques saturados.
-- **Tema claro y oscuro:** el significado y el color de contorno se conservan. Cambian el tinte de fondo y el contraste del texto para adaptarse al esquema activo.
-- **Efecto cyberpunk:** se admite un resplandor sutil, principalmente en tema oscuro; nunca debe sustituir el contorno ni perjudicar la lectura.
-- **Conectores:** mantienen una codificación independiente de la identidad de los nodos. No heredan automáticamente el color del origen o destino.
-- **Estados y avisos:** las notas `note`, `warning`, `tip/info` y `danger/failure` conservan sus colores semánticos actuales. No se confunden con la identidad funcional de los elementos de red.
-- **Accesibilidad:** el significado también debe expresarse mediante etiquetas, formas, flechas y una leyenda textual; no depende exclusivamente del color.
-- **Conservación visual:** la paleta no modifica la geometría, la distribución, la tipografía ni la iconografía de los diagramas.
+- **Regla visual:** contorno del color de la categoría; relleno translúcido del mismo color; texto con contraste suficiente. No se alteran la geometría, la distribución, la tipografía ni la iconografía de los diagramas.
+- **Tema claro:** fondo con tinte muy claro (transparencia alta) y sin brillo. Los contornos de los colores claros (verde, amarillo, naranja, lima) se oscurecen levemente para alcanzar un contraste mínimo de 3:1 con el fondo (WCAG 2.2, 1.4.11).
+- **Tema oscuro:** el contorno se aclara (violeta, azul pizarra, marrón y gris) y el fondo es un tinte más profundo con un resplandor sutil. El resplandor **no sustituye** el contraste del contorno.
+- **Texto:** siempre en un tono neutro (oscuro en tema claro, claro en tema oscuro), no en el color de la categoría, para garantizar la lectura.
+- **Conectores:** siempre grises. Las etiquetas indican si la relación es física, lógica, túnel, ruta, dependencia o flujo de tráfico.
+- **Diagramas de secuencia:** los participantes se colorean con las mismas reglas.
+- **Una sola paleta:** los fondos se adaptan mediante variables de tema (`--sx-*` en `extra.css`); no hay una segunda paleta duplicada.
+- **Accesibilidad:** el color nunca es el único medio (WCAG 2.2, 1.4.1): cada elemento lleva su nombre y esta tabla actúa de leyenda.
+- **Límites reconocidos:** con doce categorías hay pares próximos (verde y turquesa, naranja y amarillo, azul pizarra y violeta); se distinguen por contexto, nombre y forma. Y el **rojo** de «Usuarios y terminales» no significa peligro: en las **cajas de resaltado** el rojo sí significa peligro. Son dos sistemas distintos.
 
 ### 7.4 Reglas de revisión de cada diagrama
 
@@ -155,7 +186,7 @@ La clasificación depende de la función en contexto: un firewall como equipo de
 - [Arquitectura integral](../04-REFERENCIA/arquitectura-integral.md): mapas de síntesis y matriz de disponibilidad.
 - [Glosario](../04-REFERENCIA/glosario.md): términos y acrónimos.
 - [Competencias y casos integradores](../04-REFERENCIA/competencias.md): resultados esperados y ejercicios de repaso.
-- La documentación de diseño, servicios, seguridad, alta disponibilidad, monitoreo y pruebas se consulta en los laboratorios y documentos de referencia vigentes.
+- [Proyecto final integrador](../03-PROYECTO-FINAL/index.md): diseño, servicios, seguridad, alta disponibilidad, monitoreo, pruebas y memoria técnica.
 
 ## 9. Criterio de cierre
 

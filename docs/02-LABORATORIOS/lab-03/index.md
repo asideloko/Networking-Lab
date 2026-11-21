@@ -7,7 +7,7 @@ description: "Laboratorio 03 de NETWORKING Lab — Componentes de Red y Conmutac
 
 # COMPONENTES DE RED Y CONMUTACIÓN
 
-<p class="tema-meta"><span>13 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>15 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -15,8 +15,8 @@ La empresa **Networking SecOps** ha crecido. Ahora hay **4 empleados** en la ofi
 
 El equipo de TI ha decidido implementar un **switch** para centralizar las conexiones de los clientes, y así: 
 
--   Reducir el tráfico innecesario en el router.
--   Permitir la comunicación directa entre clientes sin pasar por el router.
+-   Separar la **conmutación** (el switch) del **enrutamiento** (el router), que hasta ahora comparten equipo.
+-   Reducir el tráfico innecesario: la trama debe llegar solo al puerto del destinatario.
 -   Facilitar la expansión futura (más clientes, VLANs, etc.).
 
 Además, se debe **documentar el funcionamiento del switch**: cómo aprende direcciones MAC, cómo reenvía tramas y cómo segmenta el tráfico.
@@ -653,7 +653,6 @@ Repite desde un cliente hacia otro destino no contactado y compara la captura en
 `ping -M do -s N` controla el tamaño de la carga ICMP, no el tamaño total de la trama Ethernet: añade cabecera IP e ICMP. Con IPv4 sin opciones, el tamaño del paquete IP es aproximadamente `N + 28` bytes. Si un router no puede fragmentar un paquete con DF, debe devolver ICMP Destination Unreachable / Fragmentation Needed (tipo 3, código 4). Si ese ICMP se filtra, PMTUD clásico puede fallar de forma silenciosa; no concluyas que todo paquete perdido es un problema de MTU.
 
 El cambio a MTU 9000 debe compararse con pruebas repetidas y la misma carga, duración, CPU y dirección de prueba. Una variación de `iperf3` en veth no demuestra por sí sola una mejora física de jumbo frames.
-
 
 ## Preguntas de reflexión
 

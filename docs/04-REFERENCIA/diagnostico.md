@@ -42,6 +42,7 @@ flowchart TD
     D -- Sí --> E{"¿Va lento? iperf3, mtr"}
     E -- Sí --> E1["Pérdida, MTU o saturación"]
     E -- No --> E2["Aplicación"]
+    class B1,B2,C1,D1,E1 sxMonitor
 ```
 
 ## Síntomas, herramientas y causas
@@ -82,7 +83,7 @@ Cada una se resuelve **razonando** con las herramientas ya vistas; no hace falta
 4.  **El *gateway* responde pero no hay salida a Internet.** Pista: ¿el *gateway* tiene una WAN operativa y NAT? (Caso B del laboratorio 15.)
 5.  **Una aplicación funciona pero con degradación.** Pistas: `iperf3` (pérdida y *jitter*), `ping -M do -s` (MTU), `mtr` (en qué salto empieza).
 
-!!! info "Qué se espera del razonamiento"
+!!! note "Qué se espera del razonamiento"
     No hay una única respuesta correcta: lo importante es **descartar capas con evidencia**, no probar comandos al azar. Anota en cada caso qué descartaste y con qué comando.
 
 Véase también: [Comparaciones conceptuales](comparaciones.md) · [Servicios, protocolos y puertos](servicios-puertos.md).

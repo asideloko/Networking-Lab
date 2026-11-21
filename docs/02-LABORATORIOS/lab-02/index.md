@@ -7,20 +7,20 @@ description: "Laboratorio 02 de NETWORKING Lab — Transmisión de Datos y Capa 
 
 # TRANSMISIÓN DE DATOS Y CAPA FÍSICA
 
-<p class="tema-meta"><span>14 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>16 secciones</span><span>1 diagrama</span><span>7 tablas</span></p>
 
 ## Contexto empresarial
 
 La empresa **Networking SecOps** ya cuenta con su red local funcionando (Clientes 1 y 2 conectados mediante el bridge del equipo `router`, laboratorio 01). El equipo de operaciones ha notado que la red funciona correctamente para comunicaciones internas, pero necesitan **conectar la oficina a Internet** para que los empleados puedan acceder a servicios en la nube, correo electrónico y navegación web.
 
-El CTO ha solicitado que, además de implementar la salida a Internet, se **documente el proceso de transmisión de datos**, explicando cómo viajan los bits desde el equipo del usuario hasta el router y cómo se comporta la señal en el medio físico.
+El CTO ha solicitado que, además de implementar la salida a Internet, se **documente el proceso de transmisión de datos**, explicando **a nivel conceptual** cómo viajan los bits desde el equipo del usuario hasta el router y cómo se comporta la señal en el medio físico. Como toda la red de este laboratorio es virtual, esa parte se estudia con teoría y se contrasta con lo que sí se puede observar (paquetes, latencia y rendimiento): una señal física no se puede medir en un enlace virtual.
 
 ## Problema inicial
 
 -   Los clientes (10.0.1.2 y 10.0.1.3) no tienen salida a Internet.
 -   El router todavía no tiene ninguna interfaz hacia el exterior. En este laboratorio le añadimos un enlace virtual hacia el **host**, que actuará como representación de la red externa; la conectividad real hacia Internet depende de la interfaz física o inalámbrica del host (`eth0`, `wlan0`…).
 -   Se requiere **enrutar** el tráfico de los clientes hacia ese enlace y aplicar **NAT (Network Address Translation)** para que salgan con una dirección distinta de la privada `10.0.1.x`.
--   Además, se debe **analizar el flujo de bits** y observar cómo se transmite la información a nivel físico.
+-   Además, se debe **explicar el flujo de bits** y la transmisión a nivel físico. Al ser una red virtual no hay señal que medir: esa parte es conceptual y se apoya en lo que sí se observa.
 
 ## Objetivos del laboratorio
 
@@ -142,7 +142,6 @@ sudo ip netns exec router ip -s link show
 ```
 
 `ping` informa pérdida y estadísticas RTT (incluida desviación); `iperf3` TCP mide throughput, mientras UDP informa jitter y datagramas perdidos para la tasa ofrecida. `tc -s qdisc` y `ip -s link` ayudan a identificar colas, drops y errores. Repite varias veces con la misma duración, dirección y número de flujos; compara medianas y no una única muestra. El resultado entre dos `veth` no predice el throughput de Internet ni el de una NIC física.
-
 
 ## Construcción de la red
 
@@ -619,7 +618,6 @@ sudo ip netns exec cliente1 iperf3 -c 10.0.1.1 -u -b 20M -t 15 -i 1
 ```
 
 Registra CPU, duración, tasa ofrecida, throughput recibido, pérdida y jitter. No compares una tasa UDP ofrecida con el goodput TCP como si fueran la misma magnitud.
-
 
 ## Preguntas de reflexión
 

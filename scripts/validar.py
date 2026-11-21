@@ -187,6 +187,27 @@ if funcional.exists():
     if resultado.returncode:
         errores.append(f"scripts/{funcional.name}: sintaxis Bash inválida: {resultado.stderr.strip()}")
 
+# --- Coherencia narrativa de los laboratorios -------------------------------------------------
+# Todos los laboratorios comparten el mismo arco: contexto -> problema -> objetivos -> topología ->
+# ... -> preguntas -> conclusiones -> puente al siguiente. Los contadores de la cabecera se comprueban
+# contra el contenido para que no queden desactualizados.
+ESENCIALES = ["Contexto empresarial", "Problema inicial", "Objetivos del laboratorio", "Topología",
+              "Preguntas de reflexión", "Conclusiones técnicas", "Preparación para el siguiente"]
+for md in sorted((docs / "02-LABORATORIOS").glob("lab-*/index.md")):
+    txt = md.read_text(encoding="utf-8")
+    prosa = re.sub(r"```.*?```", "", txt, flags=re.S)
+    titulos = [h.strip() for h in re.findall(r"^## (.+)$", prosa, re.M)]
+    for esencial in ESENCIALES:
+        if not any(t.startswith(esencial) for t in titulos):
+            errores.append(f"{md.relative_to(docs)}: falta la sección narrativa «{esencial}»")
+    meta = re.search(r'<p class="tema-meta"><span>(\d+) secciones</span><span>(\d+) diagramas?</span><span>(\d+) tablas?</span></p>', txt)
+    if not meta:
+        errores.append(f"{md.relative_to(docs)}: falta la cabecera con contadores (tema-meta)")
+    else:
+        real = (len(titulos), len(re.findall(r"```mermaid", txt)), len(re.findall(r"^\|[ :\-|]+\|\s*$", prosa, re.M)))
+        if tuple(map(int, meta.groups())) != real:
+            errores.append(f"{md.relative_to(docs)}: contadores de la cabecera {tuple(map(int, meta.groups()))} no coinciden con el contenido {real}")
+
 avisos = []
 for css in sorted(docs.rglob("*.css")):
     for ref in re.findall(r"url\(['\"]?([^)'\"]+)", css.read_text(encoding="utf-8")):

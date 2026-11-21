@@ -7,7 +7,7 @@ description: "Laboratorio 08 de NETWORKING Lab — Seguridad en Redes."
 
 # SEGURIDAD EN REDES
 
-<p class="tema-meta"><span>13 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
+<p class="tema-meta"><span>14 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -349,7 +349,7 @@ sudo ip netns exec firewall iptables -A FORWARD -i veth-fw-wan -o br-dmz -p tcp 
 sudo ip netns exec firewall iptables -A FORWARD -i veth-fw-wan -o br-dmz -p udp -d 10.0.99.5 --dport 53 -j ACCEPT
 ```
 
-!!! note "Permitir el reenvío no equivale a publicar el servicio"
+!!! info "Permitir el reenvío no equivale a publicar el servicio"
     Estas reglas permiten el reenvío **si el paquete llega con ese destino** por la interfaz externa. En una red real, los servidores de la DMZ tienen direcciones privadas y para publicarlos se necesita además una traducción de destino (**[DNAT](https://netfilter.org/documentation/HOWTO/NAT-HOWTO-6.html)**) o direccionamiento público, junto con las rutas y políticas de seguridad. Aquí, para probar, el host añade una ruta directa hacia la DMZ (Paso 10).
 
 **Reglas desde Internet hacia LAN Interna (denegado):**
@@ -609,7 +609,7 @@ Un firewall que descarta sin dejar rastro es difícil de auditar. Añade una reg
 
 Por defecto, el kernel solo permite registrar con `LOG` desde el espacio de nombres principal. Para que el *namespace* `firewall` escriba en el registro del sistema hace falta activarlo en el host:
 
-!!! warning "Cambio en el host"
+!!! danger "Cambio en el host"
     `sudo sysctl -w net.netfilter.nf_log_all_netns=1` modifica un parámetro global del host. El bloque guarda el valor previo en `/tmp/lab08-nf_log_all_netns.orig`; la limpieza restaura exactamente ese valor, no presupone que fuera `0`.
 
 ```bash
@@ -841,7 +841,6 @@ if [ -f /tmp/lab08-nf_log_all_netns.orig ]; then
   sudo rm -f /tmp/lab08-nf_log_all_netns.orig
 fi
 ```
-
 
 ## Preguntas de reflexión
 

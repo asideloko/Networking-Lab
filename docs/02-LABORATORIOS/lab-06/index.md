@@ -7,7 +7,7 @@ description: "Laboratorio 06 de NETWORKING Lab — Enrutamiento y Conectividad e
 
 # ENRUTAMIENTO Y CONECTIVIDAD ENTRE REDES
 
-<p class="tema-meta"><span>12 secciones</span><span>4 diagramas</span><span>7 tablas</span></p>
+<p class="tema-meta"><span>14 secciones</span><span>4 diagramas</span><span>7 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -580,7 +580,6 @@ El enlace virtual `192.168.3.0/30` simula el **underlay IP** entre extremos; no 
 
 Registra el tiempo, paquetes perdidos y ruta seleccionada cuando bajas una interfaz local. Repite con un fallo remoto que no provoque pérdida de portadora (por ejemplo, descartar tráfico en el extremo remoto dentro del laboratorio). Una ruta estática con siguiente salto todavía alcanzable a nivel de enlace no desaparece necesariamente ante un fallo remoto; no la describas como convergencia automática.
 
-
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo hace que R1 envíe `10.0.2.10` por el enlace directo y no por R2?
@@ -604,7 +603,7 @@ El enrutamiento es el corazón de la comunicación entre redes. Las rutas estát
 
 ## Preparación para el siguiente laboratorio
 
-En el **Laboratorio 07** exploraremos **protocolos y servicios de red** como DHCP, DNS, NAT y firewalls.
+Hemos dejado la sede conectada con las dos sucursales mediante rutas estáticas, un enlace redundante y un túnel GRE. Las redes **ya se comunican**, pero los equipos todavía se configuran a mano y la red no ofrece servicios a los usuarios. En el **Laboratorio 07** añadimos esos servicios: **DNS, DHCP y NAT/PAT**, y la diferencia entre TCP y UDP. La seguridad (firewall y DMZ) llega en el Laboratorio 08.
 
 ---
 

@@ -7,7 +7,7 @@ description: "Laboratorio 12 de NETWORKING Lab — Arquitecturas Modernas de Red
 
 # ARQUITECTURAS MODERNAS DE RED
 
-<p class="tema-meta"><span>8 secciones</span><span>3 diagramas</span><span>5 tablas</span></p>
+<p class="tema-meta"><span>13 secciones</span><span>3 diagramas</span><span>6 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -17,8 +17,23 @@ La empresa **Networking SecOps** ha implementado su arquitectura empresarial tra
     - **Real y ejecutable:** conectividad híbrida OnPremise ↔ [VPC](https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html), acceso remoto con *política por aplicación* en un broker (modelo ZTNA simplificado con `iptables`) y **[microsegmentación](https://www.cisa.gov/zero-trust-maturity-model)** entre servidores.
     - **Simulado / conceptual:** el *Identity Provider* (solo se representa como un nodo alcanzable, no autentica a nadie) y **[SASE](https://www.cisco.com/c/en/us/products/security/what-is-sase.html)** ([SWG](https://www.cisa.gov/resources-tools/resources/cloud-security-technical-reference-architecture), [CASB](https://www.cisa.gov/resources-tools/resources/cloud-security-technical-reference-architecture), SD-WAN en un PoP): se explica en el análisis, pero no se construye. Un ZTNA real verifica identidad, dispositivo y contexto en cada conexión; aquí solo se emula la parte de *acceso mínimo por aplicación*.
 
-!!! info "Nube: abstracción didáctica, no la arquitectura real de AWS"
+!!! warning "Nube: abstracción didáctica, no la arquitectura real de AWS"
     La VPC se representa como un router Linux y EC2/RDS como *namespaces*. Es una **abstracción válida para enseñar**, pero no reproduce AWS: una **VPC** es una **red virtual definida en la infraestructura del proveedor** (con tablas de rutas, gateways, grupos de seguridad y ACL propios); una **instancia EC2** es un **recurso de cómputo**; **RDS** es un **servicio administrado de bases de datos** (no un host al que se accede por SSH); y la conectividad y la seguridad de AWS usan componentes específicos. **No debe equipararse un *namespace* Linux con una instancia administrada en la nube.**
+
+## Problema inicial
+
+-   La plantilla trabaja de forma híbrida: parte de las aplicaciones sigue en la sede y parte se aloja en la nube.
+-   La sede y la nube deben comunicarse de forma privada.
+-   Los usuarios remotos deben llegar **solo a las aplicaciones que necesitan**, no a toda la red.
+-   Si un servidor interno se compromete, no debe poder moverse libremente hacia los demás.
+
+## Objetivos del laboratorio
+
+1.  Construir la **conectividad híbrida** entre una red local (`OnPremise`) y una red virtual en la nube (VPC) y comprobar el enrutamiento entre ambas.
+2.  Aplicar **acceso mínimo por aplicación** mediante un broker (modelo ZTNA simplificado).
+3.  Implementar **microsegmentación** entre servidores y verificar qué comunicación queda bloqueada.
+4.  Distinguir lo que se **construye** (conectividad y políticas) de lo que solo se **representa** (identidad, SASE, AWS).
+5.  Explicar por qué una política basada en direcciones IP **no equivale** a verificar identidad.
 
 ## Topología
 
@@ -44,6 +59,7 @@ graph TB
     R1 --- VPC
     VPC --- EC2
     VPC --- RDS
+    class VPC sxCloud
 ```
 
 **Direccionamiento:**
@@ -489,7 +505,6 @@ Los namespaces aíslan la red, no el ciclo de vida de todos los procesos ni el s
 
 La conectividad `veth` hacia la VPC es una abstracción de underlay; no es AWS VPC real, VPN cifrada ni SASE. Mantén explícito qué parte es ejecutable, simulada o conceptual en los objetivos y conclusiones.
 
-
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo distingue dar acceso a una **aplicación** de dar acceso a toda una **red**?
@@ -499,9 +514,13 @@ La conectividad `veth` hacia la VPC es una abstracción de underlay; no es AWS V
 5.  ¿En qué escenario empresarial sustituirías una VPN de acceso remoto por ZTNA?
 6.  ¿Qué otros mecanismos aportarían identidad y estado del dispositivo?
 
-## Conclusiones
+## Conclusiones técnicas
 
 Las arquitecturas modernas combinan Cloud Networking, Zero Trust, ZTNA, SASE y microsegmentación para adaptarse a entornos híbridos con agilidad y seguridad. En este laboratorio se ha **representado** la conectividad híbrida (con una abstracción de la nube), el acceso mínimo por aplicación y la microsegmentación; la verificación de identidad, la evaluación de contexto y SASE quedan como conceptos explicados, y el escenario **no equivale a una plataforma ZTNA ni a AWS reales**.
+
+## Preparación para el siguiente laboratorio
+
+La empresa ya tiene sede, nube, acceso remoto y segmentación, pero **no sabe cómo se comporta** todo ello en funcionamiento. En el **Laboratorio 13** pasamos de construir a **observar**: se monitoriza el tráfico, se centralizan los registros y se aprende a diagnosticar con evidencias.
 
 ---
 

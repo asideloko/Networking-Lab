@@ -7,7 +7,7 @@ description: "Laboratorio 07 de NETWORKING Lab — Protocolos y Servicios de Red
 
 # PROTOCOLOS Y SERVICIOS DE RED
 
-<p class="tema-meta"><span>14 secciones</span><span>5 diagramas</span><span>5 tablas</span></p>
+<p class="tema-meta"><span>15 secciones</span><span>5 diagramas</span><span>5 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -719,7 +719,6 @@ sudo ip netns exec R1 iptables -t nat -vnL
 ```
 
 Una regla MASQUERADE no garantiza salida si el firewall del host bloquea `FORWARD`; comprueba por separado el firewall del host y el del router. No cambies políticas globales para “hacer que funcione”: autoriza solo el flujo de laboratorio y registra su reversión.
-
 
 ## Preguntas de reflexión
 

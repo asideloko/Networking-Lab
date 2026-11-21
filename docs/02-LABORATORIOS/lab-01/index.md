@@ -7,7 +7,7 @@ description: "Laboratorio 01 de NETWORKING Lab — Fundamentos de Redes y Encaps
 
 # FUNDAMENTOS DE REDES Y ENCAPSULACIÓN
 
-<p class="tema-meta"><span>13 secciones</span><span>3 diagramas</span><span>5 tablas</span></p>
+<p class="tema-meta"><span>15 secciones</span><span>3 diagramas</span><span>6 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -16,7 +16,7 @@ La empresa **Networking SecOps** acaba de abrir una nueva oficina. Cuenta con do
 !!! note "Alcance de este laboratorio"
     En esta primera demostración el equipo intermedio (el namespace `router`) aloja un **bridge Linux** y su función efectiva es la **conmutación Ethernet (capa 2)**. El **enrutamiento entre subredes** todavía no se demuestra; llegará en los laboratorios 02 y 06.
 
-!!! note "Conectividad frente a servicios"
+!!! info "Conectividad frente a servicios"
     En este laboratorio se construye la **infraestructura de conectividad local**. Los servicios de compartición de archivos y el acceso a Internet se abordarán después con tecnologías y protocolos específicos (laboratorios 02 y 07). Tener conectividad no es lo mismo que tener servicios funcionando sobre ella.
 
 ## Problema inicial
@@ -520,7 +520,6 @@ Usa `tcpdump -e -vv -XX` para relacionar los bytes con los campos. En el destino
 
 
 **Evidencia que debe entregar el estudiante:** salida de `ip route get`, captura ARP/ICMP, FDB antes y después, tabla de vecinos y explicación de cada transición. No basta con adjuntar la salida sin interpretarla.
-
 
 ## Preguntas de reflexión
 

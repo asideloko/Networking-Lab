@@ -7,7 +7,7 @@ description: "Laboratorio 11 de NETWORKING Lab — Arquitectura de Red Empresari
 
 # ARQUITECTURA DE RED EMPRESARIAL
 
-<p class="tema-meta"><span>10 secciones</span><span>4 diagramas</span><span>7 tablas</span></p>
+<p class="tema-meta"><span>14 secciones</span><span>4 diagramas</span><span>9 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -26,7 +26,7 @@ El **firewall perimetral** controla el tráfico entre el interior, la DMZ e Inte
 !!! note "Relación con el laboratorio 05"
     En el laboratorio 05 estudiamos **de forma aislada** los mecanismos de segmentación (VLAN, trunk 802.1Q, router-on-a-stick). Aquí esos mismos mecanismos se incorporan **dentro de una arquitectura empresarial jerárquica**. No son el mismo escenario: cambian los dispositivos, los nombres y el direccionamiento (aquí `10.0.10–30.0/24` y enlaces `10.255.x.x`).
 
-!!! info "Alcance"
+!!! note "Alcance"
     El escenario base construye **una** capa de acceso completa (`Access1`, con las tres VLAN) y usa **rutas estáticas con métrica**. El **Ejercicio 1** añade un segundo gateway de distribución con VRRP; el Laboratorio 15 vuelve a integrar VRRP junto con OSPF en una topología más amplia.
 
 !!! warning "Tener dos Core y dos Distribution no demuestra alta disponibilidad"
@@ -58,6 +58,22 @@ graph TB
     C1 --- FW
     C2 --- FW
 ```
+
+## Problema inicial
+
+-   La sede central todavía no tiene una arquitectura: hasta ahora se construyeron mecanismos aislados (VLAN, rutas, firewall, VPN).
+-   Los usuarios de Ventas, IT y Administración deben quedar **segmentados en VLAN** y salir a Internet por un único punto de control.
+-   Los servidores públicos deben quedar **aislados en una DMZ** detrás del firewall.
+-   El núcleo debe seguir funcionando si cae un equipo, y la empresa debe saber **qué parte de esa promesa se cumple de verdad** y qué parte no.
+
+## Objetivos del laboratorio
+
+1.  Distinguir las funciones de **Core, Distribución y Acceso** y asignar cada una a un equipo.
+2.  Construir la arquitectura con *namespaces*: enlaces `/30`, firewall, DMZ y capa de acceso con VLAN.
+3.  Configurar **rutas estáticas con métrica** (camino principal y de respaldo) y comprobar la conmutación cuando cae `Core1`.
+4.  Distinguir un **fallo local** de un **fallo remoto** y medir la convergencia.
+5.  Identificar los **puntos únicos de fallo** (`Dist1`, `Access1`, el firewall) y explicar qué mecanismo (rutas alternativas, STP/RSTP o VRRP) resuelve cada uno.
+6.  Aplicar una **política de firewall por zonas** (interior, DMZ e Internet).
 
 ## Topología
 
@@ -831,6 +847,8 @@ fi
 
 Los *namespaces* se eliminan **por nombre**, no todos los del equipo.
 
+`br-wan` pertenece al laboratorio 08 y debe conservarse durante la limpieza del laboratorio 11. Este laboratorio elimina únicamente su extremo `veth-wan-fw` cuando conserva el alias `networking-lab-lab-11`; no borra el bridge compartido.
+
 ## Profundización: disponibilidad real y mecanismos complementarios
 
 La alta disponibilidad debe evaluarse por servicio y segmento, no por contar enlaces o routers. Una ruta alternativa, STP/RSTP y VRRP resuelven problemas distintos:
@@ -852,9 +870,6 @@ La alta disponibilidad debe evaluarse por servicio y segmento, no por contar enl
 
 Una interfaz `DOWN` puede retirar inmediatamente una ruta conectada; un fallo remoto con portadora activa puede no ser detectado por una ruta estática. Registra hora de inicio, detección, cambio de ruta, pérdida de paquetes y recuperación. Si se incorpora VRRP en una ampliación, comprueba prioridad, anuncios, preemption y tracking; no atribuyas a VRRP una convergencia de routing que pertenece a otro protocolo.
 
-`br-wan` pertenece al laboratorio 08 y debe conservarse durante la limpieza del laboratorio 11. Este laboratorio elimina únicamente su extremo `veth-wan-fw` cuando conserva el alias `networking-lab-lab-11`; no borra el bridge compartido.
-
-
 ## Preguntas de reflexión
 
 1.  ¿Qué mecanismo hace que el tráfico siga funcionando cuando cae `Core1`, y por qué ese mismo mecanismo no sirve si cae `Dist1`?
@@ -864,9 +879,13 @@ Una interfaz `DOWN` puede retirar inmediatamente una ruta conectada; un fallo re
 5.  ¿En qué escenario empresarial se justifica colapsar Core y Distribución en un solo equipo?
 6.  ¿Qué otros mecanismos podrían dar alta disponibilidad al *gateway* de las VLAN?
 
-## Conclusiones
+## Conclusiones técnicas
 
 La arquitectura jerárquica proporciona escalabilidad y facilidad de administración, y permite diseñar para la disponibilidad. La redundancia elimina puntos únicos de fallo en el núcleo **si** hay mecanismos que detecten fallos y muevan el tráfico: con rutas estáticas la conmutación es posible pero limitada a fallos de enlaces propios. Las VLAN siguen dependiendo de un único *gateway* (`Dist1`). Los protocolos dinámicos (OSPF), los protocolos contra bucles (STP/RSTP) y de *gateway* (VRRP) completan la solución.
+
+## Preparación para el siguiente laboratorio
+
+Hasta aquí la arquitectura es **tradicional**: una sede con núcleo, distribución, acceso, firewall y DMZ, y un perímetro que separa «dentro» de «fuera». La empresa ahora trabaja de forma **híbrida**, con aplicaciones en la nube y usuarios remotos. En el **Laboratorio 12** la red se extiende hacia la nube y el modelo de confianza cambia: del perímetro al **acceso mínimo por aplicación**.
 
 ---
 

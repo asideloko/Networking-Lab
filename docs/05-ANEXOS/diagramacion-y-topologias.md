@@ -9,18 +9,24 @@ Esta sección reúne los diagramas del proyecto: laboratorios 01–15, proyecto 
 
 ## Convenciones cromáticas y de lectura
 
-La colorimetría es una **convención editorial propia del proyecto**. El color identifica la función del elemento y se complementa con forma, etiqueta, flechas y leyenda; nunca debe ser el único medio para transmitir significado.
+La paleta **«Cyberpunk»** es una **convención editorial propia del proyecto**: contorno luminoso del color de la categoría y fondo translúcido teñido del mismo color, con adaptación automática a tema claro y oscuro. El color identifica la **función del elemento** y se complementa siempre con su nombre, su forma y esta leyenda. La justificación completa está en la [Guía de uso, sección 7.2](guia-de-uso.md#72-convencion-cromatica-del-proyecto).
 
-| Color funcional | Categoría | Elementos representados |
-|---|---|---|
-| <span class="sx-dot" style="background:#2196D2"></span> Azul `#2196D2` | Nota / Aviso | Información relevante, observaciones, notas explicativas y avisos que orientan la lectura sin indicar peligro. |
-| <span class="sx-dot" style="background:#F59E0B"></span> Amarillo `#F59E0B` | Advertencia | Precauciones, riesgos potenciales, acciones que requieren atención y advertencias antes de ejecutar cambios. |
-| <span class="sx-dot" style="background:#10B981"></span> Verde `#10B981` | Dato Técnico | Parámetros, direcciones IP, configuraciones, características de equipos y datos técnicos de referencia. |
-| <span class="sx-dot" style="background:#EF4444"></span> Rojo `#EF4444` | Peligro / Error Crítico | Errores críticos, bloqueos, condiciones peligrosas, fallos graves y acciones que pueden causar daños. |
+| Categoría | Representa |
+|---|---|
+| <span class="sx-dot d-infra"></span> 01 · Infraestructura de red | Router, switch, bridge, núcleo, distribución, acceso, gateway |
+| <span class="sx-dot d-zone"></span> 02 · Segmentación y zonas | LAN, VLAN, subredes, DMZ, segmentos |
+| <span class="sx-dot d-system"></span> 03 · Sistemas y servidores | Servidor web, servidor de aplicaciones, servidor DNS (la máquina) |
+| <span class="sx-dot d-user"></span> 04 · Usuarios y terminales | Clientes, PC, usuarios remotos, hosts de ventas o administración |
+| <span class="sx-dot d-service"></span> 05 · Servicios y aplicaciones | DNS, DHCP, NTP, web, aplicaciones |
+| <span class="sx-dot d-security"></span> 06 · Seguridad | Firewall, VPN Gateway, ZTNA, proveedor de identidad, tráfico cifrado |
+| <span class="sx-dot d-transport"></span> 07 · Transporte y proveedor | PE, P, CE, WAN, ISP, GRE, túneles, TCP/UDP |
+| <span class="sx-dot d-process"></span> 08 · Procesamiento y operaciones | NAT, cadenas de filtrado, rutas, encapsulación, push/swap/pop y **decisiones (rombos)** |
+| <span class="sx-dot d-data"></span> 09 · Datos y estructuras | Bases de datos, cabeceras, tramas, paquetes, tablas |
+| <span class="sx-dot d-monitor"></span> 10 · Monitoreo y diagnóstico | NOC, SIEM, registros, síntomas, causas halladas, fallos |
+| <span class="sx-dot d-cloud"></span> 11 · Nube e infraestructura virtual | VPC, AWS, EC2, RDS, puerta de enlace de Internet |
+| <span class="sx-dot d-external"></span> 12 · Elementos externos y referencia | Internet, red externa |
 
-**Colores funcionales de los nodos Mermaid:** los mismos cuatro colores de las cajas de resaltado se integran en los diagramas, con rellenos suaves y contornos definidos: **azul** para infraestructura y dispositivos; **verde** para servicios y datos técnicos; **amarillo** para procesos y operaciones; y **rojo** para decisiones críticas, errores o condiciones de riesgo. Las decisiones también se reconocen por su forma de rombo. Los conectores y la composición general conservan el estilo del tema; los elementos no reconocidos permanecen neutros.
-
-**Referencias de accesibilidad:** [WCAG 2.2, criterio 1.4.1](https://www.w3.org/TR/WCAG22/#use-of-color) establece que el color no debe ser el único medio de transmitir información. [ISO 5807:1985](https://www.iso.org/standard/11955.html) ofrece convenciones de símbolos para diagramas de flujo y sistemas; no prescribe esta paleta de red.
+**Referencias de accesibilidad:** [WCAG 2.2, criterio 1.4.1](https://www.w3.org/TR/WCAG22/#use-of-color) establece que el color no debe ser el único medio de transmitir información; el criterio 1.4.11 fija un contraste mínimo de 3:1 para elementos gráficos. [ISO 5807:1985](https://www.iso.org/standard/11955.html) ofrece convenciones de símbolos para diagramas de flujo y sistemas; no prescribe esta paleta de red.
 
 ## Cómo consultar las fichas
 
@@ -967,6 +973,7 @@ graph TB
     R1 --- VPC
     VPC --- EC2
     VPC --- RDS
+    class VPC sxCloud
 ```
 
 ---
@@ -1050,6 +1057,7 @@ graph TB
     R1 --- VPC
     EC2 --- VPC
     R1 --- Internet
+    class Internet sxExternal
 ```
 
 ---
@@ -1075,6 +1083,7 @@ flowchart TD
     P -- Sí --> Q{"¿Va lento? iperf3, mtr"}
     Q -- Sí --> PERF["Rendimiento: pérdida, MTU, congestión"]
     R --> LNK["Enlace, ruta o gateway"]
+    class DNS,FW,LNK,PERF sxMonitor
 ```
 
 ---
@@ -1222,7 +1231,7 @@ sequenceDiagram
 
 ## Diagrama 42. 3. Arquitectura de referencia { #diagrama-42 }
 
-**Documento de origen:** `03-PROYECTO-FINAL` (sección retirada)
+**Documento de origen:** [`03-PROYECTO-FINAL`](../03-PROYECTO-FINAL/index.md)
 
 **Función:** Equipos e infraestructura · Servicios y software · Procesos y protocolos · Decisiones y flujos · Topologías y arquitectura
 
@@ -1362,6 +1371,7 @@ flowchart TD
     D -- Sí --> E{"¿Va lento? iperf3, mtr"}
     E -- Sí --> E1["Pérdida, MTU o saturación"]
     E -- No --> E2["Aplicación"]
+    class B1,B2,C1,D1,E1 sxMonitor
 ```
 
 ---

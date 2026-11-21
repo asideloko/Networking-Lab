@@ -7,7 +7,7 @@ description: "Laboratorio 09 de NETWORKING Lab — VPN y Tunelización."
 
 # VPN Y TUNELIZACIÓN
 
-<p class="tema-meta"><span>17 secciones</span><span>4 diagramas</span><span>8 tablas</span></p>
+<p class="tema-meta"><span>18 secciones</span><span>4 diagramas</span><span>9 tablas</span></p>
 
 ## Contexto empresarial
 
@@ -449,7 +449,7 @@ else
 fi
 ```
 
-!!! note "Compatibilidad de OpenVPN"
+!!! warning "Compatibilidad de OpenVPN"
     | Rama | Modo `--secret` | Acción del laboratorio |
     |---|---|---|
     | 2.4–2.5 | Aceptado como modo legacy sin TLS | No pasar `--allow-deprecated-insecure-static-crypto`; en 2.4 usa `--genkey --secret` |
@@ -881,7 +881,6 @@ for r in R1 R2 R3; do
 ```
 
 Elimina únicamente las rutas de las redes remotas que añadiste en los pasos de [GRE/VPN](https://www.rfc-editor.org/rfc/rfc2784); elimina los túneles `gre1`, `gre2` y `gre3` solo si pertenecen a esta práctica; elimina las SA XFRM por sus selectores `src`, `dst`, `proto esp` y SPI documentados; elimina las políticas por sus selectores y dirección. **No uses `ip xfrm flush`**, porque puede borrar asociaciones ajenas. Retira además las reglas DNAT/FORWARD insertadas en `firewall` y los procesos OpenVPN/WireGuard que arrancó esta práctica. La WAN `br-wan` y el NAT base pertenecen al laboratorio 08: no los borres aquí; revierte ese laboratorio con su procedimiento propio.
-
 
 ## Preguntas de reflexión
 
