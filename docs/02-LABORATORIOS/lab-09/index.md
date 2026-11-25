@@ -7,7 +7,7 @@ description: "Laboratorio 09 de NETWORKING Lab — VPN y Tunelización."
 
 # VPN Y TUNELIZACIÓN
 
-<p class="tema-meta"><span>23 secciones</span><span>4 diagramas</span><span>9 tablas</span></p>
+<p class="tema-meta"><span>25 secciones</span><span>4 diagramas</span><span>12 tablas</span></p>
 
 ## Hacia el exterior
 
@@ -35,6 +35,24 @@ Al terminar este laboratorio deberías poder:
 
 - **Conocimientos previos:** Laboratorios 06 a 08 (rutas, firewall y servicios) y la encapsulación del laboratorio 01. Autenticación, cifrado, integridad y gestión de claves se explican en «Fundamento necesario» antes de usar IPsec.
 - **Relación con la práctica anterior:** *Continúa el escenario anterior.* Requiere que los laboratorios 06 a 08 sigan en pie (se comprueba al inicio) y extiende la topología del 08 con túneles VPN.
+
+## Mapa de conceptos y ruta de lectura
+
+| Nivel | Contenido |
+|-------|-----------|
+| **Concepto principal** | La diferencia entre un túnel (encapsulación) y una VPN (conexión protegida) |
+| **Conceptos secundarios** | Encapsulación, autenticación, integridad y cifrado; asociaciones de seguridad y políticas de IPsec; gestión de claves |
+| **Tecnologías comparativas** | GRE, IPsec, OpenVPN y WireGuard, vistas como respuestas distintas al mismo problema |
+| **Ampliación** | NAT-T, `AllowedIPs`, PKI y TLS en OpenVPN, anti-replay, AH frente a ESP |
+| **Reservado para otras prácticas** | Enrutamiento dinámico sobre túneles y ajuste de MSS (laboratorio 15); negociación IKE con un demonio, que esta práctica no implementa |
+
+El laboratorio tiene tres partes:
+
+- **Parte A, de túnel a VPN (Pasos 3 a 8):** se construye GRE, se comprueba que no protege nada y se añade IPsec.
+- **Parte B, acceso remoto (Pasos 9 a 13):** OpenVPN y WireGuard terminan en el *gateway* VPN de la DMZ (el Paso 2 lo prepara).
+- **Parte C, comparación (Pasos 14 a 16):** capacidades, sobrecarga y efecto sobre la MTU.
+
+**Ruta recomendada en una primera lectura:** primero el concepto, con «Qué propiedades aporta cada tecnología»; después la parte A completa; las partes B y C se leen sabiendo ya qué propiedad busca cada tecnología.
 
 ## Estado inicial
 
@@ -66,6 +84,22 @@ Cuatro propiedades distintas que suelen confundirse, más la forma de obtener la
 - **Gestión de claves:** cómo se obtienen y renuevan las claves que usan las anteriores. En este laboratorio son manuales o estáticas solo para mostrar el mecanismo; en un despliegue habitual se negocian y se renuevan.
 
 Un túnel GRE aporta solo la primera propiedad; una VPN segura combina las demás con ella.
+
+## Qué propiedades aporta cada tecnología
+
+Cada tecnología responde de forma distinta a las propiedades del apartado anterior. Esta tabla es la clave de lectura de todo el laboratorio; la lectura de «cuántos comandos tiene cada una» no lo es.
+
+| Tecnología | Encapsula | Integridad | Cifra | Autenticación de los extremos | Claves en este laboratorio | Qué se ve en una captura |
+|------------|-----------|------------|-------|-------------------------------|----------------------------|--------------------------|
+| GRE | Sí | No | No | No | No aplica | Protocolo GRE, con el paquete interior en claro |
+| IPsec (ESP, modo túnel) | Sí | Sí (HMAC) | Sí | Sin negociación: claves manuales | Manuales | Solo ESP; el contenido no es legible |
+| OpenVPN (clave estática) | Sí | Con la clave compartida | Sí | Sin identidad por cliente ni revocación | Estática compartida | Tráfico UDP al puerto publicado (1194) |
+| WireGuard | Sí | Sí | Sí | Mediante la clave pública de cada par | Par de claves por extremo | Tráfico UDP al puerto elegido (51820) |
+
+Dos lecturas útiles:
+
+- **GRE no es una VPN** por sí solo: la fila de IPsec muestra qué añade ESP sobre una encapsulación.
+- **Que una VPN cifre no significa que sea segura**: las columnas «autenticación» y «claves» indican qué simplifica esta demostración (véase «Variación de laboratorio frente a despliegue habitual»).
 
 ## Topología
 
@@ -625,6 +659,20 @@ graph LR
 | IPsec | 3 | Estándar, cifra y autentica; ESP | Complejo (IKE, políticas); problemas con NAT (NAT-T) |
 | OpenVPN | 3 (`tun`) o 2 (`tap`), sobre UDP/TCP | Basado en TLS; flexible | Mayor overhead; configuración de PKI |
 | WireGuard | 3, sobre UDP | Ligero, moderno, modelo de pares simple | Menos funciones (sin asignación dinámica de direcciones integrada) |
+
+### Criterio de elección
+
+Orientación didáctica sobre qué aporta cada tecnología; no es una recomendación de diseño.
+
+| Si el escenario necesita… | Se piensa en… | Porque… |
+|---------------------------|---------------|---------|
+| Transportar tráfico entre dos extremos, incluido multicast, sin protección | GRE | Es sencilla y soporta multicast |
+| Unir dos sedes con un estándar muy extendido | IPsec | Cifra y autentica con ESP; exige IKE y políticas, y puede tener problemas con NAT |
+| Acceso remoto basado en TLS y flexible | OpenVPN | Usa TLS con certificados (en producción); tiene más sobrecarga y exige PKI |
+| Acceso remoto ligero con un modelo de pares sencillo | WireGuard | Tiene suite criptográfica fija y poca configuración; ofrece menos funciones integradas |
+| Protección criptográfica sobre un túnel GRE | GRE protegido con IPsec | Combina la encapsulación de GRE con la protección de IPsec |
+
+La pregunta de partida no es «¿cuál es mejor?», sino «¿qué propiedad necesito y qué me cuesta obtenerla?».
 
 ### Paso 15: Analizar overhead de encapsulación
 

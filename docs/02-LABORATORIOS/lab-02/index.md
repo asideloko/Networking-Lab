@@ -7,7 +7,7 @@ description: "Laboratorio 02 de NETWORKING Lab — Transmisión de Datos y Capa 
 
 # TRANSMISIÓN DE DATOS Y CAPA FÍSICA
 
-<p class="tema-meta"><span>21 secciones</span><span>1 diagrama</span><span>8 tablas</span></p>
+<p class="tema-meta"><span>23 secciones</span><span>1 diagrama</span><span>13 tablas</span></p>
 
 ## Continuemos
 
@@ -34,6 +34,17 @@ Al terminar este laboratorio deberías poder:
 
 - **Conocimientos previos:** Haber completado el laboratorio 01 (MAC, IP, ARP y bridge). NAT, ruta por defecto y reenvío se explican aquí; la capa física se trata de forma conceptual, separada de la construcción.
 - **Relación con la práctica anterior:** *Continúa el escenario anterior.* Necesita los recursos del laboratorio 01: `cliente1`, `cliente2` y el `router` con su bridge. El Paso 1 comprueba que siguen en pie.
+
+## Mapa de conceptos y ruta de lectura
+
+| Nivel | Contenido |
+|-------|-----------|
+| **Concepto principal** | Cómo sale un paquete de una red privada: ruta por defecto, reenvío y NAT, tres decisiones distintas |
+| **Conceptos secundarios** | Doble NAT y qué dirección ve cada tramo; DNS dentro de un namespace; medición de latencia, *jitter*, pérdida y rendimiento |
+| **Ampliación (conceptual, no verificable aquí)** | Bits, símbolos, codificación, modulación, SNR, BER, autonegociación y dúplex; tamaños de trama y etiqueta 802.1Q |
+| **Reservado para otras prácticas** | MTU y PMTUD (laboratorio 03), VLAN y 802.1Q (05), NAT/PAT con tabla de conexiones en detalle (07), filtrado con firewall (08) |
+
+**Ruta recomendada en una primera lectura:** Pasos 1 a 8, el apartado «Recorrido de un paquete, decisión por decisión» y la observación del Paso 9. Los fundamentos de transmisión y capa física pueden leerse después: explican lo que este laboratorio no puede mostrar, y por eso están separados de lo que sí se construye.
 
 ## Estado inicial
 
@@ -83,6 +94,17 @@ graph TB
 ## Fundamentos de transmisión y capa física
 
 La topología `veth` de este laboratorio permite estudiar Ethernet, IP y el comportamiento de la pila del kernel, pero **no genera ni mide una señal eléctrica u óptica real**. La capa física depende de la PHY, el cable, la longitud, los conectores, la negociación y las condiciones del medio.
+
+### Qué se puede medir aquí y qué no
+
+| Se observa en este laboratorio | No se observa (solo se explica) |
+|--------------------------------|----------------------------------|
+| RTT, *jitter* y pérdida (`ping`, `iperf3 -u`) | Forma de onda de la señal |
+| Throughput de la pila de red (`iperf3`) | Codificación y modulación (4B/5B, MLT-3, PAM) |
+| Tamaño de trama y MTU (`ip link`, `tcpdump -e`) | SNR, BER y atenuación del medio |
+| Contadores de errores y descartes (`ip -s link`, `tc -s qdisc`) | Autonegociación y dúplex de una PHY real |
+
+Cuando una cifra de esta práctica parezca describir «la red», conviene preguntarse a cuál de las dos columnas pertenece.
 
 ### Bits, símbolos, codificación y modulación
 
@@ -159,6 +181,18 @@ sudo ip netns exec router ip -s link show
 ```
 
 `ping` informa pérdida y estadísticas RTT (incluida desviación); `iperf3` TCP mide throughput, mientras UDP informa jitter y datagramas perdidos para la tasa ofrecida. `tc -s qdisc` y `ip -s link` ayudan a identificar colas, drops y errores. Se repiten varias veces con la misma duración, dirección y número de flujos; se compara medianas y no una única muestra. El resultado entre dos `veth` no predice el throughput de Internet ni el de una NIC física.
+
+### Cómo leer las cifras de `ping` e `iperf3`
+
+| Magnitud | Dónde se lee | Qué significa | Qué no permite concluir |
+|----------|--------------|---------------|--------------------------|
+| RTT mínimo, medio y máximo | Línea final de `ping` | Tiempo de ida y vuelta de la muestra | La latencia de otra ruta o de otro momento |
+| Desviación del RTT | Misma línea de `ping` | Variación entre muestras | Por sí sola, la causa de la variación |
+| Pérdida | `ping` o datagramas perdidos de `iperf3 -u` | Fracción de paquetes sin respuesta o sin llegar | Dónde se pierden |
+| *Jitter* | `iperf3 -u` | Variación del retardo entre datagramas | Calidad de un enlace físico |
+| Throughput TCP | `iperf3` | Datos transferidos por segundo en esa prueba | La capacidad nominal de un cable o de Internet |
+
+Entre dos `veth` el límite lo marcan la CPU y las copias del kernel, no un medio físico.
 
 ## Construcción de la red
 
@@ -368,6 +402,33 @@ ip netns exec cliente1 curl -I http://google.com
     fi
     ```
 
+## Recorrido de un paquete, decisión por decisión
+
+Cuando `cliente1` abre `curl http://google.com`, cada equipo del camino hace una pregunta distinta y consulta algo distinto. Entender cuál es cada una permite saber qué revisar cuando algo falla.
+
+| Dónde | Pregunta | Qué consulta | Resultado en este laboratorio |
+|-------|----------|--------------|--------------------------------|
+| Cliente 1 | ¿El destino está en mi red? | Sus rutas (`ip route get <destino>`) | No está en `10.0.1.0/24`: usa la ruta por defecto y envía a `10.0.1.1` (resuelve su MAC por ARP) |
+| Router, entrada `br0` | ¿Puedo reenviar? ¿Por dónde? | `ip_forward` y su tabla de rutas | Con reenvío activo, la ruta por defecto lo manda por `veth-wan` hacia `192.168.1.1` |
+| Router, salida `veth-wan` | ¿Debo traducir el origen? | Regla `MASQUERADE` de `POSTROUTING` | `10.0.1.2` pasa a `192.168.1.2` y se recuerda en la tabla de conexiones |
+| Host, entrada `veth-host` | ¿Puedo reenviar y lo permite mi firewall? | `ip_forward` y cadena `FORWARD` | Debe estar permitido el flujo `veth-host` → `eth0` |
+| Host, salida `eth0` | ¿Debo traducir el origen? | Regla `MASQUERADE` para `192.168.1.0/24` | `192.168.1.2` pasa a la dirección de `eth0` |
+| Retorno | ¿A quién devuelvo la respuesta? | Tabla de conexiones de cada traductor | Cada uno deshace su traducción y la respuesta llega a `10.0.1.2` |
+
+### Qué ocurre si falta cada pieza
+
+| Falta | Síntoma | Dónde se ve la evidencia |
+|-------|---------|---------------------------|
+| Ruta por defecto del cliente | `Network is unreachable` | `ip route` del cliente solo muestra `10.0.1.0/24` |
+| Ruta por defecto del router | El router responde `Destination Net Unreachable` | `ip route` del router |
+| `ip_forward` en el router | El paquete llega a `br0` y no sale por `veth-wan` | Captura en ambas interfaces |
+| NAT del router | El origen `10.0.1.2` cruza `veth-wan`; la regla del host solo traduce `192.168.1.0/24`, así que no se traduce y no hay respuesta | Captura en `veth-wan` y contadores de la regla en cero |
+| NAT del host | El origen `192.168.1.2` sale sin traducir y no hay respuesta | Captura en `eth0` |
+| Permiso en `FORWARD` del host | El paquete llega a `veth-host` y no sale por `eth0` | `iptables -S FORWARD` |
+| `resolv.conf` propio del namespace | `ping 8.8.8.8` funciona, pero `curl` por nombre falla | El namespace hereda `127.0.0.53` |
+
+La ruta de retorno del Paso 7 no aparece en esta tabla porque, con doble NAT, no es imprescindible para salir: solo sirve para alcanzar `10.0.1.0/24` desde el propio host.
+
 ## Observación de la transmisión de datos
 
 ### Paso 9: Capturar el flujo de datos durante una solicitud web
@@ -513,7 +574,7 @@ ip netns exec cliente1 iperf3 -c 10.0.1.1
 | `ping: connect: Network is unreachable` | No hay ruta por defecto. | Ejecutar `ip route add default via 10.0.1.1` en el cliente. |
 | No sale a Internet | NAT no configurado. | Verificar reglas de iptables y que `ip_forward=1`. |
 | `curl: (6) Could not resolve host` | El namespace no tiene un DNS utilizable (hereda el `resolv.conf` del host, que suele apuntar a `127.0.0.53`). | Crear `/etc/netns/cliente1/resolv.conf` (véase la nota «DNS dentro de un namespace» del Paso 8). **No** escribir en `/etc/resolv.conf`: es el del host. |
-| Los paquetes no llegan al host | Host no tiene ruta de retorno. | Agregar ruta en el host: `ip route add 10.0.1.0/24 via 192.168.1.2`. |
+| El host no alcanza `10.0.1.0/24` (por ejemplo, `ping 10.0.1.2` desde el host) | Falta la ruta de retorno en el host (Paso 7); no afecta a la salida de los clientes a Internet. | Agregar ruta en el host: `ip route add 10.0.1.0/24 via 192.168.1.2`. |
 
 ## Revertir los cambios del host
 
@@ -668,7 +729,7 @@ Responde con tus propias palabras antes de abrir las respuestas orientativas. Un
 
     **Nivel 3.** Sin NAT el paquete sale con un origen privado que la red externa no sabe devolver, así que las respuestas no llegan aunque exista reenvío.
 
-    **Caso de diagnóstico.** Síntoma: sin salida pero con router alcanzable. Mecanismo: enrutamiento, reenvío o NAT. Herramientas: `ip route`, `sysctl net.ipv4.ip_forward`, reglas NAT del `router`, `tcpdump` en `veth-wan`. Evidencia: dónde deja de verse el tráfico. Causas habituales: ruta por defecto ausente, reenvío desactivado, NAT ausente o falta de ruta de retorno en el host (Paso 7).
+    **Caso de diagnóstico.** Síntoma: sin salida pero con router alcanzable. Mecanismo: enrutamiento, reenvío o NAT. Herramientas: `ip route`, `sysctl net.ipv4.ip_forward`, reglas NAT del `router`, `tcpdump` en `veth-wan`. Evidencia: dónde deja de verse el tráfico. Causas habituales: ruta por defecto ausente, reenvío desactivado, NAT ausente o el firewall del host descartando el reenvío (Paso 8).
 
 ## Estado final
 

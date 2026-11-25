@@ -7,7 +7,7 @@ description: "Laboratorio 07 de NETWORKING Lab — Protocolos y Servicios de Red
 
 # PROTOCOLOS Y SERVICIOS DE RED
 
-<p class="tema-meta"><span>20 secciones</span><span>5 diagramas</span><span>6 tablas</span></p>
+<p class="tema-meta"><span>22 secciones</span><span>5 diagramas</span><span>9 tablas</span></p>
 
 ## Servicios para los usuarios
 
@@ -35,6 +35,22 @@ Al terminar este laboratorio deberías poder:
 
 - **Conocimientos previos:** Laboratorios 01 a 06: IP, *gateway*, rutas y NAT básico. DNS, DHCP, TCP, UDP y MSS se presentan aquí uno a uno; la idea central es que tener conectividad no es lo mismo que tener servicios.
 - **Relación con la práctica anterior:** *Continúa el escenario anterior.* Requiere el laboratorio 06 funcionando, con el enlace directo R1-R3 restablecido; el comienzo del laboratorio lo comprueba.
+
+## Mapa de conceptos y ruta de lectura
+
+| Nivel | Contenido |
+|-------|-----------|
+| **Concepto principal** | Tener conectividad no equivale a tener servicios: DHCP, DNS y NAT/PAT convierten una red con rutas en una red utilizable |
+| **Conceptos secundarios** | Intercambio DORA, resolución de nombres interna y externa, traducción de puertos con seguimiento de conexiones |
+| **Ampliación** | TCP frente a UDP y QUIC, MSS frente a MTU, renovación de la concesión DHCP (T1 y T2), tipos de servidor DNS |
+| **Reservado para otras prácticas** | Publicación de servicios y reglas de firewall (laboratorio 08); túneles y su efecto en la MTU (09); *relay* DHCP, solo como concepto |
+
+El laboratorio tiene dos partes:
+
+- **Parte A, servicios (Pasos 1 a 9):** DHCP, DNS y NAT/PAT, y cómo se comprueban por separado.
+- **Parte B, transporte (Pasos 10 a 12):** TCP, UDP y MSS, observados en capturas sobre lo construido en la parte A.
+
+**Ruta recomendada en una primera lectura:** la parte A completa y el apartado «Qué servicio actúa en cada momento». La parte B puede abordarse después sin perder el hilo.
 
 ## Estado inicial
 
@@ -448,6 +464,29 @@ Como el cliente aún no tiene IP, usa *broadcast* (`0.0.0.0 → 255.255.255.255`
 
 La matriz completa de la serie (incluye OSPF, VRRP, GRE, IPsec, OpenVPN y WireGuard) está en [Servicios, protocolos y puertos](../../04-REFERENCIA/servicios-puertos.md).
 
+## Qué servicio actúa en cada momento
+
+Los servicios no son temas aislados: un equipo los necesita en orden, y cada uno responde a una pregunta distinta.
+
+| Momento | Pregunta del equipo | Servicio | Protocolo y puerto | Cómo comprobarlo |
+|---------|---------------------|----------|--------------------|------------------|
+| Se conecta sin dirección | ¿Qué IP, *gateway* y DNS uso? | DHCP | UDP 68 → 67, por broadcast | `tcpdump` del intercambio DORA |
+| Quiere salir de su red | ¿A quién envío lo que no es local? | *Gateway* (R1) | ARP y rutas | `ip route get <destino>` |
+| Conoce un nombre y no una IP | ¿Qué dirección tiene ese nombre? | DNS | UDP 53 | `dig @10.0.0.5 <nombre>` |
+| Abre una conexión | ¿El otro extremo acepta la conexión? | TCP | SYN, SYN-ACK, ACK | Captura filtrada por `tcp` |
+| Su origen es privado | ¿Con qué dirección salgo? | NAT/PAT en R1 | Seguimiento de conexiones | `conntrack -L` en R1 |
+
+### Qué ocurre si falla cada servicio
+
+| Falla | Qué se nota | Qué sigue funcionando |
+|-------|-------------|------------------------|
+| DHCP | Un equipo nuevo no obtiene dirección | Los equipos con una concesión vigente o con IP fija |
+| DNS | Los nombres no se resuelven | Todo lo que se accede por IP, incluido `ping` a una dirección |
+| NAT en R1 | Nada sale a Internet desde el direccionamiento privado | La comunicación interna entre sede y sucursales |
+| Ruta por defecto de R2 o R3 | Esa sucursal recibe `Destination Net Unreachable` al salir | Su LAN y las rutas internas |
+
+Por eso una prueba aislada no basta: `ping` a una IP solo demuestra conectividad, y un nombre que no resuelve no demuestra que la red esté caída.
+
 ## Análisis de TCP y UDP
 
 ### Paso 10: Capturar tráfico TCP
@@ -516,6 +555,18 @@ R1 traduce el origen de cada conexión privada y lo recuerda en `conntrack`; as�
 | `10.0.2.10` (ICMP, id 7) | `192.168.100.2` | `192.168.100.1` (con el identificador ICMP) |
 
 (Valores ilustrativos: comprueba los reales con `conntrack -L`.)
+
+### Cómo leer una entrada de `conntrack`
+
+Una entrada describe una conexión con dos tuplas: la **original**, tal como la envió el cliente, y la de **respuesta**, tal como regresará. La traducción se reconoce comparándolas. Ejemplo ilustrativo (los valores reales los muestra `conntrack -L`):
+
+```text
+tcp  6  431999  ESTABLISHED  src=10.0.0.10 dst=192.168.100.2 sport=40001 dport=80  src=192.168.100.2 dst=192.168.100.1 sport=80 dport=40001 [ASSURED]
+```
+
+- **Primera tupla:** `10.0.0.10:40001` → `192.168.100.2:80`, la conexión del cliente.
+- **Segunda tupla:** la respuesta llega a `192.168.100.1:40001`. Ese destino, distinto del origen original, indica que R1 tradujo `10.0.0.10` a `192.168.100.1`.
+- Si otro equipo usa el mismo puerto de origen, la traducción asigna otro puerto, y así se distinguen las conexiones (PAT).
 
 ## Análisis de MSS
 
@@ -734,7 +785,7 @@ Una regla MASQUERADE no garantiza salida si el firewall del host bloquea `FORWAR
 |---------|----------------|----------|
 | Hay IP, máscara y *gateway*, y `ping` por IP funciona, pero no se resuelven nombres | El servidor DNS anunciado no responde | Probar `dig @servidor` y revisar `dnsmasq` y la ruta hasta él. |
 | Las sucursales no reciben dirección | Mantienen direccionamiento fijo y no hay *relay* DHCP | Configurarlas de forma estática o añadir un *relay*. |
-| Los equipos con direccionamiento privado no salen a Internet | Falta NAT/PAT en R1 o la ruta de retorno | Revisar las reglas NAT y `conntrack -L` en R1. |
+| Los equipos con direccionamiento privado no salen a Internet | Falta NAT/PAT en R1, o falta la ruta por defecto de R2 o R3 | Revisar las reglas NAT y `conntrack -L` en R1, y la ruta por defecto de la sucursal. |
 | Las conexiones pequeñas funcionan y las transferencias grandes se cuelgan | MSS y MTU incoherentes en el camino | Comparar el MSS del SYN con la MTU de cada tramo. |
 
 ## Análisis técnico y decisiones
