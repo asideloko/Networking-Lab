@@ -1,3 +1,4 @@
+
 # =============================================================================
 # ZENSICAL.TOML — NETWORKING Lab · Laboratorios de explicación y simulación de redes
 # =============================================================================
@@ -11,9 +12,30 @@ docs_dir = "docs"
 site_dir = "site"
 use_directory_urls = false
 
-extra_css = ['stylesheets/extra.css', 'stylesheets/tipografia-local.css', 'stylesheets/experience.css']
-extra_javascript = ["javascripts/mermaid.min.js", "javascripts/custom.js", "javascripts/experience.js", "javascripts/copyright.js"]
+# =============================================================================
+# RECURSOS PERSONALIZADOS
+# =============================================================================
+
+extra_css = [
+  "stylesheets/extra.css",
+  "stylesheets/tipografia-local.css",
+  "stylesheets/experience.css",
+  "stylesheets/motion.css",
+]
+
+extra_javascript = [
+  "javascripts/mermaid.min.js",
+  "javascripts/custom.js",
+  "javascripts/experience.js",
+  "javascripts/copyright.js",
+  "javascripts/motion.js",
+]
+
 dev_addr = "localhost:8000"
+
+# =============================================================================
+# NAVEGACIÓN
+# =============================================================================
 
 nav = [
   { "INICIO" = "index.md" },
@@ -54,6 +76,10 @@ nav = [
   ] },
 ]
 
+# =============================================================================
+# INFORMACIÓN Y ENLACES SOCIALES
+# =============================================================================
+
 [project.extra]
 social = [
   { icon = "fontawesome/solid/book", link = "https://leanpub.com/networking-fundamentos", name = "Libro NETWORKING" },
@@ -63,12 +89,13 @@ social = [
 # =============================================================================
 # TEMA: APARIENCIA Y COMPORTAMIENTO
 # =============================================================================
+
 [project.theme]
 language   = "es"
 logo       = "assets/logo.png"
 favicon    = "assets/favicon.png"
 custom_dir = "overrides"
-font = false
+font       = false
 
 features = [
   "announce.dismiss",
@@ -95,26 +122,28 @@ features = [
 ]
 
 # Selector de tema de tres posiciones: automático (según el sistema) · claro · oscuro
+
 [[project.theme.palette]]
-media  = "(prefers-color-scheme)"
+media = "(prefers-color-scheme)"
 toggle.icon = "material/brightness-auto"
 toggle.name = "Tema automático (sistema)"
 
 [[project.theme.palette]]
 scheme = "default"
-media  = "(prefers-color-scheme: light)"
+media = "(prefers-color-scheme: light)"
 toggle.icon = "material/brightness-7"
 toggle.name = "Tema claro"
 
 [[project.theme.palette]]
 scheme = "slate"
-media  = "(prefers-color-scheme: dark)"
+media = "(prefers-color-scheme: dark)"
 toggle.icon = "material/brightness-4"
 toggle.name = "Tema oscuro"
 
 # =============================================================================
 # EXTENSIONES DE MARKDOWN
 # =============================================================================
+
 [project.markdown_extensions]
 abbr       = {}
 admonition = {}
@@ -142,6 +171,7 @@ pymdownx.emoji.emoji_index     = "zensical.extensions.emoji.twemoji"
 # =============================================================================
 # PLUGINS (solo los que usa el sitio de laboratorios)
 # =============================================================================
+
 [project.plugins.search]
 enabled = true
 lang    = "es"

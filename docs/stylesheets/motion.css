@@ -1,0 +1,112 @@
+
+/* ==========================================================================
+   NETWORKING LAB — SISTEMA DE MOVIMIENTO RESPONSIVE
+   Movimiento ambiental de portada + entrada progresiva de contenido.
+   No depende de hover ni del ancho de pantalla.
+   ========================================================================== */
+
+/* --- Portada: movimiento ambiental continuo --- */
+
+@keyframes sx-hero-drift-a {
+  0% {
+    transform: translate3d(-1%, 0, 0) scale(1.02);
+  }
+  50% {
+    transform: translate3d(0.5%, 0.7%, 0) scale(1.045);
+  }
+  100% {
+    transform: translate3d(1%, -0.3%, 0) scale(1.02);
+  }
+}
+
+@keyframes sx-hero-drift-b {
+  0% {
+    transform: translate3d(1%, 0, 0);
+  }
+  50% {
+    transform: translate3d(-0.7%, -1%, 0);
+  }
+  100% {
+    transform: translate3d(0.5%, 0.5%, 0);
+  }
+}
+
+.md-typeset .sx-hero::before {
+  transform-origin: center;
+  animation: sx-hero-drift-a 22s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.md-typeset .sx-hero::after {
+  transform-origin: center;
+  animation: sx-hero-drift-b 28s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* --- Entrada progresiva de elementos al entrar en pantalla --- */
+
+/*
+   Los elementos permanecen visibles por defecto.
+   Solo se ocultan cuando motion.js confirma que puede gestionar
+   correctamente su entrada mediante IntersectionObserver.
+*/
+
+html.sx-motion-ready .sx-reveal {
+  opacity: 0;
+  transform: translate3d(0, 20px, 0);
+  transition:
+    opacity 650ms cubic-bezier(.22, 1, .36, 1),
+    transform 650ms cubic-bezier(.22, 1, .36, 1);
+  transition-delay: var(--sx-reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+html.sx-motion-ready .sx-reveal.sx-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/* --- Ajuste para pantallas táctiles y móviles --- */
+
+@media screen and (max-width: 60em) {
+  .md-typeset .sx-hero::before {
+    animation-duration: 26s;
+  }
+
+  .md-typeset .sx-hero::after {
+    animation-duration: 32s;
+  }
+
+  html.sx-motion-ready .sx-reveal {
+    transform: translate3d(0, 14px, 0);
+    transition-duration: 520ms;
+  }
+}
+
+/* --- Accesibilidad: respetar la preferencia del sistema --- */
+
+@media (prefers-reduced-motion: reduce) {
+  .md-typeset .sx-hero::before,
+  .md-typeset .sx-hero::after {
+    animation: none !important;
+    transform: none !important;
+    will-change: auto;
+  }
+
+  html.sx-motion-ready .sx-reveal,
+  html.sx-motion-ready .sx-reveal.sx-visible {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    will-change: auto;
+  }
+}
+
+/* --- Evitar mantener capas de composición innecesarias --- */
+
+@media (hover: none) and (pointer: coarse) {
+  .md-typeset .sx-hero::before,
+  .md-typeset .sx-hero::after {
+    will-change: auto;
+  }
+}
