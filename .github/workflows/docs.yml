@@ -1,3 +1,4 @@
+
 name: Validar y publicar documentación
 
 on:
@@ -7,8 +8,6 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Evita acumular ejecuciones obsoletas cuando llegan varios commits seguidos.
-# Una ejecución nueva de la misma referencia cancela la anterior.
 concurrency:
   group: docs-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -21,6 +20,7 @@ jobs:
     name: Validar y construir documentación
     runs-on: ubuntu-latest
     timeout-minutes: 25
+
     steps:
       - name: Obtener el repositorio
         uses: actions/checkout@v4
@@ -59,12 +59,15 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
     permissions:
       pages: write
       id-token: write
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - name: Desplegar sitio
         id: deployment
