@@ -1,0 +1,282 @@
+/*
+ * Networking-Lab | Tipografía local
+ * Texto: Bai Jamjuree
+ * Encabezados y destacados: Chakra Petch
+ * Código: TeX Gyre Cursor
+ */
+
+@font-face {
+  font-family: "Bai Jamjuree";
+  src: url("../fonts/Bai-Jamjure/BaiJamjuree-ExtraLight.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bai Jamjuree";
+  src: url("../fonts/Bai-Jamjure/BaiJamjuree-ExtraLightItalic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 200;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bai Jamjuree";
+  src: url("../fonts/Bai-Jamjure/BaiJamjuree-Light.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bai Jamjuree";
+  src: url("../fonts/Bai-Jamjure/BaiJamjuree-LightItalic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bai Jamjuree";
+  src: url("../fonts/Bai-Jamjure/BaiJamjuree-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bai Jamjuree";
+  src: url("../fonts/Bai-Jamjure/BaiJamjuree-Italic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bai Jamjuree";
+  src: url("../fonts/Bai-Jamjure/BaiJamjuree-Medium.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bai Jamjuree";
+  src: url("../fonts/Bai-Jamjure/BaiJamjuree-MediumItalic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bai Jamjuree";
+  src: url("../fonts/Bai-Jamjure/BaiJamjuree-SemiBold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bai Jamjuree";
+  src: url("../fonts/Bai-Jamjure/BaiJamjuree-SemiBoldItalic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bai Jamjuree";
+  src: url("../fonts/Bai-Jamjure/BaiJamjuree-Bold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bai Jamjuree";
+  src: url("../fonts/Bai-Jamjure/BaiJamjuree-BoldItalic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../fonts/Chakra-Petch/ChakraPetch-Light.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../fonts/Chakra-Petch/ChakraPetch-LightItalic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../fonts/Chakra-Petch/ChakraPetch-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../fonts/Chakra-Petch/ChakraPetch-Italic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../fonts/Chakra-Petch/ChakraPetch-Medium.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../fonts/Chakra-Petch/ChakraPetch-MediumItalic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../fonts/Chakra-Petch/ChakraPetch-SemiBold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../fonts/Chakra-Petch/ChakraPetch-SemiBoldItalic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../fonts/Chakra-Petch/ChakraPetch-Bold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("../fonts/Chakra-Petch/ChakraPetch-BoldItalic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "TeX Gyre Cursor";
+  src: url("../fonts/TexGyre-Cursor/texgyrecursor-regular.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "TeX Gyre Cursor";
+  src: url("../fonts/TexGyre-Cursor/texgyrecursor-italic.otf") format("opentype");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "TeX Gyre Cursor";
+  src: url("../fonts/TexGyre-Cursor/texgyrecursor-bold.otf") format("opentype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "TeX Gyre Cursor";
+  src: url("../fonts/TexGyre-Cursor/texgyrecursor-bolditalic.otf") format("opentype");
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
+:root {
+  --md-text-font: "Bai Jamjuree";
+  --md-code-font: "TeX Gyre Cursor";
+  font-synthesis: none;
+}
+
+/* Texto general */
+html,
+body,
+.md-typeset,
+.md-nav,
+.md-header,
+.md-tabs,
+.md-search,
+.md-footer {
+  font-family: "Bai Jamjuree", sans-serif;
+}
+
+/* Encabezados */
+h1, h2, h3, h4, h5, h6,
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+  font-family: "Chakra Petch", sans-serif;
+}
+
+/* Negritas y destacados */
+strong,
+b,
+.md-typeset strong,
+.md-typeset b,
+.md-typeset .admonition-title,
+.md-typeset summary,
+.md-typeset .tabbed-labels > label {
+  font-family: "Chakra Petch", sans-serif;
+}
+
+/* Código, terminal y fragmentos */
+code,
+pre,
+kbd,
+samp,
+.md-typeset code,
+.md-typeset pre,
+.highlight,
+.highlight code,
+.highlight pre,
+.md-clipboard,
+.md-typeset .highlighttable {
+  font-family: "TeX Gyre Cursor", monospace;
+}
+
+/* Mantener el código legible sin alterar su peso */
+.md-typeset code,
+.md-typeset pre {
+  font-synthesis: none;
+}
+
+/* Controles y elementos de navegación */
+button,
+input,
+select,
+textarea {
+  font-family: "Bai Jamjuree", sans-serif;
+}
