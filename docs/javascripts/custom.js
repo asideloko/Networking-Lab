@@ -183,7 +183,7 @@ function renderMermaid() {
 
   mermaid.initialize({
     startOnLoad: false, securityLevel: "loose", theme: "base",
-    themeVariables: Object.assign({ fontFamily: "Chakra Petch, sans-serif" }, mermaidTema())
+    themeVariables: Object.assign({ fontFamily: "Bai Jamjuree, sans-serif" }, mermaidTema())
   });
 
   Promise.resolve(mermaid.run({ nodes: nodos })).then(function () {

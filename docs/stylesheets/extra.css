@@ -1,19 +1,11 @@
 /* ==========================================================================
    NETWORKING · SecOpsMX — identidad visual tomada del PDF del libro
-   Tipografía: Chakra Petch (archivo local) · Código: Nimbus Mono PS
+   Tipografía: Bai Jamjuree (texto), Chakra Petch (encabezados) · Código: TeX Gyre Cursor
    Paleta:  un solo morado #5B18CC · neutros blancos y grises
             noche #5b18cc · índigo #5b18cc · tinta #181818 · código Breeze Dark #232629
    ========================================================================== */
 
-/* --- Fuente (solo se distribuye el peso Medium; el navegador sintetiza negrita) --- */
-@font-face {
-  font-family: "Chakra Petch";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("../assets/fonts/Chakra-Petch/ChakraPetch-Medium.ttf") format("truetype");
-}
-
+/* Las tres tipografías locales se declaran en tipografia-local.css. */
 :root {
   --sx-ink: #181818;
   --sx-violet: #5b18cc;
@@ -24,9 +16,8 @@
   --sx-indigo: #5b18cc;
   --sx-code-bg: #232629;
   --sx-code-fg: #eff0f1;
-
-  --md-text-font: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
-  --md-code-font: "Nimbus Mono PS", "TeX Gyre Cursor", "Cascadia Mono", "Fira Mono", ui-monospace, monospace;
+  --md-text-font: "Bai Jamjuree", sans-serif;
+  --md-code-font: "TeX Gyre Cursor", monospace;
 }
 
 /* --- Esquema claro --- */
@@ -569,11 +560,6 @@ html { scroll-behavior: smooth; }
 .md-footer__title,
 .md-footer__direction { text-transform: uppercase; }
 .md-nav--primary .md-nav__link { font-size: 0.64rem; letter-spacing: 0.04em; line-height: 1.35; }
-
-/* Página 404 */
-.sx-404 { text-align: center; padding: 3rem 1rem 2rem; }
-.sx-404__n { display: block; font-size: clamp(4rem, 16vw, 8rem); line-height: 1; color: var(--sx-h1); font-weight: 500; letter-spacing: 0.06em; -webkit-text-stroke: 1px currentColor; }
-.sx-404 p { margin: 0.8rem auto 1.6rem; max-width: 30rem; }
 
 /* Aviso superior */
 .md-banner { background: #5b18cc; color: #ffffff; font-size: 0.72rem; letter-spacing: 0.03em; }
