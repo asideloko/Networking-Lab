@@ -3,40 +3,6 @@
 (function () {
   'use strict';
 
-  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  var observer;
-
-  function initReveal(root) {
-    var items = root.querySelectorAll('[data-reveal], .sx-stats > div, .sx-cards .sx-card');
-
-    if (!('IntersectionObserver' in window) || reduceMotion.matches) {
-      items.forEach(function (item) {
-        item.classList.add('sx-visible');
-      });
-      return;
-    }
-
-    if (!observer) {
-      observer = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('sx-visible');
-            observer.unobserve(entry.target);
-          }
-        });
-      }, {
-        threshold: 0.12,
-        rootMargin: '0px 0px -6% 0px'
-      });
-    }
-
-    items.forEach(function (item, index) {
-      if (item.classList.contains('sx-visible')) return;
-
-      item.style.setProperty('--sx-reveal-order', Math.min(index, 8));
-      observer.observe(item);
-    });
-  }
 
   function initHero(root) {
     var hero = root.querySelector('.sx-hero');
@@ -48,13 +14,15 @@
 
     hero.dataset.motionReady = 'true';
 
-    var points = scene.querySelectorAll('.sx-node');
+    var points = hero.querySelectorAll('.sx-node');
 
     points.forEach(function (point, index) {
       point.style.setProperty('--node-delay', (index * -0.7) + 's');
     });
 
-    if (reduceMotion.matches) return;
+    /* El desplazamiento con el puntero solo tiene sentido con ratón; en táctil la escena se mueve sola (CSS). */
+    var finePointer = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    if (!finePointer) return;
 
     var frame = 0;
     var lastX = 0;
@@ -218,7 +186,6 @@
   }
 
   function init(root) {
-    initReveal(root);
     initHero(root);
     initDiagramPan(root);
     initZoom(root);
@@ -254,18 +221,6 @@
         document.hidden
       );
     });
-
-    if (reduceMotion.addEventListener) {
-      reduceMotion.addEventListener('change', function () {
-        if (reduceMotion.matches) {
-          document.querySelectorAll(
-            '[data-reveal], .sx-stats > div, .sx-cards .sx-card'
-          ).forEach(function (item) {
-            item.classList.add('sx-visible');
-          });
-        }
-      });
-    }
   }
 
   boot();
