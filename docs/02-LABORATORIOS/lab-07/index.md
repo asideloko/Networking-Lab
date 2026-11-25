@@ -7,7 +7,7 @@ description: "Laboratorio 07 de NETWORKING Lab — Protocolos y Servicios de Red
 
 # PROTOCOLOS Y SERVICIOS DE RED
 
-<p class="tema-meta"><span>16 secciones</span><span>5 diagramas</span><span>5 tablas</span></p>
+<p class="tema-meta"><span>20 secciones</span><span>5 diagramas</span><span>6 tablas</span></p>
 
 ## Servicios para los usuarios
 
@@ -21,6 +21,20 @@ Este laboratorio añade en la sede los servicios básicos: **DNS** y **DHCP** co
 
 !!! info "Servicios independientes"
     **DHCP** entrega parámetros de configuración de red (dirección, máscara, gateway, servidor DNS). **DNS** resuelve nombres a registros de recursos (direcciones, entre otros). Son servicios **independientes**: recibir una IP por DHCP no garantiza que la resolución DNS funcione (por ejemplo, si el servidor DNS anunciado no responde), y un DNS operativo no sirve de nada a un cliente sin dirección. Aquí se alojan en equipos distintos y se comprueban por separado.
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- describir el intercambio DORA y qué parámetros entrega DHCP;
+- explicar por qué DHCP y DNS son servicios independientes y cómo comprobarlos por separado;
+- explicar cómo NAT/PAT traduce direcciones y cómo se observa en la tabla de conexiones (`conntrack`);
+- comparar TCP y UDP en capturas e interpretar el MSS negociado frente a la MTU.
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Laboratorios 01 a 06: IP, *gateway*, rutas y NAT básico. DNS, DHCP, TCP, UDP y MSS se presentan aquí uno a uno; la idea central es que tener conectividad no es lo mismo que tener servicios.
+- **Relación con la práctica anterior:** *Continúa el escenario anterior.* Requiere el laboratorio 06 funcionando, con el enlace directo R1-R3 restablecido; el comienzo del laboratorio lo comprueba.
 
 ## Estado inicial
 
@@ -714,9 +728,45 @@ sudo ip netns exec R1 iptables -t nat -vnL
 
 Una regla MASQUERADE no garantiza salida si el firewall del host bloquea `FORWARD`; se comprueba por separado el firewall del host y el del router. No debe cambiarse políticas globales para “hacer que funcione”: autoriza solo el flujo de laboratorio y se registra su reversión.
 
+## Diagnóstico de problemas frecuentes
+
+| Síntoma | Causa probable | Solución |
+|---------|----------------|----------|
+| Hay IP, máscara y *gateway*, y `ping` por IP funciona, pero no se resuelven nombres | El servidor DNS anunciado no responde | Probar `dig @servidor` y revisar `dnsmasq` y la ruta hasta él. |
+| Las sucursales no reciben dirección | Mantienen direccionamiento fijo y no hay *relay* DHCP | Configurarlas de forma estática o añadir un *relay*. |
+| Los equipos con direccionamiento privado no salen a Internet | Falta NAT/PAT en R1 o la ruta de retorno | Revisar las reglas NAT y `conntrack -L` en R1. |
+| Las conexiones pequeñas funcionan y las transferencias grandes se cuelgan | MSS y MTU incoherentes en el camino | Comparar el MSS del SYN con la MTU de cada tramo. |
+
 ## Análisis técnico y decisiones
 
 Un cliente DHCP sin dirección utiliza inicialmente broadcast para localizar servidores; el intercambio DORA permite descubrir, ofrecer, solicitar y confirmar una concesión. Si el servidor DNS anunciado no responde, el cliente puede conservar dirección, máscara y gateway correctos, pero fallará la resolución de nombres: conectividad IP y DNS son servicios distintos. DNS suele utilizar UDP/53 para consultas habituales y puede utilizar TCP/53, por ejemplo, para respuestas truncadas o transferencias de zona. Direccionamiento fijo en sucursales aumenta la carga operativa y el riesgo de errores o duplicados. DHCP relay permite transportar solicitudes entre subredes hasta un servidor central cuando no existe un servidor local.
+
+## Qué no demuestra esta práctica
+
+- Las sucursales mantienen direccionamiento fijo: para recibir DHCP necesitarían un *relay*.
+- Recibir una IP por DHCP no garantiza que el DNS anunciado responda.
+- Las capturas muestran el comportamiento de TCP y UDP en un entorno virtual, no el de una red real con pérdida y latencia variables.
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** Ordena los mensajes del intercambio DORA y di qué hace cada uno.
+
+**Nivel 2 — Interpretación.** Un cliente tiene IP, máscara y *gateway* correctos: `ping` a una IP externa funciona, pero no resuelve nombres. ¿Qué servicio falla y qué comando lo demuestra?
+
+**Nivel 3 — Razonamiento.** Las sucursales usan IP fijas. ¿Qué haría falta para que recibieran direcciones por DHCP? ¿Qué cambia en la tabla de NAT cuando una sucursal sale a Internet?
+
+**Caso de diagnóstico.** Un usuario tiene red pero no abre sitios por nombre. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** *Discover*, *Offer*, *Request* y *Acknowledge*: el cliente busca servidores por broadcast, el servidor ofrece, el cliente solicita una oferta y el servidor confirma la concesión.
+
+    **Nivel 2.** Falla DNS, no la conectividad IP. `dig` contra el servidor anunciado, o comparar `ping` por IP y por nombre, lo demuestra.
+
+    **Nivel 3.** Un *relay* DHCP en la sede. En la tabla de NAT aparecen entradas con el origen privado de la sucursal traducido a la dirección externa de R1.
+
+    **Caso de diagnóstico.** Síntoma: sin nombres. Mecanismo: DNS. Herramientas: `ping` por IP, `dig @servidor`, `ss`. Evidencia: IP responde, nombre no. Conclusión: el servidor DNS anunciado no responde o la consulta no llega.
 
 ## Estado final
 

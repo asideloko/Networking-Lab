@@ -46,6 +46,24 @@ for md in sorted(docs.rglob("*.md")):
     if rel.parts[0] == "02-LABORATORIOS" and rel.parts[1].startswith("lab-"):
         if not re.search(r"^##+ .*?(?:Limpieza|Revertir los cambios del host)", txt, re.M):
             errores.append(f"{rel}: falta una sección explícita de limpieza o reversión")
+    # Estándar pedagógico: secciones obligatorias en los quince laboratorios.
+    if rel.parts[0] == "02-LABORATORIOS" and rel.parts[1].startswith("lab-"):
+        for sec in ("Objetivos de aprendizaje", "Qué no demuestra esta práctica", "Comprensión y reflexión"):
+            if not re.search(r"^## " + re.escape(sec) + r"\s*$", txt, re.M):
+                errores.append(f"{rel}: falta la sección obligatoria «{sec}»")
+        for sec in ("Conceptos clave", "Pruebas de comportamiento", "Diagnóstico de problemas frecuentes"):
+            if not re.search(r"^## " + re.escape(sec), txt, re.M):
+                errores.append(f"{rel}: falta la sección «{sec}»")
+        if "Relación con la práctica anterior" not in txt:
+            errores.append(f"{rel}: no declara la relación con la práctica anterior")
+        if "Conocimientos previos" not in txt:
+            errores.append(f"{rel}: no declara los conocimientos previos")
+        for nivel in ("Nivel 1", "Nivel 2", "Nivel 3", "Caso de diagnóstico"):
+            if f"**{nivel}" not in txt:
+                errores.append(f"{rel}: falta el ejercicio «{nivel}»")
+        if "04-REFERENCIA/diagnostico.md" not in txt:
+            errores.append(f"{rel}: el caso de diagnóstico no enlaza con el método de diagnóstico")
+
     for l in sin_codigo(txt):
         for m in re.finditer(r"\]\(([^)#\s]+\.md)(#[^)]*)?\)", l):
             if not existe(md.parent, m.group(1)):

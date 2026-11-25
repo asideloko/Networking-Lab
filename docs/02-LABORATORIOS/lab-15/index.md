@@ -7,7 +7,7 @@ description: "Laboratorio 15 de NETWORKING Lab — Implementación Práctica Int
 
 # IMPLEMENTACIÓN PRÁCTICA INTEGRAL
 
-<p class="tema-meta"><span>22 secciones</span><span>3 diagramas</span><span>14 tablas</span></p>
+<p class="tema-meta"><span>27 secciones</span><span>3 diagramas</span><span>15 tablas</span></p>
 
 ## El cierre del recorrido
 
@@ -25,6 +25,20 @@ La construcción es progresiva. Cada apartado funciona por sí mismo y añade un
 
 !!! note "Este es un escenario nuevo"
     Los laboratorios 01–14 usaron topologías diferentes. Aquí **se reutilizan los nombres `R1` y `R2` con otra función y otro direccionamiento** (sede y respaldo/sucursal), y el escenario se construye desde cero. Cada apartado funciona por sí mismo, pero la coherencia global se comprueba en el apartado «Coherencia del conjunto» al final: que cada bloque funcione aisladamente no garantiza que el conjunto sea coherente.
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- integrar VLSM, rutas, OSPF, firewall con `nftables`, NAT, DHCP, DNS y VRRP en una red multisede construida por etapas;
+- explicar qué protege VRRP y qué queda sin proteger;
+- interpretar la reconvergencia de OSPF al caer el enlace principal;
+- diagnosticar fallos (MTU, vecinos ARP, rutas) con el método de diagnóstico y evaluar la coherencia del conjunto.
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Es una práctica integradora: presupone lo aprendido en los laboratorios 01 a 14 (direccionamiento, enrutamiento, servicios, firewall, VPN y diagnóstico) y no explica de nuevo esos conceptos desde cero. Cuando conviene, remite al laboratorio correspondiente.
+- **Relación con la práctica anterior:** *Nueva topología.* Parte de un entorno vacío y construye el escenario desde cero. Reutiliza los nombres `R1` y `R2` con otra función y otro direccionamiento, y empieza limpiando solo los recursos propios de Lab15.
 
 ## Estado inicial
 
@@ -1094,9 +1108,71 @@ VRRP se ejecuta solo en la red de servidores en el escenario descrito. Finanzas,
 
 **ARP:** el ajuste de `gc_thresh2/3` modifica umbrales del host; no demuestra por sí mismo agotamiento de la tabla. La prueba se limita a inspección y ajuste de umbrales, cuenta vecinos IPv4 y se comparan dos muestras temporales. No se denomina “simulación de agotamiento”.
 
+## Pruebas de comportamiento
+
+### Prueba 1: Reconvergencia de OSPF
+
+```bash
+sudo ip netns exec R1 ip link set veth-r1r2a down
+sudo ip netns exec R2 ip link set veth-r2r1a down
+sleep 5
+sudo ip netns exec R1 ip route show 10.0.2.0/24
+sudo ip netns exec suc ping -c 3 10.0.1.10
+sudo ip netns exec R1 ip link set veth-r1r2a up
+sudo ip netns exec R2 ip link set veth-r2r1a up
+```
+
+**Resultado esperado:** la ruta hacia la sucursal pasa del enlace A al B por decisión de OSPF y vuelve al A al restablecerlo.
+
+### Prueba 2: *Failover* de VRRP
+
+Sigue «Verificar y probar el *failover*» del apartado 15.7. **Resultado esperado:** R2 asume la IP virtual del *gateway* de servidores cuando R1 deja de anunciarse.
+
+### Prueba 3: Dos fallos que no deben confundirse
+
+Compara la caída del servicio VRRP de R1 con la caída de su WAN (apartado 15.7). **Resultado esperado:** en el primer caso R2 asume el *gateway*; en el segundo los servidores conservan el *gateway* pero pierden la salida, porque nada protege la WAN de R1.
+
+## Diagnóstico de problemas frecuentes
+
+| Síntoma | Causa probable | Solución |
+|---------|----------------|----------|
+| No hay rutas dinámicas aunque el enlace «funciona» | Se omitió `ip protocol ospf accept` en `input` | Permitir el protocolo 89 y comprobar la adyacencia. |
+| Los clientes no reciben IP | Se omitió DHCP (UDP 67) en `input` | Permitir UDP 67 desde Finanzas y Ventas. |
+| Ambos routers se creen *master* | El firewall bloquea el protocolo 112 de VRRP | Permitir el protocolo 112 en `input`. |
+| Los servidores conservan el *gateway* pero pierden la salida | Cae la WAN de R1 mientras R1 sigue vivo | Nadie lo resuelve solo: falta seguimiento y WAN en R2. |
+| Un servicio publicado no es alcanzable desde fuera aunque `forward` lo permite | Falta la regla DNAT | Añadir el DNAT. |
+| Las conexiones pequeñas funcionan y las transferencias grandes se cuelgan | MTU menor en un túnel | Ajustar MTU o MSS. |
+
 ## Análisis técnico y decisiones
 
 VRRP permite que R2 asuma la dirección IP virtual del gateway cuando R1 deja de anunciarse como maestro. Esto protege únicamente el segmento donde está configurado y no crea una segunda salida WAN ni replica automáticamente DHCP, NAT o servicios. Si el firewall bloquea el protocolo IP 112 (VRRP), los routers no intercambian anuncios y la elección puede fallar o producir estados inconsistentes. OSPF detecta cambios de topología y recalcula rutas según sus temporizadores y estado de vecinos; una ruta estática no detecta por sí sola un fallo remoto si el siguiente salto sigue accesible. La implementación conserva dependencias: WAN única, servicios centrales y segmentos sin gateway redundante. Una segunda conexión ISP con routing apropiado, BGP o SD-WAN puede cubrir fallos de salida que VRRP no resuelve.
+
+## Qué no demuestra esta práctica
+
+- VRRP protege únicamente el segmento de servidores: Finanzas, Ventas, Gestión y la sucursal conservan sus dependencias de R1 o R2.
+- DHCP y NAT no se replican automáticamente entre R1 y R2.
+- No reúne en ejecución todas las tecnologías de los quince laboratorios ni constituye un despliegue de producción.
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** ¿Qué protege VRRP y qué no protege en este escenario?
+
+**Nivel 2 — Interpretación.** OSPF reconverge al caer el enlace principal: ¿qué determina el tiempo que tarda y qué muestran las rutas antes y después?
+
+**Nivel 3 — Razonamiento.** Bloquea el protocolo IP 112 en el firewall: predice qué le sucede a la elección de VRRP y por qué.
+
+**Caso de diagnóstico.** R2 asume la dirección virtual del *gateway* de servidores, pero los equipos siguen sin servicios. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** Protege la dirección del *gateway* del segmento de servidores; no crea una segunda salida WAN ni replica DHCP, NAT o servicios.
+
+    **Nivel 2.** Los temporizadores de OSPF determinan cuánto tarda en detectar el cambio y recalcular; la tabla pasa de usar el enlace principal a usar el de respaldo.
+
+    **Nivel 3.** Sin intercambio de anuncios VRRP, los routers no se coordinan: la elección puede fallar o producir estados inconsistentes.
+
+    **Caso de diagnóstico.** Síntoma: servicios sin respuesta tras la conmutación. Mecanismo: VRRP solo cubre el segmento. Herramientas: estado de VRRP, `ip route`, reglas de `nft`, `conntrack`. Evidencia: la dirección virtual está en R2 pero NAT o DHCP siguen configurados solo en R1. Conclusión: son servicios no replicados.
 
 ## Estado final
 

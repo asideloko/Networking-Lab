@@ -7,7 +7,7 @@ description: "Laboratorio 08 de NETWORKING Lab — Seguridad en Redes."
 
 # SEGURIDAD EN REDES
 
-<p class="tema-meta"><span>15 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
+<p class="tema-meta"><span>18 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
 
 ## Primero, protegerse
 
@@ -18,6 +18,20 @@ Con los servicios básicos funcionando (laboratorio 07), el equipo de seguridad 
 Hasta aquí todo el tráfico entre redes está permitido: los servicios administrativos se exponen a toda la red, no hay segmentación para servidores públicos y las comunicaciones internas no se cifran.
 
 Este laboratorio introduce un **firewall** con `iptables`, listas de control de acceso para restringir los servicios administrativos, una **DMZ** para aislar los servidores públicos, acceso **SSH** con verificación de identidad del servidor y **TLS** con un certificado autofirmado. Cada medida se prueba con tráfico permitido y con tráfico que debe quedar bloqueado.
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- explicar cómo procesa `iptables` un paquete: cadenas, política por defecto y seguimiento de estado;
+- distinguir una ACL, una DMZ y el DNAT, y explicar qué publica realmente cada uno;
+- distinguir cifrado de validación de identidad (huella SSH, certificado TLS);
+- comprobar cada medida con tráfico permitido y con tráfico bloqueado.
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Laboratorios 06 y 07: enrutamiento y servicios. Firewall, zonas, cadenas, estado de conexión, DNAT, SSH y TLS se explican en este laboratorio.
+- **Relación con la práctica anterior:** *Continúa el escenario anterior.* Requiere el laboratorio 07 funcionando (se comprueba al inicio) y extiende su topología con una DMZ y medidas de seguridad. El `br-wan` que se crea aquí lo conserva el laboratorio 10.
 
 ## Estado inicial
 
@@ -836,6 +850,33 @@ fi
 ## Análisis técnico y decisiones
 
 La separación entre LAN y DMZ se consigue mediante interfaces y políticas explícitas de firewall: el tráfico originado en la DMZ no debe alcanzar la LAN salvo excepciones justificadas. La regla `ESTABLISHED,RELATED` permite el retorno de conexiones ya autorizadas; eliminarla puede bloquear respuestas y romper sesiones legítimas. Permitir el reenvío hacia la DMZ no publica automáticamente un servicio: la publicación requiere una regla de destino (DNAT) y una política de forwarding coherente. Un certificado autofirmado no ofrece confianza pública automática; su autenticidad depende de distribuir y verificar la CA o el certificado. Un DNS público suele ubicarse en una zona expuesta o servicio perimetral separado, nunca mezclado sin control con el DNS interno. IDS/IPS, registros centralizados, segmentación y gestión de identidades complementan el firewall.
+
+## Qué no demuestra esta práctica
+
+- El certificado TLS es autofirmado y el servidor HTTPS es de pruebas: en producción corresponde un servicio real y un certificado emitido por una CA.
+- Ninguna medida es suficiente por sí sola: cada una depende de su configuración y mantenimiento.
+- El firewall de la práctica protege una topología didáctica; no sustituye un diseño de seguridad completo.
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** ¿Qué zonas intervienen en el firewall y qué política por defecto se aplica entre ellas?
+
+**Nivel 2 — Interpretación.** Para una regla `DROP`: ¿qué flujo pretende bloquear, qué cadena lo procesa, qué ocurre con las respuestas y cómo compruebas que se aplica?
+
+**Nivel 3 — Razonamiento.** Elimina la regla `ESTABLISHED,RELATED`: predice qué sesiones legítimas se rompen. Después, permite el reenvío hacia la DMZ sin DNAT: ¿queda publicado el servicio?
+
+**Caso de diagnóstico.** El acceso SSH desde la red de administración deja de funcionar. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** LAN interna, DMZ e «Internet»; la política es restrictiva y los flujos permitidos se declaran de forma explícita.
+
+    **Nivel 2.** La cadena que atraviesa el tráfico (por ejemplo, `FORWARD`) lo descarta; las respuestas dependen de las reglas de estado. Se comprueba con tráfico permitido y bloqueado y con los contadores de la regla.
+
+    **Nivel 3.** Sin `ESTABLISHED,RELATED` se bloquean las respuestas de conexiones ya autorizadas. Permitir el reenvío no publica un servicio: la publicación requiere una regla de destino (DNAT) y una política coherente.
+
+    **Caso de diagnóstico.** Síntoma: SSH sin acceso. Mecanismo: ACL o firewall. Herramientas: `iptables -L -v -n`, `ss`, registros de firewall. Evidencia: contadores de la regla de bloqueo o ausencia del servicio en escucha. Conclusión: regla ausente o mal ubicada, o servicio detenido.
 
 ## Estado final
 

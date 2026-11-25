@@ -7,7 +7,7 @@ description: "Laboratorio 01 de NETWORKING Lab — Fundamentos de Redes y Encaps
 
 # FUNDAMENTOS DE REDES Y ENCAPSULACIÓN
 
-<p class="tema-meta"><span>16 secciones</span><span>3 diagramas</span><span>6 tablas</span></p>
+<p class="tema-meta"><span>21 secciones</span><span>3 diagramas</span><span>7 tablas</span></p>
 
 ## ¡Bienvenido!
 
@@ -24,6 +24,20 @@ En esta primera implementación se construye una red virtual con dos equipos Lin
 
 !!! info "Conectividad frente a servicios"
     En este laboratorio se construye la **infraestructura de conectividad local**. Los servicios de compartición de archivos y el acceso a Internet se abordarán después con tecnologías y protocolos específicos (laboratorios 02 y 07). Tener conectividad no es lo mismo que tener servicios funcionando sobre ella.
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- explicar la diferencia entre la dirección MAC (enlace local, capa 2) y la dirección IP (capa 3) y dónde se observa cada una;
+- describir cómo viaja un `ping` entre dos equipos: mensaje ICMP dentro de un paquete IP dentro de una trama Ethernet;
+- interpretar una captura de `tcpdump` y el intercambio de solicitud y respuesta ARP;
+- explicar por qué dos equipos de la misma subred se comunican sin usar el *gateway*.
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Uso básico de Linux: abrir una terminal, ejecutar comandos con privilegios y leer su salida. No se presupone ningún conocimiento de redes: los seis términos necesarios están en «Fundamento necesario».
+- **Relación con la práctica anterior:** *Independiente.* Es el primer laboratorio y no necesita configuraciones previas; el Paso 1 solo comprueba el entorno. Sus recursos (`cliente1`, `cliente2` y `router`) son el punto de partida del laboratorio 02.
 
 ## Estado inicial
 
@@ -525,9 +539,69 @@ Con `tcpdump -e -vv -XX`, los bytes capturados se pueden relacionar con los camp
 
 **Observaciones de esta secuencia:** la salida de `ip route get`, la captura ARP/ICMP, la FDB antes y después y la tabla de vecinos permiten reconstruir cada transición. Se interpretan en el propio desarrollo, junto al comando que las produce.
 
+## Pruebas de comportamiento
+
+### Prueba 1: Renovar una resolución ARP
+
+```bash
+sudo ip netns exec cliente1 ip neigh flush to 10.0.1.3 dev veth-c1
+sudo ip netns exec cliente1 ping -c 1 10.0.1.3
+sudo ip netns exec cliente1 ip -s neigh show to 10.0.1.3 dev veth-c1
+```
+
+**Resultado esperado:** al retirar la entrada, el primer `ping` provoca una nueva solicitud ARP y la entrada reaparece. Esto demuestra que la tabla de vecinos asocia IP con MAC y se reconstruye con el tráfico.
+
+### Prueba 2: Aprendizaje del bridge
+
+```bash
+sudo ip netns exec router bridge fdb show br br0
+sudo ip netns exec cliente1 ping -c 1 10.0.1.3
+sudo ip netns exec router bridge fdb show br br0
+```
+
+**Resultado esperado:** tras el tráfico aparecen en la FDB las MAC de los clientes asociadas a su puerto. La FDB asocia MAC con puerto del bridge; no debe confundirse con la tabla de vecinos. El experimento de *flooding* de unicast desconocido se desarrolla en la profundización.
+
+## Conceptos clave
+
+| Concepto | Aplicación en el laboratorio |
+|----------|------------------------------|
+| Encapsulación | Mensaje ICMP dentro de un paquete IP dentro de una trama Ethernet, visible en la captura de `tcpdump` |
+| Dirección MAC | Identifica `veth-c1`, `veth-c2` y `br0` dentro del enlace local |
+| Dirección IP | Direccionamiento lógico `10.0.1.0/24` de los clientes y del bridge |
+| ARP | Resolución de la MAC del destino; se observa vaciando la caché de vecinos |
+| Bridge y conmutación | `br0` en el `router`: aprende MAC por puerto y replica el unicast desconocido |
+| Dominio de broadcast | Todos los equipos conectados a `br0` comparten uno |
+
 ## Análisis técnico y decisiones
 
 La comunicación entre Cliente 1 y Cliente 2 ocurre dentro de la misma subred: el emisor resuelve la MAC del destino mediante ARP y envía la trama al bridge. No necesita utilizar el gateway. Si `br0` deja de unir los dos puertos, los extremos `veth` quedan en dominios de enlace separados y el ping deja de llegar, aunque las direcciones IP sigan configuradas. `ping` confirma la respuesta ICMP a nivel IP; `tcpdump -e` permite observar las tramas Ethernet y sus MAC. El diseño es una LAN de capa 2: no proporciona aislamiento entre usuarios, redundancia ni salida a otras redes por sí solo. En una instalación física, un switch Ethernet cumple la función de interconectar los hosts; un enlace directo también es posible, pero no escala como punto de concentración.
+
+## Qué no demuestra esta práctica
+
+- No demuestra enrutamiento: el `router` solo conmuta tramas con un bridge; el enrutamiento llega en los laboratorios 02 y 06.
+- No demuestra servicios (compartir archivos, acceso a Internet): solo se construye la conectividad local.
+- Un par `veth` y un bridge Linux representan un enlace y un conmutador, pero no generan señales físicas ni equivalen a un switch empresarial.
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** ¿Cuál de estas direcciones identifica una interfaz dentro del enlace local y cuál permite comunicar redes distintas: `10.0.1.2` o la dirección MAC de `veth-c1`?
+
+**Nivel 2 — Interpretación.** En la captura del `ping`, ¿qué campos pertenecen a la trama Ethernet, cuáles al paquete IP y cuál al mensaje ICMP? ¿Por qué aparece una solicitud ARP antes del primer `ping` si la caché de vecinos está vacía?
+
+**Nivel 3 — Razonamiento.** Predice qué ocurre con el `ping` entre los clientes si `br0` deja de unir los dos puertos, y qué estado esperas en `ip neigh` de Cliente 1. Compruébalo y razona por qué el *gateway* `10.0.1.1` no cambia el resultado.
+
+**Caso de diagnóstico.** Mientras haces `ping`, `tcpdump` no muestra ningún paquete. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** La MAC identifica la interfaz en el enlace local (capa 2); la IP direcciona redes y permite comunicarlas (capa 3).
+
+    **Nivel 2.** Ethernet: MAC de origen y destino; IP: direcciones de origen y destino; ICMP: el mensaje de eco. ARP resuelve la MAC del destino antes de poder construir la trama.
+
+    **Nivel 3.** El `ping` falla: las solicitudes ARP no reciben respuesta (la entrada queda incompleta o fallida) porque los extremos quedan en dominios de enlace separados. Al estar en la misma subred, el *gateway* no interviene.
+
+    **Caso de diagnóstico.** Síntoma: captura vacía. Mecanismo: punto de captura. Herramientas: `ip link`, `tcpdump -i br0` o `any`. Evidencia: la interfaz elegida no es la que atraviesa el tráfico o está caída. Conclusión: capturar en `br0` (o `any`) y comprobar que esté activa.
 
 ## Estado final
 

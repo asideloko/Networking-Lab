@@ -7,7 +7,7 @@ description: "Laboratorio 11 de NETWORKING Lab — Arquitectura de Red Empresari
 
 # ARQUITECTURA DE RED EMPRESARIAL
 
-<p class="tema-meta"><span>15 secciones</span><span>4 diagramas</span><span>9 tablas</span></p>
+<p class="tema-meta"><span>19 secciones</span><span>4 diagramas</span><span>10 tablas</span></p>
 
 ## Diseñar el conjunto
 
@@ -64,6 +64,20 @@ graph TB
     C1 --- FW
     C2 --- FW
 ```
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- explicar la función de las capas Core, Distribución y Acceso, y por qué son funciones y no niveles físicos;
+- distinguir redundancia física de disponibilidad e identificar puntos únicos de fallo;
+- observar la conmutación del núcleo al caer `Core1` y el efecto de depender de un único *gateway*;
+- explicar para qué sirven VRRP y STP/RSTP en una arquitectura redundante.
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Laboratorios 05 (VLAN y *trunk*), 06 (enrutamiento) y 08 (firewall y DMZ). Core, Distribución y Acceso se explican en la introducción técnica.
+- **Relación con la práctica anterior:** *Escenario nuevo.* Reutiliza los mecanismos de segmentación del laboratorio 05, pero dentro de una arquitectura jerárquica con otros dispositivos, nombres y direccionamiento. Su limpieza solo retira recursos de Lab11 y no toca `br-wan` ni otras prácticas.
 
 ## Estado inicial
 
@@ -869,9 +883,45 @@ La alta disponibilidad debe evaluarse por servicio y segmento, no por contar enl
 
 Una interfaz `DOWN` puede retirar inmediatamente una ruta conectada; un fallo remoto con portadora activa puede no ser detectado por una ruta estática. Se registra hora de inicio, detección, cambio de ruta, pérdida de paquetes y recuperación. Si se incorpora VRRP en una ampliación, se comprueba prioridad, anuncios, preemption y tracking; no atribuyas a VRRP una convergencia de routing que pertenece a otro protocolo.
 
+## Diagnóstico de problemas frecuentes
+
+| Síntoma | Causa probable | Solución |
+|---------|----------------|----------|
+| Las VLAN pierden conectividad al caer `Dist1` | Único *gateway* para las VLAN | Añadir un segundo *gateway* con VRRP (Prueba 1). |
+| Tormenta de broadcast tras añadir otro enlace de acceso | Bucle de capa 2 sin STP | Habilitar STP/RSTP (Prueba 2). |
+| Al caer `Core1` se pierde conectividad | Falta la ruta de respaldo por el otro core | Revisar las rutas y sus métricas. |
+| Un fallo remoto no cambia el camino aunque la interfaz local sigue activa | Las rutas estáticas solo detectan fallos locales | Recurrir a un protocolo dinámico (OSPF, laboratorio 15). |
+
 ## Análisis técnico y decisiones
 
 La redundancia del núcleo mantiene caminos alternativos entre bloques cuando falla Core1, pero no compensa necesariamente la pérdida de Dist1 si ese equipo concentra los gateways de las VLAN. Añadir un segundo trunk sin STP puede crear un bucle de capa 2, con tormentas broadcast e inestabilidad de tablas MAC. Dos equipos no equivalen a alta disponibilidad: hacen falta caminos independientes, protocolos de elección, sincronización, alimentación, enlaces y pruebas de failover. Un firewall único continúa siendo punto de fallo aunque el núcleo esté duplicado. En sedes pequeñas puede justificarse colapsar Core y Distribución para reducir coste y complejidad, siempre que el tráfico y el crecimiento lo permitan. VRRP/HSRP o gateways distribuidos pueden aportar redundancia al gateway de las VLAN.
+
+## Qué no demuestra esta práctica
+
+- Tener dos routers de núcleo y dos de distribución no demuestra por sí solo alta disponibilidad.
+- Las VLAN dependen de un único *gateway* (`Dist1`) hasta que se añade VRRP.
+- Con rutas estáticas la conmutación se limita a fallos de enlaces propios; el firewall único sigue siendo un punto único de fallo.
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** ¿Qué función cumple cada capa y por qué un mismo equipo podría cumplir dos?
+
+**Nivel 2 — Interpretación.** Cae `Core1`: ¿por qué el tráfico sigue pasando? ¿Por qué no ocurre lo mismo si cae `Dist1`?
+
+**Nivel 3 — Razonamiento.** Añade un segundo enlace de acceso sin STP: predice qué sucede. ¿Qué hace falta para que `Dist2` sustituya a `Dist1` como *gateway*?
+
+**Caso de diagnóstico.** Las VLAN pierden conectividad aunque `Dist2` está sana. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** Core transporta con rendimiento, Distribución agrega y aplica políticas, Acceso conecta los dispositivos finales; las capas describen funciones, y en redes pequeñas pueden colapsarse.
+
+    **Nivel 2.** El núcleo tiene rutas de respaldo hacia el otro router; `Access1` solo se conecta a `Dist1`, que es el único *gateway* de las VLAN.
+
+    **Nivel 3.** Aparece un bucle de capa 2: tormenta de broadcast e inestabilidad de la tabla MAC. Para sustituir al *gateway* hace falta una dirección virtual compartida (VRRP) y detección del fallo.
+
+    **Caso de diagnóstico.** Síntoma: VLAN sin conectividad. Mecanismo: *gateway* único. Herramientas: `ip route`, `ping` al *gateway*, estado de `Dist1`. Evidencia: `Access1` solo llega a `Dist1`. Conclusión: punto único de fallo; hace falta un segundo *gateway* con VRRP.
 
 ## Estado final
 

@@ -7,7 +7,7 @@ description: "Laboratorio 05 de NETWORKING Lab — Conmutación y Segmentación 
 
 # CONMUTACIÓN Y SEGMENTACIÓN DE RED
 
-<p class="tema-meta"><span>14 secciones</span><span>2 diagramas</span><span>4 tablas</span></p>
+<p class="tema-meta"><span>20 secciones</span><span>2 diagramas</span><span>6 tablas</span></p>
 
 ## Más gente, más tráfico
 
@@ -24,6 +24,20 @@ Las **VLAN** dividen un mismo switch en dominios de broadcast independientes. En
 
 !!! note "Continuidad con el laboratorio 04"
     Aquí el direccionamiento cambia: se pasa de las subredes VLSM de `10.0.0.0/24` a redes `/24` independientes por VLAN (`10.0.10.0/24`, `10.0.20.0/24`, `10.0.30.0/24`). No es una corrección del laboratorio 04: es **otro escenario**. En el 04 el tema es el reparto de direcciones; en este, la segmentación de capa 2, para la cual resulta más clara una subred `/24` por VLAN. Ambas tablas **no describen la misma infraestructura**.
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- explicar qué separa una VLAN (un dominio de broadcast) y en qué se diferencia de una subred IP;
+- distinguir un puerto de acceso de un *trunk* 802.1Q e identificar la etiqueta en una captura;
+- describir *router-on-a-stick* y su papel en la comunicación entre VLAN;
+- explicar por qué una VLAN no es por sí sola una barrera de seguridad y cómo las reglas del router controlan los flujos entre ellas.
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Laboratorios 01 a 04: bridge, subred y *gateway*. VLAN, 802.1Q y *trunk* se explican en este laboratorio.
+- **Relación con la práctica anterior:** *Escenario independiente.* No continúa el laboratorio 04: es otro escenario, con redes `/24` por VLAN. El Paso 1 limpia solo una ejecución anterior de Lab05 y no toca recursos de otras prácticas.
 
 ## Estado inicial
 
@@ -536,9 +550,89 @@ Se ejecuta un ping entre VLAN permitidas y se compara dónde aparece el encabeza
 
 No debe dejarse reglas temporales ni cambios de PVID al terminar; restaura la configuración de la topología siguiendo la limpieza del laboratorio.
 
+## Pruebas de comportamiento
+
+### Prueba 1: Retirar una VLAN del *trunk*
+
+```bash
+ip netns exec switch bridge vlan del dev veth-sr vid 30
+ip netns exec admin1 ping -c 2 -W 1 10.0.30.1
+ip netns exec ventas1 ping -c 2 10.0.20.2
+ip netns exec switch bridge vlan add dev veth-sr vid 30
+```
+
+**Resultado esperado:** la VLAN 30 deja de llegar al router y sus equipos no reciben respuesta; las demás VLAN siguen funcionando. Al restaurar la VLAN se recupera la comunicación.
+
+### Prueba 2: Política entre VLAN
+
+```bash
+ip netns exec ventas1 ping -c 4 10.0.10.3
+ip netns exec ventas1 ping -c 2 -W 1 10.0.20.2
+ip netns exec admin1 ping -c 4 10.0.20.2
+```
+
+**Resultado esperado:** la misma VLAN conserva conectividad; Ventas no alcanza IT porque el router aplica `FORWARD DROP`; Administración sí puede enviar ICMP a IT por una regla explícita.
+
+### Prueba 3: Contadores del firewall
+
+```bash
+ip netns exec router iptables -L FORWARD -n -v --line-numbers
+```
+
+**Resultado esperado:** los contadores de la regla bloqueante aumentan con los intentos de Ventas hacia IT, lo que demuestra que la política se aplica y no solo que la prueba falla.
+
+## Diagnóstico de problemas frecuentes
+
+| Síntoma | Causa probable | Solución |
+|---------|----------------|----------|
+| Host aislado o en una VLAN distinta | VLAN ausente del puerto de acceso | Revisar `bridge vlan show` y asignar la VLAN al puerto. |
+| Solo falla un segmento a través del *trunk* | VID no permitido en el *trunk* | Añadirlo con `bridge vlan add dev veth-sr vid <id>`. |
+| Una trama sin etiqueta cae en la VLAN equivocada | PVID incorrecto | Revisar el PVID del puerto y la tabla VLAN. |
+| La red local funciona pero no se sale a otras redes | *Gateway* incorrecto | Comprobar `ip route`, `ip route get` y el ARP del *gateway*. |
+| El *trunk* transporta la VLAN pero no hay enrutamiento | Subinterfaz ausente en el router | Revisar `ip -d link`, direcciones y rutas del router. |
+| Ruta y ARP correctos, pero el tráfico entre VLAN se descarta | Regla `FORWARD` bloqueante | Revisar contadores del firewall y capturar a ambos lados. |
+
+## Conceptos clave
+
+| Concepto | Aplicación en el laboratorio |
+|----------|------------------------------|
+| VLAN | Dominio de broadcast independiente dentro de un mismo switch |
+| Puerto de acceso | Entrega tráfico sin etiqueta a un host de una VLAN |
+| *Trunk* 802.1Q | Transporta varias VLAN identificadas por etiquetas |
+| *Router-on-a-stick* | Una subinterfaz del router por VLAN sobre un único enlace |
+| Política entre VLAN | Denegar por defecto y permitir solo los flujos explícitos |
+| VLAN 99 | Plano de gestión de los dispositivos de red |
+
 ## Análisis técnico y decisiones
 
 Cada VLAN constituye un dominio de broadcast de capa 2 independiente. El switch no reenvía el broadcast de VLAN 10 a VLAN 20; la comunicación entre ambas necesita un dispositivo de capa 3 y políticas de enrutamiento. Si el trunk no permite la VLAN 30, sus tramas etiquetadas no atraviesan ese enlace y los equipos de esa VLAN pierden conectividad hacia el otro extremo. Un puerto de acceso entrega tráfico sin etiqueta al host y lo asocia a una VLAN; un trunk transporta varias VLAN identificadas mediante etiquetas 802.1Q. Router-on-a-Stick concentra el tráfico inter-VLAN en un enlace y puede convertirse en cuello de botella. Un switch multicapa puede realizar el enrutamiento directamente mediante interfaces VLAN (SVI).
+
+## Qué no demuestra esta práctica
+
+- Una VLAN no es por sí sola una barrera de seguridad: el aislamiento depende del *trunk* (qué VLAN admite) y de las reglas del router.
+- La VLAN 99 representa el plano de gestión de los dispositivos de red; no se construye una red de gestión completa.
+- Un bridge Linux con VLAN ilustra el mecanismo, pero no reproduce todas las funciones de un switch gestionable.
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** ¿Qué diferencia hay entre un puerto de acceso y un *trunk*, y qué transporta este último?
+
+**Nivel 2 — Interpretación.** En la captura del *trunk*, ¿qué indica la etiqueta 802.1Q? ¿Por qué el broadcast de la VLAN 10 no aparece en la VLAN 20?
+
+**Nivel 3 — Razonamiento.** Si el *trunk* deja de admitir la VLAN 30, predice qué pierde conectividad y qué sigue funcionando. ¿Qué papel cumplen entonces las reglas del router?
+
+**Caso de diagnóstico.** Un equipo de la VLAN 30 no alcanza su *gateway*. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** El puerto de acceso entrega tráfico sin etiqueta a un host de una VLAN; el *trunk* transporta varias VLAN identificadas por etiquetas 802.1Q.
+
+    **Nivel 2.** La etiqueta identifica la VLAN de la trama. El switch no reenvía el broadcast de una VLAN a otra porque cada una es un dominio de broadcast independiente.
+
+    **Nivel 3.** Los equipos de la VLAN 30 pierden conectividad hacia el otro extremo; las demás VLAN siguen. La comunicación entre VLAN depende del router, y sus reglas deciden qué flujos se permiten.
+
+    **Caso de diagnóstico.** Síntoma: una VLAN sin conectividad. Mecanismo: *trunk* y VLAN permitidas. Herramientas: `bridge vlan show`, `ip -d link`, `tcpdump -e`. Evidencia: la VLAN no figura entre las permitidas o las tramas no llevan etiqueta. Conclusión: añadir la VLAN al *trunk* y a la subinterfaz del router.
 
 ## Estado final
 

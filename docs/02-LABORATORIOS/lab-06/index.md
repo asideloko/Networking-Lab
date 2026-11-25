@@ -7,7 +7,7 @@ description: "Laboratorio 06 de NETWORKING Lab — Enrutamiento y Conectividad e
 
 # ENRUTAMIENTO Y CONECTIVIDAD ENTRE REDES
 
-<p class="tema-meta"><span>15 secciones</span><span>4 diagramas</span><span>7 tablas</span></p>
+<p class="tema-meta"><span>18 secciones</span><span>4 diagramas</span><span>7 tablas</span></p>
 
 ## Nuevas sedes
 
@@ -21,6 +21,20 @@ Este laboratorio interconecta una sede y dos sucursales mediante tres routers (R
 
 !!! note "Alcance: enrutamiento dinámico"
     Este laboratorio trabaja **solo con enrutamiento estático**. Las rutas estáticas no se adaptan solas a un fallo remoto; esa limitación es la que justifica un protocolo dinámico. **[OSPF](https://www.rfc-editor.org/rfc/rfc2328) se implementa de forma real con FRRouting en el Laboratorio 15.**
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- explicar cómo R1 elige entre rutas: prefijo más largo y, a igualdad, métrica;
+- leer una tabla de enrutamiento y reconstruir el reenvío de un paquete salto a salto;
+- distinguir un fallo local de un fallo remoto y explicar por qué las rutas estáticas solo protegen del primero;
+- describir qué hace un túnel GRE (encapsula sin cifrar) y por qué la limitación de las rutas estáticas justifica un protocolo dinámico.
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Laboratorios 01 a 05: subred, *gateway*, bridge y VLAN. El enrutamiento estático y la selección de rutas se explican aquí.
+- **Relación con la práctica anterior:** *Escenario nuevo.* Reutiliza conceptos del laboratorio 05, pero monta tres routers (R1, R2 y R3) con la sede simplificada a una LAN `10.0.0.0/24`: las VLAN del laboratorio 05 no se vuelven a montar. Su limpieza solo retira recursos de Lab06.
 
 ## Estado inicial
 
@@ -577,6 +591,33 @@ Se registra el tiempo, paquetes perdidos y ruta seleccionada cuando se baja una 
 ## Análisis técnico y decisiones
 
 R1 selecciona la ruta aplicando primero el prefijo más específico y, entre rutas equivalentes, la métrica o distancia administrativa según el mecanismo configurado. La ruta directa prevalece sobre la ruta alternativa mientras esté instalada. Si se elimina la ruta secundaria y cae el enlace principal, no queda un camino configurado y el destino se vuelve inalcanzable. Un fallo local de interfaz suele detectarse por el estado del enlace; un fallo remoto puede dejar la interfaz y el vecino activos mientras el destino posterior está caído. Las rutas estáticas son sencillas en redes pequeñas, pero su mantenimiento crece con cada sede y cambio. GRE encapsula tráfico, pero no cifra ni autentica por sí mismo; se combina con IPsec cuando se requiere protección. OSPF u otro protocolo dinámico permite aprender y recalcular rutas automáticamente.
+
+## Qué no demuestra esta práctica
+
+- Las rutas estáticas no se adaptan solas a un fallo remoto; el enrutamiento dinámico (OSPF) se implementa en el laboratorio 15.
+- GRE encapsula pero no cifra ni autentica; la protección criptográfica llega en el laboratorio 09.
+- Una métrica no mide calidad física del enlace: solo expresa una preferencia configurada.
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** ¿Qué es *longest prefix match* y en qué se diferencia una ruta por defecto de una ruta específica?
+
+**Nivel 2 — Interpretación.** Explica por qué la ruta directa prevalece sobre la alternativa mientras esté instalada y cómo `traceroute` muestra el efecto del TTL en cada salto.
+
+**Nivel 3 — Razonamiento.** Falla un enlace remoto situado detrás de R2 mientras la interfaz local de R1 sigue activa. Predice qué hace R1 y por qué una ruta de respaldo por métrica no ayuda.
+
+**Caso de diagnóstico.** Una sucursal queda inalcanzable tras caer un enlace. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** Se elige la ruta cuyo prefijo coincide con más bits del destino; la ruta por defecto (`/0`) solo se usa si no hay otra más específica.
+
+    **Nivel 2.** Mientras la ruta directa esté instalada es la preferida; `traceroute` incrementa el TTL y cada salto responde cuando se agota.
+
+    **Nivel 3.** R1 sigue enviando por la ruta principal porque su interfaz está activa: el fallo remoto no cambia su tabla. La ruta de respaldo solo entra cuando se retira la principal.
+
+    **Caso de diagnóstico.** Síntoma: destino inalcanzable. Mecanismo: ruta o fallo local/remoto. Herramientas: `ip route`, `ip route get`, `traceroute`. Evidencia: dónde se corta el recorrido y si la ruta de respaldo existe. Conclusión: ruta secundaria ausente o fallo remoto no detectado.
 
 ## Estado final
 

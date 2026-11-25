@@ -7,7 +7,7 @@ description: "Laboratorio 02 de NETWORKING Lab — Transmisión de Datos y Capa 
 
 # TRANSMISIÓN DE DATOS Y CAPA FÍSICA
 
-<p class="tema-meta"><span>17 secciones</span><span>1 diagrama</span><span>7 tablas</span></p>
+<p class="tema-meta"><span>21 secciones</span><span>1 diagrama</span><span>8 tablas</span></p>
 
 ## Continuemos
 
@@ -20,6 +20,20 @@ Este laboratorio tiene dos partes que conviene mantener separadas.
 La primera es **ejecutable**: el `router` del laboratorio 01 obtiene una salida hacia el exterior mediante un par `veth` hacia el host, una ruta por defecto, reenvío IPv4 y NAT. Con ella se observa el recorrido de un paquete con doble traducción de direcciones y se miden latencia y rendimiento.
 
 La segunda es **conceptual**: bits, señales, codificación y modulación. Una interfaz `veth` copia tramas entre dos extremos dentro del kernel y no genera ninguna señal eléctrica, óptica o de radio, de modo que esa parte se explica y se contrasta con lo que sí puede observarse (paquetes, retardo, pérdida y rendimiento).
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- distinguir la parte ejecutable (salida a Internet con ruta por defecto, reenvío y NAT) de la parte conceptual (bits, señales, codificación y modulación);
+- explicar las tres decisiones que permiten salir de la red local: enviar al *gateway*, reenviar con `ip_forward` y traducir con NAT;
+- interpretar qué dirección ve cada tramo en una captura con doble NAT;
+- medir e interpretar latencia, *jitter*, pérdida y rendimiento TCP y UDP, y saber qué no representan sobre `veth`.
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Haber completado el laboratorio 01 (MAC, IP, ARP y bridge). NAT, ruta por defecto y reenvío se explican aquí; la capa física se trata de forma conceptual, separada de la construcción.
+- **Relación con la práctica anterior:** *Continúa el escenario anterior.* Necesita los recursos del laboratorio 01: `cliente1`, `cliente2` y el `router` con su bridge. El Paso 1 comprueba que siguen en pie.
 
 ## Estado inicial
 
@@ -614,9 +628,47 @@ sudo ip netns exec cliente1 iperf3 -c 10.0.1.1 -u -b 20M -t 15 -i 1
 
 Se registra CPU, duración, tasa ofrecida, throughput recibido, pérdida y jitter. No debe compararse una tasa UDP ofrecida con el goodput TCP como si fueran la misma magnitud.
 
+## Conceptos clave
+
+| Concepto | Aplicación en el laboratorio |
+|----------|------------------------------|
+| Ruta por defecto | Los clientes envían al `router` lo que no es local |
+| Reenvío IP | `ip_forward` permite al `router` pasar paquetes entre interfaces |
+| NAT y doble NAT | Traducción del origen en el `router` y en el host; se compara en dos capturas |
+| Latencia, *jitter*, pérdida y rendimiento | `ping` e `iperf3` sobre el enlace virtual |
+| Capa física | Bits, señales, codificación y modulación, explicados de forma conceptual |
+| NIC física frente a `veth` | La interfaz virtual copia tramas y no genera señal |
+
 ## Análisis técnico y decisiones
 
 La salida de una red local depende de tres decisiones distintas: el cliente envía el paquete al gateway, el router reenvía el paquete con `ip_forward` y NAT traduce el origen cuando el destino requiere una dirección alcanzable desde el exterior. Si se elimina NAT pero se conserva el reenvío, el paquete puede salir con una dirección privada que la red externa no sabe devolver. En la captura interna se observa el origen privado; en la WAN, después de MASQUERADE, aparece la dirección del lado externo del router. Simular Internet mediante el host permite estudiar rutas y traducción, pero no reproduce un ISP, sus políticas, latencia ni capacidad física. El doble NAT aparece en redes domésticas o empresariales con varias capas de traducción; complica conexiones entrantes, trazabilidad y algunos protocolos.
+
+## Qué no demuestra esta práctica
+
+- Las cifras de `iperf3` sobre `veth` describen la capacidad del kernel, no la de un medio físico.
+- La teoría de señalización y modulación no se verifica con instrumentos: una interfaz `veth` no genera señales eléctricas, ópticas ni de radio.
+- Simular Internet con el host permite estudiar rutas y traducción, pero no reproduce un proveedor, sus políticas, su latencia ni su capacidad.
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** ¿Qué hace cada una de estas piezas: la ruta por defecto de los clientes, `ip_forward` en el `router` y la regla de NAT?
+
+**Nivel 2 — Interpretación.** Compara la captura interna con la de `veth-wan`: ¿por qué cambia la dirección de origen? ¿Qué significa «doble NAT» y dónde se produce cada traducción?
+
+**Nivel 3 — Razonamiento.** Elimina NAT del `router` pero conserva el reenvío. Predice qué dirección de origen sale hacia el exterior y por qué las respuestas no regresan.
+
+**Caso de diagnóstico.** Los clientes hacen `ping` al `router` pero no alcanzan Internet. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** Ruta por defecto: el cliente envía al *gateway* lo que no es local. `ip_forward`: permite al `router` reenviar paquetes entre interfaces. NAT: traduce el origen privado a una dirección alcanzable desde el exterior.
+
+    **Nivel 2.** En el segmento interno se ve el origen privado `10.0.1.x`; tras la traducción aparece la dirección del lado externo del `router`. Hay doble NAT porque traducen el `router` y el host.
+
+    **Nivel 3.** Sin NAT el paquete sale con un origen privado que la red externa no sabe devolver, así que las respuestas no llegan aunque exista reenvío.
+
+    **Caso de diagnóstico.** Síntoma: sin salida pero con router alcanzable. Mecanismo: enrutamiento, reenvío o NAT. Herramientas: `ip route`, `sysctl net.ipv4.ip_forward`, reglas NAT del `router`, `tcpdump` en `veth-wan`. Evidencia: dónde deja de verse el tráfico. Causas habituales: ruta por defecto ausente, reenvío desactivado, NAT ausente o falta de ruta de retorno en el host (Paso 7).
 
 ## Estado final
 

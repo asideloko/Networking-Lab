@@ -7,7 +7,7 @@ description: "Laboratorio 13 de NETWORKING Lab — Monitoreo y Diagnóstico de R
 
 # MONITOREO Y DIAGNÓSTICO DE REDES
 
-<p class="tema-meta"><span>14 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
+<p class="tema-meta"><span>17 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
 
 ## Mirar la red por dentro
 
@@ -25,6 +25,20 @@ Este laboratorio construye un puesto de operación (`NOC`), un servidor de aplic
 
 !!! info "[NOC](https://www.cisco.com/c/en/us/products/routers/what-is-network-operations-center-noc.html) y SIEM: dos funciones distintas"
     Un **NOC** (*Network Operations Center*) se ocupa de la **disponibilidad, el rendimiento y la operación** de la infraestructura (¿está caído el enlace? ¿qué latencia hay?). Un **SIEM** (*Security Information and Event Management*) se ocupa de **recolectar, correlacionar y analizar eventos relevantes para la seguridad** (¿hay un patrón de intentos de acceso anómalos?). En este laboratorio, el equipo `NOC` ejecuta herramientas de diagnóstico y el equipo `SIEM` hace de colector de registros; ambos comparten red, pero sirven a propósitos diferentes.
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- distinguir las funciones de un NOC y de un SIEM, y qué es observabilidad;
+- medir conectividad, camino, tráfico y rendimiento con `ping`, `traceroute`, `tcpdump` e `iperf3`;
+- interpretar métricas, umbrales, alertas y falsos positivos;
+- aplicar el método de diagnóstico «del síntoma a la causa» y diagnosticar un fallo de MTU.
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Laboratorios 02, 03, 07 y 12: rutas, MTU, servicios y la red sobre la que se trabaja. Las herramientas avanzadas se tratan con detalle en el laboratorio 14.
+- **Relación con la práctica anterior:** *Continúa el escenario anterior.* Continúa sobre la red del laboratorio 12 (`OnPremise`, `AppServer`, `DBServer`, `AWS_VPC`, `EC2_Server`…). El comienzo comprueba que `OnPremise` conserva la marca del laboratorio 12 y sigue en pie.
 
 ## Estado inicial
 
@@ -620,6 +634,33 @@ Ante un reporte de lentitud, el registro del diagnóstico reúne: síntoma y alc
 ## Análisis técnico y decisiones
 
 El diagnóstico del NOC combina disponibilidad, métricas, logs, capturas y pruebas de servicio: una ruta se inspecciona con herramientas de routing, DNS con consultas explícitas, servicios con sockets y peticiones, y rendimiento con mediciones de throughput, pérdida y jitter. En una LAN conmutada, una captura en un host no ve necesariamente el unicast entre otros dos equipos; se necesita un punto de captura adecuado, mirror/SPAN o captura en los extremos. TCP adapta la transmisión y su throughput refleja control de congestión, ventanas y retransmisiones; UDP mide la tasa ofrecida y permite observar pérdida/jitter sin control de congestión equivalente. `rsyslog` centraliza logs, pero no equivale a un SIEM con correlación, analítica, detección y respuesta. SNMP, streaming telemetry y métricas de flujo amplían la observabilidad.
+
+## Qué no demuestra esta práctica
+
+- El colector de registros con `rsyslog` no es un SIEM: faltan normalización, correlación, alertas y respuesta.
+- El monitoreo detecta; la prevención y la respuesta son medidas aparte.
+- Las cifras de `iperf3` sobre enlaces virtuales no certifican la capacidad de un enlace físico.
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** ¿Qué pregunta responde un NOC y cuál un SIEM?
+
+**Nivel 2 — Interpretación.** En una LAN conmutada, ¿por qué una captura en un host no ve necesariamente el unicast entre otros dos equipos? ¿Qué alternativas hay?
+
+**Nivel 3 — Razonamiento.** Un usuario dice que «la aplicación va lenta». Ordena una investigación por capas y decide qué evidencia distingue pérdida, latencia, MTU y DNS antes de concluir.
+
+**Caso de diagnóstico.** Los `ping` pequeños funcionan, pero las transferencias grandes se congelan. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** NOC: disponibilidad, rendimiento y operación (¿está caído el enlace? ¿qué latencia hay?). SIEM: recolectar y correlacionar eventos relevantes para la seguridad.
+
+    **Nivel 2.** El switch solo envía el unicast al puerto del destino; hace falta capturar en los extremos o en un punto adecuado (*mirror*/SPAN).
+
+    **Nivel 3.** Síntoma → capa → herramienta → evidencia → conclusión: `ping` y `mtr` (pérdida y latencia), `dig` (DNS), `ping` con *Don't Fragment* (MTU), `iperf3` (rendimiento). Cada prueba descarta una hipótesis.
+
+    **Caso de diagnóstico.** Síntoma: congelación con paquetes grandes. Mecanismo: MTU. Herramientas: `ping` con *Don't Fragment*, `tcpdump`. Evidencia: los paquetes grandes no pasan. Conclusión: problema de MTU en el camino.
 
 ## Estado final
 

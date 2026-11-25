@@ -7,7 +7,7 @@ description: "Laboratorio 12 de NETWORKING Lab — Arquitecturas Modernas de Red
 
 # ARQUITECTURAS MODERNAS DE RED
 
-<p class="tema-meta"><span>14 secciones</span><span>3 diagramas</span><span>6 tablas</span></p>
+<p class="tema-meta"><span>18 secciones</span><span>3 diagramas</span><span>7 tablas</span></p>
 
 ## Fuera de la oficina
 
@@ -25,6 +25,20 @@ Este laboratorio representa esa arquitectura: una red local (`OnPremise`) conect
 
 !!! warning "Nube: abstracción didáctica, no la arquitectura real de AWS"
     La VPC se representa como un router Linux y EC2/RDS como *namespaces*. Es una **abstracción válida para enseñar**, pero no reproduce AWS: una **VPC** es una **red virtual definida en la infraestructura del proveedor** (con tablas de rutas, gateways, grupos de seguridad y ACL propios); una **instancia EC2** es un **recurso de cómputo**; **RDS** es un **servicio administrado de bases de datos** (no un host al que se accede por SSH); y la conectividad y la seguridad de AWS usan componentes específicos. **No debe equipararse un *namespace* Linux con una instancia administrada en la nube.**
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- describir la conectividad híbrida entre una red local y una red virtual de nube;
+- distinguir ZTNA (acceso por aplicación) de una VPN tradicional (acceso a una red) y situar Zero Trust, ZTNA y SASE;
+- aplicar microsegmentación para limitar cada base de datos a su servidor y puerto;
+- separar lo que se construye de lo que solo se representa (proveedor de identidad, SASE, AWS).
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Laboratorios 08 y 09 (firewall y VPN) y 11 (arquitectura). Zero Trust, ZTNA y SASE se desarrollan en el apartado de análisis.
+- **Relación con la práctica anterior:** *Escenario nuevo.* Construye desde cero `OnPremise`, `AWS_VPC`, `ZTNA_Broker` y los demás namespaces. El Paso 0 solo retira recursos de Lab12; no elimina `br-wan` ni recursos de otras prácticas, cuya reversión se ejecuta por separado. El laboratorio 13 continúa sobre esta red.
 
 ## Estado inicial
 
@@ -507,9 +521,45 @@ Los namespaces aíslan la red, no el ciclo de vida de todos los procesos ni el s
 
 La conectividad `veth` hacia la VPC es una abstracción de underlay; no es AWS VPC real, VPN cifrada ni SASE. Se mantiene explícito qué parte es ejecutable, simulada o conceptual en la introducción técnica y en el estado final.
 
+## Diagnóstico de problemas frecuentes
+
+| Síntoma | Causa probable | Solución |
+|---------|----------------|----------|
+| Un usuario alcanza puertos que no debería | Política del *broker* demasiado amplia | Restringir por aplicación y puerto. |
+| Un usuario no accede a su aplicación | Regla ausente, ruta incorrecta o puerto no permitido | Revisar las reglas del *broker*, `ip route` y `ss`. |
+| Un servidor alcanza una base de datos que no le corresponde | Falta microsegmentación | Limitar origen y puerto (3306 en la sede, 5432 en la nube). |
+| Se esperaba una autenticación real del usuario | El proveedor de identidad es un nodo alcanzable que no autentica | Es un límite declarado; un proveedor real valida identidad y emite tokens. |
+
 ## Análisis técnico y decisiones
 
 ZTNA limita el acceso a aplicaciones concretas según identidad, política y contexto; una VPN tradicional suele proporcionar acceso a una red o segmento más amplio. Si el broker permite cualquier puerto hacia la base de datos, desaparece la restricción por aplicación y aumenta la superficie de exposición. Un IdP representado como nodo alcanzable no autentica usuarios: un IdP real valida identidades, aplica MFA y emite tokens o aserciones verificables. Una VPC simulada con namespaces no reproduce el plano de control, servicios gestionados, IAM ni aislamiento físico del proveedor cloud. ZTNA resulta útil para usuarios remotos que necesitan aplicaciones concretas, mientras que la conectividad de red completa puede seguir requiriendo VPN. MFA, postura del dispositivo y evaluación continua refuerzan el modelo.
+
+## Qué no demuestra esta práctica
+
+- El proveedor de identidad es solo un nodo alcanzable: no autentica a nadie.
+- SASE se explica pero no se construye, y una política basada en direcciones IP no equivale a verificar identidad.
+- La VPC es una abstracción didáctica: no reproduce AWS (tablas de rutas, grupos de seguridad ni servicios administrados).
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** ¿En qué se diferencian el alcance de una VPN tradicional y el de ZTNA?
+
+**Nivel 2 — Interpretación.** Con la matriz de acceso usuario–aplicación–puerto del laboratorio, indica qué debe poder alcanzar cada usuario y qué debe quedar bloqueado.
+
+**Nivel 3 — Razonamiento.** Si el *broker* permitiera cualquier puerto hacia la base de datos, ¿qué principio se pierde? ¿Qué no valida el proveedor de identidad simulado?
+
+**Caso de diagnóstico.** Un usuario remoto no accede a su aplicación. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** La VPN suele dar acceso a una red o segmento; ZTNA limita el acceso a aplicaciones concretas según identidad, política y contexto.
+
+    **Nivel 2.** Cada usuario debe alcanzar solo su aplicación en su puerto; cualquier otro destino o puerto debe quedar bloqueado, y se comprueba con accesos permitidos y bloqueados.
+
+    **Nivel 3.** Se pierde el acceso mínimo por aplicación y aumenta la superficie expuesta. El proveedor de identidad simulado no valida identidades, no aplica MFA ni emite tokens.
+
+    **Caso de diagnóstico.** Síntoma: sin acceso a una aplicación. Mecanismo: política del *broker*, ruta o microsegmentación. Herramientas: reglas del *broker*, `ip route`, `ss`, `tcpdump`. Evidencia: dónde se descarta el tráfico. Conclusión: regla, ruta o puerto no permitido para ese usuario.
 
 ## Estado final
 

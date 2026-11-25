@@ -7,7 +7,7 @@ description: "Laboratorio 03 de NETWORKING Lab — Componentes de Red y Conmutac
 
 # COMPONENTES DE RED Y CONMUTACIÓN
 
-<p class="tema-meta"><span>16 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>20 secciones</span><span>1 diagrama</span><span>4 tablas</span></p>
 
 ## El próximo reto
 
@@ -18,6 +18,20 @@ Los dos empleados de Networking SecOps ya navegan por Internet, pero la oficina 
 Con dos clientes, el bridge del `router` basta. Con más equipos conviene separar la **conmutación** del **enrutamiento**: un switch concentra las conexiones de los clientes y reenvía cada trama solo al puerto del destinatario, mientras que el router conserva el enrutamiento y el NAT hacia el exterior.
 
 En este laboratorio el switch se construye como un bridge Linux en un *namespace* propio, se conectan cuatro clientes y se observa cómo aprende direcciones MAC, cómo reenvía tramas y cómo la MTU condiciona el tamaño de los paquetes.
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- explicar cómo un switch aprende direcciones MAC y decide entre reenviar, inundar o filtrar una trama;
+- distinguir la función del switch (capa 2) de la del router (capa 3) una vez separado el bridge del `router`;
+- leer la tabla de direcciones MAC del bridge (`bridge fdb`) y relacionarla con el tráfico capturado;
+- relacionar MTU, fragmentación y PMTUD, e interpretar qué ocurre cuando se bloquea el ICMP necesario.
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Laboratorios 01 y 02: MAC, ARP, bridge, ruta por defecto y NAT. MTU y PMTUD se explican en el apartado de análisis de MTU.
+- **Relación con la práctica anterior:** *Modifica el escenario anterior.* Requiere el laboratorio 02 funcionando y cambia su topología: elimina el bridge del `router` y los cables virtuales anteriores, y crea un namespace propio para el switch. Los clientes pierden IP y ruta y se reconfiguran en el Paso 7.
 
 ## Estado inicial
 
@@ -645,9 +659,46 @@ Se repite desde un cliente hacia otro destino no contactado y se compara la capt
 
 El cambio a MTU 9000 debe compararse con pruebas repetidas y la misma carga, duración, CPU y dirección de prueba. Una variación de `iperf3` en veth no demuestra por sí sola una mejora física de jumbo frames.
 
+## Conceptos clave
+
+| Concepto | Aplicación en el laboratorio |
+|----------|------------------------------|
+| Conmutación y FDB | El bridge del switch asocia MAC con puerto y decide si reenvía o inunda |
+| Separación de funciones | El switch opera en capa 2; el `router` queda solo con capa 3 |
+| Broadcast | Llega a todos los puertos del switch |
+| MTU | Tamaño máximo del paquete IP en un enlace |
+| Fragmentación y PMTUD | Un paquete mayor que la MTU se fragmenta o se descarta y se avisa por ICMP |
+
 ## Análisis técnico y decisiones
 
 El bridge aprende la MAC de origen de cada trama y la asocia al puerto de entrada en su FDB. Cuando conoce la MAC destino, reenvía por el puerto asociado; si la desconoce, inunda la trama por los demás puertos de la misma VLAN, excepto el de entrada. El broadcast se replica dentro del dominio de broadcast; un unicast conocido se dirige a un puerto concreto. Borrar una entrada provoca aprendizaje posterior y, mientras tanto, flooding de unicast desconocido. Un bridge Linux reproduce la conmutación básica, pero no sustituye todas las funciones de un switch gestionable: ASIC, telemetría, políticas avanzadas, PoE y operación del fabricante. VLAN y STP amplían la segmentación y evitan bucles de capa 2.
+
+## Qué no demuestra esta práctica
+
+- Un bridge Linux no es un switch empresarial completo.
+- La MTU sobre `veth` no reproduce las restricciones de un enlace físico ni de un proveedor.
+- La prueba de PMTUD es un caso controlado (se bloquea el mensaje ICMP *Fragmentation Needed* hacia un cliente), no todos los comportamientos posibles de una red real.
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** ¿Qué guarda la tabla de direcciones MAC del bridge y en qué se diferencia de la tabla ARP de un cliente?
+
+**Nivel 2 — Interpretación.** Tras generar tráfico entre dos clientes, interpreta una entrada de `bridge fdb`: ¿qué MAC y qué puerto contiene y por qué apareció? ¿Por qué un broadcast sí llega a todos los puertos?
+
+**Nivel 3 — Razonamiento.** Un datagrama mayor que la MTU, con *Don't Fragment*, necesita que el `router` envíe ICMP tipo 3 código 4 a Cliente 1. Predice qué ocurre si ese mensaje se bloquea y por qué el fallo es difícil de ver.
+
+**Caso de diagnóstico.** Los `ping` pequeños funcionan, los grandes no, y no aparece ningún error visible. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** La tabla del bridge asocia MAC con puerto (capa 2); la tabla ARP asocia IP con MAC dentro de un cliente.
+
+    **Nivel 2.** El bridge aprende la MAC de origen y el puerto por el que llegó la trama; un destino desconocido o un broadcast se inunda por todos los puertos.
+
+    **Nivel 3.** Sin el ICMP el emisor nunca se entera de que debe reducir el tamaño: los paquetes grandes se descartan en silencio mientras los pequeños pasan.
+
+    **Caso de diagnóstico.** Síntoma: solo fallan los tamaños grandes. Mecanismo: MTU y PMTUD. Herramientas: `ping` con *Don't Fragment* y distintos tamaños, `ip link`, `tcpdump icmp`. Evidencia: no llega el ICMP *Fragmentation Needed*. Conclusión: el bloqueo de ese ICMP impide el descubrimiento de la MTU.
 
 ## Estado final
 

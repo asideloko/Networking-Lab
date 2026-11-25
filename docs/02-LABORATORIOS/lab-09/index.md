@@ -7,7 +7,7 @@ description: "Laboratorio 09 de NETWORKING Lab — VPN y Tunelización."
 
 # VPN Y TUNELIZACIÓN
 
-<p class="tema-meta"><span>19 secciones</span><span>4 diagramas</span><span>9 tablas</span></p>
+<p class="tema-meta"><span>23 secciones</span><span>4 diagramas</span><span>9 tablas</span></p>
 
 ## Hacia el exterior
 
@@ -21,6 +21,20 @@ Este laboratorio construye un túnel GRE y lo protege con IPsec (ESP en modo tú
 
 !!! warning "Túnel no es lo mismo que VPN"
     Un **túnel** es la **encapsulación** de tráfico entre dos extremos. Una **VPN** es una conexión virtual **protegida** mediante mecanismos de seguridad (autenticación, integridad y, normalmente, cifrado). **No todos los túneles son VPN seguras**: GRE es un túnel, pero no cifra ni autentica criptográficamente el tráfico. Puede combinarse con IPsec para obtener protección criptográfica.
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- distinguir túnel (encapsulación) de VPN (conexión protegida) y explicar por qué GRE no es una VPN segura;
+- explicar autenticación, integridad, cifrado y gestión de claves, y qué aporta IPsec sobre GRE;
+- comparar GRE, IPsec, OpenVPN y WireGuard según qué añaden a un paquete, alcance y complejidad;
+- estimar el *overhead* de cada túnel y su efecto sobre la MTU.
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Laboratorios 06 a 08 (rutas, firewall y servicios) y la encapsulación del laboratorio 01. Autenticación, cifrado, integridad y gestión de claves se explican en «Fundamento necesario» antes de usar IPsec.
+- **Relación con la práctica anterior:** *Continúa el escenario anterior.* Requiere que los laboratorios 06 a 08 sigan en pie (se comprueba al inicio) y extiende la topología del 08 con túneles VPN.
 
 ## Estado inicial
 
@@ -40,6 +54,18 @@ Quedan operativos un túnel GRE, una asociación IPsec entre dos sedes, un acces
 - `iproute2` (subsistema `xfrm`) para IPsec, `openssl` para generar claves.
 - `openvpn` para OpenVPN.
 - `wireguard-tools` para WireGuard.
+
+## Fundamento necesario
+
+Cuatro propiedades distintas que suelen confundirse, más la forma de obtener las claves:
+
+- **Encapsulación:** meter un paquete dentro de otro para transportarlo entre dos extremos (un túnel). Por sí sola no protege nada.
+- **Autenticación:** comprobar quién está en el otro extremo o quién originó el paquete.
+- **Integridad:** detectar que el contenido no se modificó en tránsito.
+- **Cifrado (confidencialidad):** impedir que un tercero lea el contenido.
+- **Gestión de claves:** cómo se obtienen y renuevan las claves que usan las anteriores. En este laboratorio son manuales o estáticas solo para mostrar el mecanismo; en un despliegue habitual se negocian y se renuevan.
+
+Un túnel GRE aporta solo la primera propiedad; una VPN segura combina las demás con ella.
 
 ## Topología
 
@@ -878,6 +904,33 @@ Se elimina únicamente las rutas de las redes remotas que añadiste en los pasos
 ## Análisis técnico y decisiones
 
 GRE encapsula paquetes y crea un enlace lógico, pero no aporta cifrado, integridad ni autenticación; por eso no constituye por sí solo una VPN segura. Crear el túnel sin ruta de retorno deja el tráfico de ida encaminado y las respuestas sin camino. En una captura, GRE identifica el protocolo de encapsulación; ESP corresponde a la protección IPsec y oculta el contenido protegido. OpenVPN con clave estática simplifica una demostración, pero carece de las capacidades de autenticación, negociación y gestión de claves de un despliegue TLS completo. WireGuard ofrece configuración compacta y criptografía moderna; IPsec cuenta con amplia interoperabilidad y perfiles empresariales. ZTNA puede sustituir ciertos accesos remotos de red por acceso a aplicaciones según identidad y contexto, no es un reemplazo universal de toda conectividad sitio a sitio.
+
+## Qué no demuestra esta práctica
+
+- Las claves fijas y el modo estático son solo para demostración; en un despliegue habitual se negocian y renuevan.
+- OpenVPN con clave estática carece de la autenticación, negociación y gestión de claves de un despliegue completo.
+- La VPN transporta el tráfico: son las rutas y las políticas del firewall las que deciden qué se alcanza a través de ella.
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** Define túnel y VPN, y clasifica GRE, IPsec (ESP), OpenVPN y WireGuard según qué propiedades aportan.
+
+**Nivel 2 — Interpretación.** En una captura, ¿cómo distingues GRE de ESP y qué contenido es visible en cada caso?
+
+**Nivel 3 — Razonamiento.** Crea el túnel sin ruta de retorno: predice qué ocurre con la ida y con la vuelta. Después explica por qué el túnel reduce la MTU efectiva.
+
+**Caso de diagnóstico.** El túnel figura como activo pero no hay respuestas desde el otro extremo. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** Un túnel encapsula; una VPN además autentica, protege la integridad y, normalmente, cifra. GRE solo encapsula; IPsec aporta autenticación, integridad y cifrado; OpenVPN y WireGuard son VPN con sus propios mecanismos.
+
+    **Nivel 2.** GRE aparece como protocolo de encapsulación y deja ver el contenido; ESP corresponde a IPsec y oculta el contenido protegido.
+
+    **Nivel 3.** La ida está encaminada pero las respuestas no tienen camino. Cada tecnología añade cabeceras, de modo que cabe menos carga útil por paquete.
+
+    **Caso de diagnóstico.** Síntoma: sin respuesta. Mecanismo: ruta de retorno o política. Herramientas: `ip route`, `tcpdump` en ambos extremos, `ip xfrm state`. Evidencia: paquetes de ida sin vuelta. Conclusión: falta la ruta de retorno o una regla del firewall.
 
 ## Estado final
 

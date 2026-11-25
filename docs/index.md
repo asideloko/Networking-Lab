@@ -9,7 +9,17 @@ hide:
 
 <div class="sx-stats"><div><b>REDES</b><span>DESARROLLO</span></div><div><b>15</b><span>ESCENARIOS</span></div><div><b>+ 30</b><span>DIAGRAMAS</span></div></div>
 
-NETWORKING LAB es un entorno de aprendizaje práctico que complementa los contenidos teóricos de **NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico**. El recorrido combina explicaciones conceptuales, escenarios reproducibles, comandos comentados y evidencias para relacionar los fundamentos con el comportamiento observable de una red.
+NETWORKING LAB complementa los fundamentos teóricos de **NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico** mediante quince laboratorios que permiten comprender, configurar, observar y diagnosticar distintos mecanismos de red.
+
+## Qué ofrece este laboratorio
+
+NETWORKING LAB es un entorno de aprendizaje práctico que complementa los fundamentos teóricos de redes mediante escenarios didácticos construidos principalmente con herramientas de Linux.
+
+Sus quince laboratorios permiten comprender los principios de comunicación, direccionamiento, conmutación, enrutamiento, servicios, seguridad y operación de redes. Cada práctica combina explicación conceptual, representación de escenarios, configuración guiada, observación del comportamiento y diagnóstico.
+
+El objetivo es que el lector comprenda cómo funcionan las tecnologías de red, por qué se utilizan y cómo se relacionan entre sí, desarrollando una base técnica que le permita continuar aprendiendo y abordar escenarios más complejos.
+
+Las prácticas utilizan simulaciones y simplificaciones controladas. No constituyen por sí mismas procedimientos de despliegue profesional ni sustituyen la validación de una infraestructura real.
 
 ## 1. Del punto A al punto B
 
@@ -21,7 +31,7 @@ El hilo conductor es **Networking SecOps**, una empresa ficticia que parte de un
 
 <div class="sx-cards"><a class="sx-card" href="02-LABORATORIOS/lab-01/index.html"><span class="sx-card__n">01</span><span class="sx-card__t">FUNDAMENTOS DE REDES Y ENCAPSULACIÓN</span></a><a class="sx-card" href="02-LABORATORIOS/lab-02/index.html"><span class="sx-card__n">02</span><span class="sx-card__t">TRANSMISIÓN DE DATOS Y CAPA FÍSICA</span></a><a class="sx-card" href="02-LABORATORIOS/lab-03/index.html"><span class="sx-card__n">03</span><span class="sx-card__t">COMPONENTES DE RED Y CONMUTACIÓN</span></a><a class="sx-card" href="02-LABORATORIOS/lab-04/index.html"><span class="sx-card__n">04</span><span class="sx-card__t">DIRECCIONAMIENTO IP Y SUBREDES</span></a><a class="sx-card" href="02-LABORATORIOS/lab-05/index.html"><span class="sx-card__n">05</span><span class="sx-card__t">CONMUTACIÓN Y SEGMENTACIÓN DE RED</span></a></div>
 
-### 1.2 Seguridad: pilar fundamental en la construcción
+### 1.2 Conectividad, servicios y seguridad
 
 <div class="sx-cards"><a class="sx-card" href="02-LABORATORIOS/lab-06/index.html"><span class="sx-card__n">06</span><span class="sx-card__t">ENRUTAMIENTO Y CONECTIVIDAD ENTRE REDES</span></a><a class="sx-card" href="02-LABORATORIOS/lab-07/index.html"><span class="sx-card__n">07</span><span class="sx-card__t">PROTOCOLOS Y SERVICIOS DE RED</span></a><a class="sx-card" href="02-LABORATORIOS/lab-08/index.html"><span class="sx-card__n">08</span><span class="sx-card__t">SEGURIDAD EN REDES</span></a><a class="sx-card" href="02-LABORATORIOS/lab-09/index.html"><span class="sx-card__n">09</span><span class="sx-card__t">VPN Y TUNELIZACIÓN</span></a><a class="sx-card" href="02-LABORATORIOS/lab-10/index.html"><span class="sx-card__n">10</span><span class="sx-card__t">INFRAESTRUCTURA WAN Y CORE</span></a></div>
 

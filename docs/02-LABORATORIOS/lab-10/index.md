@@ -7,7 +7,7 @@ description: "Laboratorio 10 de NETWORKING Lab — Infraestructura WAN y Core."
 
 # INFRAESTRUCTURA WAN Y CORE
 
-<p class="tema-meta"><span>15 secciones</span><span>4 diagramas</span><span>8 tablas</span></p>
+<p class="tema-meta"><span>19 secciones</span><span>4 diagramas</span><span>9 tablas</span></p>
 
 ## Más allá de la sede
 
@@ -18,6 +18,20 @@ Con las oficinas unidas por túneles (laboratorio 09), Networking SecOps necesit
 Las sedes se han interconectado con rutas y túneles; falta observar **la red que transporta** ese tráfico. Un proveedor organiza su núcleo con routers de borde (PE) y routers internos (P) en malla parcial, con caminos alternativos entre ellos.
 
 Este laboratorio construye esa topología con roles PE y P y rutas estáticas, interconecta tres LAN remotas, provoca la caída de un enlace del núcleo y se observa cómo se reparte el tráfico entre caminos de igual coste (ECMP). MPLS y SD-WAN se desarrollan de forma conceptual.
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- describir los roles PE y P en la red de un proveedor y por qué se usan caminos alternativos;
+- observar el camino de un flujo, la conmutación a una ruta alternativa y el reparto con ECMP;
+- distinguir *failover* de ECMP;
+- separar lo ejecutable (IP convencional con rutas estáticas) de lo conceptual (etiquetas MPLS: *push*, *swap* y *pop*, y SD-WAN).
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Laboratorios 06 y 09: rutas estáticas y túneles. MPLS y SD-WAN se desarrollan de forma conceptual en el análisis; no se configuran etiquetas.
+- **Relación con la práctica anterior:** *Escenario nuevo.* Crea sus propios namespaces (PE y P). Conserva `br-wan`, que pertenece al laboratorio 08, y no continúa si quedan recursos del laboratorio 09 que choquen con los suyos: en ese caso revierte primero esa práctica.
 
 ## Estado inicial
 
@@ -523,9 +537,44 @@ sudo ip -s link show
 
 MPLS es una tecnología/arquitectura de forwarding del proveedor; SD-WAN es una arquitectura de control, políticas y orquestación de conectividad WAN que puede utilizar MPLS, Internet o enlaces LTE como underlay. Evalúa SLA de aplicaciones con latencia, jitter y pérdida, y diferencia edge, controlador y orquestador.
 
+## Diagnóstico de problemas frecuentes
+
+| Síntoma | Causa probable | Solución |
+|---------|----------------|----------|
+| Tras caer un enlace del núcleo, una LAN remota sigue inalcanzable | No hay ruta alternativa o el fallo es remoto y no se detecta | Revisar `ip route`, usar `traceroute` por tramos y añadir la ruta alternativa. |
+| Todo el tráfico usa un único camino aunque hay dos de igual coste | ECMP no configurado, o se prueba con un solo flujo | Revisar las rutas múltiples y repetir con varios flujos TCP. |
+| Se esperaban etiquetas MPLS y no aparecen | La práctica ejecuta IP convencional con rutas estáticas | Es un límite declarado; haría falta cargar `mpls_router` y `mpls_iptunnel` y configurar etiquetas. |
+
 ## Análisis técnico y decisiones
 
 En una arquitectura MPLS de proveedor, el PE conecta redes de clientes y participa en la imposición o retirada de etiquetas; los routers P conmutan tráfico dentro del núcleo sin mantener necesariamente las rutas de cliente. Si se pierden simultáneamente los dos caminos hacia P3, los destinos detrás de ese nodo quedan aislados salvo que exista otra ruta. La simulación basada en rutas IP permite estudiar topología y redundancia, pero no demuestra el plano de etiquetas MPLS, LDP/RSVP-TE ni VPN MPLS reales. Sin routing dinámico, cada cambio del núcleo requiere intervención manual y aumenta el riesgo de inconsistencias. MPLS puede resultar adecuado para requisitos de servicio gestionado y SLA; SD-WAN puede aportar selección dinámica de enlaces y políticas sobre transportes diversos.
+
+## Qué no demuestra esta práctica
+
+- No es un núcleo MPLS: los nombres PE y P designan roles, pero lo que se ejecuta es enrutamiento IP con rutas estáticas, sin etiquetas, LDP ni VPN MPLS.
+- Sin OSPF ni BGP el núcleo no reconverge solo ante fallos remotos.
+- SD-WAN se explica pero no se construye.
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** ¿Qué función cumplen los routers PE y P en la red de un proveedor?
+
+**Nivel 2 — Interpretación.** Con varios flujos TCP, ¿cómo describes el reparto de ECMP y qué diferencia hay entre *failover* y ECMP?
+
+**Nivel 3 — Razonamiento.** Se pierden a la vez los dos caminos hacia P3. ¿Qué destinos quedan aislados y por qué la red no se recupera sola?
+
+**Caso de diagnóstico.** Tras caer un enlace del núcleo, una LAN remota sigue inalcanzable. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** PE conecta las redes de los clientes con el núcleo; P conmuta tráfico dentro del núcleo sin necesidad de conocer las redes de cliente.
+
+    **Nivel 2.** ECMP reparte flujos entre caminos de igual coste; el *failover* solo usa el alternativo cuando el principal desaparece.
+
+    **Nivel 3.** Quedan aislados los destinos detrás de P3: con rutas estáticas no existe otro camino configurado ni mecanismo que detecte el fallo remoto.
+
+    **Caso de diagnóstico.** Síntoma: LAN inalcanzable. Mecanismo: rutas del núcleo. Herramientas: `ip route`, `traceroute`, `ping` por tramos. Evidencia: último salto que responde. Conclusión: falta una ruta alternativa o el fallo es remoto y no se detecta.
 
 ## Estado final
 

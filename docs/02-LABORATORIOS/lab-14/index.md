@@ -7,7 +7,7 @@ description: "Laboratorio 14 de NETWORKING Lab — Herramientas Linux Avanzadas.
 
 # HERRAMIENTAS LINUX AVANZADAS
 
-<p class="tema-meta"><span>12 secciones</span><span>2 diagramas</span><span>7 tablas</span></p>
+<p class="tema-meta"><span>16 secciones</span><span>2 diagramas</span><span>8 tablas</span></p>
 
 ## Dominar las herramientas
 
@@ -23,6 +23,20 @@ El laboratorio 13 utilizó varias de ellas de forma puntual; aquí se organizan 
 
 !!! note "Laboratorio independiente"
     Este laboratorio monta su **propia** topología (un router Linux con LAN y DMZ) para practicar las herramientas con calma; no depende de los anteriores. Empieza limpiando **solo los recursos propios de este escenario** (no todo lo que haya en el equipo).
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- elegir la herramienta adecuada según la pregunta técnica (`ip`, `ss`, `conntrack`, `nft`, `ethtool`, `tcpdump`);
+- interpretar `ip route get` e `ip rule` para saber qué decisión toma el kernel;
+- distinguir sockets locales (`ss`) de conexiones que atraviesan el router (`conntrack`);
+- explicar dónde engancha cada regla (`input`, `forward`, `output`) y comparar las herramientas modernas con las clásicas.
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Laboratorios 08 y 13: firewall y monitoreo. Este laboratorio organiza las herramientas por tipo de pregunta; no introduce tecnologías nuevas de red.
+- **Relación con la práctica anterior:** *Independiente.* Monta su propia topología (un router Linux con LAN `Host1` y `Host2`, DMZ y salida al host) y no depende de los laboratorios anteriores. Comienza limpiando solo los recursos propios de este escenario.
 
 ## Estado inicial
 
@@ -590,9 +604,44 @@ done
 
 Si el servicio escucha (`ss`), la ruta existe (`ip route get`) y la conexión falla, captura en ambos extremos (`tcpdump`) y revisa reglas/contadores (`nft list ruleset`). El punto donde desaparece el paquete y el contador que aumenta sustentan el diagnóstico; no basta con que una regla parezca sospechosa.
 
+## Diagnóstico de problemas frecuentes
+
+| Síntoma | Causa probable | Solución |
+|---------|----------------|----------|
+| `ping` hacia una dirección detrás de Host1 deja de funcionar | `ip_forward` en 0 en Host1 | Habilitar el reenvío (Prueba 3). |
+| Un servicio no recibe conexiones | `ss -tlnp` no lo muestra escuchando | Iniciar el servicio o corregir la IP en la que escucha. |
+| El Router no responde a `ping`, pero Host1 sigue saliendo a Internet | Regla `icmp drop` en la cadena `input` | Afecta solo al tráfico destinado al Router (Prueba 1). |
+
 ## Análisis técnico y decisiones
 
 La tabla de rutas y las reglas de política determinan la interfaz de salida; `ip route get` muestra la decisión efectiva para un destino y origen concretos. Una política `drop` en `input` bloquea tráfico dirigido al propio router salvo que existan reglas explícitas para conexiones establecidas y servicios necesarios. `ss` muestra sockets locales y sus estados; conntrack registra flujos que atraviesan o son traducidos por el kernel. `ping` solo comprueba ICMP y no demuestra que DNS, TCP o una aplicación funcionen. La herramienta debe elegirse según la capa del síntoma: `ip` para direcciones/rutas, `ss` para sockets, `nft` para filtrado, `ethtool` para parámetros de interfaz y `tcpdump` para observar paquetes.
+
+## Qué no demuestra esta práctica
+
+- `ping` solo comprueba ICMP: no demuestra que un servicio responda.
+- `ethtool` en interfaces virtuales tiene un alcance limitado.
+- Conocer las herramientas no sustituye el método: hay que formular una hipótesis antes de elegir el comando.
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** ¿Qué pregunta responde cada herramienta: `ip`, `ss`, `conntrack`, `nft`, `ethtool` y `tcpdump`?
+
+**Nivel 2 — Interpretación.** Interpreta una salida de `ip route get <destino>`: ¿qué interfaz, siguiente salto y origen eligió el kernel y por qué?
+
+**Nivel 3 — Razonamiento.** Aplica una política `drop` en la cadena `input`: predice qué tráfico se bloquea y cuál no. Compruébalo con tráfico dirigido al router y con tráfico que lo atraviesa.
+
+**Caso de diagnóstico.** `ping` al servidor funciona, pero la aplicación no responde. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** `ip`: interfaces, direcciones, rutas y vecinos; `ss`: sockets locales; `conntrack`: flujos que atraviesan o se traducen; `nft`: reglas de filtrado; `ethtool`: estado y estadísticas del enlace; `tcpdump`: qué se ve realmente en el cable.
+
+    **Nivel 2.** `ip route get` muestra la decisión efectiva para ese destino: la ruta elegida, el siguiente salto, la interfaz de salida y la dirección de origen.
+
+    **Nivel 3.** Se bloquea el tráfico dirigido al propio router (salvo conexiones establecidas y servicios permitidos); el tráfico que lo atraviesa depende de la cadena `forward`.
+
+    **Caso de diagnóstico.** Síntoma: la aplicación no responde. Mecanismo: servicio o filtrado, no conectividad. Herramientas: `ss -tln`, reglas de `nft`, `tcpdump`. Evidencia: el puerto no escucha o una regla lo descarta. Conclusión: servicio detenido o regla de filtrado.
 
 ## Estado final
 

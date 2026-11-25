@@ -7,7 +7,9 @@ description: "Un esquema común para razonar desde el síntoma hasta la causa en
 
 # MÉTODO DE DIAGNÓSTICO
 
-Los laboratorios enseñan a configurar y a observar. El gran diferenciador existe en el método que sea desarrollado de manera individual y  propone **cómo razonar** cuando algo no funciona, se pueden seguir cadenas de trabajo que ayuden a identificar, determinar y resolver, en el set anterior se manejo una metodología que se compre del siguiente modo: 
+Configurar una red permite construir su funcionamiento; diagnosticarla permite comprender qué ocurre cuando ese funcionamiento cambia o falla. Por eso, además de aprender comandos y herramientas, es necesario desarrollar un método de investigación que permita formular hipótesis, obtener evidencias, interpretar resultados y determinar la causa de una incidencia.
+
+Este método se aplica progresivamente en los laboratorios y proporciona una base para abordar problemas de red de manera ordenada. Se resume en cinco pasos:
 
 ## El esquema en cinco pasos
 

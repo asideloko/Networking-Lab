@@ -7,7 +7,7 @@ description: "Laboratorio 04 de NETWORKING Lab — Direccionamiento IP y Subrede
 
 # DIRECCIONAMIENTO IP Y SUBREDES
 
-<p class="tema-meta"><span>16 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>21 secciones</span><span>1 diagrama</span><span>4 tablas</span></p>
 
 ## Un concepto nuevo
 
@@ -21,6 +21,20 @@ Este laboratorio calcula las subredes con VLSM a partir de `10.0.0.0/24`, las as
 
 !!! warning "Subred IP no es lo mismo que VLAN"
     Una **subred IP** es una división lógica de **capa 3**; una **VLAN** es una división lógica de **capa 2** (dominio de broadcast). Suelen asociarse una VLAN con una subred IP, pero no son conceptos equivalentes. En este laboratorio solo dividimos el direccionamiento (capa 3): todos los equipos siguen conectados al **mismo bridge**, es decir, al mismo dominio de broadcast. Reducir los dominios de broadcast exigirá VLAN (laboratorio 05).
+
+## Objetivos de aprendizaje
+
+Al terminar este laboratorio deberías poder:
+
+- calcular subredes con VLSM: ordenar los requerimientos de mayor a menor, elegir el prefijo y alinear los bloques sin solapamientos;
+- explicar con la operación AND cómo un equipo decide si un destino es local o debe ir al *gateway*;
+- distinguir subred IP (capa 3) de VLAN (capa 2) y explicar por qué aquí el dominio de broadcast sigue siendo uno;
+- verificar el diseño con `ip route get`, `ip neigh` y capturas.
+
+### Conocimientos previos y relación con la práctica anterior
+
+- **Conocimientos previos:** Direccionamiento IPv4: lo necesario (dirección, máscara, prefijo, red, broadcast y hosts utilizables) se resume en «Fundamento necesario». Conceptos de los laboratorios 01 a 03: ARP, bridge y *gateway*.
+- **Relación con la práctica anterior:** *Escenario nuevo con limpieza previa.* El Paso 1 comprueba el estado anterior; el Paso 2 detecta, y elimina con confirmación, los recursos que coinciden con los nombres de esta práctica; el Paso 3 crea su propia topología. Reutiliza conceptos, no recursos.
 
 ## Estado inicial
 
@@ -81,6 +95,16 @@ Los prefijos no se eligen por intuición. Para cada subred:
 La decisión de red local se obtiene con una operación AND bit a bit entre IP y máscara: `1 AND 1 = 1`; cualquier otro par produce `0`. Por ejemplo, `10.0.0.18 AND 255.255.255.248 = 10.0.0.16`, por lo que `10.0.0.18/29` pertenece a `10.0.0.16/29`. Si el destino AND máscara produce otra red, el host no hace ARP por el destino: consulta la tabla de rutas y resuelve por ARP la MAC del siguiente salto (normalmente el gateway).
 
 Antes de configurar, valida cada subred con una calculadora CIDR o con Python; después confirma en Linux con `ip route get DESTINO`, `ip route show table main` y `ip neigh show`. La calculadora verifica el cálculo, pero no sustituye el razonamiento sobre gateway y rutas.
+
+## Fundamento necesario
+
+Antes de calcular subredes conviene fijar cinco ideas:
+
+- Una **dirección IPv4** son 32 bits escritos como cuatro octetos, por ejemplo `10.0.0.18`.
+- La **máscara** (`255.255.255.248`) o el **prefijo CIDR** (`/29`) indica cuántos bits identifican la red; los restantes identifican al host. En `/29` hay 29 bits de red y 3 de host.
+- Con `h` bits de host, la subred tiene `2^h` direcciones. La primera es la **dirección de red** y la última la de **broadcast**, así que quedan `2^h − 2` utilizables: en un `/29` hay 8 direcciones y 6 utilizables.
+- Para decidir si un destino es local, el equipo aplica la máscara a la dirección (AND bit a bit) y compara con sus redes conectadas: si coincide, resuelve su MAC por ARP; si no, envía el paquete al *gateway*.
+- **VLSM** no es otra tecnología: consiste en repartir un bloque con prefijos de distinto tamaño según las necesidades de cada grupo.
 
 ## Topología
 
@@ -659,9 +683,47 @@ El primer destino puede ser local según la máscara configurada; el segundo pue
 
 **Evidencia:** cálculo binario de AND, tabla de subredes, `ip route get` antes/después y explicación de qué IP se resuelve por ARP (destino local o siguiente salto).
 
+## Conceptos clave
+
+| Concepto | Aplicación en el laboratorio |
+|----------|------------------------------|
+| Prefijo y máscara | Indican cuántos bits identifican la red |
+| VLSM | Reparto de `10.0.0.0/24` en bloques de distinto tamaño, de mayor a menor |
+| Operación AND | Decide si un destino es local o debe ir al *gateway* |
+| Subred frente a VLAN | La subred es capa 3; aquí el dominio de broadcast sigue siendo único |
+| Gateway | El router tiene una dirección por subred sobre su único enlace al switch |
+| Solapamiento | Se detecta comprobando los rangos de cada bloque |
+
 ## Análisis técnico y decisiones
 
 El host aplica la máscara a la dirección destino y se compara el prefijo resultante con sus redes conectadas. Si el destino pertenece a una red local, resuelve su MAC; de lo contrario, utiliza la ruta seleccionada, normalmente el gateway. Una máscara más corta puede hacer que el cliente considere locales direcciones que el resto de la red considera remotas, provocando ARP sin respuesta y rutas asimétricas. Una subred contiene direcciones de red, broadcast y direcciones utilizables; el tamaño del prefijo determina cuántas hay disponibles. VLSM permite ajustar el tamaño de cada segmento, pero requiere inventario y planificación de crecimiento. El direccionamiento de tamaño fijo simplifica la uniformidad, a costa de desperdiciar espacio o limitar capacidad.
+
+## Qué no demuestra esta práctica
+
+- La división en subredes IP no separa los dominios de broadcast: todos los equipos siguen en el mismo bridge.
+- El segmento `/30` no es un enlace de tránsito de capa 3: es direccionamiento de gestión sobre el mismo segmento de capa 2.
+- El único enlace entre router y switch es un puerto de acceso sin etiquetas, no un trunk con VLAN y subinterfaces (eso se estudia en el laboratorio 05).
+
+## Comprensión y reflexión
+
+Responde con tus propias palabras antes de abrir las respuestas orientativas. Un resultado correcto en la terminal no demuestra por sí solo que se haya comprendido el mecanismo.
+
+**Nivel 1 — Reconocimiento.** ¿Cuántas direcciones utilizables tiene un `/28` y un `/29`? ¿Cuáles son la dirección de red y la de broadcast de `10.0.0.16/29`?
+
+**Nivel 2 — Interpretación.** Con la operación AND, explica por qué `10.0.0.18/29` pertenece a `10.0.0.16/29` y qué ocurre si un cliente configura una máscara más corta de la que corresponde.
+
+**Nivel 3 — Razonamiento.** Ventas crece de 14 a 20 equipos. ¿Qué prefijo necesita, por qué no cabe en el lugar actual del plan y cómo reorganizarías el reparto?
+
+**Caso de diagnóstico.** Un equipo de IT no alcanza a uno de Ventas aunque ambos tienen *gateway* configurado. Aplica el [método de diagnóstico](../../04-REFERENCIA/diagnostico.md): síntoma, capa o mecanismo, herramientas, evidencia y conclusión técnica.
+
+??? success "Respuestas orientativas"
+    **Nivel 1.** `/28`: 16 direcciones, 14 utilizables. `/29`: 8 direcciones, 6 utilizables. En `10.0.0.16/29` la red es `10.0.0.16` y el broadcast `10.0.0.23`.
+
+    **Nivel 2.** `10.0.0.18 AND 255.255.255.248 = 10.0.0.16`. Con una máscara más corta el cliente considera locales direcciones que no lo son: envía ARP sin respuesta en lugar de usar el *gateway*, y pueden aparecer rutas asimétricas.
+
+    **Nivel 3.** Un `/27` ofrece 30 utilizables. Empezando en `10.0.0.0` abarcaría `.0` a `.31` y solaparía con IT y con el `/30`; hay que recalcular poniendo primero el bloque mayor y desplazando los demás.
+
+    **Caso de diagnóstico.** Síntoma: sin comunicación entre subredes. Mecanismo: decisión local o *gateway*. Herramientas: `ip addr`, `ip route get`, `ip neigh`, `tcpdump arp`. Evidencia: ARP sin respuesta o máscara distinta de la prevista. Conclusión: corregir la máscara o el *gateway* del equipo.
 
 ## Estado final
 
