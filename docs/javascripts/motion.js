@@ -2,7 +2,7 @@
 /* ==========================================================================
    NETWORKING LAB — CONTROL RESPONSIVE DE ANIMACIONES
    Compatible con navegación instantánea de Zensical.
-   Utiliza IntersectionObserver; no depende de eventos hover.
+   IntersectionObserver + accesibilidad + reinicialización dinámica.
    ========================================================================== */
 
 (function () {
@@ -28,10 +28,17 @@
   var observer = null;
   var contador = 0;
 
+  var consultaMovimiento = window.matchMedia
+    ? window.matchMedia("(prefers-reduced-motion: reduce)")
+    : null;
+
   function movimientoReducido() {
-    return (
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    return consultaMovimiento && consultaMovimiento.matches;
+  }
+
+  function obtenerElementos() {
+    return Array.prototype.slice.call(
+      document.querySelectorAll(SELECTOR)
     );
   }
 
@@ -39,14 +46,28 @@
     elementos.forEach(function (elemento) {
       elemento.classList.remove("sx-reveal");
       elemento.classList.add("sx-visible");
+
+      elemento.removeAttribute("data-sx-motion-init");
+      elemento.style.removeProperty("--sx-reveal-delay");
     });
 
     document.documentElement.classList.remove("sx-motion-ready");
   }
 
+  function destruirObservador() {
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
+  }
+
   function crearObservador() {
-    if (observer || !("IntersectionObserver" in window)) {
-      return;
+    if (observer) {
+      return true;
+    }
+
+    if (!("IntersectionObserver" in window)) {
+      return false;
     }
 
     observer = new IntersectionObserver(
@@ -66,32 +87,24 @@
         threshold: 0.08
       }
     );
+
+    return true;
   }
 
   function inicializarMovimiento() {
-    var elementos = Array.prototype.slice.call(
-      document.querySelectorAll(SELECTOR)
-    );
+    var elementos = obtenerElementos();
 
     if (!elementos.length) {
       return;
     }
 
-    /* Nunca ocultar contenido si el usuario solicita menos movimiento. */
     if (movimientoReducido()) {
+      destruirObservador();
       mostrarSinAnimacion(elementos);
       return;
     }
 
-    /* Fallback: contenido visible si el navegador no soporta la API. */
-    if (!("IntersectionObserver" in window)) {
-      mostrarSinAnimacion(elementos);
-      return;
-    }
-
-    crearObservador();
-
-    if (!observer) {
+    if (!crearObservador()) {
       mostrarSinAnimacion(elementos);
       return;
     }
@@ -99,29 +112,44 @@
     document.documentElement.classList.add("sx-motion-ready");
 
     elementos.forEach(function (elemento) {
-      if (elemento.dataset.sxMotionInit === "true") {
+      if (elemento.getAttribute("data-sx-motion-init") === "true") {
         return;
       }
 
-      elemento.dataset.sxMotionInit = "true";
+      elemento.setAttribute("data-sx-motion-init", "true");
+
+      elemento.classList.remove("sx-visible");
       elemento.classList.add("sx-reveal");
 
-      /* Desfase corto para evitar que todos los bloques aparezcan juntos. */
       elemento.style.setProperty(
         "--sx-reveal-delay",
         (contador % 5) * 65 + "ms"
       );
 
       contador++;
+
       observer.observe(elemento);
     });
   }
 
+  function actualizarPreferencia() {
+    if (movimientoReducido()) {
+      destruirObservador();
+      mostrarSinAnimacion(obtenerElementos());
+    } else {
+      inicializarMovimiento();
+    }
+  }
+
   /*
-   * Zensical utiliza document$ para notificar los cambios de documento
-   * cuando navigation.instant está habilitado.
+   * Navegación instantánea de Zensical.
+   * Cada cambio de documento vuelve a examinar los elementos nuevos.
    */
-  if (typeof document$ !== "undefined") {
+  if (
+    typeof document$ !== "undefined" &&
+    document$ &&
+    typeof document$.subscribe === "function"
+  ) {
     document$.subscribe(function () {
       inicializarMovimiento();
     });
@@ -135,36 +163,21 @@
     inicializarMovimiento();
   }
 
-  /* Si cambia la preferencia de accesibilidad, actualizar la presentación. */
-  if (window.matchMedia) {
-    var consultaMovimiento = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    );
-
-    var actualizarPreferencia = function () {
-      if (consultaMovimiento.matches) {
-        if (observer) {
-          observer.disconnect();
-          observer = null;
-        }
-
-        mostrarSinAnimacion(
-          Array.prototype.slice.call(
-            document.querySelectorAll(".sx-reveal")
-          )
-        );
-      } else {
-        inicializarMovimiento();
-      }
-    };
-
-    if (consultaMovimiento.addEventListener) {
+  /*
+   * Detectar cambios en la preferencia de accesibilidad
+   * sin dejar elementos bloqueados u ocultos.
+   */
+  if (consultaMovimiento) {
+    if (typeof consultaMovimiento.addEventListener === "function") {
       consultaMovimiento.addEventListener(
         "change",
         actualizarPreferencia
       );
-    } else if (consultaMovimiento.addListener) {
-      consultaMovimiento.addListener(actualizarPreferencia);
+    } else if (typeof consultaMovimiento.addListener === "function") {
+      consultaMovimiento.addListener(
+        actualizarPreferencia
+      );
     }
   }
+
 })();
