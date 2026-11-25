@@ -7,14 +7,9 @@
 site_name        = "NETWORKING LAB"
 site_description = "Laboratorios de explicación y simulación de redes, complementarios del libro NETWORKING · Guillermo Castillo · SecOpsMX"
 site_author      = "Guillermo Castillo · SecOpsMX"
-
 docs_dir = "docs"
 site_dir = "site"
 use_directory_urls = false
-
-# =============================================================================
-# RECURSOS PERSONALIZADOS
-# =============================================================================
 
 extra_css = [
   "stylesheets/extra.css",
@@ -32,10 +27,6 @@ extra_javascript = [
 ]
 
 dev_addr = "localhost:8000"
-
-# =============================================================================
-# NAVEGACIÓN
-# =============================================================================
 
 nav = [
   { "INICIO" = "index.md" },
@@ -76,10 +67,6 @@ nav = [
   ] },
 ]
 
-# =============================================================================
-# INFORMACIÓN Y ENLACES SOCIALES
-# =============================================================================
-
 [project.extra]
 social = [
   { icon = "fontawesome/solid/book", link = "https://leanpub.com/networking-fundamentos", name = "Libro NETWORKING" },
@@ -95,7 +82,7 @@ language   = "es"
 logo       = "assets/logo.png"
 favicon    = "assets/favicon.png"
 custom_dir = "overrides"
-font       = false
+font = false
 
 features = [
   "announce.dismiss",
@@ -124,19 +111,19 @@ features = [
 # Selector de tema de tres posiciones: automático (según el sistema) · claro · oscuro
 
 [[project.theme.palette]]
-media = "(prefers-color-scheme)"
+media  = "(prefers-color-scheme)"
 toggle.icon = "material/brightness-auto"
 toggle.name = "Tema automático (sistema)"
 
 [[project.theme.palette]]
 scheme = "default"
-media = "(prefers-color-scheme: light)"
+media  = "(prefers-color-scheme: light)"
 toggle.icon = "material/brightness-7"
 toggle.name = "Tema claro"
 
 [[project.theme.palette]]
 scheme = "slate"
-media = "(prefers-color-scheme: dark)"
+media  = "(prefers-color-scheme: dark)"
 toggle.icon = "material/brightness-4"
 toggle.name = "Tema oscuro"
 
@@ -164,7 +151,6 @@ pymdownx.tilde = {}
 pymdownx.mark  = {}
 pymdownx.keys  = {}
 pymdownx.arithmatex = { generic = true }
-
 pymdownx.emoji.emoji_generator = "zensical.extensions.emoji.to_svg"
 pymdownx.emoji.emoji_index     = "zensical.extensions.emoji.twemoji"
 
