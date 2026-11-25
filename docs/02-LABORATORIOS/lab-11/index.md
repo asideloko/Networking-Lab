@@ -7,11 +7,17 @@ description: "Laboratorio 11 de NETWORKING Lab — Arquitectura de Red Empresari
 
 # ARQUITECTURA DE RED EMPRESARIAL
 
-<p class="tema-meta"><span>14 secciones</span><span>4 diagramas</span><span>9 tablas</span></p>
+<p class="tema-meta"><span>15 secciones</span><span>4 diagramas</span><span>9 tablas</span></p>
 
-## Contexto empresarial
+## Diseñar el conjunto
 
-La empresa **Networking SecOps** ha implementado su infraestructura WAN (Laboratorio 10). Ahora necesita diseñar la arquitectura de red completa para su sede central, con el modelo jerárquico **Core - Distribución - Acceso**, redundancia en el núcleo y una DMZ.
+La infraestructura WAN ya está operativa (laboratorio 10). Ahora Networking SecOps necesita diseñar la arquitectura completa de su sede central con el modelo jerárquico **Core – Distribución – Acceso**, redundancia en el núcleo y una DMZ. En este laboratorio construirás esa arquitectura y comprobarás qué ocurre cuando falla un componente.
+
+## Introducción técnica
+
+Una red empresarial no es una suma de equipos sino un diseño. El modelo jerárquico **Core – Distribución – Acceso** reparte las funciones: el núcleo transporta con rendimiento, la distribución agrega y aplica políticas, y el acceso conecta los dispositivos finales. Un firewall perimetral separa el interior, la DMZ e Internet.
+
+Este laboratorio construye esa arquitectura en una sede, con redundancia en el núcleo y una DMZ.
 
 ### Función de cada capa
 
@@ -24,13 +30,13 @@ La empresa **Networking SecOps** ha implementado su infraestructura WAN (Laborat
 El **firewall perimetral** controla el tráfico entre el interior, la DMZ e Internet. No basta con dibujar los tres niveles: cada uno tiene una función distinta.
 
 !!! note "Relación con el laboratorio 05"
-    En el laboratorio 05 estudiamos **de forma aislada** los mecanismos de segmentación (VLAN, trunk 802.1Q, router-on-a-stick). Aquí esos mismos mecanismos se incorporan **dentro de una arquitectura empresarial jerárquica**. No son el mismo escenario: cambian los dispositivos, los nombres y el direccionamiento (aquí `10.0.10–30.0/24` y enlaces `10.255.x.x`).
+    En el laboratorio 05 se estudian **de forma aislada** los mecanismos de segmentación (VLAN, trunk 802.1Q, router-on-a-stick). Aquí esos mismos mecanismos se incorporan **dentro de una arquitectura empresarial jerárquica**. No son el mismo escenario: cambian los dispositivos, los nombres y el direccionamiento (aquí `10.0.10–30.0/24` y enlaces `10.255.x.x`).
 
 !!! note "Alcance"
-    El escenario base construye **una** capa de acceso completa (`Access1`, con las tres VLAN) y usa **rutas estáticas con métrica**. El **Ejercicio 1** añade un segundo gateway de distribución con VRRP; el Laboratorio 15 vuelve a integrar VRRP junto con OSPF en una topología más amplia.
+    El escenario base construye **una** capa de acceso completa (`Access1`, con las tres VLAN) y usa **rutas estáticas con métrica**. El **Prueba 1** añade un segundo gateway de distribución con VRRP; el Laboratorio 15 vuelve a integrar VRRP junto con OSPF en una topología más amplia.
 
 !!! warning "Tener dos Core y dos Distribution no demuestra alta disponibilidad"
-    La redundancia **física** solo se convierte en **disponibilidad** si existen mecanismos que (1) eviten bucles, (2) detecten el fallo y (3) muevan el tráfico (y los *gateways*) al camino alternativo. En esta práctica: el **núcleo** tolera la caída de `Core1` (mediante rutas de respaldo y fallo **local**), pero las VLAN dependen de **un único *gateway***, `Dist1`, porque `Access1` solo se conecta a él. Si `Dist1` falla, las VLAN pierden conectividad aunque `Dist2` esté sana. Resolverlo requiere un segundo trunk, un protocolo contra bucles de capa 2 (STP/[RSTP](https://1.ieee802.org/spanning-tree/)) y redundancia de *gateway* (VRRP): ejercicios y Laboratorio 15.
+    La redundancia **física** solo se convierte en **disponibilidad** si existen mecanismos que (1) eviten bucles, (2) detecten el fallo y (3) muevan el tráfico (y los *gateways*) al camino alternativo. En esta práctica: el **núcleo** tolera la caída de `Core1` (mediante rutas de respaldo y fallo **local**), pero las VLAN dependen de **un único *gateway***, `Dist1`, porque `Access1` solo se conecta a él. Si `Dist1` falla, las VLAN pierden conectividad aunque `Dist2` esté sana. Resolverlo requiere un segundo trunk, un protocolo contra bucles de capa 2 (STP/[RSTP](https://1.ieee802.org/spanning-tree/)) y redundancia de *gateway* (VRRP): pruebas de esta práctica y Laboratorio 15.
 
 ### Las capas son funciones, no niveles físicos
 
@@ -59,21 +65,14 @@ graph TB
     C2 --- FW
 ```
 
-## Problema inicial
+## Estado inicial
 
--   La sede central todavía no tiene una arquitectura: hasta ahora se construyeron mecanismos aislados (VLAN, rutas, firewall, VPN).
--   Los usuarios de Ventas, IT y Administración deben quedar **segmentados en VLAN** y salir a Internet por un único punto de control.
--   Los servidores públicos deben quedar **aislados en una DMZ** detrás del firewall.
--   El núcleo debe seguir funcionando si cae un equipo, y la empresa debe saber **qué parte de esa promesa se cumple de verdad** y qué parte no.
+- Los mecanismos de los laboratorios anteriores existen por separado.
+- Falta una arquitectura que los organice: capas con funciones distintas, un perímetro y un núcleo sin punto único de fallo.
 
-## Objetivos del laboratorio
+## Resultado que se construirá
 
-1.  Distinguir las funciones de **Core, Distribución y Acceso** y asignar cada una a un equipo.
-2.  Construir la arquitectura con *namespaces*: enlaces `/30`, firewall, DMZ y capa de acceso con VLAN.
-3.  Configurar **rutas estáticas con métrica** (camino principal y de respaldo) y comprobar la conmutación cuando cae `Core1`.
-4.  Distinguir un **fallo local** de un **fallo remoto** y medir la convergencia.
-5.  Identificar los **puntos únicos de fallo** (`Dist1`, `Access1`, el firewall) y explicar qué mecanismo (rutas alternativas, STP/RSTP o VRRP) resuelve cada uno.
-6.  Aplicar una **política de firewall por zonas** (interior, DMZ e Internet).
+Queda una sede con dos routers de núcleo (`Core1`, `Core2`), dos de distribución (`Dist1`, `Dist2`), un switch de acceso (`Access1`) con tres VLAN, un firewall y una DMZ con servidores públicos. Se observan el camino de cada tipo de tráfico, la conmutación del núcleo cuando cae `Core1`, el comportamiento de las VLAN frente a un único *gateway* y, en variaciones, VRRP y STP.
 
 ## Topología
 
@@ -215,7 +214,7 @@ sudo ip addr add 192.168.100.2/24 dev veth-wan-fw
 sudo ip link set veth-wan-fw up
 sudo ip netns exec Firewall ip route add default via 192.168.100.2
 
-# El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)
+# El host reenvía y traduce hacia la red real (cambia eth0 por tu interfaz de salida)
 if [ ! -e /tmp/lab11-ip_forward.orig ]; then
   sudo sysctl -n net.ipv4.ip_forward | sudo tee /tmp/lab11-ip_forward.orig >/dev/null
 fi
@@ -252,7 +251,7 @@ done
 ```
 
 !!! danger "Cambio en el host en el Paso 3"
-    Dentro del bloque anterior, **estas líneas actúan sobre el equipo real, no sobre un namespace**: `ip addr add 192.168.100.2/24 dev veth-wan-fw`, `sysctl -w net.ipv4.ip_forward=1` y la regla `iptables -t nat … MASQUERADE`. El bloque conserva el valor original de `ip_forward` y registra si añadió la regla NAT. Los cambios afectan al host hasta ejecutar «Revertir los cambios del host».
+    Dentro del bloque anterior, **estas líneas actúan sobre el equipo real, no sobre un namespace**: `ip addr add 192.168.100.2/24 dev veth-wan-fw`, `sysctl -w net.ipv4.ip_forward=1` y la regla `iptables -t nat … MASQUERADE`. El bloque conserva el valor original de `ip_forward` y se registra si añadió la regla NAT. Los cambios afectan al host hasta ejecutar «Revertir los cambios del host».
 
 ### Paso 4: Rutas estáticas con métrica (camino principal y de respaldo)
 
@@ -353,7 +352,7 @@ for h in "ventas 10 veth-ven veth-a1ven" "it 20 veth-it veth-a1it" "admin 30 vet
 done
 ```
 
-**Quién es el *gateway* de cada VLAN.** En el escenario base, `Dist1` mediante las subinterfaces `veth-d1a1.10/.20/.30` (direcciones `.1`); `Dist2` **no** es gateway de ninguna VLAN. El Ejercicio 1 convierte `Dist2` en segundo gateway mediante VIP VRRP. Si no se ejecuta ese ejercicio, la caída de `Dist1` deja las VLAN sin gateway.
+**Quién es el *gateway* de cada VLAN.** En el escenario base, `Dist1` mediante las subinterfaces `veth-d1a1.10/.20/.30` (direcciones `.1`); `Dist2` **no** es gateway de ninguna VLAN. El Prueba 1 convierte `Dist2` en segundo gateway mediante VIP VRRP. Si no se ejecuta esa prueba, la caída de `Dist1` deja las VLAN sin gateway.
 
 ### Paso 7: Verificar
 
@@ -389,7 +388,7 @@ Una arquitectura es tan disponible como su **punto único de fallo más débil**
 |-----------|-----------------------|-------------------------|-------------------|
 | **Rutas estáticas con métrica** | Camino de respaldo ante fallo **local** | Fallos remotos | Laboratorios 06, 10, 11 |
 | **OSPF** | Aprender topología y **reconverger** ante fallos | Qué *gateway* usan los hosts | Laboratorio 15 |
-| **VRRP** | Que los hosts conserven un **gateway** (IP virtual) si falla un router | Redundancia del gateway de VLAN | Ejercicio 1 de este laboratorio; integración en Laboratorio 15 |
+| **VRRP** | Que los hosts conserven un **gateway** (IP virtual) si falla un router | Redundancia del gateway de VLAN | Prueba 1 de este laboratorio; integración en Laboratorio 15 |
 
 ### STP/RSTP: redundancia física sin bucles
 
@@ -402,7 +401,7 @@ graph LR
     SB --- H[Host]
 ```
 
-(Esquema conceptual; el Ejercicio 2 permite observarlo con `bridge link show`.)
+(Esquema conceptual; el Prueba 2 permite observarlo con `bridge link show`.)
 
 ### Ejemplo de crecimiento: Access2 y Access3
 
@@ -471,7 +470,7 @@ done
 
 ### Medir la convergencia
 
-«Funciona tras el fallo» no basta: importa **cuánto tiempo** se interrumpe el servicio. Lanza un ping continuo con marcas de tiempo, provoca el fallo de Core1 y cuenta los paquetes perdidos:
+«Funciona tras el fallo» no basta: importa **cuánto tiempo** se interrumpe el servicio. Se lanza un ping continuo con marcas de tiempo, se provoca el fallo de Core1 y se cuentan los paquetes perdidos:
 
 ```bash
 sudo ip netns exec ventas ping -D -i 0.2 -c 100 10.0.99.10 > /tmp/lab11-conv.txt &
@@ -481,7 +480,7 @@ wait
 tail -3 /tmp/lab11-conv.txt          # paquetes enviados, recibidos y % de pérdida
 ```
 
-Cada paquete perdido equivale a unos 0,2 s sin servicio. Con rutas estáticas y fallo local, la conmutación al camino de respaldo es casi inmediata; con un fallo **remoto** (que el router no detecta en su propia interfaz) no habría conmutación y la pérdida sería total hasta intervenir. Esa diferencia es la razón de usar OSPF (laboratorio 15) y VRRP (Ejercicio 1 de este laboratorio, con integración en Lab15). Restaura Core1 con el bloque de recuperación anterior y vuelve a medir para confirmar que la red recupera su estado original.
+Cada paquete perdido equivale a unos 0,2 s sin servicio. Con rutas estáticas y fallo local, la conmutación al camino de respaldo es casi inmediata; con un fallo **remoto** (que el router no detecta en su propia interfaz) no habría conmutación y la pérdida sería total hasta intervenir. Esa diferencia es la razón de usar OSPF (laboratorio 15) y VRRP (Prueba 1 de este laboratorio, con integración en Lab15). Se restaura Core1 con el bloque de recuperación anterior y vuelve a medir para confirmar que la red recupera su estado original.
 
 ### Experimento: fallo remoto con la interfaz local todavía activa
 
@@ -512,7 +511,7 @@ sudo ip netns exec Core1 ip route get 10.0.99.10
 sudo ip netns exec Core1 ip -br link show veth-c1fw
 ```
 
-**Resultado esperado:** el ping deja de recibir respuestas, pero `ip route get` sigue seleccionando el siguiente salto por `veth-c1fw` y la interfaz permanece `UP`. La ruta estática no detecta que el firewall remoto está descartando paquetes. Retira la regla exacta y confirma que el ping se recupera:
+**Resultado esperado:** el ping deja de recibir respuestas, pero `ip route get` sigue seleccionando el siguiente salto por `veth-c1fw` y la interfaz permanece `UP`. La ruta estática no detecta que el firewall remoto está descartando paquetes. Se retira la regla exacta y confirma que el ping se recupera:
 
 ```bash
 sudo ip netns exec Firewall iptables -D FORWARD -i veth-fwc1 -o br-dmz -s 10.0.0.0/18 -d 10.0.99.0/24 -p icmp --icmp-type echo-request -j DROP
@@ -520,7 +519,7 @@ rm -f /tmp/lab11/remote-drop.added
 sudo ip netns exec ventas ping -c 3 -W 1 10.0.99.10
 ```
 
-No confundas este caso con una caída local de interfaz: aquí no hay evento de carrier que retire la ruta. Registra el tiempo y la pérdida en ambos experimentos.
+No debe confundirse este caso con una caída local de interfaz: aquí no hay evento de carrier que retire la ruta. Se registra el tiempo y la pérdida en ambos experimentos.
 
 ## Segmentación VLAN
 
@@ -532,15 +531,15 @@ No confundas este caso con una caída local de interfaz: aquí no hay evento de 
 
 La DMZ (`10.0.99.0/24`) **no** es una VLAN en este laboratorio: es un segmento propio del firewall.
 
-## Ejercicios
+## Pruebas de comportamiento
 
-### Ejercicio 1: Segundo gateway de distribución con VRRP
+### Prueba 1: Segundo gateway de distribución con VRRP
 
-Este ejercicio convierte a `Dist2` en un segundo gateway de las tres VLAN. Requiere `keepalived`; se ejecuta dentro de namespaces, pero la instalación del paquete modifica el inventario de software del host. Las direcciones físicas de los routers serán `.2` y `.3`; la dirección `.1` quedará reservada para la IP virtual (VIP), que no debe configurarse estáticamente en ninguno de los dos.
+Esta prueba convierte a `Dist2` en un segundo gateway de las tres VLAN. Requiere `keepalived`; se ejecuta dentro de namespaces, pero la instalación del paquete modifica el inventario de software del host. Las direcciones físicas de los routers serán `.2` y `.3`; la dirección `.1` quedará reservada para la IP virtual (VIP), que no debe configurarse estáticamente en ninguno de los dos.
 
 ```bash
 sudo apt-get install -y keepalived
-if [ -e /tmp/lab11 ]; then echo "/tmp/lab11 ya existe; ejecuta la reversión antes de repetir el ejercicio."; exit 1; fi
+if [ -e /tmp/lab11 ]; then echo "/tmp/lab11 ya existe; ejecuta la reversión antes de repetir la prueba."; exit 1; fi
 mkdir -p /tmp/lab11
 touch /tmp/lab11/.networking-lab-lab-11
 
@@ -674,16 +673,16 @@ sudo ip netns exec Dist1 ip -br addr show veth-d1a1.10
 sudo ip netns exec Dist2 ip -br addr show veth-d2a1.10
 sudo ip netns exec ventas ping -c 3 10.0.10.1
 
-# 4. Simular caída de Dist1: detener solo el keepalived arrancado por este ejercicio.
+# 4. Simular caída de Dist1: detener solo el keepalived arrancado por esta prueba.
 sudo kill -TERM "$(cat /tmp/lab11/dist1.pid)"
 sleep 4
 sudo ip netns exec Dist2 ip -br addr show veth-d2a1.10
 sudo ip netns exec ventas ping -c 3 10.0.10.1
 ```
 
-**Resultado esperado:** la VIP `10.0.10.1` (y las otras dos VIP) aparece primero en Dist1 y, al detener su proceso keepalived, pasa a Dist2. Los hosts no cambian su ruta por defecto. Esto prueba redundancia de gateway en las VLAN; no prueba continuidad de WAN ni de DHCP/DNS. Para volver al estado base, ejecuta el bloque de reversión del ejercicio antes de seguir.
+**Resultado esperado:** la VIP `10.0.10.1` (y las otras dos VIP) aparece primero en Dist1 y, al detener su proceso keepalived, pasa a Dist2. Los hosts no cambian su ruta por defecto. Esto prueba redundancia de gateway en las VLAN; no prueba continuidad de WAN ni de DHCP/DNS. Para volver al estado base, ejecuta el bloque de reversión dla prueba antes de seguir.
 
-**Reversión del ejercicio 1:**
+**Reversión del prueba 1:**
 
 ```bash
 for pf in /tmp/lab11/dist1.pid /tmp/lab11/dist2.pid /tmp/lab11/dist1.vrrp.pid /tmp/lab11/dist2.vrrp.pid; do
@@ -717,13 +716,13 @@ sudo ip netns exec Access1 ip link del veth-a1d2 2>/dev/null || true
 if [ -f /tmp/lab11/.networking-lab-lab-11 ]; then sudo rm -rf /tmp/lab11; fi
 ```
 
-### Ejercicio 2: Implementar STP en enlaces redundantes de acceso
+### Prueba 2: STP en enlaces redundantes de acceso
 
-Linux bridge implementa STP clásico (`stp_state 1`); no implementa RSTP de forma nativa mediante `iproute2`. RSTP se estudia como evolución de STP y requiere un componente compatible específico. El ejercicio crea dos switches con dos enlaces paralelos: sin STP se forma un bucle de capa 2; con STP, uno de los puertos queda bloqueado.
+Linux bridge implementa STP clásico (`stp_state 1`); no implementa RSTP de forma nativa mediante `iproute2`. RSTP se estudia como evolución de STP y requiere un componente compatible específico. La prueba crea dos switches con dos enlaces paralelos: sin STP se forma un bucle de capa 2; con STP, uno de los puertos queda bloqueado.
 
 ```bash
 if sudo ip netns list | awk '{print $1}' | grep -Fxq Access2; then
-  echo "Access2 ya existe; ejecuta la reversión del ejercicio STP antes de repetirlo."
+  echo "Access2 ya existe; ejecuta la reversión dla prueba STP antes de repetirlo."
   exit 1
 fi
 sudo ip netns add Access2
@@ -753,9 +752,9 @@ sudo ip netns exec Access1 bridge link show
 sudo ip netns exec Access2 bridge link show
 ```
 
-**Resultado esperado:** los bridges eligen un puerto raíz y uno de los enlaces paralelos queda en estado `blocking` o `disabled` para evitar el bucle. Si tu kernel no muestra el estado, consulta `bridge -d link show` y los registros del kernel. No confundas STP clásico con RSTP.
+**Resultado esperado:** los bridges eligen un puerto raíz y uno de los enlaces paralelos queda en estado `blocking` o `disabled` para evitar el bucle. Si el kernel no muestra el estado, se consulta `bridge -d link show` y los registros del kernel. No debe confundirse STP clásico con RSTP.
 
-**Reversión del ejercicio 2:**
+**Reversión del prueba 2:**
 
 ```bash
 for n in 1 2; do sudo ip netns exec Access1 ip link del veth-a1a2-$n 2>/dev/null || true; done
@@ -768,9 +767,9 @@ fi
 
 Esto elimina los dos enlaces redundantes, devuelve `Access1` al estado STP inicial y elimina únicamente el namespace `Access2` marcado por el laboratorio.
 
-### Ejercicio 3: Replicar el acceso
+### Prueba 3: Réplica de la capa de acceso
 
-Crea otro switch siguiendo el Paso 6 y comprueba que los equipos de la misma VLAN en distintos switches se alcanzan cuando todos los trunks transportan la VLAN. No añadas un segundo enlace redundante sin activar antes STP.
+Se crea otro switch siguiendo el Paso 6 y se comprueba que los equipos de la misma VLAN en distintos switches se alcanzan cuando todos los trunks transportan la VLAN. No debe añadirse un segundo enlace redundante sin activar antes STP.
 
 ## Conceptos clave
 
@@ -785,7 +784,7 @@ Crea otro switch siguiendo el Paso 6 y comprueba que los equipos de la misma VLA
 ## Revertir los cambios del host
 
 ```bash
-# 1. Detener únicamente los procesos keepalived registrados y cuya cmdline apunta a este ejercicio.
+# 1. Detener únicamente los procesos keepalived registrados y cuya cmdline apunta a esta prueba.
 PROC_LEFT=0
 for pf in /tmp/lab11/dist1.pid /tmp/lab11/dist2.pid /tmp/lab11/dist1.vrrp.pid /tmp/lab11/dist2.vrrp.pid; do
   [ -s "$pf" ] || continue
@@ -857,7 +856,7 @@ La alta disponibilidad debe evaluarse por servicio y segmento, no por contar enl
 - STP/RSTP: evita bucles de capa 2 y desbloquea caminos redundantes según la topología/temporizadores.
 - VRRP: ofrece un gateway virtual a los hosts; no repara automáticamente rutas WAN, DHCP, DNS ni servicios dependientes del router.
 
-### Matriz de disponibilidad que debe completar el estudiante
+### Matriz de disponibilidad del escenario
 
 | Componente/servicio | ¿Está redundado en el escenario base? | Dependencia o punto único de fallo | Prueba necesaria |
 |---|---|---|---|
@@ -868,25 +867,18 @@ La alta disponibilidad debe evaluarse por servicio y segmento, no por contar enl
 
 ### Fallo local frente a fallo remoto
 
-Una interfaz `DOWN` puede retirar inmediatamente una ruta conectada; un fallo remoto con portadora activa puede no ser detectado por una ruta estática. Registra hora de inicio, detección, cambio de ruta, pérdida de paquetes y recuperación. Si se incorpora VRRP en una ampliación, comprueba prioridad, anuncios, preemption y tracking; no atribuyas a VRRP una convergencia de routing que pertenece a otro protocolo.
+Una interfaz `DOWN` puede retirar inmediatamente una ruta conectada; un fallo remoto con portadora activa puede no ser detectado por una ruta estática. Se registra hora de inicio, detección, cambio de ruta, pérdida de paquetes y recuperación. Si se incorpora VRRP en una ampliación, se comprueba prioridad, anuncios, preemption y tracking; no atribuyas a VRRP una convergencia de routing que pertenece a otro protocolo.
 
-## Preguntas de reflexión
+## Análisis técnico y decisiones
 
-1.  ¿Qué mecanismo hace que el tráfico siga funcionando cuando cae `Core1`, y por qué ese mismo mecanismo no sirve si cae `Dist1`?
-2.  ¿Qué sucedería si se conecta `Access1` a `Dist2` con otro trunk sin activar STP?
-3.  ¿Qué diferencia hay entre «tener dos equipos» y «tener alta disponibilidad»?
-4.  ¿Qué limitaciones tiene un diseño con un único firewall?
-5.  ¿En qué escenario empresarial se justifica colapsar Core y Distribución en un solo equipo?
-6.  ¿Qué otros mecanismos podrían dar alta disponibilidad al *gateway* de las VLAN?
+La redundancia del núcleo mantiene caminos alternativos entre bloques cuando falla Core1, pero no compensa necesariamente la pérdida de Dist1 si ese equipo concentra los gateways de las VLAN. Añadir un segundo trunk sin STP puede crear un bucle de capa 2, con tormentas broadcast e inestabilidad de tablas MAC. Dos equipos no equivalen a alta disponibilidad: hacen falta caminos independientes, protocolos de elección, sincronización, alimentación, enlaces y pruebas de failover. Un firewall único continúa siendo punto de fallo aunque el núcleo esté duplicado. En sedes pequeñas puede justificarse colapsar Core y Distribución para reducir coste y complejidad, siempre que el tráfico y el crecimiento lo permitan. VRRP/HSRP o gateways distribuidos pueden aportar redundancia al gateway de las VLAN.
 
-## Conclusiones técnicas
+## Estado final
 
-La arquitectura jerárquica proporciona escalabilidad y facilidad de administración, y permite diseñar para la disponibilidad. La redundancia elimina puntos únicos de fallo en el núcleo **si** hay mecanismos que detecten fallos y muevan el tráfico: con rutas estáticas la conmutación es posible pero limitada a fallos de enlaces propios. Las VLAN siguen dependiendo de un único *gateway* (`Dist1`). Los protocolos dinámicos (OSPF), los protocolos contra bucles (STP/RSTP) y de *gateway* (VRRP) completan la solución.
+Queda implementada una arquitectura jerárquica con firewall y DMZ, donde el núcleo tolera la caída de `Core1` mediante rutas de respaldo.
 
-## Preparación para el siguiente laboratorio
+Límites: las VLAN siguen dependiendo de un único *gateway* (`Dist1`) hasta que se añade VRRP; con rutas estáticas la conmutación se limita a fallos de enlaces propios; y los protocolos dinámicos (OSPF), STP/RSTP y VRRP completan la solución. Tener dos routers de cada capa no demuestra por sí solo alta disponibilidad.
 
-Hasta aquí la arquitectura es **tradicional**: una sede con núcleo, distribución, acceso, firewall y DMZ, y un perímetro que separa «dentro» de «fuera». La empresa ahora trabaja de forma **híbrida**, con aplicaciones en la nube y usuarios remotos. En el **Laboratorio 12** la red se extiende hacia la nube y el modelo de confianza cambia: del perímetro al **acceso mínimo por aplicación**.
+## Continuidad técnica
 
----
-
-**¡Laboratorio 11 completado!** Continúa con el **Laboratorio 12**.
+La arquitectura queda como una red tradicional: una sede con núcleo, distribución, acceso, firewall y DMZ, y un perímetro que separa «dentro» de «fuera». La empresa trabaja ahora de forma híbrida, con aplicaciones en la nube y usuarios remotos; en el laboratorio 12 la red se extiende hacia la nube y el modelo de confianza pasa del perímetro al acceso mínimo por aplicación.

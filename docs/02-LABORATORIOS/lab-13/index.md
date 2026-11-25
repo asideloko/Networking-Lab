@@ -7,11 +7,17 @@ description: "Laboratorio 13 de NETWORKING Lab — Monitoreo y Diagnóstico de R
 
 # MONITOREO Y DIAGNÓSTICO DE REDES
 
-<p class="tema-meta"><span>13 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
+<p class="tema-meta"><span>14 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
 
-## Contexto empresarial
+## Mirar la red por dentro
 
-La empresa **Networking SecOps** ha implementado su infraestructura de red completa con arquitectura moderna (Laboratorio 12). Ahora el equipo de operaciones necesita establecer un sistema de monitoreo y diagnóstico que permita supervisar el estado de la red, detectar anomalías y resolver incidentes de manera eficiente.
+Networking SecOps ya tiene sede, nube, acceso remoto y segmentación, pero el equipo de operaciones no sabe cómo se comporta todo ello en funcionamiento. En este laboratorio establecerás un puesto de operación, centralizarás registros y medirás el estado de la red para detectar anomalías y resolver incidentes con evidencias.
+
+## Introducción técnica
+
+Una red solo puede operarse si se puede observar. Medir conectividad, capturar tráfico, centralizar registros y definir umbrales permite pasar de un síntoma («la aplicación va lenta») a una causa con evidencias que otra persona pueda comprobar.
+
+Este laboratorio construye un puesto de operación (`NOC`), un servidor de aplicación y un colector de registros (`SIEM`) y emplea `ping`, `traceroute`, `tcpdump` e `iperf3` para medir, capturar y diagnosticar. Las herramientas avanzadas de Linux se tratan con detalle en el laboratorio 14.
 
 !!! info "Dos precisiones técnicas"
     - Los namespaces aíslan la **red**, no el sistema de archivos: un `tcpdump -w /tmp/captura.pcap` o un `rsyslog` dentro de un namespace escriben en el `/tmp` y el `/etc` **reales** del equipo. Por eso las capturas y el [SIEM](https://csrc.nist.gov/glossary/term/security_information_and_event_management) de este laboratorio usan rutas propias en `/tmp/lab13/` y los servicios se arrancan a mano (`systemctl` actuaría sobre el host).
@@ -20,20 +26,15 @@ La empresa **Networking SecOps** ha implementado su infraestructura de red compl
 !!! info "[NOC](https://www.cisco.com/c/en/us/products/routers/what-is-network-operations-center-noc.html) y SIEM: dos funciones distintas"
     Un **NOC** (*Network Operations Center*) se ocupa de la **disponibilidad, el rendimiento y la operación** de la infraestructura (¿está caído el enlace? ¿qué latencia hay?). Un **SIEM** (*Security Information and Event Management*) se ocupa de **recolectar, correlacionar y analizar eventos relevantes para la seguridad** (¿hay un patrón de intentos de acceso anómalos?). En este laboratorio, el equipo `NOC` ejecuta herramientas de diagnóstico y el equipo `SIEM` hace de colector de registros; ambos comparten red, pero sirven a propósitos diferentes.
 
-## Problema inicial
+## Estado inicial
 
--   El equipo de operaciones solo sabe que la red falla cuando un usuario lo reporta: no tiene forma de **medir ni observar** su estado.
--   Necesita ver el tráfico, medir el rendimiento y **centralizar los registros** de los equipos.
--   Debe poder pasar de un síntoma («la aplicación va lenta») a una causa, con evidencias que otra persona pueda comprobar.
+- La red funciona, pero su estado no se mide ni se registra de forma centralizada.
+- Los fallos solo se conocen cuando alguien los nota.
+- Se necesita un procedimiento de diagnóstico por capas que parta del síntoma.
 
-## Objetivos del laboratorio
+## Resultado que se construirá
 
-1.  Distinguir las funciones de un **NOC** y de un **SIEM** y saber qué herramientas corresponden a cada uno.
-2.  Medir conectividad y camino con `ping`, `traceroute` y MTR, e interpretar los resultados.
-3.  Capturar tráfico con `tcpdump` e interpretar lo observado, incluidos sus límites en una LAN conmutada.
-4.  Medir rendimiento TCP y UDP con `iperf3` y explicar por qué esas cifras no certifican la capacidad de un enlace físico.
-5.  Centralizar registros con `rsyslog` y definir métricas, **umbrales** y alertas.
-6.  Aplicar un **método de diagnóstico por capas** y reproducir un fallo de MTU.
+Quedan operativos un equipo `NOC` con herramientas de diagnóstico, un `AppServer` que ofrece servicios medibles y un colector central de registros con `rsyslog`. Se miden conectividad y camino (`ping`, `traceroute`, MTR), tráfico (`tcpdump`) y rendimiento TCP y UDP (`iperf3`), se definen métricas, umbrales y alertas, y se reproduce y diagnostica un fallo de MTU.
 
 ## Topología
 
@@ -72,7 +73,7 @@ graph TB
 
 ### Paso 1: Verificar infraestructura existente
 
-Este laboratorio continúa sobre la red del laboratorio 12 (namespaces `OnPremise`, `AppServer`, `DBServer`, `AWS_VPC`, `EC2_Server`...). Comprueba que `OnPremise` conserva la marca del laboratorio 12 y sigue en pie:
+Este laboratorio continúa sobre la red del laboratorio 12 (namespaces `OnPremise`, `AppServer`, `DBServer`, `AWS_VPC`, `EC2_Server`...). Se comprueba que `OnPremise` conserva la marca del laboratorio 12 y sigue en pie:
 
 ```bash
 if [ "$(sudo ip netns exec OnPremise cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-lab-12 ]; then echo "OnPremise no pertenece a Lab12 o no está disponible; ejecuta su configuración antes de Lab13."; exit 1; fi
@@ -81,7 +82,7 @@ sudo ip netns exec OnPremise ping -c 2 10.100.1.10
 sudo ip netns exec OnPremise ping -c 2 10.0.0.10
 ```
 
-Si no existe, ejecuta antes el laboratorio 12. Instala las herramientas (en el host):
+Si no existe, ejecuta antes el laboratorio 12. Se instalan las herramientas (en el host):
 
 ```bash
 sudo apt-get install -y mtr-tiny traceroute tcpdump iperf3 rsyslog rsyslog-gnutls dnsutils netcat-openbsd openssl logrotate
@@ -158,7 +159,7 @@ if ! sudo ip netns exec OnPremise iptables -t nat -C POSTROUTING -o veth-op-wan 
   sudo ip netns exec OnPremise iptables -t nat -A POSTROUTING -o veth-op-wan -j MASQUERADE && touch /tmp/lab13-onprem-nat.added
 fi
 
-# El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida).
+# El host reenvía y traduce hacia la red real (cambia eth0 por tu interfaz de salida).
 # El valor original de ip_forward y la creación de la regla NAT quedan registrados para revertirlos.
 if [ ! -e /tmp/lab13-ip_forward.orig ]; then
   sudo sysctl -n net.ipv4.ip_forward | sudo tee /tmp/lab13-ip_forward.orig >/dev/null
@@ -186,7 +187,7 @@ sudo ip netns exec NOC traceroute -n 10.100.1.10
 
 **Interpretación del `traceroute` hacia la nube:** primer salto el router (`10.0.0.1`), segundo el extremo VPC del enlace híbrido (`172.16.255.2`) y por último `10.100.1.10`.
 
-Con Internet disponible en tu equipo:
+Con Internet disponible en el equipo:
 
 ```bash
 sudo ip netns exec NOC ping -c 4 8.8.8.8
@@ -243,7 +244,7 @@ sudo ip netns exec AppServer iperf3 -s -D -I /tmp/lab13/iperf3.pid
 sudo ip netns exec NOC iperf3 -c 10.0.0.10 -t 5
 sudo ip netns exec NOC iperf3 -c 10.0.0.10 -u -b 100M -t 5
 
-# Mantén el servidor para el ejercicio bidireccional; la limpieza validada lo detiene al final.
+# Mantén el servidor para la prueba bidireccional; la limpieza validada lo detiene al final.
 ```
 
 **Cómo interpretar los resultados.**
@@ -251,7 +252,7 @@ sudo ip netns exec NOC iperf3 -c 10.0.0.10 -u -b 100M -t 5
 -   **TCP** mide el *throughput* que la conexión consigue sostener: TCP **se adapta** al camino (control de congestión), así que el resultado refleja la capacidad **efectiva** (y la CPU disponible, porque aquí el enlace es virtual).
 -   **UDP** con `-b 100M` **ofrece** una tasa fija de 100 Mbps: es la tasa **ofrecida a la prueba**, **no demuestra que la red la soporte**. El informe debe leerse junto con la **pérdida de datagramas**, el **jitter**, la **capacidad real del enlace** y las **condiciones de ejecución** (carga de la máquina, otras pruebas simultáneas). Si la pérdida es 0 %, el camino aguantó esa tasa; si es alta, la tasa ofrecida superó lo que se pudo transportar.
 
-**Ejemplo de interpretación** (salida representativa de la prueba TCP; tus cifras serán distintas):
+**Ejemplo de interpretación** (salida representativa de la prueba TCP; las cifras serán distintas):
 
 ```
 [ ID] Interval        Transfer     Bitrate         Retr
@@ -269,7 +270,7 @@ En la prueba **UDP**, mira además `Lost/Total` y `Jitter`: una pérdida de 0 % 
 
 ### Paso 8: Colector central de logs (SIEM básico) con rsyslog
 
-Arrancamos una instancia de `rsyslog` **solo para el SIEM**, con su propia configuración (no se toca el `rsyslog` del equipo):
+Se arranca una instancia de `rsyslog` **solo para el SIEM**, con su propia configuración (no se toca el `rsyslog` del equipo):
 
 ```bash
 # Certificados efímeros de laboratorio: CA, servidor SIEM y cliente NOC.
@@ -314,7 +315,7 @@ Una "alerta" rudimentaria es buscar patrones en el colector:
 grep -i "error" /tmp/lab13/remote.log
 ```
 
-**Qué demuestra esto y qué no.** El envío de mensajes con `logger` demuestra el **transporte de eventos** hacia un punto central. Es un ejemplo básico de **centralización y consulta de registros**. **No** constituye correlación avanzada, detección automatizada ni respuesta ante incidentes: un SIEM real normaliza los eventos de muchas fuentes, los correlaciona (por ejemplo, «muchos fallos de acceso seguidos de un acceso correcto») y genera alertas.
+**Qué demuestra esto y qué no.** El envío de mensajes con `logger` demuestra el **transporte de eventos** hacia un punto central. Es un ejemplo básico de **centralización y se consulta de registros**. **No** constituye correlación avanzada, detección automatizada ni respuesta ante incidentes: un SIEM real normaliza los eventos de muchas fuentes, los correlaciona (por ejemplo, «muchos fallos de acceso seguidos de un acceso correcto») y genera alertas.
 
 **Monitoreo y seguridad.** Los datos de monitoreo y los registros permiten **detectar anomalías**, pero **no sustituyen** las medidas **preventivas** (firewall, segmentación, autenticación) ni los mecanismos de **respuesta** (procedimientos, aislamiento, recuperación).
 
@@ -367,7 +368,7 @@ El archivo de estado de `logrotate` también queda en `/tmp/lab13/`; no se modif
 
 ### NTP y consistencia temporal
 
-Los namespaces comparten el reloj del kernel con el host: **no** arranques un `chronyd` de prueba dentro de un namespace ni cambies la hora del equipo para este laboratorio. Comprueba la sincronización del host y registra zona horaria/desfase antes de correlacionar:
+Los namespaces comparten el reloj del kernel con el host: **no** arranques un `chronyd` de prueba dentro de un namespace ni cambies la hora del equipo para este laboratorio. Se comprueba la sincronización del host y se registra zona horaria/desfase antes de correlacionar:
 
 ```bash
 timedatectl show -p NTPSynchronized -p TimeUSec -p Timezone
@@ -441,9 +442,9 @@ Antes de actuar sobre una alerta: (1) confirma con una segunda fuente (`mtr`, ot
 
 Guardar registros no es correlacionarlos. Ejemplo conceptual: un solo intento de SSH fallido es normal; **veinte fallos desde una misma IP en un minuto, seguidos de un acceso correcto**, es un patrón. Un colector con `rsyslog` reúne los eventos; un SIEM los **normaliza, relaciona entre fuentes y alerta**. Aquí solo se construye la primera parte.
 
-## Ejercicios
+## Pruebas de comportamiento
 
-### Ejercicio 1: Analizar una captura
+### Prueba 1: Análisis de una captura
 
 ```bash
 # timeout 5: la captura termina sola a los 5 s (con -c N esperaría N paquetes que quizá nunca lleguen)
@@ -454,9 +455,9 @@ wait
 tcpdump -r /tmp/lab13/nc8080.pcap -n
 ```
 
-Puedes abrir el `.pcap` con Wireshark o `tshark` para un análisis más detallado.
+El `.pcap` puede abrirse con Wireshark o `tshark` para un análisis más detallado.
 
-### Ejercicio 2: Monitoreo bidireccional
+### Prueba 2: Monitoreo bidireccional
 
 El servidor iniciado en el Paso 7 permanece activo y conserva su PID en `/tmp/lab13/iperf3.pid`. Reutilízalo; no arranques otro servidor sobre el mismo puerto:
 
@@ -464,9 +465,9 @@ El servidor iniciado en el Paso 7 permanece activo y conserva su PID en `/tmp/la
 sudo ip netns exec NOC iperf3 -c 10.0.0.10 --bidir -t 5
 ```
 
-### Ejercicio 3: Simular un fallo de MTU
+### Prueba 3: Fallo de MTU
 
-Bajamos la MTU **solo en el servidor App**. NOC y AppServer están en la misma LAN, sin un router entre ambos. Por eso el servidor con MTU 1400 puede descartar un paquete IP mayor sin que exista un router que genere ICMP «Fragmentation Needed»: es un agujero negro local. El comportamiento exacto de la captura en el receptor puede variar según kernel/driver, porque el descarte puede ocurrir en distintos puntos de la recepción.
+Se baja la MTU **solo en el servidor App**. NOC y AppServer están en la misma LAN, sin un router entre ambos. Por eso el servidor con MTU 1400 puede descartar un paquete IP mayor sin que exista un router que genere ICMP «Fragmentation Needed»: es un agujero negro local. El comportamiento exacto de la captura en el receptor puede variar según kernel/driver, porque el descarte puede ocurrir en distintos puntos de la recepción.
 
 ```bash
 sudo ip netns exec AppServer ip link set veth-app mtu 1400
@@ -490,11 +491,10 @@ sudo ip netns exec NOC ping -c 2 -W 1 -M do -s 1372 10.0.0.10
 sudo ip netns exec AppServer ip link set veth-app mtu 1500     # restaurar
 ```
 
-**Interpretación:** el emisor puede mostrar que el Echo Request sale; el receptor puede mostrar la trama en `tcpdump` aunque su pila IP la descarte. Si el receptor no la muestra, anota en qué punto parece producirse el descarte. El tamaño `-s` de `ping` es solo el payload ICMP: no es el tamaño IP ni el tamaño Ethernet. Con 1472 bytes, IP mide 1500; la trama añade 14 bytes de cabecera Ethernet (el FCS normalmente no aparece en la captura del host). Con 1372, IP mide 1400.
+**Interpretación:** el emisor puede mostrar que el Echo Request sale; el receptor puede mostrar la trama en `tcpdump` aunque su pila IP la descarte. Si el receptor no la muestra, se anota en qué punto parece producirse el descarte. El tamaño `-s` de `ping` es solo el payload ICMP: no es el tamaño IP ni el tamaño Ethernet. Con 1472 bytes, IP mide 1500; la trama añade 14 bytes de cabecera Ethernet (el FCS normalmente no aparece en la captura del host). Con 1372, IP mide 1400.
 
 **Comparación con un camino enrutado o un túnel:** si un router recibe un paquete IPv4 mayor que la MTU de salida y DF está activo, debe descartarlo y devolver ICMP tipo 3/código 4 (*Fragmentation Needed*) con la MTU siguiente; en IPv6 se utiliza [ICMPv6](https://www.rfc-editor.org/rfc/rfc4443) *Packet Too Big*. PMTUD ajusta el tamaño a partir de esos mensajes. Si el firewall filtra el ICMP necesario, la conexión puede quedarse colgada. En un túnel, la cabecera exterior consume parte de la MTU disponible (GRE sobre IPv4 añade normalmente 24 bytes sin opciones/clave; IPsec depende del modo y algoritmos), por lo que el MTU interior debe ser menor o ajustarse MSS. Esta práctica demuestra el caso local; los túneles se estudian en el laboratorio 09 y el ajuste MSS en el 15.
-## Errores comunes
-
+## Diagnóstico de problemas frecuentes
 | Error | Solución |
 |-------|----------|
 | Ping falla | Verificar rutas y reglas de firewall/microsegmentación (laboratorio 12) |
@@ -515,7 +515,7 @@ sudo ip netns exec AppServer ip link set veth-app mtu 1500     # restaurar
 
 ## Revertir los cambios del host
 
-Este laboratorio continúa el 12: **no elimines** `OnPremise`, `AppServer` ni el resto de la red de ese laboratorio si aún la necesitas. Solo deshaz lo añadido aquí:
+Este laboratorio continúa el 12: **no deben eliminarse** `OnPremise`, `AppServer` ni el resto de la red de ese laboratorio si aún se necesita. Solo se deshace lo añadido aquí:
 
 ```bash
 # 1. Procesos iniciados por el laboratorio: validar PID y línea de comandos.
@@ -593,11 +593,11 @@ else
 fi
 ```
 
-Si quieres retirar también la red del laboratorio 12, ejecuta la sección de reversión del laboratorio 12; no elimines sus *namespaces* por nombre. Instalaste `mtr-tiny`, `iperf3`, `rsyslog`, etc.: quedan como paquetes, sin servicio activo propio.
+Para retirar también la red del laboratorio 12, ejecuta la sección de reversión del laboratorio 12; no elimines sus *namespaces* por nombre. Instalaste `mtr-tiny`, `iperf3`, `rsyslog`, etc.: quedan como paquetes, sin servicio activo propio.
 
 ## Profundización: integridad temporal y transporte de logs
 
-El colector `rsyslog` de este laboratorio centraliza mensajes; no constituye por sí solo un SIEM completo. UDP/514 sirve para demostrar syslog básico, pero no garantiza entrega, orden ni confidencialidad. Compara las alternativas:
+El colector `rsyslog` de este laboratorio centraliza mensajes; no constituye por sí solo un SIEM completo. UDP/514 sirve para demostrar syslog básico, pero no garantiza entrega, orden ni confidencialidad. Se comparan las alternativas:
 
 | Transporte | Ventaja | Límite |
 |---|---|---|
@@ -607,33 +607,26 @@ El colector `rsyslog` de este laboratorio centraliza mensajes; no constituye por
 
 ### Tiempo, retención y calidad de evidencia
 
-Sin sincronización horaria, la correlación entre router, firewall y servidores puede producir una secuencia falsa. Comprueba NTP/chrony en los nodos y documenta zona horaria y desfase antes de investigar un incidente. La retención y rotación deben evitar llenar el disco y preservar los registros necesarios; los logs no deben contener secretos ni credenciales.
+Sin sincronización horaria, la correlación entre router, firewall y servidores puede producir una secuencia falsa. Se comprueba NTP/chrony en los nodos y documenta zona horaria y desfase antes de investigar un incidente. La retención y rotación deben evitar llenar el disco y preservar los registros necesarios; los logs no deben contener secretos ni credenciales.
 
 ### Interpretación correcta de iperf3 y MTU
 
-Una prueba `iperf3` sobre veth enseña cómo medir throughput, pérdida y jitter en el escenario virtual; no certifica la capacidad de una WAN física, ISP o VPN de producción. En el caso MTU, captura en emisor y receptor, distingue tamaño de carga ICMP de tamaño IP, observa DF y mensajes ICMP Fragmentation Needed. Si ICMP está filtrado, PMTUD puede quedar bloqueado; confirma la hipótesis con evidencia en ambos extremos.
+Una prueba `iperf3` sobre veth enseña cómo medir throughput, pérdida y jitter en el escenario virtual; no certifica la capacidad de una WAN física, ISP o VPN de producción. En el caso MTU, captura en emisor y receptor, se distingue tamaño de carga ICMP de tamaño IP, se observa DF y mensajes ICMP Fragmentation Needed. Si ICMP está filtrado, PMTUD puede quedar bloqueado; confirma la hipótesis con evidencia en ambos extremos.
 
 ### Informe de incidente basado en evidencias
 
-Ante un reporte de lentitud, entrega: síntoma y alcance; línea temporal con relojes sincronizados; hipótesis; evidencia de ping/MTR; métricas TCP/UDP; captura que muestre retransmisiones o pérdida; logs de cambios; causa probable y nivel de confianza; corrección; validación posterior y riesgos residuales. No atribuyas pérdida a un salto intermedio de MTR sin verificar si los saltos posteriores también muestran pérdida: algunos routers limitan respuestas ICMP de control.
+Ante un reporte de lentitud, el registro del diagnóstico reúne: síntoma y alcance; línea temporal con relojes sincronizados; hipótesis; evidencia de ping/MTR; métricas TCP/UDP; captura que muestre retransmisiones o pérdida; logs de cambios; causa probable y nivel de confianza; corrección; validación posterior y riesgos residuales. No debe atribuirse pérdida a un salto intermedio de MTR sin verificar si los saltos posteriores también muestran pérdida: algunos routers limitan respuestas ICMP de control.
 
-## Preguntas de reflexión
+## Análisis técnico y decisiones
 
-1.  ¿Qué mecanismo permite al NOC decidir si un problema es de ruta, de DNS, de servicio o de rendimiento?
-2.  ¿Qué sucedería si el NOC captura tráfico entre otros dos hosts de una LAN conmutada? ¿Qué vería realmente?
-3.  ¿Qué diferencia hay entre el rendimiento TCP medido y la tasa UDP ofrecida?
-4.  ¿Qué limitaciones tiene un colector `rsyslog` frente a un SIEM empresarial?
-5.  ¿En qué escenario empresarial una alerta por umbral habría evitado una incidencia?
-6.  ¿Qué otras herramientas aportarían métricas continuas? (SNMP, telemetría.)
+El diagnóstico del NOC combina disponibilidad, métricas, logs, capturas y pruebas de servicio: una ruta se inspecciona con herramientas de routing, DNS con consultas explícitas, servicios con sockets y peticiones, y rendimiento con mediciones de throughput, pérdida y jitter. En una LAN conmutada, una captura en un host no ve necesariamente el unicast entre otros dos equipos; se necesita un punto de captura adecuado, mirror/SPAN o captura en los extremos. TCP adapta la transmisión y su throughput refleja control de congestión, ventanas y retransmisiones; UDP mide la tasa ofrecida y permite observar pérdida/jitter sin control de congestión equivalente. `rsyslog` centraliza logs, pero no equivale a un SIEM con correlación, analítica, detección y respuesta. SNMP, streaming telemetry y métricas de flujo amplían la observabilidad.
 
-## Conclusiones técnicas
+## Estado final
 
-Las herramientas de monitoreo y diagnóstico permiten detectar y resolver incidentes de red de manera rápida y estructurada. Un colector de logs es el primer paso hacia un SIEM; la correlación y las alertas avanzadas requieren herramientas específicas. El monitoreo detecta; la prevención y la respuesta son medidas aparte.
+Queda implementado un entorno de observación con medición, captura, registros centralizados y un método de diagnóstico por capas.
 
-## Preparación para el siguiente laboratorio
+Un colector de registros es el primer paso hacia un SIEM, pero no lo es: faltan normalización, correlación y respuesta. El monitoreo detecta; la prevención y la respuesta son medidas aparte, y las cifras de `iperf3` sobre enlaces virtuales no certifican la capacidad de un enlace físico.
 
-Observar y medir exige dominar las herramientas con las que se obtienen los datos. En el **Laboratorio 14** se estudian con calma las herramientas avanzadas de Linux (`ip`, `ss`, `nft`, `ethtool`, `tcpdump`) sobre una topología propia y sencilla, para saber **elegir la correcta según la pregunta** que se quiere responder.
+## Continuidad técnica
 
----
-
-**¡Laboratorio 13 completado!** Continúa con el **Laboratorio 14**.
+Observar y medir exige dominar las herramientas con las que se obtienen los datos. En el laboratorio 14 el equipo de operaciones recorre las herramientas avanzadas de Linux (`ip`, `ss`, `nft`, `ethtool`, `tcpdump`) sobre una topología sencilla, para elegir la correcta según la pregunta que se quiere responder.

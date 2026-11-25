@@ -25,7 +25,7 @@ nav = [
       { "04 · DIRECCIONAMIENTO IP Y SUBREDES" = "02-LABORATORIOS/lab-04/index.md" },
       { "05 · CONMUTACIÓN Y SEGMENTACIÓN DE RED" = "02-LABORATORIOS/lab-05/index.md" },
     ] },
-    { "06–10 · CONECTIVIDAD, SERVICIOS, SEGURIDAD Y WAN" = [
+    { "06–10 · CONECTIVIDAD, SERVICIOS Y SEGURIDAD" = [
       { "06 · ENRUTAMIENTO Y CONECTIVIDAD ENTRE REDES" = "02-LABORATORIOS/lab-06/index.md" },
       { "07 · PROTOCOLOS Y SERVICIOS DE RED" = "02-LABORATORIOS/lab-07/index.md" },
       { "08 · SEGURIDAD EN REDES" = "02-LABORATORIOS/lab-08/index.md" },
@@ -40,16 +40,14 @@ nav = [
       { "15 · IMPLEMENTACIÓN PRÁCTICA INTEGRAL" = "02-LABORATORIOS/lab-15/index.md" },
     ] },
   ] },
-  { "02 · PROYECTO FINAL" = "03-PROYECTO-FINAL/index.md" },
-  { "03 · REFERENCIA TÉCNICA" = [
-    { "COMPETENCIAS Y CASOS INTEGRADORES" = "04-REFERENCIA/competencias.md" },
+  { "02 · REFERENCIA TÉCNICA" = [
     { "COMPARACIONES CONCEPTUALES" = "04-REFERENCIA/comparaciones.md" },
     { "MÉTODO DE DIAGNÓSTICO" = "04-REFERENCIA/diagnostico.md" },
     { "SERVICIOS, PROTOCOLOS Y PUERTOS" = "04-REFERENCIA/servicios-puertos.md" },
     { "ARQUITECTURA INTEGRAL" = "04-REFERENCIA/arquitectura-integral.md" },
     { "GLOSARIO" = "04-REFERENCIA/glosario.md" },
   ] },
-  { "04 · ANEXOS Y CONVENCIONES" = [
+  { "03 · ANEXOS Y CONVENCIONES" = [
     { "GUÍA DE USO" = "05-ANEXOS/guia-de-uso.md" },
     { "DIAGRAMACIÓN Y TOPOLOGÍAS" = "05-ANEXOS/diagramacion-y-topologias.md" },
     { "DERECHOS DE AUTOR" = "05-ANEXOS/derechos-de-autor.md" },

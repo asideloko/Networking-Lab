@@ -7,28 +7,31 @@ description: "Laboratorio 02 de NETWORKING Lab — Transmisión de Datos y Capa 
 
 # TRANSMISIÓN DE DATOS Y CAPA FÍSICA
 
-<p class="tema-meta"><span>16 secciones</span><span>1 diagrama</span><span>7 tablas</span></p>
+<p class="tema-meta"><span>17 secciones</span><span>1 diagrama</span><span>7 tablas</span></p>
 
-## Contexto empresarial
+## Continuemos
 
-La empresa **Networking SecOps** ya cuenta con su red local funcionando (Clientes 1 y 2 conectados mediante el bridge del equipo `router`, laboratorio 01). El equipo de operaciones ha notado que la red funciona correctamente para comunicaciones internas, pero necesitan **conectar la oficina a Internet** para que los empleados puedan acceder a servicios en la nube, correo electrónico y navegación web.
+Los dos equipos de Networking SecOps ya se comunican entre sí dentro de la oficina, pero los empleados necesitan salir a Internet para consultar correo, acceder a servicios en la nube y descargar actualizaciones. El router aún no tiene salida al exterior. En este laboratorio le añadirás una interfaz externa, una ruta por defecto y NAT, y medirás cómo viajan los datos hasta salir de la red local.
 
-El CTO ha solicitado que, además de implementar la salida a Internet, se **documente el proceso de transmisión de datos**, explicando **a nivel conceptual** cómo viajan los bits desde el equipo del usuario hasta el router y cómo se comporta la señal en el medio físico. Como toda la red de este laboratorio es virtual, esa parte se estudia con teoría y se contrasta con lo que sí se puede observar (paquetes, latencia y rendimiento): una señal física no se puede medir en un enlace virtual.
+## Introducción técnica
 
-## Problema inicial
+Este laboratorio tiene dos partes que conviene mantener separadas.
 
--   Los clientes (10.0.1.2 y 10.0.1.3) no tienen salida a Internet.
--   El router todavía no tiene ninguna interfaz hacia el exterior. En este laboratorio le añadimos un enlace virtual hacia el **host**, que actuará como representación de la red externa; la conectividad real hacia Internet depende de la interfaz física o inalámbrica del host (`eth0`, `wlan0`…).
--   Se requiere **enrutar** el tráfico de los clientes hacia ese enlace y aplicar **NAT (Network Address Translation)** para que salgan con una dirección distinta de la privada `10.0.1.x`.
--   Además, se debe **explicar el flujo de bits** y la transmisión a nivel físico. Al ser una red virtual no hay señal que medir: esa parte es conceptual y se apoya en lo que sí se observa.
+La primera es **ejecutable**: el `router` del laboratorio 01 obtiene una salida hacia el exterior mediante un par `veth` hacia el host, una ruta por defecto, reenvío IPv4 y NAT. Con ella se observa el recorrido de un paquete con doble traducción de direcciones y se miden latencia y rendimiento.
 
-## Objetivos del laboratorio
+La segunda es **conceptual**: bits, señales, codificación y modulación. Una interfaz `veth` copia tramas entre dos extremos dentro del kernel y no genera ninguna señal eléctrica, óptica o de radio, de modo que esa parte se explica y se contrasta con lo que sí puede observarse (paquetes, retardo, pérdida y rendimiento).
 
-1.  Comprender los conceptos de transmisión de datos: bits, señales digitales/analógicas, codificación y modulación.
-2.  Implementar la salida a Internet combinando enrutamiento y NAT.
-3.  Configurar las rutas por defecto para que los clientes salgan a través del router.
-4.  Capturar y analizar paquetes para observar el flujo de datos.
-5.  Medir el rendimiento y la latencia en la red.
+## Estado inicial
+
+- Los clientes `10.0.1.2` y `10.0.1.3` se comunican entre sí, pero no tienen salida a Internet.
+- El `router` no tiene ninguna interfaz hacia el exterior. Se le añade un enlace virtual hacia el **host**, que representa la red externa; la conectividad real depende de la interfaz física o inalámbrica del host (`eth0`, `wlan0`…).
+- Para que los clientes salgan con una dirección distinta de la privada `10.0.1.x` hacen falta enrutamiento y **NAT** (*Network Address Translation*).
+
+## Resultado que se construirá
+
+Los clientes alcanzan el exterior a través del `router` y del host, y el laboratorio deja medidas de latencia, pérdida, *jitter* y rendimiento TCP y UDP. Las capturas muestran qué dirección ve cada tramo del camino.
+
+En paralelo se desarrolla el fundamento de transmisión y capa física, con una comparación explícita entre una NIC física y una interfaz `veth`.
 
 ## Herramientas necesarias
 
@@ -61,7 +64,7 @@ graph TB
 | Router (WAN)| veth-wan | 192.168.1.2/24    |
 | Host (extremo del enlace virtual) | veth-host | 192.168.1.1/24 |
 
-**Nota:** `192.168.1.0/24` es aquí el direccionamiento **del enlace virtual** entre el router y el host, y es independiente del direccionamiento de la interfaz física real del host (`eth0`, `wlan0`…). `192.168.1.1` no es «la IP del host», sino la dirección que le damos a `veth-host`; solo debe cambiarse si tu red real ya usa ese rango (véase el aviso del paso 4).
+**Nota:** `192.168.1.0/24` es aquí el direccionamiento **del enlace virtual** entre el router y el host, y es independiente del direccionamiento de la interfaz física real del host (`eth0`, `wlan0`…). `192.168.1.1` no es «la IP del host», sino la dirección que le damos a `veth-host`; solo debe cambiarse si la red real ya usa ese rango (véase el aviso del paso 4).
 
 ## Fundamentos de transmisión y capa física
 
@@ -100,11 +103,11 @@ Un bit es una unidad de información. Un símbolo es un estado de señal transmi
 
 Con MTU 1500, una trama Ethernet sin etiqueta ocupa normalmente 1518 bytes contando FCS (14 + 1500 + 4); con 802.1Q, 1522 bytes. Preamble/SFD e inter-frame gap consumen tiempo en el medio, aunque no formen parte de esos tamaños de trama.
 
-No confundas **bandwidth** (capacidad nominal del enlace), **throughput** (tasa de datos que realmente atraviesa el punto medido) y **goodput** (datos útiles de aplicación, descontando cabeceras, retransmisiones y otros overheads).
+No debe confundirse **bandwidth** (capacidad nominal del enlace), **throughput** (tasa de datos que realmente atraviesa el punto medido) y **goodput** (datos útiles de aplicación, descontando cabeceras, retransmisiones y otros overheads).
 
 ### Observación de una NIC física frente a `veth`
 
-Identifica la interfaz usada por la ruta al exterior y consulta sus parámetros sin cambiarlos:
+La interfaz utilizada para alcanzar el exterior se obtiene de la tabla de rutas; sus parámetros se consultan sin modificarlos:
 
 ```bash
 WAN_IF=$(ip -4 route get 8.8.8.8 2>/dev/null | awk '{for (i=1;i<=NF;i++) if ($i=="dev") {print $(i+1); exit}}')
@@ -114,9 +117,9 @@ echo "Interfaz de salida: ${WAN_IF:-no determinada}"
 [ -n "$WAN_IF" ] && ethtool -S "$WAN_IF" 2>/dev/null | head -30
 ```
 
-Registra `Speed`, `Duplex`, `Auto-negotiation`, `Link detected` y los contadores de errores/drops. `ethtool -S` depende del controlador y sus nombres de contadores no son universales. La herramienta normalmente no expone la forma de onda ni una medición SNR/BER completa.
+Los campos `Speed`, `Duplex`, `Auto-negotiation`, `Link detected` y los contadores de errores/drops describen el estado observado. `ethtool -S` depende del controlador y sus nombres de contadores no son universales. La herramienta normalmente no expone la forma de onda ni una medición SNR/BER completa.
 
-Compara con la interfaz virtual del router:
+Se compara con la interfaz virtual del router:
 
 ```bash
 sudo ip netns exec router ethtool veth-wan 2>/dev/null || true
@@ -127,7 +130,7 @@ Una `veth` puede informar una velocidad virtual o campos no disponibles; **no ti
 
 ### RTT, jitter, pérdida, colas y throughput
 
-Con los clientes del laboratorio 01, mide primero latencia y variación de RTT; después mide TCP y UDP en el mismo segmento virtual. En una terminal inicia el servidor en cliente 2 y en otra ejecuta los clientes. Detén el servidor con `Ctrl+C` al terminar:
+Con los clientes del laboratorio 01, se mide primero la latencia y la variación de RTT y después TCP y UDP en el mismo segmento virtual. En una terminal se inicia el servidor en `cliente2` y en otra se ejecutan los clientes. Se detiene el servidor con `Ctrl+C` al terminar:
 
 ```bash
 sudo ip netns exec cliente2 iperf3 -s
@@ -141,7 +144,7 @@ sudo ip netns exec router tc -s qdisc show dev br0
 sudo ip netns exec router ip -s link show
 ```
 
-`ping` informa pérdida y estadísticas RTT (incluida desviación); `iperf3` TCP mide throughput, mientras UDP informa jitter y datagramas perdidos para la tasa ofrecida. `tc -s qdisc` y `ip -s link` ayudan a identificar colas, drops y errores. Repite varias veces con la misma duración, dirección y número de flujos; compara medianas y no una única muestra. El resultado entre dos `veth` no predice el throughput de Internet ni el de una NIC física.
+`ping` informa pérdida y estadísticas RTT (incluida desviación); `iperf3` TCP mide throughput, mientras UDP informa jitter y datagramas perdidos para la tasa ofrecida. `tc -s qdisc` y `ip -s link` ayudan a identificar colas, drops y errores. Se repiten varias veces con la misma duración, dirección y número de flujos; se compara medianas y no una única muestra. El resultado entre dos `veth` no predice el throughput de Internet ni el de una NIC física.
 
 ## Construcción de la red
 
@@ -159,7 +162,7 @@ ip netns exec cliente1 ping -c 2 10.0.1.3
 
 Si no existen los namespaces, ejecuta los comandos del laboratorio 01 para crearlos.
 
-Anota ahora qué directorios [DNS](https://www.rfc-editor.org/rfc/rfc1034) por namespace existían ya en tu equipo; la reversión borrará solo los que cree este laboratorio:
+Se anota ahora qué directorios [DNS](https://www.rfc-editor.org/rfc/rfc1034) por namespace existían ya en el equipo; la reversión borrará solo los que cree este laboratorio:
 
 ```bash
 if [ -e /tmp/lab02-netns.preexistente ]; then echo "Existe el inventario previo de Lab02; ejecuta la reversión antes de repetir."; exit 1; fi
@@ -171,7 +174,7 @@ done
 
 ### Paso 2: Crear una interfaz WAN para el router
 
-Ahora vamos a conectar el router al host. Un par **veth** crea un enlace Ethernet virtual entre dos interfaces; **por sí mismo no proporciona conexión a Internet**. La salida real depende de la interfaz física del host (`eth0`, `wlan0`…), del reenvío IP y de la traducción que configuraremos en los pasos siguientes.
+A continuación se conecta el router al host. Un par **veth** crea un enlace Ethernet virtual entre dos interfaces; **por sí mismo no proporciona conexión a Internet**. La salida real depende de la interfaz física del host (`eth0`, `wlan0`…), del reenvío IP y de la traducción que configuraremos en los pasos siguientes.
 
 ```bash
 # Crear par veth para la conexión WAN; no reutilizar una interfaz ajena.
@@ -202,7 +205,7 @@ ip addr add 192.168.1.1/24 dev veth-host
 ip link set veth-host up
 ```
 
-**Nota:** Ejecuta `ip addr show` y comprueba que ninguna interfaz real del host use ya `192.168.1.0/24`; si es así, elige otro rango para el enlace virtual.
+**Nota:** Se ejecuta `ip addr show` y se comprueba que ninguna interfaz real del host use ya `192.168.1.0/24`; si es así, se elige otro rango para el enlace virtual.
 
 ### Paso 4: Dar al router una ruta por defecto hacia el host
 
@@ -212,7 +215,7 @@ El router solo conoce sus redes directamente conectadas (`10.0.1.0/24` y `192.16
 ip netns exec router ip route add default via 192.168.1.1
 ```
 
-El host también debe reenviar y traducir el tráfico del enlace de laboratorio hacia tu red real. Sustituye `eth0` por la interfaz con la que sales a Internet (`ip route get 8.8.8.8` te la muestra):
+El host también debe reenviar y traducir el tráfico del enlace de laboratorio hacia la red real. Se sustituye `eth0` por la interfaz de salida a Internet (`ip route get 8.8.8.8` la muestra):
 
 ```bash
 # Si una ejecución anterior se interrumpió, restaura primero el estado que guardó.
@@ -254,10 +257,10 @@ fi
     | Regla `MASQUERADE` en `nat/POSTROUTING` | Host | **No** (salvo que uses un gestor que guarde reglas) |
     | Par `veth-host` ↔ `veth-wan` | Host | No |
 
-    Antes de empezar: `sysctl net.ipv4.ip_forward` (anota el valor) y `iptables -t nat -S POSTROUTING` (anota las reglas existentes). Ejecuta el laboratorio en una **máquina virtual de pruebas**.
+    Antes de empezar: `sysctl net.ipv4.ip_forward` (anota el valor) y `iptables -t nat -S POSTROUTING` (anota las reglas existentes). Se ejecuta el laboratorio en una **máquina virtual de pruebas**.
 
-!!! warning "Evita solapar tu red real"
-    Si tu red doméstica ya usa `192.168.1.0/24`, el enlace host–router chocará con ella. En ese caso elige otro rango libre para este enlace (por ejemplo `192.168.77.0/24`) y úsalo en todos los pasos y laboratorios siguientes.
+!!! warning "Evita solapar la red real"
+    Si la red doméstica ya usa `192.168.1.0/24`, el enlace host–router chocará con ella. En ese caso se elige otro rango libre para este enlace (por ejemplo `192.168.77.0/24`) y se usa en todos los pasos y laboratorios siguientes.
 
 ### Paso 5: Habilitar reenvío y NAT en el router
 
@@ -293,7 +296,7 @@ ip netns exec cliente2 ip route add default via 10.0.1.1
 
 ### Paso 7: Configurar ruta en el host para que el tráfico de retorno llegue al router
 
-En este laboratorio hay **doble NAT** (router y host, véase el paso 10), de modo que el host solo ve la dirección `192.168.1.2` y las respuestas vuelven por la tabla de conexiones, no por una ruta hacia `10.0.1.0/24`. Por eso esta ruta **no es imprescindible** para la salida a Internet; resulta útil si quieres alcanzar `10.0.1.0/24` desde el propio host (por ejemplo, para hacer `ping 10.0.1.2`):
+En este laboratorio hay **doble NAT** (router y host, véase el paso 10), de modo que el host solo ve la dirección `192.168.1.2` y las respuestas vuelven por la tabla de conexiones, no por una ruta hacia `10.0.1.0/24`. Por eso esta ruta **no es imprescindible** para la salida a Internet; resulta útil si se quiere alcanzar `10.0.1.0/24` desde el propio host (por ejemplo, para hacer `ping 10.0.1.2`):
 
 ```bash
 if ! ip route show 10.0.1.0/24 | grep -q 'via 192.168.1.2'; then
@@ -330,7 +333,7 @@ ip netns exec cliente1 curl -I http://google.com
     echo 'nameserver 8.8.8.8' | sudo tee /etc/netns/cliente1/resolv.conf /etc/netns/cliente2/resolv.conf
     ```
 
-    Repite este paso con cada cliente que necesite resolver nombres en los laboratorios siguientes. (Alternativa rápida: `nslookup google.com 8.8.8.8`.)
+    Se repite este paso con cada cliente que necesite resolver nombres en los laboratorios siguientes. (Alternativa rápida: `nslookup google.com 8.8.8.8`.)
 
 !!! warning "El firewall del host también filtra el tráfico reenviado"
     El tráfico del laboratorio **atraviesa el equipo real** (de `veth-host` a `eth0`), así que lo evalúa el *firewall* del host. Si el NAT está bien y aun así no hay salida a Internet, revisa su política de reenvío: Docker, `ufw` y algunas distribuciones dejan la cadena `FORWARD` en `DROP` por defecto.
@@ -355,7 +358,7 @@ ip netns exec cliente1 curl -I http://google.com
 
 ### Paso 9: Capturar el flujo de datos durante una solicitud web
 
-Vamos a observar cómo viajan los datos desde el cliente hasta Internet.
+A continuación se observa cómo viajan los datos desde el cliente hasta Internet.
 
 ```bash
 # Iniciar captura en el router (interfaz br0 y veth-wan)
@@ -373,7 +376,7 @@ ip netns exec cliente1 curl -s http://google.com > /dev/null
 Deberías ver paquetes que entran por `br0` (desde el cliente) y salen por `veth-wan` (hacia el host).
 
 !!! note "Captura esquemática, no transcripción literal"
-    `curl http://google.com` conecta con la dirección IP que devuelva el DNS para `google.com`, que **no** es `8.8.8.8` (esa es la IP del DNS público de Google). Para que la lectura sea clara, el esquema siguiente usa `8.8.8.8` como si fuera el servidor web. En tu ejecución real verás la IP de destino que resuelva tu DNS, otros números de secuencia y, si el servidor responde con una redirección, tráfico adicional. Es un **esquema conceptual** del proceso, no una salida garantizada.
+    `curl http://google.com` conecta con la dirección IP que devuelva el DNS para `google.com`, que **no** es `8.8.8.8` (esa es la IP del DNS público de Google). Para que la lectura sea clara, el esquema siguiente usa `8.8.8.8` como si fuera el servidor web. En una ejecución real aparece la IP de destino que resuelva el DNS, otros números de secuencia y, si el servidor responde con una redirección, tráfico adicional. Es un **esquema conceptual** del proceso, no una salida garantizada.
 
 ```
 br0      In  IP 10.0.1.2.54321   > 8.8.8.8.80:       Flags [S]
@@ -434,7 +437,7 @@ En nuestro laboratorio, el enlace entre el cliente y el router está limitado po
 -   **Latencia**: tiempo de ida y vuelta (RTT).
 -   **Jitter**: variación en la latencia.
 
-Para medir rendimiento, podemos usar `iperf3`:
+Para medir rendimiento, es posible usar `iperf3`:
 
 ```bash
 # En el router (servidor)
@@ -446,7 +449,7 @@ ip netns exec cliente1 iperf3 -c 10.0.1.1
 
 ### Medición de latencia
 
-Podemos medir la latencia hacia Internet:
+Es posible medir la latencia hacia Internet:
 
 ```bash
 ip netns exec cliente1 ping -c 10 8.8.8.8
@@ -454,9 +457,9 @@ ip netns exec cliente1 ping -c 10 8.8.8.8
 
 La salida mostrará el tiempo mínimo, promedio y máximo (RTT).
 
-## Ejercicios prácticos
+## Pruebas de comportamiento
 
-### Ejercicio 1: Observar la tabla de enrutamiento
+### Prueba 1: Tabla de enrutamiento
 
 En el router, muestra la tabla de rutas:
 
@@ -464,13 +467,9 @@ En el router, muestra la tabla de rutas:
 ip netns exec router ip route show
 ```
 
-**Preguntas:**
+**Interpretación del resultado:** la tabla debe mostrar la red conectada `10.0.1.0/24` asociada a `br0` y una ruta por defecto hacia el siguiente salto configurado para la WAN. El kernel instala automáticamente las rutas de las redes conectadas al asignar la dirección a la interfaz; la ruta por defecto cubre destinos sin coincidencia más específica.
 
-- ¿Qué rutas tiene el router?
-- ¿Cómo sabe el router que debe enviar el tráfico a 10.0.1.0/24 por br0?
-- ¿Qué ruta usa para Internet?
-
-### Ejercicio 2: Ver las reglas de NAT
+### Prueba 2: Reglas de NAT
 
 En el router, muestra las reglas de iptables:
 
@@ -478,14 +477,11 @@ En el router, muestra las reglas de iptables:
 ip netns exec router iptables -t nat -L -v
 ```
 
-**Preguntas:**
+**Interpretación del resultado:** la cadena `POSTROUTING` de la tabla `nat` debe mostrar la regla `MASQUERADE` asociada a la interfaz de salida. Los contadores de paquetes y bytes aumentan cuando el tráfico atraviesa la regla; si permanecen en cero, revisa la ruta, el forwarding y la interfaz de salida.
 
-- ¿Qué regla de NAT está activa?
-- ¿Cuántos paquetes han sido traducidos?
+### Prueba 3: Medición de throughput
 
-### Ejercicio 3: Medir throughput
-
-Instala `iperf3` si no lo tienes y mide el rendimiento entre Cliente 1 y el router.
+Se instala `iperf3` si no está disponible y se mide el rendimiento entre Cliente 1 y el router.
 
 ```bash
 # En el router (servidor)
@@ -495,10 +491,9 @@ ip netns exec router iperf3 -s &
 ip netns exec cliente1 iperf3 -c 10.0.1.1
 ```
 
-**Pregunta:** ¿Cuál es el throughput alcanzado? ¿De qué depende (CPU, número de núcleos, tamaño de segmento) si el enlace es virtual y no tiene una velocidad nominal fija?
+**Interpretación del resultado:** el throughput medido es el rendimiento que el host pudo procesar durante la prueba, no la velocidad nominal de un enlace físico. Depende de CPU, planificación, carga del sistema, tamaño de ventana y segmentos TCP, buffers y versión de `iperf3`. Se repite la prueba en condiciones comparables antes de atribuir una diferencia a la red.
 
-## Errores comunes y soluciones
-
+## Diagnóstico de problemas frecuentes
 | Error | Causa | Solución |
 |-------|-------|----------|
 | `ping: connect: Network is unreachable` | No hay ruta por defecto. | Ejecutar `ip route add default via 10.0.1.1` en el cliente. |
@@ -508,7 +503,7 @@ ip netns exec cliente1 iperf3 -c 10.0.1.1
 
 ## Revertir los cambios del host
 
-Al terminar, deshaz **solo lo que hiciste aquí** (no borres reglas ajenas):
+Al terminar se deshace **solo lo que se hizo aquí** (sin borrar reglas ajenas):
 
 ```bash
 NS_LEFT=0
@@ -548,11 +543,11 @@ else
 fi
 ```
 
-Si tu equipo ya tenía `ip_forward=1`, el paso 2 lo deja en 1, que es su valor original. Si borraste `/tmp/lab02-ip_forward.orig` o abriste otra sesión, consulta el valor que anotaste antes de empezar. Comprueba el resultado con `iptables -t nat -S POSTROUTING` y `sysctl net.ipv4.ip_forward`.
+Si el equipo ya tenía `ip_forward=1`, el paso 2 lo deja en 1, que es su valor original. Si se borró `/tmp/lab02-ip_forward.orig` o se abrió otra sesión, se consulta el valor anotado antes de empezar. Se comprueba el resultado con `iptables -t nat -S POSTROUTING` y `sysctl net.ipv4.ip_forward`.
 
 ## Profundización: capa física, señalización y límites de la simulación
 
-Ethernet no utiliza un único esquema de señalización. El PHY concreto determina codificación, señalización, velocidad, medio y negociación. No generalices PAM5/PAM16 a todo Ethernet:
+Ethernet no utiliza un único esquema de señalización. El PHY concreto determina codificación, señalización, velocidad, medio y negociación. No debe generalizarse PAM5/PAM16 a todo Ethernet:
 
 | PHY | Medio y señalización (resumen didáctico) | Qué demuestra |
 |---|---|---|
@@ -571,7 +566,7 @@ PAM representa niveles de amplitud; QAM combina amplitud y fase y es habitual en
 - **Goodput:** carga útil de aplicación, excluyendo cabeceras y retransmisiones.
 - **RTT, jitter y pérdida:** dimensiones diferentes de la experiencia temporal.
 
-`veth` es un enlace virtual en software. `iperf3`, `tcpdump` y `ping` sobre él permiten estudiar protocolos, colas y rendimiento del kernel, pero no miden voltaje, potencia óptica, SNR ni una velocidad física negociada. Para observar una NIC real, compara `ethtool <interfaz>` y `ethtool -S <interfaz>`; no cambies autonegociación ni velocidad en una interfaz de producción.
+`veth` es un enlace virtual en software. `iperf3`, `tcpdump` y `ping` sobre él permiten estudiar protocolos, colas y rendimiento del kernel, pero no miden voltaje, potencia óptica, SNR ni una velocidad física negociada. Para observar una NIC real, se compara `ethtool <interfaz>` y `ethtool -S <interfaz>`; no cambies autonegociación ni velocidad en una interfaz de producción.
 
 ### Atenuación, ruido, SNR y calidad del enlace
 
@@ -585,7 +580,7 @@ Un SNR menor reduce el margen para distinguir símbolos y puede aumentar la tasa
 
 ### Codificación de línea, modulación y tasa de símbolos
 
-No confundas **codificación de línea** (cómo se representan bits/transiciones) con **modulación** (cómo se asignan símbolos a una señal física) ni con la tasa de símbolos (baud). Como referencias de Ethernet:
+No debe confundirse **codificación de línea** (cómo se representan bits/transiciones) con **modulación** (cómo se asignan símbolos a una señal física) ni con la tasa de símbolos (baud). Como referencias de Ethernet:
 
 | Estándar | Señalización física relevante | Precisión didáctica |
 |---|---|---|
@@ -598,15 +593,15 @@ QAM aparece en tecnologías como DOCSIS, Wi-Fi y ciertos sistemas DSL; no debe a
 ### Dúplex, autonegociación y MTU
 
 - **Full-duplex** permite transmitir y recibir simultáneamente; **half-duplex** comparte el medio y puede usar [CSMA/CD](https://standards.ieee.org/standard/802_3-2022.html) en Ethernet heredado. Un *duplex mismatch* puede causar errores, retransmisiones y bajo rendimiento.
-- La autonegociación acuerda velocidad y dúplex cuando ambos extremos la implementan de forma compatible. No fuerces velocidad/dúplex en una interfaz productiva para hacer una prueba.
+- La autonegociación acuerda velocidad y dúplex cuando ambos extremos la implementan de forma compatible. No debe forzarse velocidad/dúplex en una interfaz productiva para hacer una prueba.
 - MTU 1500 describe la carga IP Ethernet habitual, no todo lo que ocupa la trama en el medio. Una etiqueta 802.1Q añade 4 bytes; cabecera Ethernet, FCS, preámbulo e intervalo entre tramas también consumen tiempo de transmisión.
 - **Ancho de banda**, *throughput* y *goodput* no son sinónimos: el último descuenta cabeceras, retransmisiones y datos de control.
 
-Para observar un enlace físico usa `ethtool INTERFAZ_FISICA` y compara `Speed`, `Duplex`, `Auto-negotiation`, `Link detected` y contadores de errores. En una `veth` o interfaz de namespace los valores son sintéticos; no permiten inferir categoría de cable, potencia óptica ni calidad real del medio.
+Para observar un enlace físico usa `ethtool INTERFAZ_FISICA` y se compara `Speed`, `Duplex`, `Auto-negotiation`, `Link detected` y contadores de errores. En una `veth` o interfaz de namespace los valores son sintéticos; no permiten inferir categoría de cable, potencia óptica ni calidad real del medio.
 
 ### Experimento de medición reproducible
 
-Ejecuta TCP y UDP con condiciones documentadas y repite cada prueba al menos tres veces:
+Se ejecutan TCP y UDP con condiciones documentadas y se repite cada prueba al menos tres veces:
 
 ```bash
 # Servidor en una terminal
@@ -617,32 +612,24 @@ sudo ip netns exec cliente1 iperf3 -c 10.0.1.1 -t 15 -i 1
 sudo ip netns exec cliente1 iperf3 -c 10.0.1.1 -u -b 20M -t 15 -i 1
 ```
 
-Registra CPU, duración, tasa ofrecida, throughput recibido, pérdida y jitter. No compares una tasa UDP ofrecida con el goodput TCP como si fueran la misma magnitud.
+Se registra CPU, duración, tasa ofrecida, throughput recibido, pérdida y jitter. No debe compararse una tasa UDP ofrecida con el goodput TCP como si fueran la misma magnitud.
 
-## Preguntas de reflexión
+## Análisis técnico y decisiones
 
-1.  ¿Qué mecanismo permite que Cliente 1 llegue a una dirección fuera de `10.0.1.0/24`, y qué dirección MAC usa como destino de la trama?
-2.  ¿Qué sucedería si se elimina la regla de NAT pero se mantiene el reenvío (`ip_forward`)?
-3.  ¿Qué diferencia hay entre lo que muestra la captura en la interfaz interna y en la WAN del router?
-4.  ¿Qué limitaciones tiene simular Internet con el propio equipo anfitrión?
-5.  ¿En qué escenario real se usaría doble NAT, y qué problemas puede causar?
+La salida de una red local depende de tres decisiones distintas: el cliente envía el paquete al gateway, el router reenvía el paquete con `ip_forward` y NAT traduce el origen cuando el destino requiere una dirección alcanzable desde el exterior. Si se elimina NAT pero se conserva el reenvío, el paquete puede salir con una dirección privada que la red externa no sabe devolver. En la captura interna se observa el origen privado; en la WAN, después de MASQUERADE, aparece la dirección del lado externo del router. Simular Internet mediante el host permite estudiar rutas y traducción, pero no reproduce un ISP, sus políticas, latencia ni capacidad física. El doble NAT aparece en redes domésticas o empresariales con varias capas de traducción; complica conexiones entrantes, trazabilidad y algunos protocolos.
 
-## Conclusiones técnicas
+## Estado final
 
-En este laboratorio hemos:
+Queda implementada la salida a Internet de los clientes con doble NAT (en el `router` y en el host), rutas por defecto y reenvío, y están medidos el retardo y el rendimiento del enlace virtual.
 
-1.  **Ampliado la red local** agregando conectividad a Internet mediante NAT.
-2.  **Observado el flujo de datos** desde el cliente hasta el router y el host, incluida la doble traducción de direcciones.
-3.  **Comprendido conceptualmente la transmisión de datos** a nivel de bits, señales y modulación (sin medirlas físicamente, algo que una captura de paquetes no permite).
-4.  **Medido el rendimiento** y la latencia de la red.
-5.  **Analizado el proceso de encapsulación** y la traducción de direcciones (NAT), distinguiéndolo del enrutamiento.
+Límites: las cifras de `iperf3` sobre `veth` describen la capacidad del kernel y no la de un medio físico, y la teoría de señalización y modulación no se verifica con instrumentos. Los cambios en el host (reenvío y regla NAT) se registran y se revierten en «Revertir los cambios del host».
 
-Los conceptos de transmisión de datos son fundamentales para entender las limitaciones y capacidades de las redes. El ancho de banda, la latencia, el ruido y la modulación determinan el rendimiento real que los usuarios experimentan.
+# ¡Bien hecho!
 
-## Preparación para el siguiente laboratorio
+Hemos dejado la red con salida a Internet (doble NAT), rutas y reenvío configurados. En el Laboratorio 03 agregaremos más dispositivos: un switch con múltiples clientes, el estudio de la tabla MAC y de la MTU. (La segmentación con VLAN llega en el laboratorio 05.)
 
-Hemos dejado la red con salida a Internet (doble NAT), rutas y reenvío configurados. En el **Laboratorio 03** agregaremos más dispositivos: un switch con múltiples clientes, el estudio de la tabla MAC y de la MTU. (La segmentación con VLAN llega en el laboratorio 05.)
+La topología conserva los dos clientes, el `router` con salida a Internet, rutas y reenvío configurados. En el laboratorio 03 el bridge sale del `router`, se convierte en un switch independiente con cuatro clientes, y se estudian la tabla MAC y la MTU.
 
----
+## Continuidad técnica
 
-**¡Laboratorio 02 completado!** Ahora los clientes tienen acceso a Internet y hemos analizado el proceso de transmisión de datos. Continúa con el **Laboratorio 03**.
+Networking SecOps queda con dos clientes que salen a Internet a través del `router` y del host, con rutas y reenvío configurados. La oficina crece: en el laboratorio 03 el bridge pasa a ser un switch independiente con cuatro clientes, y se estudian la tabla MAC y la MTU.

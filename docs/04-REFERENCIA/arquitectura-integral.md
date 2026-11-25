@@ -55,7 +55,7 @@ graph TB
 
 ## Qué está implementado y qué es una arquitectura de referencia
 
-El mapa anterior es una síntesis curricular, no una única topología desplegada. La serie utiliza escenarios independientes para aislar mecanismos. La continuidad de Networking SecOps es narrativa y conceptual; no implica que todos los namespaces y enlaces persistan de un laboratorio al siguiente.
+El mapa anterior es una síntesis, no una única topología desplegada. La serie utiliza escenarios independientes para aislar mecanismos. La continuidad de Networking SecOps es narrativa y conceptual; no implica que todos los namespaces y enlaces persistan de un laboratorio al siguiente.
 
 | Área | Evidencia ejecutable en la serie | Alcance que permanece conceptual o parcial |
 |---|---|---|
@@ -67,7 +67,7 @@ El mapa anterior es una síntesis curricular, no una única topología desplegad
 | Operación | Herramientas, métricas, capturas y colector rsyslog en 13–14 | rsyslog no es un SIEM completo; iperf3 sobre veth no certifica una WAN física |
 | Integración | VLSM, OSPF, firewall, DHCP/NAT y VRRP parcial en 15 | No reúne en ejecución todas las tecnologías de los 15 laboratorios |
 
-Usa esta tabla para explicar qué se ha construido, qué se ha representado y qué haría falta para un despliegue real. No presentes una abstracción didáctica como una implementación de producto o servicio empresarial.
+Esta tabla permite explicar qué se ha construido, qué se ha representado y qué haría falta para un despliegue real. No presentes una abstracción didáctica como una implementación de producto o servicio empresarial.
 
 ## Comparación de tecnologías de conectividad
 

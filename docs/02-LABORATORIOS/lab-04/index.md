@@ -7,39 +7,30 @@ description: "Laboratorio 04 de NETWORKING Lab — Direccionamiento IP y Subrede
 
 # DIRECCIONAMIENTO IP Y SUBREDES
 
-<p class="tema-meta"><span>15 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>16 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
-## Contexto empresarial
+## Un concepto nuevo
 
-La empresa **Networking SecOps** ha seguido creciendo. Ahora cuenta con **dos departamentos** con necesidades de red independientes:
+La oficina de Networking SecOps sigue creciendo. Ahora los empleados se han organizado en dos departamentos —Ventas e IT— y el administrador necesita separar su tráfico: cada grupo debe tener su propio espacio de direcciones, pero ambos deben poder comunicarse entre sí y salir a Internet. En este laboratorio dividirás la red en subredes con VLSM, asignarás direcciones a cada departamento y configurarás el router como *gateway* de cada una.
 
--   **Ventas**: 10 empleados que necesitan acceso a Internet y a un servidor interno.
--   **IT/Sistemas**: 5 empleados que administran servidores y necesitan acceso restringido.
+## Introducción técnica
 
-La red actual (todos los clientes en una sola subred `10.0.1.0/24`) ya no es suficiente. Se necesita **segmentar la red** en subredes separadas para:
+Cuando todos los equipos comparten una sola subred, el tráfico entre grupos no puede distinguirse ni controlarse. Dividir el direccionamiento en subredes convierte el tráfico entre ellas en tráfico **enrutado**, sobre el que pueden aplicarse políticas, y permite repartir el espacio de direcciones según las necesidades reales de cada grupo.
 
--   Separar lógicamente el direccionamiento de cada departamento (el tráfico entre ellos pasa a ser tráfico **enrutado**, sobre el que se pueden aplicar políticas).
--   Preparar la aplicación de políticas de seguridad diferentes.
--   Optimizar el uso del espacio de direcciones.
+Este laboratorio calcula las subredes con VLSM a partir de `10.0.0.0/24`, las asigna a dos grupos (Ventas e IT) y configura el router como *gateway* de cada una.
 
 !!! warning "Subred IP no es lo mismo que VLAN"
     Una **subred IP** es una división lógica de **capa 3**; una **VLAN** es una división lógica de **capa 2** (dominio de broadcast). Suelen asociarse una VLAN con una subred IP, pero no son conceptos equivalentes. En este laboratorio solo dividimos el direccionamiento (capa 3): todos los equipos siguen conectados al **mismo bridge**, es decir, al mismo dominio de broadcast. Reducir los dominios de broadcast exigirá VLAN (laboratorio 05).
 
-## Problema inicial
+## Estado inicial
 
--   Todos los clientes están en la misma subred `10.0.1.0/24`.
--   Se necesitan **dos subredes**: una para Ventas y otra para IT.
--   El router debe encaminar el tráfico entre subredes.
--   Se debe implementar **[VLSM](https://www.cisco.com/c/en/us/support/docs/ip/routing-information-protocol-rip/13788-3.html)** para optimizar el uso de direcciones.
+- Todos los clientes están en la misma subred `10.0.1.0/24`.
+- Se necesitan dos subredes, una para Ventas y otra para IT, más un segmento `/30` entre el router y el switch.
+- El router debe encaminar entre las subredes que tiene conectadas.
 
-## Objetivos del laboratorio
+## Resultado que se construirá
 
-1.  Comprender la estructura de las direcciones IPv4 (32 bits).
-2.  Aplicar **subnetting** para dividir una red en subredes más pequeñas.
-3.  Implementar **VLSM** (Variable Length Subnet Mask) para optimizar direcciones.
-4.  Configurar **varias direcciones IP (una por subred) en la interfaz del router** para que actúe como *gateway* de cada subred. (Las subinterfaces con etiquetas VLAN se estudian en el laboratorio 05.)
-5.  Verificar la comunicación entre subredes mediante enrutamiento.
-6.  Analizar la relación Red-Subred-Host.
+Quedan dos subredes con tamaño ajustado a su número de equipos, un segmento `/30` de gestión y un router con una dirección por subred sobre su única interfaz hacia el switch. Se verifica la comunicación dentro de cada subred, entre subredes y hacia Internet, y se examina la relación entre red, subred y host.
 
 ## Herramientas necesarias
 
@@ -57,7 +48,7 @@ La red actual (todos los clientes en una sola subred `10.0.1.0/24`) ya no es suf
 -   Subred 2: IT → 5 hosts + 1 *gateway* = 6 direcciones (mínimo /29 → 6 hosts útiles).
 -   Subred 3: Enlace de gestión router-switch → 2 direcciones, router y switch (mínimo /30 → 2 hosts útiles).
 
-**Recuerda:** el *gateway* y cualquier equipo de infraestructura también consumen una dirección útil. Al dimensionar una subred, cuéntalos junto con los clientes.
+**Debe recordarse:** el *gateway* y cualquier equipo de infraestructura también consumen una dirección útil. Al dimensionar una subred, cuéntalos junto con los clientes.
 
 **Cálculo VLSM:**
 
@@ -79,13 +70,13 @@ La convención «primera dirección útil = gateway» es habitual, pero no oblig
 
 ### Cálculo VLSM y operación AND
 
-No elijas prefijos por intuición. Para cada subred:
+Los prefijos no se eligen por intuición. Para cada subred:
 
 1. Cuenta los hosts requeridos, incluidos gateway, servidores e interfaces de infraestructura.
 2. Ordena los requerimientos de mayor a menor para evitar fragmentar el espacio.
-3. Busca el menor número de bits de host `h` que cumpla `2^h - 2 >= hosts` (para subredes IPv4 convencionales; `/31` punto a punto es una excepción específica).
-4. Calcula el prefijo `/(32-h)` y el tamaño del bloque `2^h` direcciones.
-5. Alinea la siguiente dirección de red al múltiplo del tamaño de bloque, determina broadcast y rango usable, y verifica que no haya solapamientos.
+3. Se busca el menor número de bits de host `h` que cumpla `2^h - 2 >= hosts` (para subredes IPv4 convencionales; `/31` punto a punto es una excepción específica).
+4. Se calcula el prefijo `/(32-h)` y el tamaño del bloque `2^h` direcciones.
+5. Alinea la siguiente dirección de red al múltiplo del tamaño de bloque, determina broadcast y rango usable, y se verifica que no haya solapamientos.
 
 La decisión de red local se obtiene con una operación AND bit a bit entre IP y máscara: `1 AND 1 = 1`; cualquier otro par produce `0`. Por ejemplo, `10.0.0.18 AND 255.255.255.248 = 10.0.0.16`, por lo que `10.0.0.18/29` pertenece a `10.0.0.16/29`. Si el destino AND máscara produce otra red, el host no hace ARP por el destino: consulta la tabla de rutas y resuelve por ARP la MAC del siguiente salto (normalmente el gateway).
 
@@ -374,10 +365,13 @@ ip netns exec router sysctl -w net.ipv4.ip_forward=1
 # y se restaura en «Revertir los cambios del host».
 # Configurar NAT (asumiendo que el host tiene una interfaz con Internet)
 # En este laboratorio, simulamos Internet con el host
+if [ -e /sys/class/net/veth-host ]; then
+  echo "veth-host ya existe; comprueba y revierte el laboratorio anterior antes de continuar."
+  exit 1
+fi
 ip link add veth-host type veth peer name veth-wan
 ip link set veth-host alias networking-lab-lab-04
 ip link set veth-wan alias networking-lab-lab-04
-ip link set veth-host alias networking-lab-lab-04
 ip link set veth-wan netns router
 ip netns exec router ip addr add 192.168.1.2/24 dev veth-wan
 ip netns exec router ip link set veth-wan up
@@ -387,7 +381,7 @@ ip link set veth-host up
 # Ruta por defecto del router hacia el host (sin ella no hay salida a Internet)
 ip netns exec router ip route add default via 192.168.1.1
 
-# El host reenvía y traduce el tráfico hacia tu red real (cambia eth0 por tu interfaz)
+# El host reenvía y traduce el tráfico hacia la red real (cambia eth0 por tu interfaz)
 if [ ! -e /tmp/lab04-ip_forward.orig ]; then
   sysctl -n net.ipv4.ip_forward > /tmp/lab04-ip_forward.orig
 fi
@@ -444,7 +438,7 @@ ip netns exec ventas1 ping -c 4 8.8.8.8
 ip netns exec it1 curl -I http://google.com
 ```
 
-Si `curl` no resuelve el nombre, consulta la nota «DNS dentro de un namespace» del laboratorio 02.
+Si `curl` no resuelve el nombre, se consulta la nota «DNS dentro de un namespace» del laboratorio 02.
 
 **Resultado esperado:** Respuestas exitosas (si el host tiene salida real a Internet).
 
@@ -467,7 +461,7 @@ ip netns exec ventas1 ping -c 2 -W 1 10.0.0.20      # Destination Host Unreachab
 
 ### Experimento: máscara incorrecta y decisión de siguiente salto
 
-Añade temporalmente `10.0.0.9/28` a `ventas2` (dirección libre dentro de Ventas). Observa la decisión correcta y luego reduce la máscara de `ventas1` de `/28` a `/29`: el destino `.9` quedará fuera del prefijo local y el host intentará usar el gateway `.14`. Las interfaces de este laboratorio son `veth-v1` y `veth-v2`:
+Se añade temporalmente `10.0.0.9/28` a `ventas2` (dirección libre dentro de Ventas). Se observa la decisión correcta y luego se reduce la máscara de `ventas1` de `/28` a `/29`: el destino `.9` quedará fuera del prefijo local y el host intentará usar el gateway `.14`. Las interfaces de este laboratorio son `veth-v1` y `veth-v2`:
 
 ```bash
 sudo ip netns exec ventas2 ip addr add 10.0.0.9/28 dev veth-v2
@@ -484,7 +478,7 @@ sudo ip netns exec ventas1 ip addr add 10.0.0.1/28 dev veth-v1
 sudo ip netns exec ventas2 ip addr del 10.0.0.9/28 dev veth-v2
 ```
 
-**Resultado esperado:** con `/28`, `10.0.0.9` es local y se resuelve directamente por ARP; con `/29`, queda fuera del prefijo local y el host intenta usar la ruta por defecto vía `10.0.0.14`. Observa el cambio con `ip route get` y `ip neigh`; no confundas el resultado de la tabla con que el siguiente salto vaya a responder. Ejecuta la reversión incluso si una prueba falla.
+**Resultado esperado:** con `/28`, `10.0.0.9` es local y se resuelve directamente por ARP; con `/29`, queda fuera del prefijo local y el host intenta usar la ruta por defecto vía `10.0.0.14`. Se observa el cambio con `ip route get` y `ip neigh`; no confundas el resultado de la tabla con que el siguiente salto vaya a responder. Se ejecuta la reversión incluso si una prueba falla.
 
 ## Observación y análisis
 
@@ -520,32 +514,32 @@ ip netns exec ventas1 ping -c 1 10.0.0.17
 
 1.  El paquete sale de Ventas 1 con origen 10.0.0.1 y destino 10.0.0.17.
 2.  **Es Ventas 1 quien decide** que 10.0.0.17 no está en su subred (`10.0.0.0/28`) y, por su ruta por defecto, envía la trama con IP destino 10.0.0.17 pero **MAC destino = la del gateway** (`10.0.0.14`, resuelta por ARP). El switch no examina direcciones IP: conmuta la trama por la MAC.
-3.  El router recibe el paquete, consulta su tabla de enrutamiento (10.0.0.17 pertenece a la red conectada `10.0.0.16/29`) y lo reenvía **por la misma interfaz** con una nueva trama (MAC origen: la del router; MAC destino: la de IT 1). Por entrar y salir por la misma interfaz, Linux puede enviar a Ventas 1 un *ICMP redirect* (aviso de que existe un camino más directo). Si el cliente lo acepta, que es lo habitual por defecto, los paquetes siguientes pueden ir directamente a IT 1 sin pasar por el router; por eso este rebote se observa con claridad en el primer `ping` (`-c 1`) tras vaciar la caché ARP.
+3.  El router recibe el paquete, se consulta su tabla de enrutamiento (10.0.0.17 pertenece a la red conectada `10.0.0.16/29`) y lo reenvía **por la misma interfaz** con una nueva trama (MAC origen: la del router; MAC destino: la de IT 1). Por entrar y salir por la misma interfaz, Linux puede enviar a Ventas 1 un *ICMP redirect* (aviso de que existe un camino más directo). Si el cliente lo acepta, que es lo habitual por defecto, los paquetes siguientes pueden ir directamente a IT 1 sin pasar por el router; por eso este rebote se observa con claridad en el primer `ping` (`-c 1`) tras vaciar la caché ARP.
 4.  El switch conmuta esa trama hacia el puerto de IT 1.
 
-En la captura verás cada ICMP **dos veces** (entrada y salida del router por `veth-rs`), con distintas MAC pero las mismas IP: es la huella de un router que reenvía por una sola interfaz (*[router-on-a-stick](https://www.cisco.com/c/en/us/support/docs/lan-switching/inter-vlan-routing/10023-3.html)* sin VLAN).
+En la captura se ve cada ICMP **dos veces** (entrada y salida del router por `veth-rs`), con distintas MAC pero las mismas IP: es la huella de un router que reenvía por una sola interfaz (*[router-on-a-stick](https://www.cisco.com/c/en/us/support/docs/lan-switching/inter-vlan-routing/10023-3.html)* sin VLAN).
 
-## Ejercicios prácticos
+## Pruebas de comportamiento
 
-### Ejercicio 1: Calcular subredes adicionales
+### Prueba 1: Cálculo de subredes adicionales
 
-Si necesitáramos una tercera subred para **Administración** con 4 hosts, ¿qué máscara usarías y qué rango de direcciones asignarías?
+La siguiente variación añade una subred **Administración** para 4 hosts y dimensiona su prefijo y rango de direcciones.
 
 **Solución:**
 
 - 4 hosts + 1 *gateway* = 5 direcciones → /29 (8 direcciones, 6 hosts útiles).
 - Las direcciones `10.0.0.0`–`10.0.0.27` ya están asignadas. Un /29 debe empezar en un múltiplo de 8, y `10.0.0.28` no lo es (a partir de ahí solo cabe un /30). El siguiente bloque /29 libre es `10.0.0.32/29` (hosts `.33`–`.38`, broadcast `.39`).
 
-### Ejercicio 2: Verificar la tabla ARP
+### Prueba 2: Tabla ARP
 
 ```bash
 # Ver tabla ARP en Ventas 1
 ip netns exec ventas1 ip neigh show
 ```
 
-### Ejercicio 3: Agregar un nuevo cliente
+### Prueba 3: Incorporación de un cliente
 
-Agrega un cuarto cliente al departamento Ventas (10.0.0.4/28) y verifica que puede comunicarse con los demás.
+Se agrega un cuarto cliente al departamento Ventas (`10.0.0.4/28`) con su `veth` al bridge y el *gateway* de la subred. **Efecto esperado:** el cliente nuevo alcanza a los demás de Ventas directamente por ARP y a IT a través del router, sin tocar la configuración del router, porque la subred ya está conectada a él.
 
 ```bash
 ip netns add ventas4
@@ -564,7 +558,7 @@ ip netns exec switch ip link set veth-sv4 up
 ip netns exec ventas4 ping -c 4 10.0.0.1
 ```
 
-### Ejercicio 4: VLSM con tres departamentos y dos enlaces
+### Prueba 4: VLSM con tres departamentos y dos enlaces
 
 Con el bloque `192.168.10.0/24`, diseña subredes para Ventas (**60** hosts), Soporte (**28**), Invitados (**12**) y dos enlaces punto a punto `/30`. Cuenta también la dirección del *gateway*.
 
@@ -581,22 +575,21 @@ Con el bloque `192.168.10.0/24`, diseña subredes para Ventas (**60** hosts), So
 
     Quedan libres desde `192.168.10.120` para crecer.
 
-### Ejercicio 5: dimensionar con crecimiento
+### Prueba 5: Dimensionamiento con crecimiento
 
-Ventas tiene **25** equipos y prevé crecer un **50 %** en dos años. ¿Qué máscara necesita (con gateway)? ¿Por qué no basta `/27`?
+La variación dimensiona Ventas para **25 equipos** con un crecimiento previsto del **50 %** en dos años, incluyendo el gateway.
 
 ??? success "Solución"
     25 × 1,5 ≈ 38 equipos + 1 gateway = 39 direcciones. `/27` ofrece 30 útiles (insuficiente); `/26` ofrece 62: **`/26`**. Dimensionar solo para hoy obliga a renumerar al crecer.
 
-### Ejercicio 6: encontrar el solapamiento
+### Prueba 6: Detección de solapamientos
 
-¿Es válido este plan? `10.0.0.0/25` (Ventas) y `10.0.0.64/26` (IT).
+La comprobación de solapamiento contrasta `10.0.0.0/25` (Ventas) con `10.0.0.64/26` (IT).
 
 ??? success "Solución"
     **No.** `10.0.0.0/25` abarca `10.0.0.0`–`10.0.0.127`, y `10.0.0.64/26` (`.64`–`.127`) queda **dentro**: se solapan. IT podría ir en `10.0.0.128/26`.
 
-## Errores comunes y soluciones
-
+## Diagnóstico de problemas frecuentes
 | Error | Causa | Solución |
 |-------|-------|----------|
 | Clientes en diferentes subredes no pueden hacer ping | El router no tiene una IP de *gateway* en cada subred, o `ip_forward` vale 0. | Verificar `ip addr show dev veth-rs` en el router y `sysctl net.ipv4.ip_forward`. |
@@ -637,7 +630,7 @@ else echo "Se conservan reglas host, rutas, enlaces y marcadores: hay procesos a
 
 ## Profundización: cómo calcula un host su red local
 
-Un host no decide si el destino es local por proximidad numérica ni por pertenecer al mismo edificio. Aplica la máscara al origen y al destino y compara los prefijos:
+Un host no decide si el destino es local por proximidad numérica ni por pertenecer al mismo edificio. Se aplica la máscara al origen y al destino y se comparan los prefijos:
 
 \[\text{red} = \text{IP} \;\text{AND}\; \text{máscara}\]
 
@@ -646,11 +639,11 @@ Ejemplo: `10.0.0.18/29` pertenece a `10.0.0.16/29`. La máscara `/29` equivale a
 ### Algoritmo VLSM verificable
 
 1. Ordena los segmentos por demanda de hosts, de mayor a menor.
-2. Añade red y broadcast en IPv4 tradicional: para H hosts, busca el menor n tal que `2^n - 2 ≥ H`.
+2. Se añade red y broadcast en IPv4 tradicional: para H hosts, busca el menor n tal que `2^n - 2 ≥ H`.
 3. El prefijo es `32 - n`.
-4. Calcula el tamaño del bloque y alinea el inicio al múltiplo correspondiente.
-5. Asigna gateway y hosts sin usar red ni broadcast.
-6. Comprueba que los intervalos no se solapen y que caben en el bloque padre.
+4. Se calcula el tamaño del bloque y alinea el inicio al múltiplo correspondiente.
+5. Se asigna gateway y hosts sin usar red ni broadcast.
+6. Se comprueba que los intervalos no se solapen y que caben en el bloque padre.
 7. Reserva espacio de crecimiento y documenta las decisiones.
 
 ### Demostración de decisión local o gateway
@@ -662,31 +655,24 @@ sudo ip netns exec ventas1 ip route show
 sudo ip netns exec ventas1 ip neigh show
 ```
 
-El primer destino puede ser local según la máscara configurada; el segundo puede requerir gateway. Cambia temporalmente la máscara en un cliente de laboratorio y predice antes de probar: una máscara demasiado amplia puede hacer que el host intente ARP por un destino remoto; una demasiado estrecha puede enviar al gateway un destino que debería ser local. Restaura la máscara al terminar.
+El primer destino puede ser local según la máscara configurada; el segundo puede requerir gateway. Se cambia temporalmente la máscara en un cliente de laboratorio y se predice antes de probar: una máscara demasiado amplia puede hacer que el host intente ARP por un destino remoto; una demasiado estrecha puede enviar al gateway un destino que debería ser local. Se restaura la máscara al terminar.
 
 **Evidencia:** cálculo binario de AND, tabla de subredes, `ip route get` antes/después y explicación de qué IP se resuelve por ARP (destino local o siguiente salto).
 
-## Preguntas de reflexión
+## Análisis técnico y decisiones
 
-1.  ¿Qué mecanismo decide si un paquete se entrega directamente o se envía al *gateway*?
-2.  ¿Qué sucedería si se asigna a un cliente una máscara más corta que la del resto de su subred?
-3.  ¿Qué diferencia hay entre el número de direcciones totales de una subred y el de direcciones asignables a hosts?
-4.  ¿Qué limitaciones tiene un esquema VLSM cuando la empresa crece más de lo previsto?
-5.  ¿Qué otro diseño de direccionamiento resolvería el mismo problema (por ejemplo, con subredes de tamaño fijo)?
+El host aplica la máscara a la dirección destino y se compara el prefijo resultante con sus redes conectadas. Si el destino pertenece a una red local, resuelve su MAC; de lo contrario, utiliza la ruta seleccionada, normalmente el gateway. Una máscara más corta puede hacer que el cliente considere locales direcciones que el resto de la red considera remotas, provocando ARP sin respuesta y rutas asimétricas. Una subred contiene direcciones de red, broadcast y direcciones utilizables; el tamaño del prefijo determina cuántas hay disponibles. VLSM permite ajustar el tamaño de cada segmento, pero requiere inventario y planificación de crecimiento. El direccionamiento de tamaño fijo simplifica la uniformidad, a costa de desperdiciar espacio o limitar capacidad.
 
-## Conclusiones técnicas
+## Estado final
 
-En este laboratorio hemos:
+Queda implementada la división en subredes con VLSM, con comunicación verificada dentro de cada una y entre ellas a través del router, que encamina porque tiene las redes directamente conectadas y no necesita rutas estáticas.
 
-1.  **Aplicado subnetting** para dividir una red en subredes más pequeñas.
-2.  **Implementado VLSM** para optimizar el uso de direcciones.
-3.  **Comprobado** que el router encamina entre las subredes porque las tiene directamente conectadas (no hacen falta rutas estáticas). Hemos visto además que dividir en subredes IP **no** separa los dominios de broadcast.
-4.  **Verificado la comunicación entre subredes** a través del router.
+Límite: la división en subredes IP **no** separa los dominios de broadcast. Todos los equipos siguen colgados del mismo bridge.
 
-## Preparación para el siguiente laboratorio
+# ¡Bien hecho!
 
-Hemos dejado la red con dos subredes (Ventas e IT) y un segmento /30 de gestión entre router y switch, todo en un mismo dominio de broadcast. En el **Laboratorio 05** implementaremos **VLAN** para separar también la capa 2. Cambiaremos el direccionamiento a redes `/24` independientes porque allí el objetivo es estudiar la segmentación, no el reparto VLSM: son escenarios distintos y **no** describen la misma infraestructura.
+La red de Networking SecOps ya está organizada en dos subredes: Ventas e IT tienen su propio espacio de direcciones y pueden comunicarse entre sí y con Internet a través del router. Has calculado el reparto con VLSM, has configurado el router como *gateway* de cada subred y has comprobado con pruebas positivas y negativas que el diseño funciona por las razones correctas. En el Laboratorio 05 separaremos también la capa 2 con VLAN para aislar los dominios de broadcast.
 
----
+## Continuidad técnica
 
-**¡Laboratorio 04 completado!** Continúa con el **Laboratorio 05**.
+La empresa queda con dos subredes (Ventas e IT) y un segmento `/30` entre router y switch, todo en un mismo dominio de broadcast. En el laboratorio 05 se separa también la capa 2 con VLAN; el direccionamiento cambia a redes `/24` independientes porque allí se estudia la segmentación y no el reparto VLSM: son escenarios distintos.

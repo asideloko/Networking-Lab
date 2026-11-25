@@ -7,25 +7,27 @@ description: "Laboratorio 10 de NETWORKING Lab — Infraestructura WAN y Core."
 
 # INFRAESTRUCTURA WAN Y CORE
 
-<p class="tema-meta"><span>14 secciones</span><span>4 diagramas</span><span>8 tablas</span></p>
+<p class="tema-meta"><span>15 secciones</span><span>4 diagramas</span><span>8 tablas</span></p>
 
-## Contexto empresarial
+## Más allá de la sede
 
-La empresa **Networking SecOps** ha implementado exitosamente su red con VPN y tunelización (Laboratorio 09). Ahora necesita expandir su infraestructura a nivel geográfico, conectando múltiples sucursales y centros de datos a través de una red WAN robusta y escalable.
+Con las oficinas unidas por túneles (laboratorio 09), Networking SecOps necesita crecer geográficamente: conectar varias sucursales y centros de datos mediante una red WAN robusta y escalable. En este laboratorio montarás el núcleo de esa red con routers PE y P, rutas con redundancia y reparto de tráfico entre caminos, y analizarás qué aportan MPLS y SD-WAN.
 
-## Problema inicial
+## Introducción técnica
 
--   Hasta ahora las sedes se interconectaron con rutas y túneles; falta entender **la red que transporta** ese tráfico.
--   La empresa va a conectar varias sucursales y centros de datos, y debe saber cómo se organiza el núcleo de una WAN de proveedor (roles PE y P, malla parcial, caminos alternativos).
--   Debe comprobar qué ocurre cuando falla un enlace del núcleo y cómo se reparte el tráfico entre caminos de igual preferencia.
--   Antes de elegir una arquitectura WAN, necesita distinguir qué resuelve MPLS y qué resuelve SD-WAN.
+Las sedes se han interconectado con rutas y túneles; falta observar **la red que transporta** ese tráfico. Un proveedor organiza su núcleo con routers de borde (PE) y routers internos (P) en malla parcial, con caminos alternativos entre ellos.
 
-## Objetivos del laboratorio
+Este laboratorio construye esa topología con roles PE y P y rutas estáticas, interconecta tres LAN remotas, provoca la caída de un enlace del núcleo y se observa cómo se reparte el tráfico entre caminos de igual coste (ECMP). MPLS y SD-WAN se desarrollan de forma conceptual.
 
-1.  Construir una **simulación de una topología WAN con roles PE/P**: **routers PE** (*Provider Edge*) y **routers P** (*Provider*) en malla parcial, con direccionamiento IP y rutas estáticas.
-2.  Interconectar tres LAN remotas a través del núcleo con **rutas estáticas**.
-3.  Comprobar la **redundancia** de la malla y el reparto de carga con **[ECMP](https://www.rfc-editor.org/rfc/rfc2992)**.
-4.  Comprender (a nivel conceptual) cómo MPLS reenvía por etiquetas, en qué se diferencia del enrutamiento IP convencional y en qué se diferencia de [SD-WAN](https://www.cisco.com/c/en/us/solutions/enterprise-networks/sd-wan/what-is-sd-wan.html).
+## Estado inicial
+
+- Las sedes se conectan con rutas y túneles, pero se desconoce cómo se organiza el núcleo que los transporta.
+- Hacen falta tres LAN remotas interconectadas a través de un núcleo con caminos alternativos.
+- Hay que distinguir qué resuelve MPLS y qué resuelve SD-WAN.
+
+## Resultado que se construirá
+
+Queda una topología de tres routers PE y tres P con tres LAN remotas, direccionamiento IP y rutas estáticas. Se observan el camino de un flujo entre LAN distintas, la conmutación a una ruta alternativa al caer un enlace, el reparto con ECMP de varios flujos TCP y el hecho de que una ruta estática no detecta un fallo remoto. MPLS (*push*, *swap*, *pop*) y SD-WAN se comparan en el análisis.
 
 !!! warning "Qué es ejecutable y qué es conceptual"
     - **Ejecutable:** topología PE/P, rutas estáticas, failover por métricas y ECMP.
@@ -371,7 +373,7 @@ graph LR
 -   **Un IGP** (como OSPF o IS-IS) que dé a LDP la topología de transporte.
 -   **Las tablas MPLS** (LFIB), que sustituyen en el núcleo a la consulta de la tabla de rutas IP, y el soporte de etiquetas en las interfaces (módulos `mpls_router` y `mpls_iptunnel` en Linux).
 
-Entonces, ¿para qué sirve? Entre otras cosas, para **VPN de capa 3 (L3VPN)**, **ingeniería de tráfico** y **QoS** en redes de proveedor.
+Entre otros usos, sirve para **VPN de capa 3 (L3VPN)**, **ingeniería de tráfico** y **QoS** en redes de proveedor.
 
 ## Comparación MPLS vs SD-WAN
 
@@ -388,11 +390,11 @@ Entonces, ¿para qué sirve? Entre otras cosas, para **VPN de capa 3 (L3VPN)**, 
 
 Los valores de coste y agilidad son tendencias habituales, no reglas.
 
-## Ejercicios
+## Pruebas de comportamiento
 
-### Ejercicio 1: Simular un fallo en el núcleo
+### Prueba 1: Fallo en el núcleo
 
-Tiramos el enlace directo P1-P3 (camino preferido) **por sus dos extremos**: así ambos routers retiran su ruta y activan la de respaldo por P2.
+Se baja el enlace directo P1-P3 (camino preferido) **por sus dos extremos**: así ambos routers retiran su ruta y activan la de respaldo por P2.
 
 ```bash
 sudo ip netns exec P1 ip link set veth-p1p3 down
@@ -401,7 +403,7 @@ sudo ip netns exec host1 ping -c 4 10.2.0.10
 sudo ip netns exec host1 traceroute -n 10.2.0.10
 ```
 
-**Resultado esperado:** 0% de pérdida y un salto más (P2, `192.168.1.14`). Restablece después el enlace (`up` en ambos extremos) y vuelve a añadir las rutas que se retiraron al bajar la interfaz:
+**Resultado esperado:** 0% de pérdida y un salto más (P2, `192.168.1.14`). Se restablece después el enlace (`up` en ambos extremos) y vuelve a añadir las rutas que se retiraron al bajar la interfaz:
 
 ```bash
 sudo ip netns exec P1 ip link set veth-p1p3 up
@@ -415,9 +417,9 @@ sudo ip netns exec P3 ip route add 10.0.0.0/24 via 192.168.1.17
 !!! warning "Sin reconvergencia automática"
     Si en lugar del enlace P1-P3 cae el P2-P3, P1 **no se entera** y sigue usando una ruta estática que ya no sirve. Detectar fallos remotos es tarea de OSPF/BGP (Laboratorio 15).
 
-### Ejercicio 2: Balanceo ECMP
+### Prueba 2: Balanceo ECMP
 
-**ECMP** (*Equal-Cost Multi-Path*) reparte el tráfico entre varios caminos de **igual coste**: es **balanceo de carga**, distinto del *failover*, que es la **selección de una ruta alternativa** cuando falla la principal (Ejercicio 1). ECMP **no equivale a alta disponibilidad completa**: si un camino cae, los flujos que lo usaban se interrumpen hasta que se detecta el fallo y se reasignan, y las aplicaciones pueden notarlo. Se define con **una sola ruta de varios saltos** (`nexthop`), no con dos `ip route add` (el segundo daría `File exists`). Por defecto el reparto se calcula solo con las IP de origen y destino; con la política 1 también se usan los puertos y se ven los dos caminos. (Aquí los dos caminos tienen distinta longitud: Linux no lo exige en rutas estáticas, pero protocolos como OSPF solo reparten entre caminos de **igual coste**.) Comprueba el reparto:
+**ECMP** (*Equal-Cost Multi-Path*) reparte el tráfico entre varios caminos de **igual coste**: es **balanceo de carga**, distinto del *failover*, que es la **selección de una ruta alternativa** cuando falla la principal (Prueba 1). ECMP **no equivale a alta disponibilidad completa**: si un camino cae, los flujos que lo usaban se interrumpen hasta que se detecta el fallo y se reasignan, y las aplicaciones pueden notarlo. Se define con **una sola ruta de varios saltos** (`nexthop`), no con dos `ip route add` (el segundo daría `File exists`). Por defecto el reparto se calcula solo con las IP de origen y destino; con la política 1 también se usan los puertos y se ven los dos caminos. (Aquí los dos caminos tienen distinta longitud: Linux no lo exige en rutas estáticas, pero protocolos como OSPF solo reparten entre caminos de **igual coste**.) Comprueba el reparto:
 
 ```bash
 sudo ip netns exec P1 sysctl -w net.ipv4.fib_multipath_hash_policy=1
@@ -509,7 +511,7 @@ La pila de etiquetas puede contener etiqueta de transporte y etiqueta de servici
 
 ### ECMP: medir y describir el reparto
 
-ECMP reparte normalmente por flujo mediante un hash para conservar afinidad; no implica que cada paquete de una misma sesión siga un camino distinto. Comprueba la ruta multipath y realiza varias conexiones independientes antes de concluir que el reparto es uniforme. Distingue igualdad de coste calculada por un IGP de una ruta multipath estática configurada manualmente con pesos.
+ECMP reparte normalmente por flujo mediante un hash para conservar afinidad; no implica que cada paquete de una misma sesión siga un camino distinto. Se comprueba la ruta multipath y realiza varias conexiones independientes antes de concluir que el reparto es uniforme. Distingue igualdad de coste calculada por un IGP de una ruta multipath estática configurada manualmente con pesos.
 
 ```bash
 sudo ip route show
@@ -521,22 +523,16 @@ sudo ip -s link show
 
 MPLS es una tecnología/arquitectura de forwarding del proveedor; SD-WAN es una arquitectura de control, políticas y orquestación de conectividad WAN que puede utilizar MPLS, Internet o enlaces LTE como underlay. Evalúa SLA de aplicaciones con latencia, jitter y pérdida, y diferencia edge, controlador y orquestador.
 
-## Preguntas de reflexión
+## Análisis técnico y decisiones
 
-1.  ¿Qué distingue a un router PE de uno P en una arquitectura de proveedor?
-2.  ¿Qué sucedería con el tráfico si caen a la vez los enlaces P1-P3 y P2-P3?
-3.  ¿Qué diferencia hay entre lo que esta simulación demuestra (rutas IP) y lo que haría MPLS real?
-4.  ¿Qué limitaciones tiene no disponer de un protocolo de enrutamiento dinámico en el núcleo?
-5.  ¿Cuándo preferiría una empresa SD-WAN a un servicio MPLS contratado?
+En una arquitectura MPLS de proveedor, el PE conecta redes de clientes y participa en la imposición o retirada de etiquetas; los routers P conmutan tráfico dentro del núcleo sin mantener necesariamente las rutas de cliente. Si se pierden simultáneamente los dos caminos hacia P3, los destinos detrás de ese nodo quedan aislados salvo que exista otra ruta. La simulación basada en rutas IP permite estudiar topología y redundancia, pero no demuestra el plano de etiquetas MPLS, LDP/RSVP-TE ni VPN MPLS reales. Sin routing dinámico, cada cambio del núcleo requiere intervención manual y aumenta el riesgo de inconsistencias. MPLS puede resultar adecuado para requisitos de servicio gestionado y SLA; SD-WAN puede aportar selección dinámica de enlaces y políticas sobre transportes diversos.
 
-## Conclusiones técnicas
+## Estado final
 
-Hemos construido una **simulación de una topología WAN con roles PE/P** y rutas IP estáticas, y hemos explicado MPLS de forma conceptual: para que fuese un core MPLS faltarían la distribución de etiquetas (LDP) y las tablas de etiquetas. MPLS permite ingeniería de tráfico y QoS mediante el reenvío por etiquetas (la calidad no es automática: depende de cómo el proveedor la configure). SD-WAN es un enfoque de gestión por políticas que puede apoyarse en MPLS, banda ancha u otros transportes, y suele ofrecer flexibilidad y reducción de costos. Las arquitecturas híbridas combinan ambos.
+Queda implementada una simulación de núcleo WAN con roles PE y P y enrutamiento IP convencional con rutas estáticas, con redundancia y ECMP observados.
 
-## Preparación para el siguiente laboratorio
+No es un núcleo MPLS: faltan la distribución de etiquetas (LDP) y las tablas de etiquetas. MPLS permite ingeniería de tráfico y QoS por reenvío de etiquetas, y SD-WAN gestiona por políticas distintos transportes; ambos pueden combinarse en arquitecturas híbridas.
 
-Hasta aquí cada laboratorio estudió **un mecanismo** (rutas, servicios, firewall, VPN, WAN). En el **Laboratorio 11** esos mecanismos se **organizan en una arquitectura empresarial**: capas Core, Distribución y Acceso, con firewall, DMZ y redundancia. Pasamos de configurar piezas a **diseñar un conjunto**.
+## Continuidad técnica
 
----
-
-**¡Laboratorio 10 completado!** Continúa con el **Laboratorio 11**.
+Hasta aquí cada laboratorio resolvió un mecanismo: rutas, servicios, firewall, VPN, WAN. En el laboratorio 11 esos mecanismos se organizan en una arquitectura empresarial con capas Core, Distribución y Acceso, firewall, DMZ y redundancia: se pasa de configurar piezas a diseñar un conjunto.

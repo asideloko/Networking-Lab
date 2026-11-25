@@ -188,11 +188,10 @@ if funcional.exists():
         errores.append(f"scripts/{funcional.name}: sintaxis Bash inválida: {resultado.stderr.strip()}")
 
 # --- Coherencia narrativa de los laboratorios -------------------------------------------------
-# Todos los laboratorios comparten el mismo arco: contexto -> problema -> objetivos -> topología ->
-# ... -> preguntas -> conclusiones -> puente al siguiente. Los contadores de la cabecera se comprueban
+# Todos los laboratorios comparten el mismo arco: apertura narrativa (situación de la empresa) -> estado inicial ->
+# topología -> ... -> estado final -> continuidad (cierre y puente al siguiente). Los contadores de la cabecera se comprueban
 # contra el contenido para que no queden desactualizados.
-ESENCIALES = ["Contexto empresarial", "Problema inicial", "Objetivos del laboratorio", "Topología",
-              "Preguntas de reflexión", "Conclusiones técnicas", "Preparación para el siguiente"]
+ESENCIALES = ["Introducción técnica", "Estado inicial", "Topología", "Estado final", "Continuidad técnica"]
 for md in sorted((docs / "02-LABORATORIOS").glob("lab-*/index.md")):
     txt = md.read_text(encoding="utf-8")
     prosa = re.sub(r"```.*?```", "", txt, flags=re.S)

@@ -7,35 +7,30 @@ description: "Laboratorio 06 de NETWORKING Lab — Enrutamiento y Conectividad e
 
 # ENRUTAMIENTO Y CONECTIVIDAD ENTRE REDES
 
-<p class="tema-meta"><span>14 secciones</span><span>4 diagramas</span><span>7 tablas</span></p>
+<p class="tema-meta"><span>15 secciones</span><span>4 diagramas</span><span>7 tablas</span></p>
 
-## Contexto empresarial
+## Nuevas sedes
 
-La empresa **Networking SecOps** ha implementado exitosamente su red con VLANs y Router-on-a-Stick. Ahora necesita **conectar su sede central con dos sucursales** (Sucursal A y Sucursal B) que se encuentran en ubicaciones geográficas diferentes. Cada sucursal tiene su propia red local y necesita comunicarse con la sede y entre sí.
+La sede de Networking SecOps ya está segmentada con VLAN y *router-on-a-stick*. Ahora la empresa abre **dos sucursales** (A y B) en ubicaciones distintas, cada una con su propia red local, y necesita que la sede y las sucursales se comuniquen entre sí. En este laboratorio las unirás con rutas estáticas, añadirás un enlace redundante con ruta de respaldo y construirás un túnel GRE entre redes no contiguas.
 
-El equipo de redes ha decidido implementar:
+## Introducción técnica
 
-1. **Rutas estáticas** para conectar las oficinas, con una ruta alternativa (métricas) para tolerar fallos.
-2. **Túneles GRE** para conectar redes no contiguas a través de Internet.
+Una sede segmentada no resuelve la comunicación con otras ubicaciones. Para conectar redes que no están contiguas hay que decidir, equipo por equipo, qué ruta sigue cada paquete.
+
+Este laboratorio interconecta una sede y dos sucursales mediante tres routers (R1, R2 y R3) con **rutas estáticas** y una ruta por defecto, añade un enlace redundante con rutas de respaldo por métrica y construye un túnel GRE entre redes no contiguas. Con ello se estudian la tabla de enrutamiento y la selección por prefijo más largo.
 
 !!! note "Alcance: enrutamiento dinámico"
     Este laboratorio trabaja **solo con enrutamiento estático**. Las rutas estáticas no se adaptan solas a un fallo remoto; esa limitación es la que justifica un protocolo dinámico. **[OSPF](https://www.rfc-editor.org/rfc/rfc2328) se implementa de forma real con FRRouting en el Laboratorio 15.**
 
-## Problema inicial
+## Estado inicial
 
-- La sede central tiene una red con VLANs (Ventas, IT, Administración).
-- Las sucursales A y B tienen sus propias redes locales.
+- La sede tiene una red con VLAN (Ventas, IT, Administración); las sucursales A y B tienen sus propias redes locales.
 - No hay conectividad entre las oficinas.
-- Se necesita enrutar el tráfico entre todas las redes.
+- El tráfico entre todas las redes debe enrutarse.
 
-## Objetivos del laboratorio
+## Resultado que se construirá
 
-1.  Comprender los principios del enrutamiento IP.
-2.  Configurar **rutas estáticas** y la **ruta por defecto**.
-3.  Comprender por qué el enrutamiento estático no basta a escala (OSPF se practica en el Laboratorio 15).
-4.  Analizar la **tabla de enrutamiento** y el proceso de **[longest prefix match](https://www.rfc-editor.org/rfc/rfc1812)**.
-5.  Configurar un **túnel GRE** para interconectar redes remotas.
-6.  Verificar la conectividad entre todas las oficinas.
+La sede y las dos sucursales se alcanzan entre sí a través de R1, R2 y R3. Se observa la tabla de enrutamiento y el criterio de *longest prefix match*, la conmutación a una ruta de respaldo cuando cae un enlace propio, el efecto del TTL con `traceroute` y un túnel GRE que encapsula tráfico sin cifrarlo.
 
 ## Topología
 
@@ -114,7 +109,7 @@ for ns in $EXISTENTES; do sudo ip netns del "$ns" 2>/dev/null || true; done
 Si siguen activos namespaces de otras prácticas, ejecuta su reversión; este paso no los modifica.
 ### Paso 1: Crear namespaces y enlaces
 
-Creamos tres routers y tres clientes (uno por oficina).
+La creación establece tres routers y tres clientes (uno por oficina).
 
 ```bash
 # Routers
@@ -332,11 +327,11 @@ sequenceDiagram
     CB-->>CA: respuesta por el camino de retorno
 ```
 
-El **TTL** evita bucles infinitos: cada router lo decrementa y, si llega a 0, descarta el paquete y envía un ICMP *Time Exceeded*. `traceroute` lo aprovecha: manda paquetes con TTL 1, 2, 3… y registra quién responde en cada salto.
+El **TTL** evita bucles infinitos: cada router lo decrementa y, si llega a 0, descarta el paquete y envía un ICMP *Time Exceeded*. `traceroute` lo aprovecha: manda paquetes con TTL 1, 2, 3… y se registra quién responde en cada salto.
 
 ### Paso 6: Agregar un enlace directo R1-R3 (camino preferido)
 
-Un enlace directo es un camino más corto. Lo agregamos y le damos una **métrica menor (50)**: Linux elige siempre la ruta de menor métrica, y deja la ruta por R2 (métrica 100) como respaldo.
+Un enlace directo es un camino más corto. Se agrega con una **métrica menor (50)**: Linux elige siempre la ruta de menor métrica, y deja la ruta por R2 (métrica 100) como respaldo.
 
 ```bash
 # Crear enlace R1-R3
@@ -355,7 +350,7 @@ sudo ip netns exec R1 ip route add 10.0.2.0/24 via 192.168.3.2 metric 50
 sudo ip netns exec R3 ip route add 10.0.0.0/24 via 192.168.3.1 metric 50
 ```
 
-Comprueba qué camino usa ahora el tráfico (debe pasar directamente por R3):
+Se comprueba qué camino usa ahora el tráfico (debe pasar directamente por R3):
 
 ```bash
 sudo ip netns exec R1 ip route show 10.0.2.0/24
@@ -366,7 +361,7 @@ sudo ip netns exec clienteSede traceroute -n 10.0.2.10
 
 ### Paso 7: Simular un fallo y verificar la redundancia
 
-Tiramos el **enlace preferido** (R1-R3) por **sus dos extremos**. Con rutas estáticas, un router solo "sabe" que un enlace cayó si es uno de sus propios enlaces: por eso el fallo debe afectar a ambos routers del enlace.
+Se baja el **enlace preferido** (R1-R3) por **sus dos extremos**. Con rutas estáticas, un router solo "sabe" que un enlace cayó si es uno de sus propios enlaces: por eso el fallo debe afectar a ambos routers del enlace.
 
 ```bash
 sudo ip netns exec R1 ip link set veth-r1r3 down
@@ -400,7 +395,7 @@ graph LR
 !!! warning "Limitación de las rutas estáticas"
     Si en cambio cae el enlace R2-R3 (un fallo **remoto** para R1), R1 seguiría enviando tráfico por R2 y se perdería: las rutas estáticas no detectan fallos que no son de su propio enlace. Para eso existen los protocolos dinámicos (Laboratorio 15).
 
-Restablece el enlace antes de continuar:
+Se restablece el enlace antes de continuar:
 
 ```bash
 sudo ip netns exec R1 ip link set veth-r1r3 up
@@ -452,7 +447,7 @@ sudo ip netns exec R1 ip tunnel del gre1
 sudo ip netns exec R3 ip tunnel del gre1
 ```
 
-Fíjate en que `traceroute` ahora ve el túnel como **un solo salto** (`10.100.0.2`).
+Se observa que `traceroute` ahora ve el túnel como **un solo salto** (`10.100.0.2`).
 
 ### Redundancia frente a convergencia
 
@@ -487,26 +482,25 @@ sudo ip netns exec R1 ip route show
 - La ruta por defecto (si existe) aparece como `default via …` (equivale a `0.0.0.0/0`); en R1 no hay ninguna.
 - Para ver qué ruta se **elegiría** para un destino concreto, usa `ip route get`.
 
-## Ejercicios prácticos
+## Pruebas de comportamiento
 
-### Ejercicio 1: Agregar una nueva oficina
+### Prueba 1: Incorporación de una oficina
 
-Agrega una cuarta oficina (Sucursal C) con red 10.0.3.0/24, conéctala a R2 y configura las rutas necesarias para que todos los clientes se comuniquen.
+Se agrega una cuarta oficina (Sucursal C) con la red `10.0.3.0/24`, conectada a R2. **Efecto esperado:** mientras R1, R2 y R3 no aprendan la red nueva con rutas estáticas (y R2 la de vuelta hacia ellos), la Sucursal C solo alcanza a R2; con las rutas en ambos sentidos todos los clientes se comunican. Cada red nueva obliga a editar las tablas de todos los routers, lo que ilustra por qué las rutas estáticas no escalan.
 
-### Ejercicio 2: Verificar el TTL
+### Prueba 2: Comportamiento del TTL
 
-Desde el cliente Sede, haz un `traceroute` a la Sucursal B y observa cómo los routers decrementan el TTL.
+Desde el cliente Sede, se hace un `traceroute` a la Sucursal B y se observa cómo los routers decrementan el TTL.
 
 ```bash
 sudo ip netns exec clienteSede traceroute -n 10.0.2.10
 ```
 
-### Ejercicio 3: Fallo remoto y rutas de respaldo
+### Prueba 3: Fallo remoto y rutas de respaldo
 
-Baja el enlace R2-R3 por **ambos extremos** (`veth-r2r3` en R2 y `veth-r3r2` en R3) y comprueba que `clienteSucA` ya no alcanza a `clienteSucB`, aunque físicamente exista el camino R2 → R1 → R3. Después agrega rutas de respaldo con métrica 100 (en R2 hacia `192.168.1.1`; en R3, para la Sucursal A, hacia `192.168.3.1`) y vuelve a probar.
+Se baja el enlace R2-R3 por **ambos extremos** (`veth-r2r3` en R2 y `veth-r3r2` en R3) y se comprueba que `clienteSucA` ya no alcanza a `clienteSucB`, aunque físicamente exista el camino R2 → R1 → R3. Después se agregan rutas de respaldo con métrica 100 (en R2 hacia `192.168.1.1`; en R3, para la Sucursal A, hacia `192.168.3.1`) y se vuelve a probar. **Efecto esperado:** hasta agregar las rutas de respaldo no hay camino, porque la única ruta de R2 hacia la Sucursal B pasa por el enlace caído; con ellas, el tráfico pasa por R1.
 
-## Errores comunes y soluciones
-
+## Diagnóstico de problemas frecuentes
 | Error | Causa | Solución |
 |-------|-------|----------|
 | Ping falla entre oficinas | Falta ruta de retorno. | Verificar rutas en ambos sentidos. |
@@ -526,7 +520,7 @@ Baja el enlace R2-R3 por **ambos extremos** (`veth-r2r3` en R2 y `veth-r3r2` en 
 
 ## Limpieza del laboratorio
 
-Todos los dispositivos y enlaces de esta topología viven dentro de los *namespaces*. No se modifica el reenvío, las rutas ni el firewall global del host. Esta limpieza elimina únicamente los seis namespaces de la práctica; ejecútala cuando hayas terminado los ejercicios.
+Todos los dispositivos y enlaces de esta topología viven dentro de los *namespaces*. No se modifica el reenvío, las rutas ni el firewall global del host. Esta limpieza elimina únicamente los seis namespaces de la práctica; se ejecuta al terminar las pruebas.
 
 ```bash
 NS_LEFT=0
@@ -570,41 +564,26 @@ El router aplica *longest prefix match* entre rutas elegibles; después resuelve
 
 ### Métrica no significa calidad física
 
-La métrica es un criterio administrativo de preferencia dentro de la selección de rutas; no mide automáticamente latencia, ancho de banda, pérdida ni número de saltos. Compara una ruta con métrica menor y RTT mayor frente a otra con métrica superior y RTT menor: Linux puede preferir la primera por su métrica, aunque la segunda parezca más rápida en una medición puntual.
+La métrica es un criterio administrativo de preferencia dentro de la selección de rutas; no mide automáticamente latencia, ancho de banda, pérdida ni número de saltos. Se compara una ruta con métrica menor y RTT mayor frente a otra con métrica superior y RTT menor: Linux puede preferir la primera por su métrica, aunque la segunda parezca más rápida en una medición puntual.
 
 ### GRE y underlay
 
-El enlace virtual `192.168.3.0/30` simula el **underlay IP** entre extremos; no representa Internet pública. GRE añade una cabecera GRE y una cabecera IP exterior alrededor del paquete interior. El TTL exterior y el interior son campos distintos; observa ambos con capturas en el extremo del túnel y en la interfaz subyacente. La MTU efectiva disminuye por el overhead y debe probarse en ambos sentidos.
+El enlace virtual `192.168.3.0/30` simula el **underlay IP** entre extremos; no representa Internet pública. GRE añade una cabecera GRE y una cabecera IP exterior alrededor del paquete interior. El TTL exterior y el interior son campos distintos; se observan ambos con capturas en el extremo del túnel y en la interfaz subyacente. La MTU efectiva disminuye por el overhead y debe probarse en ambos sentidos.
 
 ### Fallo local frente a fallo remoto
 
-Registra el tiempo, paquetes perdidos y ruta seleccionada cuando bajas una interfaz local. Repite con un fallo remoto que no provoque pérdida de portadora (por ejemplo, descartar tráfico en el extremo remoto dentro del laboratorio). Una ruta estática con siguiente salto todavía alcanzable a nivel de enlace no desaparece necesariamente ante un fallo remoto; no la describas como convergencia automática.
+Se registra el tiempo, paquetes perdidos y ruta seleccionada cuando se baja una interfaz local. Se repite con un fallo remoto que no provoque pérdida de portadora (por ejemplo, descartar tráfico en el extremo remoto dentro del laboratorio). Una ruta estática con siguiente salto todavía alcanzable a nivel de enlace no desaparece necesariamente ante un fallo remoto; no debe describirse como convergencia automática.
 
-## Preguntas de reflexión
+## Análisis técnico y decisiones
 
-1.  ¿Qué mecanismo hace que R1 envíe `10.0.2.10` por el enlace directo y no por R2?
-2.  ¿Qué sucedería si se borra la ruta de métrica 100 y después cae el enlace directo?
-3.  ¿Qué diferencia hay entre un fallo local (cae mi interfaz) y uno remoto (cae un enlace más allá del vecino)?
-4.  ¿Qué limitaciones tiene el enrutamiento estático cuando la red crece a decenas de sucursales?
-5.  ¿En qué escenario empresarial usarías un túnel GRE, y qué le falta para ser seguro?
-6.  ¿Qué otro mecanismo podría resolver la conectividad entre sedes sin configurar rutas a mano?
+R1 selecciona la ruta aplicando primero el prefijo más específico y, entre rutas equivalentes, la métrica o distancia administrativa según el mecanismo configurado. La ruta directa prevalece sobre la ruta alternativa mientras esté instalada. Si se elimina la ruta secundaria y cae el enlace principal, no queda un camino configurado y el destino se vuelve inalcanzable. Un fallo local de interfaz suele detectarse por el estado del enlace; un fallo remoto puede dejar la interfaz y el vecino activos mientras el destino posterior está caído. Las rutas estáticas son sencillas en redes pequeñas, pero su mantenimiento crece con cada sede y cambio. GRE encapsula tráfico, pero no cifra ni autentica por sí mismo; se combina con IPsec cuando se requiere protección. OSPF u otro protocolo dinámico permite aprender y recalcular rutas automáticamente.
 
-## Conclusiones técnicas
+## Estado final
 
-En este laboratorio hemos:
+Quedan implementadas las rutas estáticas entre tres routers, una ruta por defecto, un enlace redundante con métricas de respaldo y un túnel GRE.
 
-1.  Implementado una topología con tres routers interconectados.
-2.  Configurado **rutas estáticas** para interconectar las oficinas.
-3.  Analizado la **tabla de enrutamiento** y el proceso de selección.
-4.  Agregado **enlaces redundantes** con rutas de respaldo (útiles ante fallos locales, no un mecanismo de convergencia).
-5.  Configurado un **túnel GRE** para conectar redes no contiguas (encapsula, pero no cifra).
+Límite: una ruta estática no detecta el fallo de un enlace remoto, de modo que solo protege contra fallos locales. Esa limitación justifica un protocolo dinámico; [OSPF](https://www.rfc-editor.org/rfc/rfc2328) se implementa con FRRouting en el laboratorio 15.
 
-El enrutamiento es el corazón de la comunicación entre redes. Las rutas estáticas son simples pero no escalan ni reaccionan a fallos remotos. Los protocolos dinámicos como OSPF funcionan de otro modo: los routers establecen adyacencias, intercambian el estado de sus enlaces, construyen una base de datos de topología común y calculan los caminos más cortos ([SPF](https://www.rfc-editor.org/rfc/rfc2328)), reconvergiendo cuando algo cambia. Se implementa de forma real en el Laboratorio 15. Los túneles GRE permiten extender redes a través de infraestructuras IP.
+## Continuidad técnica
 
-## Preparación para el siguiente laboratorio
-
-Hemos dejado la sede conectada con las dos sucursales mediante rutas estáticas, un enlace redundante y un túnel GRE. Las redes **ya se comunican**, pero los equipos todavía se configuran a mano y la red no ofrece servicios a los usuarios. En el **Laboratorio 07** añadimos esos servicios: **DNS, DHCP y NAT/PAT**, y la diferencia entre TCP y UDP. La seguridad (firewall y DMZ) llega en el Laboratorio 08.
-
----
-
-**¡Laboratorio 06 completado!** Has implementado enrutamiento entre redes. Continúa con el **Laboratorio 07**.
+La sede queda conectada con las dos sucursales mediante rutas estáticas, un enlace redundante y un túnel GRE. Las redes ya se comunican, pero los equipos se configuran a mano y la red no ofrece servicios a los usuarios. En el laboratorio 07 se añaden DNS, DHCP y NAT/PAT, y se comparan TCP y UDP; la seguridad llega en el laboratorio 08.

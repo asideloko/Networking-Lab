@@ -7,11 +7,17 @@ description: "Laboratorio 01 de NETWORKING Lab — Fundamentos de Redes y Encaps
 
 # FUNDAMENTOS DE REDES Y ENCAPSULACIÓN
 
-<p class="tema-meta"><span>15 secciones</span><span>3 diagramas</span><span>6 tablas</span></p>
+<p class="tema-meta"><span>16 secciones</span><span>3 diagramas</span><span>6 tablas</span></p>
 
-## Contexto empresarial
+## ¡Bienvenido!
 
-La empresa **Networking SecOps** acaba de abrir una nueva oficina. Cuenta con dos empleados que necesitan compartir archivos y acceder a Internet. No hay infraestructura de red aún. Se te ha encargado **diseñar la red local** que permita la comunicación entre los equipos y preparar el acceso a la web. Además, debes **demostrar cómo viajan los datos** entre dos equipos y cómo se encapsulan en cada capa.
+La empresa Networking SecOps acaba de abrir una nueva oficina. Cuenta con dos empleados que necesitan compartir archivos y acceder a Internet. No hay infraestructura de red aún. Se te ha encargado diseñar la red local que permita la comunicación entre los equipos y preparar el acceso a la web. Además, debes demostrar cómo viajan los datos entre dos equipos y cómo se encapsulan en cada capa.
+
+## Introducción técnica
+
+Una comunicación entre dos equipos de una misma red local no necesita un router. Basta con que ambos tengan interfaces correctamente configuradas y compartan un medio de capa 2.
+
+En esta primera implementación se construye una red virtual con dos equipos Linux y un bridge Ethernet. Cada equipo vive en un *network namespace* y se une al bridge mediante un par `veth`. Con esa infraestructura se observa cómo se resuelven las direcciones MAC y cómo viajan los paquetes IP dentro de tramas Ethernet.
 
 !!! note "Alcance de este laboratorio"
     En esta primera demostración el equipo intermedio (el namespace `router`) aloja un **bridge Linux** y su función efectiva es la **conmutación Ethernet (capa 2)**. El **enrutamiento entre subredes** todavía no se demuestra; llegará en los laboratorios 02 y 06.
@@ -19,23 +25,22 @@ La empresa **Networking SecOps** acaba de abrir una nueva oficina. Cuenta con do
 !!! info "Conectividad frente a servicios"
     En este laboratorio se construye la **infraestructura de conectividad local**. Los servicios de compartición de archivos y el acceso a Internet se abordarán después con tecnologías y protocolos específicos (laboratorios 02 y 07). Tener conectividad no es lo mismo que tener servicios funcionando sobre ella.
 
-## Problema inicial
+## Estado inicial
 
--   Dos PCs (Cliente1 y Cliente2) deben comunicarse entre sí.
--   Ambas necesitarán salir a Internet a través de un router (esa salida se prepara en el laboratorio 02).
--   No se dispone de equipos físicos, pero se puede utilizar **Linux** con herramientas de virtualización de red (namespaces, [veth](https://man7.org/linux/man-pages/man4/veth.4.html), etc.) para simular la topología.
+- No existe ninguna red: solo hay un sistema Linux y las herramientas para crear entornos de red aislados (*namespaces*, pares [veth](https://man7.org/linux/man-pages/man4/veth.4.html) y bridges).
+- Los dos equipos, `cliente1` y `cliente2`, todavía no tienen interfaces ni direcciones.
+- El equipo intermedio, llamado `router`, aloja el bridge. En este laboratorio solo conmuta tramas; la salida a Internet se prepara en el laboratorio 02.
 
-## Objetivos del laboratorio
+## Resultado que se construirá
 
-1.  Comprender el concepto de red y sus componentes.
-2.  Implementar una red local sencilla usando **namespaces de red** en Linux.
-3.  Asignar direcciones IP y comprobar conectividad.
-4.  Observar el proceso de **encapsulación** mediante captura de paquetes con `tcpdump`.
-5.  Analizar el flujo de datos desde la generación hasta la transmisión.
+Queda en funcionamiento una LAN de capa 2:
 
-## Conceptos previos
+- `cliente1` con `10.0.1.2/24` y `cliente2` con `10.0.1.3/24`.
+- Un bridge Linux en el equipo `router`, con `10.0.1.1/24`, que une los dos enlaces.
+- Capturas de `tcpdump` en las que se distinguen el mensaje ICMP, el paquete IP y la trama Ethernet, además de la solicitud y la respuesta ARP.
 
-Antes de construir nada conviene fijar seis términos que se usan en todo el laboratorio:
+## Fundamento necesario
+La construcción utiliza seis términos que se repiten a lo largo de la colección:
 
 | Concepto | Qué es | Dónde aparece aquí |
 |----------|--------|--------------------|
@@ -49,7 +54,7 @@ Antes de construir nada conviene fijar seis términos que se usan en todo el lab
 ## Herramientas necesarias
 
 -   Linux (Debian/Ubuntu recomendado) con `root` o `CAP_NET_ADMIN` y `CAP_NET_RAW`; el kernel debe permitir *network namespaces*, bridges y `veth`.
--   Android/Termux permite consultar la documentación, pero no es un entorno compatible garantizado para ejecutar estas prácticas: el sandbox de Android normalmente no concede las capacidades de red necesarias. Usa una VM o PC Linux.
+-   Android/Termux permite consultar la documentación, pero no es un entorno compatible garantizado para ejecutar estas prácticas: el sandbox de Android normalmente no concede las capacidades de red necesarias. Se usa una VM o PC Linux.
 -   Comandos: `ip`, `ping`, `tcpdump` (`nslookup` y `curl` se usarán a partir del laboratorio 02).
 -   Paquetes que se usan a lo largo de la serie (instálalos una vez): `sudo apt install tcpdump traceroute iperf3 dnsutils curl`.
 -   Editor de texto para scripts (opcional).
@@ -106,11 +111,11 @@ graph LR
 
 ## Construcción de la red
 
-Usaremos **namespaces de red** para aislar cada dispositivo en un entorno virtual dentro de la misma máquina Linux. Esto nos permite simular una red sin necesidad de hardware extra.
+La topología utiliza **namespaces de red** para aislar cada dispositivo dentro de la misma máquina Linux. Así se reproduce una red funcional sin requerir hardware adicional.
 
 ### Paso 1: Verificar el entorno
 
-Asegúrate de tener permisos de root:
+La configuración requiere permisos de root:
 
 ```bash
 sudo -i
@@ -120,7 +125,7 @@ En los laboratorios 01 a 05 los comandos se muestran sin `sudo` porque se asume 
 
 ### Paso 2: Crear los namespaces
 
-Creamos un namespace para cada dispositivo:
+Cada dispositivo necesita su propio namespace. La creación se realiza con los siguientes comandos:
 
 ```bash
 ip netns add cliente1
@@ -131,7 +136,7 @@ ip netns add router
 ip netns exec router ip link set lo alias networking-lab-owned
 ```
 
-Verificamos que se hayan creado:
+La lista de namespaces permite confirmar cuáles quedaron creados:
 
 ```bash
 ip netns list
@@ -147,7 +152,7 @@ cliente2
 
 ### Paso 3: Crear los pares de interfaces virtuales (veth)
 
-Necesitamos conectar cada cliente al router. Para ello, creamos dos pares veth:
+Cada cliente necesita un enlace con el equipo intermedio. Dos pares `veth` proporcionan esos enlaces:
 
 ```bash
 # Par para Cliente 1
@@ -193,7 +198,7 @@ ip netns exec cliente2 ip link set veth-c2 up
 ip netns exec cliente2 ip link set lo up
 ```
 
-**Router – Usaremos un bridge para conectar ambos clientes:**
+**Router – La práctica utiliza un bridge para conectar ambos clientes:**
 
 ```bash
 # En el namespace router
@@ -213,31 +218,31 @@ El router todavía **no dispone de una interfaz WAN funcional**: para que los cl
 
 ### Paso 7: Verificar conectividad entre clientes
 
-Desde Cliente 1, hacemos ping a Cliente 2:
+La conectividad entre los clientes se comprueba enviando un `ping` desde Cliente 1 hacia Cliente 2:
 
 ```bash
 ip netns exec cliente1 ping -c 4 10.0.1.3
 ```
 
-**Resultado esperado:** 4 respuestas exitosas.
+**Resultado esperado:** cuatro respuestas exitosas.
 
-Desde Cliente 2 a Cliente 1:
+La prueba inversa comprueba el camino de retorno, desde Cliente 2 hacia Cliente 1:
 
 ```bash
 ip netns exec cliente2 ping -c 4 10.0.1.2
 ```
 
-**Resultado esperado:** 4 respuestas exitosas.
+**Resultado esperado:** cuatro respuestas exitosas.
 
 ### Paso 8: Verificar conectividad con el router
 
-Desde Cliente 1 al router:
+La última comprobación localiza la conectividad entre Cliente 1 y la interfaz del bridge:
 
 ```bash
 ip netns exec cliente1 ping -c 4 10.0.1.1
 ```
 
-**Resultado esperado:** 4 respuestas exitosas.
+**Resultado esperado:** cuatro respuestas exitosas.
 
 ### Qué demuestra cada prueba
 
@@ -251,11 +256,11 @@ Una respuesta [ICMP](https://www.rfc-editor.org/rfc/rfc792) exitosa (`bytes from
 
 ## Observación de la encapsulación
 
-Vamos a capturar el tráfico en el bridge del equipo intermedio para ver cómo viaja un paquete ICMP (ping) desde Cliente 1 a Cliente 2.
+La captura del tráfico en el bridge permite seguir el recorrido de un paquete ICMP (`ping`) desde Cliente 1 hasta Cliente 2.
 
 ### Paso 9: Iniciar captura en el router
 
-Abrimos otra terminal (o usamos `tmux`) y ejecutamos:
+La captura se inicia en una segunda terminal (o en una ventana de `tmux`):
 
 ```bash
 ip netns exec router tcpdump -i br0 -n -v icmp
@@ -263,7 +268,7 @@ ip netns exec router tcpdump -i br0 -n -v icmp
 
 ### Paso 10: Enviar un ping desde Cliente 1
 
-En la terminal original:
+En la terminal donde se ejecutan las pruebas:
 
 ```bash
 ip netns exec cliente1 ping -c 1 10.0.1.3
@@ -288,17 +293,17 @@ tcpdump: listening on br0, link-type EN10MB (Ethernet), capture size 262144 byte
 -   El protocolo es ICMP (1).
 -   Los datos ICMP (echo request/reply) están encapsulados dentro del paquete IP, que a su vez va dentro de la trama Ethernet.
 
-Podemos ver más detalles si usamos `-e` para mostrar la cabecera Ethernet:
+La opción `-e` añade la cabecera Ethernet a la captura y hace visibles las direcciones MAC:
 
 ```bash
 ip netns exec router tcpdump -i br0 -n -e icmp
 ```
 
-Aparecerán direcciones MAC de origen y destino, lo que confirma la encapsulación en la capa de enlace. Observa que la MAC de destino de cada trama es la de **Cliente 2** (y la de Cliente 1 en la respuesta), no la del bridge.
+Aparecerán direcciones MAC de origen y destino, lo que confirma la encapsulación en la capa de enlace. La MAC de destino de cada trama corresponde a **Cliente 2**; en la respuesta, corresponde a Cliente 1. No es la MAC del bridge.
 
 ### Paso 12: Observar la resolución [ARP](https://www.rfc-editor.org/rfc/rfc826)
 
-En el Paso 7 ya hubo `ping` entre los clientes, así que sus cachés ARP probablemente están **pobladas** y una captura nueva no mostraría ninguna solicitud. Para ver el proceso completo hay que **vaciar la caché** antes de capturar:
+En el Paso 7 ya hubo `ping` entre los clientes, así que sus cachés ARP probablemente están **pobladas** y una captura nueva no mostraría ninguna solicitud. Para observar el proceso completo, la caché debe estar **vacía** antes de iniciar la captura:
 
 ```bash
 # 1. Vaciar la caché de vecinos (ARP) de Cliente 1
@@ -356,7 +361,7 @@ graph LR
 4.  **Resolución ARP:** como 10.0.1.3 pertenece a la misma subred que el origen, Cliente 1 no necesita gateway: envía una solicitud ARP por *broadcast* preguntando «¿quién tiene 10.0.1.3?». Cliente 2 responde con su MAC. (Esos mensajes ARP no aparecen en la captura anterior porque el filtro es `icmp`; se observan en el Paso 12, vaciando antes la caché ARP.)
 5.  **Capa de enlace:** Se añade la cabecera Ethernet con MAC origen (de `veth-c1`) y MAC destino (la de `veth-c2`, obtenida por ARP).
 6.  **El bridge conmuta la trama.** No desencapsula el paquete IP ni consulta tablas de rutas. Aprende la MAC de origen de cada trama que recibe y la asocia al puerto de entrada; para decidir la salida busca la MAC de destino en su tabla. Si la conoce, reenvía la trama **sin modificarla** solo por ese puerto (`veth-r2`); si no la conoce, la inunda por todos los puertos excepto el de entrada. Puedes ver la tabla con `ip netns exec router bridge fdb show br br0`.
-7.  **Cliente 2 recibe la trama**, la desencapsula y entrega el mensaje ICMP a la aplicación, que genera la respuesta y repite el proceso inverso.
+7.  **Cliente 2 recibe la trama**, la desencapsula y entrega el mensaje ICMP a la aplicación, que genera la respuesta y se repite el proceso inverso.
 
 !!! info "Bridge frente a router"
     Un **bridge** aprende direcciones MAC y reenvía **tramas Ethernet** dentro de una misma red. Un **router** consulta información de capa 3 y reenvía **paquetes IP** entre redes distintas, reescribiendo la cabecera Ethernet en cada salto. Cuando los dos clientes están en la misma subred, la comunicación es de capa 2 y el router no participa.
@@ -370,7 +375,7 @@ Todo lo que está conectado al mismo bridge pertenece al mismo **dominio de broa
 
 ## Limpieza del laboratorio
 
-Esta limpieza elimina únicamente los tres *namespaces* creados en esta práctica. Si continúas con los laboratorios 02 y 03, no la ejecutes todavía: esos laboratorios reutilizan esta topología. Si ya ejecutaste el laboratorio 02 o el 03, utiliza primero las secciones de reversión de esas prácticas para retirar también los cambios que hicieron en el host.
+Esta limpieza elimina únicamente los tres *namespaces* creados en esta práctica. Si se continúa con los laboratorios 02 y 03, no debe ejecutarse todavía: esos laboratorios reutilizan esta topología. Si ya ejecutaste el laboratorio 02 o el 03, utiliza primero las secciones de reversión de esas prácticas para retirar también los cambios que hicieron en el host.
 
 ```bash
 # Eliminar solo namespaces propios que ya no contienen procesos.
@@ -403,7 +408,7 @@ La prueba principal no consiste solo en comprobar que `ping` responde: hay que r
 
 ### Secuencia de observación
 
-Antes de enviar tráfico, predice qué interfaz utilizará el cliente y qué dirección MAC aparecerá como destino:
+Antes de generar tráfico, la tabla de rutas permite anticipar qué interfaz utilizará el cliente; la tabla de vecinos permite comprobar qué dirección MAC se resolverá como destino:
 
 ```bash
 sudo ip netns exec cliente1 ip route get 10.0.1.3
@@ -419,7 +424,7 @@ sudo ip netns exec router bridge fdb show br br0
 sudo ip netns exec cliente1 ip neigh show
 ```
 
-**Interpretación causal:** el kernel compara el destino con sus prefijos conectados; al ser local, resuelve por ARP la MAC del destino, no la del gateway. El bridge aprende la MAC de origen al recibir la trama, consulta su [FDB](https://docs.kernel.org/networking/bridge.html) y reenvía por el puerto asociado. Si todavía no conoce la MAC de destino, inunda la trama unicast desconocida por los puertos de esa VLAN/dominio, excepto el puerto de entrada. La respuesta permite aprender el sentido inverso.
+**Interpretación causal:** el kernel compara el destino con sus prefijos conectados; al ser local, resuelve por ARP la MAC del destino, no la del gateway. El bridge aprende la MAC de origen al recibir la trama, se consulta su [FDB](https://docs.kernel.org/networking/bridge.html) y reenvía por el puerto asociado. Si todavía no conoce la MAC de destino, inunda la trama unicast desconocida por los puertos de esa VLAN/dominio, excepto el puerto de entrada. La respuesta permite aprender el sentido inverso.
 
 ### Aprendizaje, envejecimiento y ARP obsoleto
 
@@ -430,12 +435,12 @@ sudo ip netns exec cliente1 ip neigh flush to 10.0.1.3
 sudo ip netns exec cliente1 ping -c 1 10.0.1.3
 ```
 
-No confundas las tablas: la FDB asocia MAC con puerto del bridge; la tabla de vecinos asocia IP con MAC en un enlace. Sus temporizadores son independientes:
+No debe confundirse las tablas: la FDB asocia MAC con puerto del bridge; la tabla de vecinos asocia IP con MAC en un enlace. Sus temporizadores son independientes:
 
 - **Caché ARP (`ip neigh`)**: los estados NUD incluyen `REACHABLE`, `STALE`, `DELAY`, `PROBE`, `INCOMPLETE` y `FAILED`. `base_reachable_time_ms` es el tiempo base de alcanzabilidad (habitualmente 30 000 ms, con variación aleatoria); al vencer, una entrada puede pasar a `STALE` y se vuelve a validar cuando se utiliza.
 - **FDB del bridge (`bridge fdb`)**: las entradas dinámicas se eliminan tras el `ageing_time` del bridge (habitualmente 300 s sin tráfico); las entradas estáticas no envejecen de esa forma.
 
-Consulta ambos temporizadores y sus estados por separado:
+Los dos temporizadores y sus estados se consultan por separado:
 
 ```bash
 sudo ip netns exec cliente1 ip -s neigh show dev veth-c1
@@ -444,7 +449,7 @@ sudo ip netns exec router bridge -s fdb show br br0
 sudo ip netns exec router cat /sys/class/net/br0/bridge/ageing_time
 ```
 
-Para observar una nueva resolución ARP sin esperar al temporizador, elimina solo la entrada de prueba y genera tráfico:
+Una nueva resolución ARP puede observarse sin esperar al temporizador: basta con retirar únicamente la entrada de prueba y generar tráfico:
 
 ```bash
 sudo ip netns exec cliente1 ip neigh flush to 10.0.1.3 dev veth-c1
@@ -481,13 +486,13 @@ fi
 sudo ip netns exec router bridge fdb show br br0
 ```
 
-En una terminal captura el puerto observador:
+La captura del puerto observador se inicia en una terminal:
 
 ```bash
 sudo ip netns exec router tcpdump -ni veth-obs -e -vv icmp
 ```
 
-En otra terminal ejecuta dos pings, uno a la vez:
+En otra terminal se ejecutan dos `ping`, de forma secuencial:
 
 ```bash
 sudo ip netns exec cliente1 ping -c 1 10.0.1.3
@@ -495,9 +500,9 @@ sudo ip netns exec router bridge fdb show br br0
 sudo ip netns exec cliente1 ping -c 1 10.0.1.3
 ```
 
-**Resultado esperado:** el primer Echo Request aparece en `veth-obs`: el bridge aún desconoce el puerto asociado a la MAC destino y replica la trama unicast por los demás puertos. La respuesta de cliente 2 enseña su MAC en la FDB. El segundo Echo Request ya se reenvía solo por el puerto aprendido y no debe aparecer en `veth-obs`. No confundas este caso con ARP: la entrada permanente evita que el ARP broadcast sea el motivo de la copia observada.
+**Resultado esperado:** el primer Echo Request aparece en `veth-obs`: el bridge aún desconoce el puerto asociado a la MAC destino y replica la trama unicast por los demás puertos. La respuesta de cliente 2 enseña su MAC en la FDB. El segundo Echo Request ya se reenvía solo por el puerto aprendido y no debe aparecer en `veth-obs`. No debe confundirse este caso con ARP: la entrada permanente evita que el ARP broadcast sea el motivo de la copia observada.
 
-Retira la entrada permanente y el puerto temporal:
+Al terminar, se retiran la entrada permanente y el puerto temporal:
 
 ```bash
 sudo ip netns exec cliente1 ip neigh del 10.0.1.3 dev veth-c1 2>/dev/null || true
@@ -508,7 +513,7 @@ else echo "Se conserva observador: tiene procesos activos o no pertenece a Lab01
 
 ### Interpretar la trama y la desencapsulación
 
-| Campo observado | Qué representa | Qué debe explicar el estudiante |
+| Campo observado | Qué representa | Interpretación técnica |
 |---|---|---|
 | MAC destino / MAC origen | Direcciones de enlace Ethernet | La MAC destino permite al bridge consultar la FDB; la MAC origen se aprende en el puerto de entrada |
 | EtherType | Protocolo encapsulado (por ejemplo, IPv4 `0x0800` o ARP `0x0806`) | Permite identificar qué protocolo recibe el payload Ethernet |
@@ -516,31 +521,21 @@ else echo "Se conserva observador: tiene procesos activos o no pertenece a Lab01
 | ICMP tipo/código, identificador y secuencia | Mensaje de control | Distingue Echo Request y Echo Reply y correlaciona solicitud/respuesta |
 | [FCS](https://standards.ieee.org/standard/802_3-2022.html) | Comprobación de trama Ethernet | Normalmente no aparece en capturas del host porque la [NIC](https://www.ibm.com/think/topics/network-interface-card)/driver lo retira antes de entregar la trama al kernel |
 
-Usa `tcpdump -e -vv -XX` para relacionar los bytes con los campos. En el destino se retira la cabecera Ethernet, se procesa IPv4 y se entrega ICMP; la respuesta se encapsula en una **nueva** trama con MAC origen/destino correspondientes al sentido de retorno. La captura en `any`, bridge o veth puede variar por offloads; no concluyas que falta FCS o VLAN solo porque el host no lo muestra.
+Con `tcpdump -e -vv -XX`, los bytes capturados se pueden relacionar con los campos de cada cabecera. En el destino se retira la cabecera Ethernet, se procesa IPv4 y se entrega ICMP; la respuesta se encapsula en una **nueva** trama con MAC origen/destino correspondientes al sentido de retorno. La captura en `any`, bridge o veth puede variar por offloads; no concluyas que falta FCS o VLAN solo porque el host no lo muestra.
 
+**Observaciones de esta secuencia:** la salida de `ip route get`, la captura ARP/ICMP, la FDB antes y después y la tabla de vecinos permiten reconstruir cada transición. Se interpretan en el propio desarrollo, junto al comando que las produce.
 
-**Evidencia que debe entregar el estudiante:** salida de `ip route get`, captura ARP/ICMP, FDB antes y después, tabla de vecinos y explicación de cada transición. No basta con adjuntar la salida sin interpretarla.
+## Análisis técnico y decisiones
 
-## Preguntas de reflexión
+La comunicación entre Cliente 1 y Cliente 2 ocurre dentro de la misma subred: el emisor resuelve la MAC del destino mediante ARP y envía la trama al bridge. No necesita utilizar el gateway. Si `br0` deja de unir los dos puertos, los extremos `veth` quedan en dominios de enlace separados y el ping deja de llegar, aunque las direcciones IP sigan configuradas. `ping` confirma la respuesta ICMP a nivel IP; `tcpdump -e` permite observar las tramas Ethernet y sus MAC. El diseño es una LAN de capa 2: no proporciona aislamiento entre usuarios, redundancia ni salida a otras redes por sí solo. En una instalación física, un switch Ethernet cumple la función de interconectar los hosts; un enlace directo también es posible, pero no escala como punto de concentración.
 
-1.  ¿Qué mecanismo se está demostrando cuando Cliente 1 y Cliente 2 se comunican sin pasar por una dirección de *gateway*?
-2.  ¿Qué sucedería con el `ping` si se elimina `br0` y se dejan solo los dos extremos `veth-r1` y `veth-r2` sin unir?
-3.  ¿Qué diferencia hay entre lo que `ping` demuestra (conectividad IP) y lo que `tcpdump -e` permite ver (tramas)?
-4.  ¿Qué limitaciones tiene esta red? (Piensa en tamaño, seguridad y salida a otras redes.)
-5.  ¿En qué escenario empresarial real se usaría una red local de capa 2 como esta?
-6.  ¿Qué otros mecanismos podrían conectar dos equipos de la misma subred? (Un *switch* físico, un cable cruzado…)
+## Estado final
 
-## Conclusiones técnicas
+Queda implementada una LAN de capa 2 con dos clientes y un bridge, comprobada con `ping`, con la tabla de vecinos y con capturas de la encapsulación Datos → ICMP → IP → Ethernet.
 
--   Hemos implementado una red funcional utilizando **namespaces de red**, que simulan dispositivos independientes.
--   Hemos verificado la conectividad capa a capa (IP y Ethernet).
--   Mediante `tcpdump` hemos observado la **encapsulación** en tiempo real:
-    -   Datos → ICMP (mensaje) → IP (paquete) → Ethernet (trama).
--   El equipo lógico denominado `router` contiene un **bridge** que realiza la **conmutación de capa 2** entre los dos clientes. **No se ha demostrado todavía enrutamiento entre subredes**.
--   Este laboratorio sienta las bases para los siguientes, donde agregaremos más dispositivos, VLANs, enrutamiento y servicios.
+Límites de lo construido: el equipo `router` solo conmuta, por lo que **no se ha demostrado enrutamiento entre subredes**; no hay salida a Internet, aislamiento entre usuarios ni redundancia.
 
-## Errores comunes y soluciones
-
+## Diagnóstico de problemas frecuentes
 | Error | Causa | Solución |
 |-------|-------|----------|
 | `ping: connect: Network is unreachable` | No se ha asignado IP o la interfaz está down. | Verificar `ip addr show` y `ip link set ... up`. |
@@ -548,10 +543,12 @@ Usa `tcpdump -e -vv -XX` para relacionar los bytes con los campos. En el destino
 | No se ven paquetes en tcpdump | La captura está en interfaz incorrecta. | Capturar en `br0` o en `any`. |
 | Los clientes no pueden hacer ping al router | El router no tiene la IP en la interfaz correcta. | Verificar que `br0` tenga la IP y esté up. |
 
-## Preparación para el siguiente laboratorio
+# ¡Bien hecho!
 
-Hemos dejado la red con los dos clientes y el equipo `router` (con bridge). Este equipo **aún no tiene salida a Internet**. En el **Laboratorio 02** le añadiremos una interfaz externa, una ruta por defecto y NAT para que los clientes puedan salir a la web.
+Hemos dejado la red con los dos clientes y el equipo router (con bridge). Este equipo aún no tiene salida a Internet. En el Laboratorio 02 le añadiremos una interfaz externa, una ruta por defecto y NAT para que los clientes puedan salir a la web.
 
----
+La topología conserva los dos clientes y el equipo `router` con su bridge, sin salida a Internet. En el laboratorio 02 el `router` recibe una interfaz externa, una ruta por defecto y NAT, y la captura de paquetes se amplía a un flujo que atraviesa dos traducciones de dirección.
 
-**¡Laboratorio 01 completado!** Has construido tu primera red virtual y has observado cómo se encapsulan y conmutan los datos. Continúa con el **Laboratorio 02**.
+## Continuidad técnica
+
+Los dos equipos de Networking SecOps ya se comunican dentro de la oficina mediante un bridge, pero el `router` solo conmuta y la oficina no tiene salida a Internet. En el laboratorio 02 el `router` recibe una interfaz externa, una ruta por defecto y NAT.

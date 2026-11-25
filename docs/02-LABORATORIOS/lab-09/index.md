@@ -7,37 +7,31 @@ description: "Laboratorio 09 de NETWORKING Lab — VPN y Tunelización."
 
 # VPN Y TUNELIZACIÓN
 
-<p class="tema-meta"><span>18 secciones</span><span>4 diagramas</span><span>9 tablas</span></p>
+<p class="tema-meta"><span>19 secciones</span><span>4 diagramas</span><span>9 tablas</span></p>
 
-## Contexto empresarial
+## Hacia el exterior
 
-La empresa **Networking SecOps** ya tiene su infraestructura de red con firewall, DMZ y servicios básicos (Laboratorio 08). Ahora necesita **conectar de forma segura** a empleados remotos y oficinas externas a través de Internet.
+Networking SecOps ya cuenta con firewall, DMZ y servicios (laboratorio 08), pero sus sucursales y los empleados que teletrabajan deben llegar a la sede a través de Internet sin exponer las comunicaciones. En este laboratorio construirás un túnel GRE protegido con IPsec, un acceso remoto con OpenVPN y otro con WireGuard, y compararás las tres tecnologías.
 
-El equipo de redes ha identificado los siguientes requisitos:
+## Introducción técnica
 
-1. **Conectar sucursales** de forma segura a la sede central.
-2. **Permitir teletrabajo** para empleados desde sus casas.
-3. **Proteger las comunicaciones** con cifrado.
-4. Entender por qué las rutas estáticas sobre túneles no escalan y por qué el enrutamiento dinámico (OSPF, Laboratorio 15) es el paso siguiente; este laboratorio no construye enrutamiento dinámico sobre los túneles.
+Las sucursales y los usuarios remotos se conectan hasta aquí por enlaces directos sin cifrar o no se conectan. Para atravesar Internet con protección hace falta **encapsular** el tráfico y, además, **autenticarlo y cifrarlo**.
+
+Este laboratorio construye un túnel GRE y lo protege con IPsec (ESP en modo túnel, con claves manuales), publica un acceso remoto con OpenVPN en modo de clave estática y otro con WireGuard, y se comparan las tres tecnologías. El enrutamiento sobre los túneles es estático; el dinámico se introduce en el laboratorio 15.
 
 !!! warning "Túnel no es lo mismo que VPN"
     Un **túnel** es la **encapsulación** de tráfico entre dos extremos. Una **VPN** es una conexión virtual **protegida** mediante mecanismos de seguridad (autenticación, integridad y, normalmente, cifrado). **No todos los túneles son VPN seguras**: GRE es un túnel, pero no cifra ni autentica criptográficamente el tráfico. Puede combinarse con IPsec para obtener protección criptográfica.
 
-## Problema inicial
+## Estado inicial
 
-- Las sucursales están conectadas con enlaces directos (sin cifrado).
-- Los empleados remotos no pueden acceder a recursos corporativos.
-- No hay seguridad en las comunicaciones entre sedes.
-- Se necesita una solución escalable y segura.
+- Las sucursales se conectan con enlaces directos, sin cifrado.
+- Los usuarios remotos no alcanzan los recursos corporativos.
+- Las comunicaciones entre sedes no tienen protección criptográfica.
+- Las rutas estáticas sobre túneles no escalan.
 
-## Objetivos del laboratorio
+## Resultado que se construirá
 
-1.  Comprender los conceptos de **VPN** y **tunelización**.
-2.  Configurar un **túnel GRE** entre dos routers.
-3.  Implementar **IPsec** para cifrar el tráfico entre sedes.
-4.  Configurar **OpenVPN** para acceso remoto de empleados.
-5.  Implementar **WireGuard** como alternativa ligera.
-6.  Comparar las diferentes tecnologías VPN.
+Quedan operativos un túnel GRE, una asociación IPsec entre dos sedes, un acceso remoto OpenVPN (red `10.8.0.0/24`) y otro WireGuard (red `10.9.0.0/24`) terminados en un *gateway* VPN dentro de la DMZ. Se capturan GRE, ESP y los paquetes de cada VPN, se observan las asociaciones de seguridad y el efecto del túnel sobre la MTU, y se comparan alcance, seguridad y complejidad.
 
 ## Herramientas necesarias
 
@@ -213,7 +207,7 @@ fi
 sudo ip netns exec VPN_GW ip route replace 10.0.0.0/22 via 10.0.99.1
 ```
 
-Comprueba que el puerto publicado llega al gateway (DNAT), sin ninguna VPN todavía:
+Se comprueba que el puerto publicado llega al gateway (DNAT), sin ninguna VPN todavía:
 
 ```bash
 sudo ip netns exec clienteVPN ping -c 2 192.168.100.1
@@ -282,7 +276,7 @@ sudo ip netns exec R2 ping -c 2 10.10.0.6
 
 ### Paso 5: Enviar el tráfico entre oficinas por los túneles
 
-Las rutas estáticas del laboratorio 06 ya existen para estos prefijos, y un segundo `ip route add` con la misma métrica fallaría (`File exists`). Damos al túnel una **métrica menor (10)** para que sea el camino preferido, o reemplazamos la ruta cuando su métrica era 0:
+Las rutas estáticas del laboratorio 06 ya existen para estos prefijos, y un segundo `ip route add` con la misma métrica fallaría (`File exists`). Se da al túnel una **métrica menor (10)** para que sea el camino preferido, o reemplazamos la ruta cuando su métrica era 0:
 
 ```bash
 # R1: hacia Sucursal B, vía GRE R1-R2 (métrica 10 < 50 < 100)
@@ -309,7 +303,7 @@ sudo ip netns exec clienteSede ping -c 4 10.0.2.10
 sudo ip netns exec R1 ip route get 10.0.2.10
 ```
 
-La segunda orden debe mostrar `dev gre1`. Para ver la encapsulación, captura en la interfaz física mientras haces ping: verás paquetes con protocolo GRE (47) que contienen el ICMP original **en claro**. Esto demuestra que GRE es un túnel, no una VPN segura.
+La segunda orden debe mostrar `dev gre1`. Para ver la encapsulación, se captura en la interfaz física durante el ping: se ven paquetes con protocolo GRE (47) que contienen el ICMP original **en claro**. Esto demuestra que GRE es un túnel, no una VPN segura.
 
 ```bash
 sudo ip netns exec R1 tcpdump -i veth-r1r2 -n -c 4 proto gre
@@ -328,7 +322,7 @@ Conviene distinguir los elementos de IPsec:
 
 La presencia de comandos `xfrm` **no demuestra por sí sola que exista una VPN funcional**: hay que comprobar que el tráfico selecciona la política, sale como ESP y los contadores de la SA aumentan (Paso 8).
 
-En la terminología IPsec, la **SPD** (Security Policy Database) decide qué flujos se descartan, dejan en claro o protegen; la **SAD** (Security Association Database) almacena los parámetros de cada SA. El **SPI** identifica una SA unidireccional en ESP. **AH** aporta autenticación/integridad pero no cifrado y autentica campos del encabezado IP que NAT puede modificar; **ESP** es el uso habitual cuando se requiere confidencialidad. La protección anti-replay usa números de secuencia y una ventana deslizante para rechazar paquetes repetidos; no la desactives en producción. En una implementación con IKEv2, las SA se renuevan (*rekey*) antes de expirar, con nuevos SPI y claves; este ejercicio manual no negocia ni renueva claves.
+En la terminología IPsec, la **SPD** (Security Policy Database) decide qué flujos se descartan, dejan en claro o protegen; la **SAD** (Security Association Database) almacena los parámetros de cada SA. El **SPI** identifica una SA unidireccional en ESP. **AH** aporta autenticación/integridad pero no cifrado y autentica campos del encabezado IP que NAT puede modificar; **ESP** es el uso habitual cuando se requiere confidencialidad. La protección anti-replay usa números de secuencia y una ventana deslizante para rechazar paquetes repetidos; no la desactives en producción. En una implementación con IKEv2, las SA se renuevan (*rekey*) antes de expirar, con nuevos SPI y claves; esta prueba manual no negocia ni renueva claves.
 
 
 Para que los selectores IPsec protejan los paquetes IP originales, esta prueba utiliza el enlace IP directo R1–R2 como transporte; no apila ESP sobre GRE. Se fijan rutas simétricas por el enlace físico antes de instalar las políticas:
@@ -361,7 +355,7 @@ done
 
 # Políticas en R1: no se reemplaza ninguna política preexistente con estos selectores.
 if sudo ip netns exec R1 ip xfrm policy list | grep -Fq 'src 10.0.0.0/24 dst 10.0.1.0/24' || sudo ip netns exec R1 ip xfrm policy list | grep -Fq 'src 10.0.1.0/24 dst 10.0.0.0/24'; then
-  echo "R1 ya tiene políticas XFRM con los selectores del ejercicio; se aborta sin modificarlas."
+  echo "R1 ya tiene políticas XFRM con los selectores dla prueba; se aborta sin modificarlas."
   exit 1
 fi
 sudo ip netns exec R1 ip xfrm policy add src 10.0.0.0/24 dst 10.0.1.0/24 dir out \
@@ -373,7 +367,7 @@ sudo ip netns exec R1 ip xfrm policy add src 10.0.1.0/24 dst 10.0.0.0/24 dir fwd
 
 # Políticas en R2 (espejo).
 if sudo ip netns exec R2 ip xfrm policy list | grep -Fq 'src 10.0.1.0/24 dst 10.0.0.0/24' || sudo ip netns exec R2 ip xfrm policy list | grep -Fq 'src 10.0.0.0/24 dst 10.0.1.0/24'; then
-  echo "R2 ya tiene políticas XFRM con los selectores del ejercicio; se aborta sin modificarlas."
+  echo "R2 ya tiene políticas XFRM con los selectores dla prueba; se aborta sin modificarlas."
   exit 1
 fi
 sudo ip netns exec R2 ip xfrm policy add src 10.0.1.0/24 dst 10.0.0.0/24 dir out \
@@ -411,7 +405,7 @@ El selector de las políticas es `10.0.0.0/24` ↔ `10.0.1.0/24`: **solo ese tr�
 
 **OpenVPN** es una solución VPN **basada en TLS**: en su modo normal, cliente y servidor se autentican con certificados (PKI), negocian claves por un canal TLS y transportan el tráfico por UDP o TCP, con sus propios mecanismos de autenticación y cifrado. **No es IPsec ni una variante de GRE.**
 
-Un servidor OpenVPN de acceso remoto "real" necesita esa PKI (CA, certificado de servidor y de cada cliente) y no se genera en unos pocos comandos. Aquí usamos el modo de **clave estática compartida**, que **no usa TLS**, no ofrece secreto perfecto hacia adelante y está en desuso; es suficiente para ver el túnel `tun` y su sobrecarga, pero **no representa una configuración segura de producción**.
+Un servidor OpenVPN de acceso remoto "real" necesita esa PKI (CA, certificado de servidor y de cada cliente) y no se genera en unos pocos comandos. Aquí se usa el modo de **clave estática compartida**, que **no usa TLS**, no ofrece secreto perfecto hacia adelante y está en desuso; es suficiente para ver el túnel `tun` y su sobrecarga, pero **no representa una configuración segura de producción**.
 
 ```bash
 sudo apt-get install -y openvpn
@@ -426,7 +420,7 @@ OVPN_MAJOR=${OVPN_VERSION%%.*}
 OVPN_MINOR=${OVPN_VERSION#*.}; OVPN_MINOR=${OVPN_MINOR%%.*}
 if [ -z "$OVPN_VERSION" ]; then echo "No se pudo detectar la versión de OpenVPN."; exit 1; fi
 if [ "$OVPN_MAJOR" -gt 2 ] || { [ "$OVPN_MAJOR" -eq 2 ] && [ "$OVPN_MINOR" -ge 8 ]; }; then
-  echo "OpenVPN $OVPN_VERSION: el modo estático --secret puede no estar disponible; omite este ejercicio si la versión lo retiró y usa TLS/PKI o --peer-fingerprint."
+  echo "OpenVPN $OVPN_VERSION: el modo estático --secret puede no estar disponible; omite esta prueba si la versión lo retiró y usa TLS/PKI o --peer-fingerprint."
 else
   OVPN_STATIC_FLAGS=()
   if [ "$OVPN_MAJOR" -eq 2 ] && [ "$OVPN_MINOR" -ge 7 ]; then
@@ -455,13 +449,13 @@ fi
     | 2.4–2.5 | Aceptado como modo legacy sin TLS | No pasar `--allow-deprecated-insecure-static-crypto`; en 2.4 usa `--genkey --secret` |
     | 2.6 | Aceptado con advertencia de obsolescencia | No pasar la opción de excepción |
     | 2.7 | Deshabilitado por defecto; `--secret` falla salvo opt-in explícito | El bloque añade `--allow-deprecated-insecure-static-crypto`; úsalo solo para esta demostración aislada |
-    | 2.8 o posterior | Retirada prevista del modo estático; verifica la versión instalada | Si la opción ya no existe, omite el ejercicio y usa TLS/PKI o `--peer-fingerprint` |
+    | 2.8 o posterior | Retirada prevista del modo estático; verifica la versión instalada | Si la opción ya no existe, omite la prueba y usa TLS/PKI o `--peer-fingerprint` |
 
-    Comprueba `openvpn --version` y `openvpn --help` antes de ejecutar opciones legacy. En 2.6 `--secret` emite advertencia; en 2.7 queda bloqueado salvo `--allow-deprecated-insecure-static-crypto`, y su retirada está prevista para 2.8. La clave estática solo ilustra la creación del dispositivo `tun`; no representa una VPN segura de producción.
+    Se comprueba `openvpn --version` y `openvpn --help` antes de ejecutar opciones legacy. En 2.6 `--secret` emite advertencia; en 2.7 queda bloqueado salvo `--allow-deprecated-insecure-static-crypto`, y su retirada está prevista para 2.8. La clave estática solo ilustra la creación del dispositivo `tun`; no representa una VPN segura de producción.
 
 ### Arquitectura de OpenVPN: plano de control y plano de datos
 
-En el modo TLS de producción, el canal de control autentica los extremos y negocia claves; el canal de datos cifra y autentica los paquetes transportados. La PKI valida certificados, cadena de confianza, vigencia y revocación; `--peer-fingerprint` permite fijar la identidad del certificado cuando el diseño lo requiere. `tun` transporta paquetes IP (capa 3); `tap` transporta tramas Ethernet (capa 2) y amplía el dominio de broadcast. El modo `--secret` de este ejercicio no crea ese canal TLS ni una identidad por certificado: se mantiene únicamente como demostración legacy.
+En el modo TLS de producción, el canal de control autentica los extremos y negocia claves; el canal de datos cifra y autentica los paquetes transportados. La PKI valida certificados, cadena de confianza, vigencia y revocación; `--peer-fingerprint` permite fijar la identidad del certificado cuando el diseño lo requiere. `tun` transporta paquetes IP (capa 3); `tap` transporta tramas Ethernet (capa 2) y amplía el dominio de broadcast. El modo `--secret` de esta prueba no crea ese canal TLS ni una identidad por certificado: se mantiene únicamente como demostración legacy.
 
 
 ### Paso 10: Verificar OpenVPN
@@ -496,7 +490,7 @@ WireGuard utiliza una suite criptográfica fija, no una negociación de cifrados
 
 Las claves efímeras y las claves de sesión se renuevan automáticamente según los temporizadores y límites internos del protocolo. Eso **no** rota por sí solo la clave privada de larga duración del peer: para rotarla se genera un nuevo par y se actualiza la clave pública correspondiente en el otro extremo, coordinando el cambio para no perder conectividad.
 
-`PersistentKeepalive` envía paquetes vacíos periódicos (por ejemplo, cada 25 s) para mantener una asignación NAT cuando un peer está detrás de NAT y necesita recibir tráfico iniciado desde el otro lado. No es un mecanismo de failover ni una prueba de que las rutas y reglas de firewall funcionen. Usa `wg show` para observar el último handshake y contadores; un handshake reciente confirma intercambio criptográfico, no acceso completo a una aplicación.
+`PersistentKeepalive` envía paquetes vacíos periódicos (por ejemplo, cada 25 s) para mantener una asignación NAT cuando un peer está detrás de NAT y necesita recibir tráfico iniciado desde el otro lado. No es un mecanismo de failover ni una prueba de que las rutas y reglas de firewall funcionen. Se usa `wg show` para observar el último handshake y contadores; un handshake reciente confirma intercambio criptográfico, no acceso completo a una aplicación.
 
 ```bash
 sudo apt-get install -y wireguard-tools
@@ -509,7 +503,7 @@ mkdir -p /tmp/lab09 && cd /tmp/lab09
 
 ### Paso 12: Configurar el servidor (VPN Gateway) y el cliente
 
-Creamos la interfaz **dentro** de cada namespace y la configuramos con `wg set` (no usamos `wg-quick`, que lee `/etc/wireguard` del host):
+La creación establece la interfaz **dentro** de cada namespace y se configura con `wg set` (no se usa `wg-quick`, que lee `/etc/wireguard` del host):
 
 ```bash
 # VPN Gateway: 10.9.0.1, escucha en 51820, conoce la clave pública del cliente
@@ -635,7 +629,7 @@ Este *overhead* reduce la MTU efectiva del túnel (véase el laboratorio 15 para
 | OpenVPN (UDP) | ≈ 40–70 bytes | Según cifrado y modo |
 | WireGuard | 60 bytes | MTU efectiva ≈ 1440 (la interfaz suele fijarse en 1420 por compatibilidad con IPv6) |
 
-### Ejercicio de laboratorio frente a despliegue habitual
+### Variación de laboratorio frente a despliegue habitual
 
 | Tecnología | En este laboratorio | Despliegue habitual |
 |------------|---------------------|----------------------|
@@ -666,11 +660,11 @@ sudo ip netns exec clienteSede ping -c 2 -M dont -s 1472 10.0.2.10
 
 Con DF activado, el router descarta el paquete grande y avisa con ICMP «fragmentación necesaria»; sin DF lo fragmenta, con un coste de rendimiento. Si esos avisos ICMP se filtran, las conexiones TCP con paquetes grandes se quedan colgadas aunque los pings pequeños funcionen. La solución habitual es ajustar la MSS de TCP, tal como se hace en el laboratorio 15.
 
-## Ejercicios prácticos
+## Pruebas de comportamiento
 
-### Ejercicio 1: Agregar un nuevo túnel GRE
+### Prueba 1: Túnel GRE adicional
 
-Configura un túnel GRE entre R1 y R3 sobre el enlace directo `192.168.3.0/30` que se creó en el Paso 6 del laboratorio 06 (debe seguir activo) para tener redundancia.
+Se configura un túnel GRE entre R1 y R3 sobre el enlace directo `192.168.3.0/30` que se creó en el Paso 6 del laboratorio 06 (debe seguir activo) para tener redundancia.
 
 ```bash
 for ns in R1 R3; do
@@ -691,9 +685,9 @@ sudo ip netns exec R3 ip addr add 10.10.0.10/30 dev gre3
 sudo ip netns exec R3 ip link set gre3 up
 ```
 
-### Ejercicio 2: Agregar rutas redundantes
+### Prueba 2: Rutas redundantes
 
-Configura una ruta con métrica distinta a las existentes para failover (en R1 ya hay rutas a `10.0.2.0/24` con métricas 10, 50 y 100; repetir una métrica da `File exists`).
+Se configura una ruta con métrica distinta a las existentes para failover (en R1 ya hay rutas a `10.0.2.0/24` con métricas 10, 50 y 100; repetir una métrica da `File exists`).
 
 ```bash
 # En R1
@@ -702,12 +696,11 @@ if ! sudo ip netns exec R1 ip route show 10.0.2.0/24 | grep -q 'via 10.10.0.9.*g
 fi
 ```
 
-### Ejercicio 3: Configurar WireGuard en Sucursal
+### Prueba 3: WireGuard en la sucursal
 
-Implementa WireGuard entre R2 y R3 como alternativa.
+Se implementa WireGuard entre R2 y R3 como alternativa a GRE + IPsec en ese tramo. **Efecto esperado:** el túnel cifra con una configuración mucho más corta y, en la captura del enlace, el tráfico entre sucursales aparece como UDP al puerto elegido, sin cabeceras GRE ni ESP.
 
-## Errores comunes y soluciones
-
+## Diagnóstico de problemas frecuentes
 | Error | Causa | Solución |
 |-------|-------|----------|
 | Túnel GRE no sube | IPs de extremos incorrectas | Verificar `ip tunnel show` |
@@ -727,7 +720,7 @@ Implementa WireGuard entre R2 y R3 como alternativa.
 
 ## Revertir los cambios del host
 
-La reversión detiene primero los procesos de esta VPN y comprueba que los namespaces compartidos no tengan procesos activos. Si detecta un proceso desconocido o una marca de propiedad distinta, no modifica rutas, SA, reglas ni enlaces.
+La reversión detiene primero los procesos de esta VPN y se comprueba que los namespaces compartidos no tengan procesos activos. Si detecta un proceso desconocido o una marca de propiedad distinta, no modifica rutas, SA, reglas ni enlaces.
 
 ```bash
 PROC_LEFT=0
@@ -859,13 +852,13 @@ La clave simétrica configurada manualmente en XFRM permite demostrar protecció
 
 ### OpenVPN y WireGuard
 
-Una clave estática compartida no proporciona el mismo modelo de identidad, revocación y negociación que una PKI con certificados y autenticación mutua. Mantén el modo estático como demostración histórica/limitada y no como configuración recomendada. Documenta versiones de OpenVPN y valida las opciones disponibles con `openvpn --version` y `openvpn --help`; no dependas de una opción retirada o deprecada.
+Una clave estática compartida no proporciona el mismo modelo de identidad, revocación y negociación que una PKI con certificados y autenticación mutua. Se mantiene el modo estático como demostración histórica/limitada y no como configuración recomendada. Se documenta versiones de OpenVPN y valida las opciones disponibles con `openvpn --version` y `openvpn --help`; no dependas de una opción retirada o deprecada.
 
 WireGuard utiliza una arquitectura de pares con claves públicas/privadas; `AllowedIPs` participa tanto en la selección de pares para destinos como en la validación de orígenes recibidos. Un handshake demuestra que hubo intercambio criptográfico reciente, no que existan rutas, forwarding, firewall y retorno hacia toda la LAN. `PersistentKeepalive` mantiene mapeos NAT en escenarios que lo requieren; no es un mecanismo de alta disponibilidad.
 
 ### Overhead y MTU
 
-No existe un overhead universal para IPsec u OpenVPN. Depende de IPv4/IPv6 exterior, modo, algoritmo, IV/nonce, etiqueta de autenticación, padding, opciones y encapsulaciones adicionales. Calcula el overhead de la configuración concreta y valida con capturas; no presentes valores aproximados como constantes de protocolo.
+No existe un overhead universal para IPsec u OpenVPN. Depende de IPv4/IPv6 exterior, modo, algoritmo, IV/nonce, etiqueta de autenticación, padding, opciones y encapsulaciones adicionales. Se calcula el overhead de la configuración concreta y valida con capturas; no presentes valores aproximados como constantes de protocolo.
 
 ### Reversión selectiva de los recursos añadidos por este laboratorio
 
@@ -880,33 +873,18 @@ for r in R1 R2 R3; do
  done
 ```
 
-Elimina únicamente las rutas de las redes remotas que añadiste en los pasos de [GRE/VPN](https://www.rfc-editor.org/rfc/rfc2784); elimina los túneles `gre1`, `gre2` y `gre3` solo si pertenecen a esta práctica; elimina las SA XFRM por sus selectores `src`, `dst`, `proto esp` y SPI documentados; elimina las políticas por sus selectores y dirección. **No uses `ip xfrm flush`**, porque puede borrar asociaciones ajenas. Retira además las reglas DNAT/FORWARD insertadas en `firewall` y los procesos OpenVPN/WireGuard que arrancó esta práctica. La WAN `br-wan` y el NAT base pertenecen al laboratorio 08: no los borres aquí; revierte ese laboratorio con su procedimiento propio.
+Se elimina únicamente las rutas de las redes remotas que añadiste en los pasos de [GRE/VPN](https://www.rfc-editor.org/rfc/rfc2784); elimina los túneles `gre1`, `gre2` y `gre3` solo si pertenecen a esta práctica; elimina las SA XFRM por sus selectores `src`, `dst`, `proto esp` y SPI documentados; elimina las políticas por sus selectores y dirección. **No uses `ip xfrm flush`**, porque puede borrar asociaciones ajenas. Se retira además las reglas DNAT/FORWARD insertadas en `firewall` y los procesos OpenVPN/WireGuard que arrancó esta práctica. La WAN `br-wan` y el NAT base pertenecen al laboratorio 08: no los borres aquí; revierte ese laboratorio con su procedimiento propio.
 
-## Preguntas de reflexión
+## Análisis técnico y decisiones
 
-1.  ¿Qué mecanismo hace que GRE no sea, por sí solo, una VPN?
-2.  ¿Qué sucedería si se crea el túnel pero no se añade la ruta de retorno en el otro extremo?
-3.  ¿Qué diferencia hay entre el tráfico GRE y el tráfico ESP en la captura?
-4.  ¿Qué limitaciones tiene OpenVPN con clave estática frente a un modo con TLS?
-5.  ¿Cuándo elegirías WireGuard frente a IPsec para conectar dos sedes?
-6.  ¿Qué otro mecanismo ([ZTNA](https://csrc.nist.gov/pubs/sp/800/207/final), laboratorio 12) podría sustituir una VPN de acceso remoto?
+GRE encapsula paquetes y crea un enlace lógico, pero no aporta cifrado, integridad ni autenticación; por eso no constituye por sí solo una VPN segura. Crear el túnel sin ruta de retorno deja el tráfico de ida encaminado y las respuestas sin camino. En una captura, GRE identifica el protocolo de encapsulación; ESP corresponde a la protección IPsec y oculta el contenido protegido. OpenVPN con clave estática simplifica una demostración, pero carece de las capacidades de autenticación, negociación y gestión de claves de un despliegue TLS completo. WireGuard ofrece configuración compacta y criptografía moderna; IPsec cuenta con amplia interoperabilidad y perfiles empresariales. ZTNA puede sustituir ciertos accesos remotos de red por acceso a aplicaciones según identidad y contexto, no es un reemplazo universal de toda conectividad sitio a sitio.
 
-## Conclusiones técnicas
+## Estado final
 
-En este laboratorio hemos:
+Quedan implementados GRE, IPsec con claves manuales, OpenVPN con clave estática y WireGuard, con tráfico cifrado entre sedes y hacia usuarios remotos.
 
-1.  Configurado **túneles GRE** para conectar redes no contiguas.
-2.  Implementado **IPsec** (ESP en modo túnel, con claves manuales) para cifrar comunicaciones entre sedes.
-3.  Configurado **OpenVPN** en modo de clave estática para el acceso remoto (sin PKI).
-4.  Implementado **WireGuard** como alternativa moderna y ligera.
-5.  Comparado las diferentes tecnologías VPN y sus características.
+GRE encapsula pero no protege; IPsec es el estándar empresarial; OpenVPN se apoya en TLS; WireGuard destaca por su simplicidad. En todos los casos, la VPN transporta el tráfico y son **las rutas y las políticas del firewall** las que deciden qué se alcanza a través de ella. Las claves fijas y el modo estático son solo para demostración.
 
-Las VPN son esenciales para conectar sedes y proporcionar acceso remoto seguro. GRE ofrece encapsulación simple y soporte para multicast, pero **no protege** el tráfico; IPsec proporciona seguridad robusta y es un estándar empresarial; OpenVPN, basado en TLS, ofrece flexibilidad y amplia compatibilidad; y WireGuard destaca por su simplicidad, rendimiento y criptografía moderna. En todos los casos, la VPN transporta el tráfico: **las rutas y las políticas del firewall** deciden qué se alcanza a través de ella.
+## Continuidad técnica
 
-## Preparación para el siguiente laboratorio
-
-Hemos dejado la red con túneles GRE, IPsec (claves manuales), OpenVPN (clave estática) y WireGuard. En el **Laboratorio 10** exploraremos **Infraestructura WAN y Core**, montando una red troncal WAN con routers [PE](https://www.rfc-editor.org/rfc/rfc4364) y P y rutas estáticas con redundancia (el enrutamiento dinámico llega en el Laboratorio 15).
-
----
-
-**¡Laboratorio 09 completado!** Has implementado VPN y tunelización. Continúa con el **Laboratorio 10**.
+Las sedes quedan unidas por túneles GRE, IPsec (claves manuales), OpenVPN (clave estática) y WireGuard. En el laboratorio 10 la empresa estudia la red que transporta ese tráfico: un núcleo WAN con routers PE y P y rutas estáticas con redundancia (el enrutamiento dinámico llega en el laboratorio 15).

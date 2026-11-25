@@ -7,32 +7,34 @@ description: "Laboratorio 15 de NETWORKING Lab — Implementación Práctica Int
 
 # IMPLEMENTACIÓN PRÁCTICA INTEGRAL
 
-<p class="tema-meta"><span>21 secciones</span><span>3 diagramas</span><span>14 tablas</span></p>
+<p class="tema-meta"><span>22 secciones</span><span>3 diagramas</span><span>14 tablas</span></p>
 
-## Contexto empresarial
+## El cierre del recorrido
 
-La empresa **Networking SecOps** ha completado todos los laboratorios anteriores. Ahora debe integrar en una topología ejecutable los mecanismos centrales de este cierre: direccionamiento VLSM, enrutamiento dinámico con OSPF, firewall, DHCP/NAT y redundancia parcial de *gateway* con VRRP. **No es una única implementación de las quince tecnologías**: VLAN, DNS corporativo, VPN, MPLS, nube real, ZTNA y NOC/SIEM se estudian en escenarios previos, variantes o apartados conceptuales; el alcance se detalla en 15.10.
+Networking SecOps ha recorrido todos los laboratorios anteriores y ahora debe integrar en una topología ejecutable los mecanismos centrales de este cierre: direccionamiento VLSM, enrutamiento dinámico con OSPF, firewall, DHCP/NAT y redundancia parcial del *gateway* con VRRP. **No es una única implementación de las quince tecnologías**: VLAN, DNS corporativo, VPN, MPLS, nube real, ZTNA y NOC/SIEM se practicaron en escenarios previos o se tratan como variantes y apartados conceptuales; el alcance exacto se detalla en 15.10.
+
+## Introducción técnica
+
+El último laboratorio parte de un entorno vacío y construye una infraestructura multisede: una sede principal con varios segmentos, una sucursal, servicios de red, enrutamiento dinámico, políticas de seguridad y redundancia parcial. Termina con una red implementada, verificada y sometida a escenarios controlados de fallo.
+
+La construcción es progresiva. Cada apartado funciona por sí mismo y añade un mecanismo: direccionamiento VLSM, rutas estáticas y después OSPF con FRRouting, filtrado con `nftables` y NAT, DHCP y DNS, y VRRP para el *gateway* del segmento de servidores. Después se diagnostican fallos reales y se evalúan los límites de la integración.
+
 
 !!! note "Mismo modelo que el resto de la serie"
     Todo se construye con **namespaces de red**, igual que en los laboratorios anteriores (las interfaces de la práctica son virtuales). **Algunos pasos sí modifican el host**: el reenvío IPv4, una regla NAT y, en un caso de diagnóstico, un archivo persistente en `/etc/sysctl.d`. Están marcados como «Cambio en el host» y se revierten en la sección «Limpieza del laboratorio». Es un laboratorio de integración con una topología nueva, por lo que empieza limpiando el entorno. Requiere instalar `frr` (OSPF), `keepalived` (VRRP), `dnsmasq-base` (DHCP/DNS) y `dnsutils` para las pruebas con `dig`.
 
 !!! note "Este es un escenario nuevo"
-    Los laboratorios 01–14 usaron topologías diferentes. Aquí **se reutilizan los nombres `R1` y `R2` con otra función y otro direccionamiento** (sede y respaldo/sucursal), y el escenario se construye desde cero. Cada apartado funciona por sí mismo, pero la coherencia global se comprueba en el apartado «Revisión de coherencia» al final: que cada bloque funcione aisladamente no garantiza que el conjunto sea coherente.
+    Los laboratorios 01–14 usaron topologías diferentes. Aquí **se reutilizan los nombres `R1` y `R2` con otra función y otro direccionamiento** (sede y respaldo/sucursal), y el escenario se construye desde cero. Cada apartado funciona por sí mismo, pero la coherencia global se comprueba en el apartado «Coherencia del conjunto» al final: que cada bloque funcione aisladamente no garantiza que el conjunto sea coherente.
 
-## Problema inicial
+## Estado inicial
 
--   La empresa debe consolidar una sede y una sucursal en una red que funcione de forma coordinada: direcciones bien diseñadas, caminos que se recalculan solos, tráfico controlado, equipos que se configuran automáticamente y un *gateway* que no sea un punto único de fallo.
--   Esa red debe poder **diagnosticarse** cuando falla, con evidencias y no por intuición.
--   La empresa necesita saber **qué integra realmente** este cierre y qué se ha practicado solo en laboratorios previos.
+- Hay una sede y una sucursal por construir desde cero, sin direccionamiento ni servicios.
+- Se necesita direccionamiento sin solapamientos, caminos que se recalculan solos, tráfico controlado, configuración automática de equipos y un *gateway* que no sea un punto único de fallo.
+- Cuando la red falla, el diagnóstico debe apoyarse en evidencias.
 
-## Objetivos del laboratorio
+## Resultado que se construirá
 
-1.  Diseñar el direccionamiento con **VLSM** y comprobar que no hay solapamientos.
-2.  Interconectar sede y sucursal primero con **rutas estáticas** y después con **OSPF** (FRRouting).
-3.  Controlar el tráfico con **nftables** y dar salida a Internet con **NAT**.
-4.  Entregar configuración con **DHCP** y resolver nombres internos con **DNS**.
-5.  Redundar el *gateway* del segmento de servidores con **VRRP** y reconocer lo que **no** protege.
-6.  Diagnosticar fallos reales (MTU, vecinos ARP, rutas) y evaluar el alcance y los límites de la integración.
+Queda una red de sede y sucursal con direccionamiento VLSM, enlaces `/30` principal y de respaldo, OSPF, firewall con `nftables`, NAT, DHCP y DNS en R1, y VRRP en el segmento de servidores. Se prueban la reconvergencia al caer el enlace principal, la caída del *gateway* de servidores y varios fallos de diagnóstico (MTU, vecinos ARP, rutas), y se documenta qué componentes no están protegidos.
 
 ## Topología
 
@@ -89,7 +91,7 @@ Tres ideas para leerlo: (1) la **única salida a Internet** es la WAN de R1 (R2 
 
 ### Paso 0: Limpiar ejecuciones anteriores de Lab15
 
-Este paso solo puede retirar recursos de una ejecución anterior de Lab15. **No elimina namespaces ni interfaces de otros laboratorios**, no toca `br-wan` y no retira `veth-host`, `veth-wan-fw`, `veth-wan-cvpn` ni `veth-wan-op`. Ejecuta primero la reversión de cada laboratorio anterior para restaurar sus propias rutas, reglas y parámetros del host.
+Este paso solo puede retirar recursos de una ejecución anterior de Lab15. **No elimina namespaces ni interfaces de otros laboratorios**, no toca `br-wan` y no retira `veth-host`, `veth-wan-fw`, `veth-wan-cvpn` ni `veth-wan-op`. Se ejecuta primero la reversión de cada laboratorio anterior para restaurar sus propias rutas, reglas y parámetros del host.
 
 ```bash
 NS_LAB="R1 R2 SWsrv fin ven ges srv suc"
@@ -136,7 +138,7 @@ sudo ip link set veth-wan-r1 up
 sudo ip netns exec R1 ip route add default via 192.168.100.2
 sudo ip netns exec R1 iptables -t nat -A POSTROUTING -o veth-r1-wan -j MASQUERADE
 
-# El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)
+# El host reenvía y traduce hacia la red real (cambia eth0 por tu interfaz de salida)
 # Guarda el valor original de ip_forward: la limpieza lo restaura
 mkdir -p /tmp/lab15
 sysctl -n net.ipv4.ip_forward > /tmp/lab15/ip_forward.orig
@@ -166,7 +168,7 @@ sudo ip netns exec fin ping -c 3 10.0.1.1
 sudo ip netns exec fin ping -c 3 192.168.100.2
 ```
 
-(Con Internet en tu equipo, `ping 8.8.8.8` y `nslookup google.com 8.8.8.8` desde `fin` también funcionan.)
+(Con Internet en el equipo, `ping 8.8.8.8` y `nslookup google.com 8.8.8.8` desde `fin` también funcionan.)
 
 ## 15.2 Subnetting aplicado (VLSM)
 
@@ -182,7 +184,7 @@ sudo ip netns exec fin ping -c 3 192.168.100.2
 | Enlace A R1-R2 | 2 | 10.0.1.208/30 | /30 | 10.0.1.209 - 10.0.1.210 | - |
 | Enlace B R1-R2 | 2 | 10.0.1.212/30 | /30 | 10.0.1.213 - 10.0.1.214 | - |
 
-**Algoritmo VLSM que debe poder reproducir el estudiante:**
+**Algoritmo VLSM que debe poder reproducir el lector:**
 
 1. Ordenar las necesidades de mayor a menor cantidad de hosts (incluyendo redes del mismo tamaño).
 2. Para cada segmento, sumar red y broadcast (`hosts + 2`) y redondear al siguiente tamaño potencia de dos.
@@ -204,7 +206,7 @@ Ejemplos: 200 hosts requieren 202 direcciones → bloque 256 → `/24`; 100 requ
 | Enlace B (respaldo) | 10.0.1.212/30 | `veth-r1r2b` (R1 .213) ↔ `veth-r2r1b` (R2 .214) | — (punto a punto) |
 | Sucursal | 10.0.2.0/24 | `veth-r2suc` (R2) | 10.0.2.1 |
 
-Ahora creamos el resto de segmentos (Finanzas ya existe):
+Ahora se crean el resto de segmentos (Finanzas ya existe):
 
 ```bash
 # Ventas y Gestión: una interfaz de R1 por segmento
@@ -243,7 +245,7 @@ enlace R2 veth-r2suc 10.0.2.1/24 suc veth-suc 10.0.2.10/24
 sudo ip netns exec suc ip route add default via 10.0.2.1
 ```
 
-Comprueba que cada equipo alcanza a su *gateway* y entre sí a través de R1:
+Se comprueba que cada equipo alcanza a su *gateway* y entre sí a través de R1:
 
 ```bash
 sudo ip netns exec fin ping -c 2 10.0.1.130     # Finanzas -> Ventas (R1 enruta)
@@ -306,7 +308,7 @@ done
 # sudo ovs-vsctl --if-exists del-br ovs-sw
 ```
 
-Los equipos finales (`fin`, `ven`, `ges`) tendrían su IP y su *gateway* como en 15.2, pero conectados al puerto de acceso de su VLAN. Estas subinterfaces llevan las IP de *gateway* **en lugar de** las interfaces `veth-r1fin`, `veth-r1ven` y `veth-r1ges` del 15.2: **no deben coexistir las dos formas** con las mismas subredes. Verifica en tu propio entorno antes de adoptarlo: este bloque ilustra el modelo trunk/access, no se encadena con el firewall, el DHCP ni el OSPF de los apartados siguientes (que usan los nombres de interfaz del 15.2).
+Los equipos finales (`fin`, `ven`, `ges`) tendrían su IP y su *gateway* como en 15.2, pero conectados al puerto de acceso de su VLAN. Estas subinterfaces llevan las IP de *gateway* **en lugar de** las interfaces `veth-r1fin`, `veth-r1ven` y `veth-r1ges` del 15.2: **no deben coexistir las dos formas** con las mismas subredes. Se verifica en el entorno propio antes de adoptarlo: este bloque ilustra el modelo trunk/access, no se encadena con el firewall, el DHCP ni el OSPF de los apartados siguientes (que usan los nombres de interfaz del 15.2).
 
 ## 15.4 Routing entre redes
 
@@ -321,7 +323,7 @@ sudo ip netns exec suc ping -c 2 192.168.100.2    # Sucursal -> "Internet" (vía
 sudo ip netns exec R1 ip route show
 ```
 
-Funciona, pero las rutas estáticas no se adaptan solas a los cambios. Las eliminamos y usamos un protocolo dinámico.
+Funciona, pero las rutas estáticas no se adaptan solas a los cambios. Se eliminan y se usa un protocolo dinámico.
 
 ### OSPF con FRRouting
 
@@ -426,7 +428,7 @@ Por eso la reconvergencia del apartado siguiente es rápida **aquí**: la interf
 
 ### Reconvergencia ante un fallo
 
-Tiramos el enlace principal (A) por ambos extremos y observamos cómo OSPF mueve el tráfico al respaldo sin intervención:
+Se baja el enlace principal (A) por ambos extremos y se observa cómo OSPF mueve el tráfico al respaldo sin intervención:
 
 ```bash
 sudo ip netns exec R1 ip link set veth-r1r2a down
@@ -508,7 +510,7 @@ El protocolo OSPF (número 89) debe aceptarse en `input`, o R1 dejaría de ver a
 
     Sin la regla de `PREROUTING`, el host no alcanzaría el servidor aunque la política de `forward` lo permitiera.
 
-**Convivencia de nftables e iptables en esta práctica.** El filtrado de R1 se escribe en `nftables`; la NAT de salida y el DNAT de demostración usan la interfaz `iptables`. Comprueba qué backend utiliza `iptables` dentro del namespace:
+**Convivencia de nftables e iptables en esta práctica.** El filtrado de R1 se escribe en `nftables`; la NAT de salida y el DNAT de demostración usan la interfaz `iptables`. Se comprueba qué backend utiliza `iptables` dentro del namespace:
 
 ```bash
 sudo ip netns exec R1 iptables --version
@@ -516,7 +518,7 @@ sudo ip netns exec R1 iptables-save
 sudo ip netns exec R1 nft list ruleset
 ```
 
-Si `iptables --version` termina en `(nf_tables)`, `iptables` traduce sus reglas al backend nftables; ambas vistas pertenecen al mismo framework, aunque `iptables-save` sigue siendo la vista más directa de las reglas administradas por esa interfaz. Si termina en `(legacy)`, usa el backend xtables antiguo, separado del ruleset nftables y no visible como reglas nft nativas. Mezclar backends puede complicar el orden y el diagnóstico. Aquí se conserva deliberadamente para mostrar compatibilidad; en un despliegue real elige y administra un único backend, evita reglas duplicadas y verifica siempre las reglas efectivas en ambos planos.
+Si `iptables --version` termina en `(nf_tables)`, `iptables` traduce sus reglas al backend nftables; ambas vistas pertenecen al mismo framework, aunque `iptables-save` sigue siendo la vista más directa de las reglas administradas por esa interfaz. Si termina en `(legacy)`, usa el backend xtables antiguo, separado del ruleset nftables y no visible como reglas nft nativas. Mezclar backends puede complicar el orden y el diagnóstico. Aquí se conserva deliberadamente para mostrar compatibilidad; en un despliegue real elige y administra un único backend, evita reglas duplicadas y se verifica siempre las reglas efectivas en ambos planos.
 
 ### Verificar segmentación y políticas
 
@@ -588,7 +590,7 @@ sudo dnsmasq --test --conf-file=/tmp/lab15/dns.conf
 sudo ip netns exec R1 dnsmasq --conf-file=/tmp/lab15/dns.conf --pid-file=/tmp/lab15/dns.pid
 ```
 
-Tras obtener las concesiones DHCP, comprueba que cada segmento recibió su DNS y que la zona local resuelve:
+Tras obtener las concesiones DHCP, se comprueba que cada segmento recibió su DNS y que la zona local resuelve:
 
 ```bash
 sudo ip netns exec fin cat /etc/resolv.conf
@@ -600,7 +602,7 @@ sudo ip netns exec fin dig @10.0.1.1 inexistente.secops.local A
 
 Resultados esperados: `app.secops.local` devuelve `10.0.0.10`, `db.secops.local` devuelve `10.0.0.20` y el nombre inexistente devuelve `NXDOMAIN`. Si la consulta externa falla pero la zona interna responde, revisa salida WAN/forwarding antes de atribuir el fallo al DNS interno.
 
-Los clientes piden dirección en lugar de tener una fija. Para que `dhclient` no toque el `resolv.conf` de tu equipo, damos a cada namespace el suyo:
+Los clientes piden dirección en lugar de tener una fija. Para que `dhclient` no toque el `resolv.conf` de el equipo, se asigna a cada namespace el suyo:
 
 ```bash
 for ns in fin ven; do
@@ -782,7 +784,7 @@ Casos de diagnóstico habituales. Los ejemplos de direcciones (`10.10.1.100`) so
 
 ### Caso: degradación por MTU en un túnel (IPsec/GRE)
 
-**No uses MTU y MSS indistintamente:**
+**MTU y MSS no son intercambiables:**
 
 | Concepto | Qué es | Ejemplo |
 |----------|--------|---------|
@@ -813,7 +815,7 @@ fi
 
 ### Caso: presión sobre la tabla de vecinos IPv4 (ARP)
 
-Estas órdenes actúan sobre el **host** (`sysctl` y `/etc/sysctl.d`), no sobre un namespace. El ejercicio inspecciona el número de vecinos IPv4 y muestra cómo se ajustan los umbrales de recolección; **no genera ni simula un agotamiento real** de la tabla. No lo ejecutes en un equipo de producción.
+Estas órdenes actúan sobre el **host** (`sysctl` y `/etc/sysctl.d`), no sobre un namespace. La prueba inspecciona el número de vecinos IPv4 y muestra cómo se ajustan los umbrales de recolección; **no genera ni simula un agotamiento real** de la tabla. No lo ejecutes en un equipo de producción.
 
 ```bash
 dmesg | grep -i neighbour
@@ -897,7 +899,7 @@ Los servicios de red no son independientes: unos **necesitan** que otros funcion
 
 > **Aviso del equipo:** tras publicar una nueva versión del archivo `fw.nft` en R1, **los equipos que piden dirección ya no reciben IP** y, además, la **sucursal perdió las rutas dinámicas**. Los enlaces A y B están arriba y R1 responde a `ping`.
 
-Dos síntomas distintos, ¿una causa o dos? Antes de abrir la solución, razona **qué comprobarías y en qué orden**. Dispones de `ping`, `tcpdump`, `nft -a list chain inet firewall input` y `vtysh -c "show ip ospf neighbor"`.
+Los dos síntomas se investigan con una secuencia común de comprobaciones. La práctica dispone de `ping`, `tcpdump`, `nft -a list chain inet firewall input` y `vtysh -c "show ip ospf neighbor"`; la solución desarrollada a continuación muestra cómo correlacionar las evidencias antes de modificar reglas.
 
 ??? success "Solución razonada"
     1.  **Conectividad básica.** `ping` a R1 funciona: `input` acepta ICMP. Así que no es un problema de enlace ni de capa 2.
@@ -921,7 +923,7 @@ sudo ip netns exec R1 nft insert rule inet firewall input iifname '{ "veth-r1fin
 
 ## Limpieza del laboratorio
 
-Al terminar, detén los demonios y elimina solo lo creado aquí. Un namespace **no desaparece del todo mientras tenga procesos dentro**, así que primero se detienen los procesos (todos usan archivos de `/tmp/lab15`):
+Al terminar, se detienen los demonios y elimina solo lo creado aquí. Un namespace **no desaparece del todo mientras tenga procesos dentro**, así que primero se detienen los procesos (todos usan archivos de `/tmp/lab15`):
 
 ```bash
 # Detener demonios por PID file solo después de validar su línea de comandos.
@@ -1034,7 +1036,7 @@ if [ "$NS_LEFT" = 0 ] && [ "$PROC_LEFT" = 0 ]; then sudo rm -rf /tmp/lab15; else
 | `gc_thresh2` y `gc_thresh3` cambiados con `sysctl -w` | Los restaura el bloque de limpieza con los valores guardados en `/tmp/lab15/gc_thresh2.orig` y `gc_thresh3.orig` |
 | `/tmp/lab15/check_arp.sh` | Se elimina al retirar el directorio temporal `/tmp/lab15` |
 
-Comprueba al final: `sysctl net.ipv4.ip_forward`, `iptables -t nat -S POSTROUTING` y `ls /etc/sysctl.d/`.
+Se comprueba al final: `sysctl net.ipv4.ip_forward`, `iptables -t nat -S POSTROUTING` y `ls /etc/sysctl.d/`.
 
 ## Conceptos clave
 
@@ -1049,8 +1051,7 @@ Comprueba al final: `sysctl net.ipv4.ip_forward`, `iptables -t nat -S POSTROUTIN
 | VRRP | IP virtual de *gateway* con failover; no redunda toda la infraestructura |
 | Troubleshooting | MTU frente a MSS, y tabla ARP |
 
-## Revisión de coherencia del escenario global
-
+## Coherencia del conjunto
 Cada apartado funciona por sí mismo, pero conviene comprobar que **el conjunto es coherente**:
 
 -   **Direccionamiento:** el mapa red ↔ interfaz del apartado 15.2 es la referencia única; no hay dos interfaces con la misma dirección. En 15.7 la IP de R1 en servidores cambia de `10.0.0.1` a `10.0.0.2` (y la `10.0.0.1` pasa a ser virtual); OSPF sigue anunciando `10.0.0.0/24`.
@@ -1059,9 +1060,8 @@ Cada apartado funciona por sí mismo, pero conviene comprobar que **el conjunto 
 -   **VLAN:** el apartado 15.3 es una variante; no se mezcla con los demás.
 -   **Alcance de las pruebas:** las comprobaciones de cada apartado demuestran lo que se afirma en él; no demuestran, por ejemplo, que una caída de la WAN se gestione sola (véase VRRP).
 
-## 15.10. Cierre de competencias y límites de la integración
-
-La topología principal integra VLSM, routing estático/OSPF, firewall, DHCP, NAT y VRRP en los segmentos indicados. No integra en ejecución VLAN completa, DNS corporativo empresarial (incluye solo una zona interna simplificada opcional), VPN/IPsec/WireGuard, MPLS, ZTNA, nube real ni NOC/SIEM. Esas tecnologías se estudian en escenarios previos o variantes; no afirmes que la topología final las implementa todas.
+## 15.10. Alcance y límites de la integración
+La topología principal integra VLSM, routing estático/OSPF, firewall, DHCP, NAT y VRRP en los segmentos indicados. No integra en ejecución VLAN completa, DNS corporativo empresarial (incluye solo una zona interna simplificada opcional), VPN/IPsec/WireGuard, MPLS, ZTNA, nube real ni NOC/SIEM. Esas tecnologías se estudian en escenarios previos o variantes; no debe afirmarse que la topología final las implementa todas.
 
 ### RIB, LSDB, SPF y FIB en OSPF
 
@@ -1069,11 +1069,11 @@ La LSDB describe la topología mediante LSAs; no contiene una ruta de respaldo y
 
 ### DHCP y DNS: cerrar el ciclo de servicio
 
-La asignación DHCP debe verificarse junto con máscara, gateway, DNS y lease. La extensión opcional anuncia el DNS interno de R1 y sirve una zona local simplificada; no es un DNS corporativo autoritativo completo. Comprueba respuestas positivas, TTL, NXDOMAIN y consultas TCP; el reenvío externo depende de la salida WAN. No confundas una concesión DHCP válida con resolución DNS funcional.
+La asignación DHCP debe verificarse junto con máscara, gateway, DNS y lease. La extensión opcional anuncia el DNS interno de R1 y sirve una zona local simplificada; no es un DNS corporativo autoritativo completo. Se comprueba respuestas positivas, TTL, NXDOMAIN y consultas TCP; el reenvío externo depende de la salida WAN. No debe confundirse una concesión DHCP válida con resolución DNS funcional.
 
 ### Matriz de disponibilidad por segmento
 
-VRRP se ejecuta solo en la red de servidores en el escenario descrito. Finanzas, Ventas y Gestión mantienen gateways asociados a R1; la sucursal depende de R2; Internet y DHCP también tienen dependencias propias. Completa esta matriz y no generalices el failover del gateway de servidores a toda la empresa:
+VRRP se ejecuta solo en la red de servidores en el escenario descrito. Finanzas, Ventas y Gestión mantienen gateways asociados a R1; la sucursal depende de R2; Internet y DHCP también tienen dependencias propias. La matriz siguiente resume las dependencias; el *failover* del *gateway* de servidores no debe generalizarse a toda la empresa:
 
 | Segmento/servicio | Gateway redundante | Dependencia residual | Resultado ante caída de R1 |
 |---|---|---|---|
@@ -1085,33 +1085,25 @@ VRRP se ejecuta solo en la red de servidores en el escenario descrito. Finanzas,
 | Internet | No hay WAN independiente en R2 | R1/host | No hay continuidad automática |
 | DHCP | Servicio central en R1 | Proceso y conectividad a R1 | Los clientes existentes pueden conservar lease; nuevas concesiones/renovaciones pueden fallar |
 
-### Correcciones operativas obligatorias
+### Precauciones operativas
+**Open vSwitch:** no elimines `ovs-sw` solo por su nombre. Antes de crearlo, se comprueba que no exista; se registra un marcador de propiedad únicamente cuando esta práctica lo crea. En limpieza, ejecuta `ovs-vsctl --if-exists del-br ovs-sw` solo si existe el marcador y elimina el marcador después. Si el bridge ya existía, se detiene la prueba y no lo reutilices ni lo borres.
 
-**Open vSwitch:** no elimines `ovs-sw` solo por su nombre. Antes de crearlo, comprueba que no exista; registra un marcador de propiedad únicamente cuando esta práctica lo crea. En limpieza, ejecuta `ovs-vsctl --if-exists del-br ovs-sw` solo si existe el marcador y elimina el marcador después. Si el bridge ya existía, detén el ejercicio y no lo reutilices ni lo borres.
+**TCPMSS:** una regla ejecutada sin `ip netns exec` modificaría el firewall del host y puede afectar tráfico ajeno. La opción preferida es aplicar la regla dentro del router del laboratorio y limitarla a las interfaces/redes de la práctica. Si por un motivo didáctico se conserva en el host, debe restringirse a interfaces y prefijos propios, registrarse con un marcador y eliminarse con la regla exacta en la limpieza. Nunca debe dejarse una regla global sin reversión.
 
-**TCPMSS:** el ejemplo original ejecutado sin `ip netns exec` modifica el firewall del host y puede afectar tráfico ajeno. La opción preferida es aplicar la regla dentro del router del laboratorio y limitarla a las interfaces/redes de la práctica. Si por un motivo didáctico se conserva en el host, debe restringirse a interfaces y prefijos propios, registrarse con un marcador y eliminarse con la regla exacta en la limpieza. Nunca dejes una regla global sin reversión.
+**Procesos:** evita `pkill -f` como mecanismo general de limpieza. Se guarda PID de `zebra`, `ospfd`, `dnsmasq`, `keepalived` y `dhclient` al iniciarlos; valida que el proceso pertenece a `/tmp/lab15` o a la configuración del laboratorio antes de enviar TERM. Se espera su salida y usa KILL solo como último recurso sobre esos PID validados.
 
-**Procesos:** evita `pkill -f` como mecanismo general de limpieza. Guarda PID de `zebra`, `ospfd`, `dnsmasq`, `keepalived` y `dhclient` al iniciarlos; valida que el proceso pertenece a `/tmp/lab15` o a la configuración del laboratorio antes de enviar TERM. Espera su salida y usa KILL solo como último recurso sobre esos PID validados.
+**ARP:** el ajuste de `gc_thresh2/3` modifica umbrales del host; no demuestra por sí mismo agotamiento de la tabla. La prueba se limita a inspección y ajuste de umbrales, cuenta vecinos IPv4 y se comparan dos muestras temporales. No se denomina “simulación de agotamiento”.
 
-**ARP:** el ajuste de `gc_thresh2/3` modifica umbrales del host; no demuestra por sí mismo agotamiento de la tabla. El ejercicio se limita a inspección y ajuste de umbrales, cuenta vecinos IPv4 y compara dos muestras temporales. No se denomina “simulación de agotamiento”.
+## Análisis técnico y decisiones
 
-## Preguntas de reflexión
+VRRP permite que R2 asuma la dirección IP virtual del gateway cuando R1 deja de anunciarse como maestro. Esto protege únicamente el segmento donde está configurado y no crea una segunda salida WAN ni replica automáticamente DHCP, NAT o servicios. Si el firewall bloquea el protocolo IP 112 (VRRP), los routers no intercambian anuncios y la elección puede fallar o producir estados inconsistentes. OSPF detecta cambios de topología y recalcula rutas según sus temporizadores y estado de vecinos; una ruta estática no detecta por sí sola un fallo remoto si el siguiente salto sigue accesible. La implementación conserva dependencias: WAN única, servicios centrales y segmentos sin gateway redundante. Una segunda conexión ISP con routing apropiado, BGP o SD-WAN puede cubrir fallos de salida que VRRP no resuelve.
 
-1.  ¿Qué mecanismo hace que R2 asuma el *gateway*, y por qué eso no restablece la salida a Internet?
-2.  ¿Qué sucedería si se elimina `ip protocol vrrp accept` del firewall de R1 y R2?
-3.  ¿Qué diferencia hay entre el comportamiento esperado de OSPF ante la caída del enlace A y el que observaste con rutas estáticas en el laboratorio 06?
-4.  ¿Qué limitaciones tiene esta implementación frente a una red empresarial real? (Un solo *gateway* WAN, claves débiles, sin monitoreo.)
-5.  ¿En qué escenario empresarial priorizarías la redundancia de la salida WAN antes que la del *gateway* LAN?
-6.  ¿Qué otros mecanismos podrían resolver el caso B? (Segundo ISP con BGP, SD-WAN.)
+## Estado final
 
-## Conclusiones técnicas
+Queda construida y validada una red multisede dentro del alcance declarado: VLSM, OSPF, firewall, DHCP, DNS, NAT y VRRP parcial, con fallos controlados diagnosticados.
 
-Este laboratorio integra los **mecanismos centrales** de la serie en una red de sede y sucursal: direccionamiento VLSM, enrutamiento dinámico con OSPF, firewall, servicios (DHCP, DNS y NAT) y redundancia parcial de *gateway* con VRRP, y cierra con técnicas de diagnóstico. **No integra las quince tecnologías**: VLAN, VPN, MPLS, nube, ZTNA y NOC/SIEM se practicaron en laboratorios anteriores, y VRRP solo protege el segmento de servidores. Una red empresarial completa exige además planificación, documentación y verificación continua, y ese es el trabajo del Proyecto final.
+VRRP protege únicamente el segmento de servidores; Finanzas, Ventas, Gestión y la sucursal conservan sus dependencias de R1 o R2, y DHCP y NAT no se replican automáticamente. Antes de trasladar el modelo a producción hacen falta planificación, documentación y verificación continua.
 
-## Preparación para el siguiente paso
+## Continuidad técnica
 
-Con este laboratorio termina el recorrido práctico. El paso siguiente no es un laboratorio nuevo, sino el [Proyecto final](../../03-PROYECTO-FINAL/index.md): reunir los quince laboratorios en una arquitectura propia, defender las decisiones de diseño y demostrar su funcionamiento y sus límites.
-
----
-
-**¡Laboratorio 15 completado!** Has integrado los mecanismos centrales de una red de sede y sucursal. Continúa con el **Proyecto final**.
+Networking SecOps cierra el recorrido con una infraestructura multisede construida, verificada y sometida a fallos controlados: de dos equipos y un bridge en una oficina vacía a una sede y una sucursal con direccionamiento VLSM, OSPF, firewall, servicios de red y redundancia parcial del *gateway*. Los mecanismos que no entran en esta topología (VLAN, VPN, MPLS, nube, ZTNA y NOC/SIEM) se practicaron en laboratorios previos, y los límites de disponibilidad de la matriz del escenario indican qué falta antes de llevar el diseño a producción.

@@ -7,50 +7,32 @@ description: "Laboratorio 05 de NETWORKING Lab — Conmutación y Segmentación 
 
 # CONMUTACIÓN Y SEGMENTACIÓN DE RED
 
-<p class="tema-meta"><span>13 secciones</span><span>2 diagramas</span><span>4 tablas</span></p>
+<p class="tema-meta"><span>14 secciones</span><span>2 diagramas</span><span>4 tablas</span></p>
 
-## Contexto empresarial
+## Más gente, más tráfico
 
-La empresa **Networking SecOps** ha crecido y ahora tiene **tres departamentos** con necesidades de red independientes:
+Networking SecOps ya tiene **tres departamentos** con necesidades de red distintas: Ventas (10 empleados, con acceso a Internet y a un servidor de archivos), IT/Sistemas (6, que administran servidores y necesitan acceso restringido) y Administración (4, incluidos directivos que manejan datos sensibles). Las subredes del laboratorio anterior separan el direccionamiento, pero los tres grupos comparten el mismo switch y el mismo dominio de broadcast. En este laboratorio separarás cada grupo en su propia VLAN, unirás el switch con el router mediante un enlace *trunk* y aplicarás una política de filtrado entre ellas.
 
--   **Ventas**: 10 empleados, necesitan acceso a Internet y a un servidor de archivos.
--   **IT/Sistemas**: 6 empleados, administran servidores y necesitan acceso restringido.
--   **Administración**: 4 empleados, incluyendo directivos que requieren acceso a datos sensibles.
+## Introducción técnica
 
-La red actual tiene subredes separadas (Ventas e IT) pero **comparten el mismo switch físico**. Esto significa que:
+Las subredes separan el direccionamiento, pero mientras compartan un switch comparten también el dominio de broadcast: una tormenta de broadcast de un grupo alcanza a los demás y no hay separación en capa 2.
 
--   El tráfico broadcast de un departamento afecta a los otros.
--   No hay separación a nivel de capa 2: todos comparten el mismo dominio de broadcast.
--   Un problema de capa 2 (por ejemplo, una tormenta de broadcast) en un departamento puede afectar a los demás.
-
-Se necesita **segmentar la red lógicamente en capa 2** usando **VLANs** para:
-
--   Separar los dominios de broadcast entre departamentos.
--   Reducir la exposición a nivel de enlace (un puerto de un departamento deja de recibir las tramas de otro).
--   Facilitar la administración y expansión.
+Las **VLAN** dividen un mismo switch en dominios de broadcast independientes. En este laboratorio se construyen tres (Ventas, IT y Administración), se unen al router mediante un *trunk* 802.1Q con subinterfaces (*router-on-a-stick*) y se aplica una política de filtrado entre ellas.
 
 !!! warning "Las VLAN no son por sí solas una barrera de seguridad suficiente"
     Las VLAN **separan dominios de broadcast**. La comunicación **entre** ellas pasa por el router y debe controlarse mediante **enrutamiento y políticas de filtrado** (véase el apartado «Seguridad entre VLAN»). Una VLAN mal configurada (por ejemplo, un [trunk](https://www.cisco.com/c/en/us/support/docs/lan-switching/virtual-lans-vlan/10023-3.html) que admite VLAN que no debería) también puede romper la separación.
 
 !!! note "Continuidad con el laboratorio 04"
-    Aquí el direccionamiento cambia: pasamos de las subredes VLSM de `10.0.0.0/24` a redes `/24` independientes por VLAN (`10.0.10.0/24`, `10.0.20.0/24`, `10.0.30.0/24`). No es una corrección del laboratorio 04: es **otro escenario**. En el 04 el objetivo era practicar el reparto de direcciones; en este, estudiar la segmentación de capa 2, para lo cual cada VLAN con su propia subred `/24` resulta más clara. Ambas tablas **no describen la misma infraestructura**.
+    Aquí el direccionamiento cambia: se pasa de las subredes VLSM de `10.0.0.0/24` a redes `/24` independientes por VLAN (`10.0.10.0/24`, `10.0.20.0/24`, `10.0.30.0/24`). No es una corrección del laboratorio 04: es **otro escenario**. En el 04 el tema es el reparto de direcciones; en este, la segmentación de capa 2, para la cual resulta más clara una subred `/24` por VLAN. Ambas tablas **no describen la misma infraestructura**.
 
-## Problema inicial
+## Estado inicial
 
--   Todos los clientes están en el mismo switch físico (bridge).
--   Las subredes están separadas lógicamente, pero comparten el mismo dominio de broadcast.
--   Se necesitan **3 VLANs**: VLAN 10 (Ventas), VLAN 20 (IT), VLAN 30 (Administración).
--   El router debe enrutar entre VLANs mediante **subinterfaces (Router-on-a-Stick)**.
--   El switch debe soportar **trunking (802.1Q)** para transportar múltiples VLANs.
+- Los clientes están en el mismo switch (bridge) y comparten un único dominio de broadcast.
+- Las subredes están separadas lógicamente, pero no en capa 2.
 
-## Objetivos del laboratorio
+## Resultado que se construirá
 
-1.  Comprender el concepto de **direcciones MAC** y su papel en la conmutación.
-2.  Implementar **VLANs** para segmentar una red física en dominios lógicos.
-3.  Configurar **trunking ([IEEE](https://www.ieee.org/) 802.1Q)** para transportar múltiples VLANs.
-4.  Implementar **Router-on-a-Stick** con subinterfaces para enrutar entre VLANs.
-5.  Analizar los **dominios de broadcast** y cómo las VLANs los segmentan.
-6.  Diferenciar la **separación en capa 2** (VLAN) del **control del tráfico entre segmentos** (enrutamiento y filtrado).
+Queda un switch con VLAN 10, 20 y 30 (`10.0.10.0/24`, `10.0.20.0/24` y `10.0.30.0/24`), una VLAN 99 de gestión, un *trunk* hacia el router con una subinterfaz por VLAN y una política que deniega por defecto y permite solo los flujos explícitos. Se capturan las tramas etiquetadas en el *trunk* y se comprueba que el broadcast de una VLAN no llega a otra.
 
 ## Herramientas necesarias
 
@@ -332,7 +314,7 @@ Cada subinterfaz recibe solo las tramas etiquetadas con su VLAN y se convierte e
 ### Paso 9: Configurar NAT y salida a Internet
 
 !!! danger "Cambio en el host (no en un namespace)"
-    Este paso crea `veth-host` en el equipo real, activa `net.ipv4.ip_forward` y añade una regla `MASQUERADE` en el host. El bloque guarda el valor original de `ip_forward` y registra si añadió la regla NAT; la reversión está en la sección «Revertir los cambios del host».
+    Este paso crea `veth-host` en el equipo real, activa `net.ipv4.ip_forward` y añade una regla `MASQUERADE` en el host. El bloque guarda el valor original de `ip_forward` y se registra si añadió la regla NAT; la reversión está en la sección «Revertir los cambios del host».
 
 ```bash
 ip link add veth-host type veth peer name veth-wan
@@ -363,7 +345,7 @@ ip netns exec router iptables -A FORWARD -i veth-rs.30 -o veth-rs.20 -p icmp -j 
 ip netns exec router iptables -A FORWARD -i veth-rs.30 -o veth-rs.10 -p tcp --dport 22 -j ACCEPT
 ip netns exec router iptables -A FORWARD -i veth-rs.30 -o veth-rs.20 -p tcp --dport 22 -j ACCEPT
 
-# El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)
+# El host reenvía y traduce hacia la red real (cambia eth0 por tu interfaz de salida)
 if [ ! -e /tmp/lab05-ip_forward.orig ]; then
   sysctl -n net.ipv4.ip_forward > /tmp/lab05-ip_forward.orig
 fi
@@ -408,17 +390,17 @@ ip netns exec ventas1 curl -I --connect-timeout 5 https://example.com || echo "H
 ip netns exec router ping -c 2 10.0.99.2
 ```
 
-**Resultado esperado:** la misma VLAN conserva conectividad; Ventas no alcanza IT porque el router aplica `FORWARD DROP`; Administración sí puede enviar ICMP a IT por una regla explícita. La prueba de Internet no es determinista: el host, el proveedor o el destino pueden filtrar ICMP. No uses un ping externo como único criterio de conectividad.
+**Resultado esperado:** la misma VLAN conserva conectividad; Ventas no alcanza IT porque el router aplica `FORWARD DROP`; Administración sí puede enviar ICMP a IT por una regla explícita. La prueba de Internet no es determinista: el host, el proveedor o el destino pueden filtrar ICMP. No debe usarse un ping externo como único criterio de conectividad.
 
 ### Comprobar las VLAN permitidas en el trunk
 
-Un trunk solo transporta las VLAN que se le han asignado. Consulta qué admite cada puerto:
+Un trunk solo transporta las VLAN que se le han asignado. Se consulta qué admite cada puerto:
 
 ```bash
 ip netns exec switch bridge vlan show
 ```
 
-`veth-sr` debe listar las VLAN 10, 20, 30 y 99 (sin `PVID` ni `Egress Untagged`: viajan etiquetadas). Retira una y observa el efecto:
+`veth-sr` debe listar las VLAN 10, 20, 30 y 99 (sin `PVID` ni `Egress Untagged`: viajan etiquetadas). Se retira una y se observa el efecto:
 
 ```bash
 ip netns exec switch bridge vlan del dev veth-sr vid 30
@@ -490,7 +472,7 @@ ip netns exec switch bridge vlan show
 ip netns exec switch tcpdump -i veth-sr -n -e -v
 ```
 
-En `bridge vlan show` verás `veth-sv1` con `10 PVID Egress Untagged` (acceso VLAN 10) y `veth-sr` con las VLAN 10, 20, 30 y 99 **sin** PVID ni *Untagged* (trunk etiquetado). En la captura del trunk, `tcpdump -e` mostrará `vlan 10, p 0` (o 20, 30) en cada trama: es la etiqueta 802.1Q. Si no la ves, captura en `veth-rs` del lado del router; algunas versiones ocultan la etiqueta cuando el kernel la extrae como metadato.
+En `bridge vlan show` se ve `veth-sv1` con `10 PVID Egress Untagged` (acceso VLAN 10) y `veth-sr` con las VLAN 10, 20, 30 y 99 **sin** PVID ni *Untagged* (trunk etiquetado). En la captura del trunk, `tcpdump -e` mostrará `vlan 10, p 0` (o 20, 30) en cada trama: es la etiqueta 802.1Q. Si no la ves, captura en `veth-rs` del lado del router; algunas versiones ocultan la etiqueta cuando el kernel la extrae como metadato.
 
 ## Revertir los cambios del host
 
@@ -527,7 +509,7 @@ fi
 
 ## Profundización: recorrido de una trama 802.1Q
 
-Sigue una trama de Ventas desde el host hasta otro segmento. En el puerto access entra sin etiqueta; el switch la clasifica usando el PVID configurado; la FDB se consulta dentro del contexto de VLAN; al salir por el trunk se añade la etiqueta 802.1Q (TPID 0x8100 y TCI con PCP/DEI/VID); la subinterfaz del router recibe la VLAN correspondiente y el router realiza una decisión de capa 3. Al salir hacia el puerto access de destino, el switch transmite sin etiqueta si ese puerto está configurado como access/PVID.
+Se sigue una trama de Ventas desde el host hasta otro segmento. En el puerto access entra sin etiqueta; el switch la clasifica usando el PVID configurado; la FDB se consulta dentro del contexto de VLAN; al salir por el trunk se añade la etiqueta 802.1Q (TPID 0x8100 y TCI con PCP/DEI/VID); la subinterfaz del router recibe la VLAN correspondiente y el router realiza una decisión de capa 3. Al salir hacia el puerto access de destino, el switch transmite sin etiqueta si ese puerto está configurado como access/PVID.
 
 La VLAN nativa en equipos reales puede permitir tramas sin etiqueta en un trunk. Este laboratorio usa `vlan_default_pvid 0` para evitar asignaciones implícitas; no extrapoles esa decisión a todos los fabricantes ni asumas que una trama sin etiqueta siempre pertenece a VLAN 1.
 
@@ -539,7 +521,7 @@ sudo ip netns exec switch tcpdump -eni veth-s1 'vlan or arp or icmp'
 sudo ip netns exec router tcpdump -eni any 'vlan or arp or icmp'
 ```
 
-Ejecuta un ping entre VLAN permitidas y compara dónde aparece el encabezado 802.1Q. La captura depende del punto de observación y de offloads; si la etiqueta no aparece donde la esperas, contrasta `bridge vlan show`, `ip -d link show` y la captura en ambos extremos antes de declarar un fallo.
+Se ejecuta un ping entre VLAN permitidas y se compara dónde aparece el encabezado 802.1Q. La captura depende del punto de observación y de offloads; si la etiqueta no aparece donde se espera, se contrasta `bridge vlan show`, `ip -d link show` y la captura en ambos extremos antes de declarar un fallo.
 
 ### Matriz de fallos controlados
 
@@ -552,29 +534,18 @@ Ejecuta un ping entre VLAN permitidas y compara dónde aparece el encabezado 802
 | Subinterfaz ausente | El trunk transporta la VLAN pero no hay routing | `ip -d link`, direcciones y rutas del router |
 | Regla FORWARD bloqueante | Ruta y ARP correctos, tráfico inter-VLAN descartado | Contadores del firewall y captura a ambos lados |
 
-No dejes reglas temporales ni cambios de PVID al terminar; restaura la configuración de la topología siguiendo la limpieza del laboratorio.
+No debe dejarse reglas temporales ni cambios de PVID al terminar; restaura la configuración de la topología siguiendo la limpieza del laboratorio.
 
-## Preguntas de reflexión
+## Análisis técnico y decisiones
 
-1.  ¿Qué mecanismo impide que un *broadcast* de la VLAN 10 llegue a la VLAN 20?
-2.  ¿Qué sucedería si el trunk no permitiera la VLAN 30?
-3.  ¿Qué diferencia hay entre el puerto de acceso (`Untagged`) y el trunk en la salida de `bridge vlan show`?
-4.  ¿Qué limitaciones tiene *Router-on-a-Stick* cuando el tráfico entre VLAN es elevado?
-5.  ¿Qué otro mecanismo podría enrutar entre VLAN? (Un *switch* de capa 3.)
+Cada VLAN constituye un dominio de broadcast de capa 2 independiente. El switch no reenvía el broadcast de VLAN 10 a VLAN 20; la comunicación entre ambas necesita un dispositivo de capa 3 y políticas de enrutamiento. Si el trunk no permite la VLAN 30, sus tramas etiquetadas no atraviesan ese enlace y los equipos de esa VLAN pierden conectividad hacia el otro extremo. Un puerto de acceso entrega tráfico sin etiqueta al host y lo asocia a una VLAN; un trunk transporta varias VLAN identificadas mediante etiquetas 802.1Q. Router-on-a-Stick concentra el tráfico inter-VLAN en un enlace y puede convertirse en cuello de botella. Un switch multicapa puede realizar el enrutamiento directamente mediante interfaces VLAN (SVI).
 
-## Conclusiones técnicas
+## Estado final
 
-En este laboratorio hemos implementado VLANs, trunking (802.1Q) y Router-on-a-Stick para segmentar la red en dominios de broadcast independientes.
+Quedan implementados VLAN, *trunking* 802.1Q y *router-on-a-stick*, con dominios de broadcast independientes por VLAN y filtrado entre ellas en el router.
 
--   Las **VLAN separan dominios de broadcast en capa 2**; no son por sí solas una barrera de seguridad.
--   El **enrutamiento entre VLAN** lo realiza el router (subinterfaces), no el switch de capa 2.
--   El tráfico entre VLAN solo se restringe con **filtrado en el router**.
--   La VLAN 99 representa el plano de **gestión** de los dispositivos de red.
+Una VLAN no es por sí sola una barrera de seguridad: el aislamiento depende del *trunk* (qué VLAN admite) y de las reglas del router. La VLAN 99 representa el plano de gestión de los dispositivos de red.
 
-## Preparación para el siguiente laboratorio
+## Continuidad técnica
 
-Con las VLAN, la sede tiene **dominios de broadcast separados** y un router que los comunica. Pero una empresa rara vez es una sola sede: las LAN segmentadas necesitan **mecanismos de enrutamiento** para conectarse con sucursales. En el **Laboratorio 06** pasamos de segmentar una red a **interconectar varias redes** con rutas estáticas, rutas alternativas y túneles GRE.
-
----
-
-**¡Laboratorio 05 completado!** Continúa con el **Laboratorio 06**.
+La sede de Networking SecOps queda con dominios de broadcast separados y un router que los comunica. Una empresa rara vez es una sola sede: en el laboratorio 06 se interconectan varias redes con rutas estáticas, rutas alternativas y túneles GRE.

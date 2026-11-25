@@ -7,11 +7,17 @@ description: "Laboratorio 12 de NETWORKING Lab — Arquitecturas Modernas de Red
 
 # ARQUITECTURAS MODERNAS DE RED
 
-<p class="tema-meta"><span>13 secciones</span><span>3 diagramas</span><span>6 tablas</span></p>
+<p class="tema-meta"><span>14 secciones</span><span>3 diagramas</span><span>6 tablas</span></p>
 
-## Contexto empresarial
+## Fuera de la oficina
 
-La empresa **Networking SecOps** ha implementado su arquitectura empresarial tradicional (Laboratorio 11). Ahora necesita modernizar su infraestructura para adaptarse a los nuevos modelos de trabajo híbrido.
+La arquitectura empresarial tradicional ya funciona (laboratorio 11), pero Networking SecOps adopta un modelo de trabajo híbrido: parte de sus aplicaciones vive en la nube y sus usuarios trabajan desde fuera. En este laboratorio conectarás la sede con una red virtual de nube, publicarás aplicaciones con acceso mínimo por usuario y limitarás la comunicación entre servidores con microsegmentación.
+
+## Introducción técnica
+
+Cuando parte de las aplicaciones vive en la nube y los usuarios trabajan desde fuera, el perímetro deja de ser suficiente. Hacen falta conectividad privada entre sede y nube, acceso de cada usuario **solo a las aplicaciones que necesita** y límites entre servidores para que el compromiso de uno no se propague.
+
+Este laboratorio representa esa arquitectura: una red local (`OnPremise`) conectada a una red virtual de nube (VPC), un *broker* con política por aplicación (modelo ZTNA simplificado) y microsegmentación entre servidores.
 
 !!! warning "Qué es real y qué es simulado"
     - **Real y ejecutable:** conectividad híbrida OnPremise ↔ [VPC](https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html), acceso remoto con *política por aplicación* en un broker (modelo ZTNA simplificado con `iptables`) y **[microsegmentación](https://www.cisa.gov/zero-trust-maturity-model)** entre servidores.
@@ -20,20 +26,16 @@ La empresa **Networking SecOps** ha implementado su arquitectura empresarial tra
 !!! warning "Nube: abstracción didáctica, no la arquitectura real de AWS"
     La VPC se representa como un router Linux y EC2/RDS como *namespaces*. Es una **abstracción válida para enseñar**, pero no reproduce AWS: una **VPC** es una **red virtual definida en la infraestructura del proveedor** (con tablas de rutas, gateways, grupos de seguridad y ACL propios); una **instancia EC2** es un **recurso de cómputo**; **RDS** es un **servicio administrado de bases de datos** (no un host al que se accede por SSH); y la conectividad y la seguridad de AWS usan componentes específicos. **No debe equipararse un *namespace* Linux con una instancia administrada en la nube.**
 
-## Problema inicial
+## Estado inicial
 
--   La plantilla trabaja de forma híbrida: parte de las aplicaciones sigue en la sede y parte se aloja en la nube.
--   La sede y la nube deben comunicarse de forma privada.
--   Los usuarios remotos deben llegar **solo a las aplicaciones que necesitan**, no a toda la red.
--   Si un servidor interno se compromete, no debe poder moverse libremente hacia los demás.
+- Parte de las aplicaciones permanece en la sede y parte se aloja en la nube.
+- La sede y la nube deben comunicarse de forma privada.
+- Los usuarios remotos deben llegar solo a las aplicaciones que necesitan.
+- Un servidor comprometido no debe poder moverse libremente hacia los demás.
 
-## Objetivos del laboratorio
+## Resultado que se construirá
 
-1.  Construir la **conectividad híbrida** entre una red local (`OnPremise`) y una red virtual en la nube (VPC) y comprobar el enrutamiento entre ambas.
-2.  Aplicar **acceso mínimo por aplicación** mediante un broker (modelo ZTNA simplificado).
-3.  Implementar **microsegmentación** entre servidores y verificar qué comunicación queda bloqueada.
-4.  Distinguir lo que se **construye** (conectividad y políticas) de lo que solo se **representa** (identidad, SASE, AWS).
-5.  Explicar por qué una política basada en direcciones IP **no equivale** a verificar identidad.
+Quedan operativos el enrutamiento entre `OnPremise` y la VPC, un *broker* que permite a cada usuario alcanzar únicamente su aplicación y una microsegmentación que limita cada base de datos a su servidor y a su puerto (3306 en la sede, 5432 en la nube). Se comprueban los accesos permitidos y los bloqueados, y se distingue lo que se construye de lo que solo se representa (identidad, SASE, AWS).
 
 ## Topología
 
@@ -340,7 +342,7 @@ El **proveedor de identidad (IdP)** responde a «¿quién eres y puedes acceder?
 
 **Flujo de decisión:** el IdP autentica y entrega claims; el PDP combina esos atributos con la postura del dispositivo y el contexto; el PEP aplica la decisión para una aplicación concreta. MFA autentica mejor, pero no sustituye al PDP; el broker transporta la conexión, pero no debe confundirse con el IdP. La autorización puede reevaluarse durante la sesión y revocarse si cambian las condiciones.
 
-**Alcance de esta práctica:** el nodo `IDP` no emite tokens, no ejecuta MFA ni valida postura; el broker aplica reglas estáticas de IP/puerto y representa una función de PEP simplificada. No hay PDP real, claims firmados, evaluación continua ni revocación de sesiones. El ejercicio demuestra acceso mínimo por aplicación, no una plataforma ZTNA completa.
+**Alcance de esta práctica:** el nodo `IDP` no emite tokens, no ejecuta MFA ni valida postura; el broker aplica reglas estáticas de IP/puerto y representa una función de PEP simplificada. No hay PDP real, claims firmados, evaluación continua ni revocación de sesiones. La prueba demuestra acceso mínimo por aplicación, no una plataforma ZTNA completa.
 
 ```mermaid
 sequenceDiagram
@@ -417,13 +419,13 @@ No son sinónimos: ZTNA puede ser un componente de SASE, y ambos intentan aplica
 
 La microsegmentación del Paso 9 equivale, en un proveedor de nube, a **grupos de seguridad** (reglas con estado, asociadas a recursos: «la base de datos solo acepta el puerto 5432 desde el grupo de la aplicación») y **ACL de subred** (reglas sin estado, a nivel de subred). Es la misma idea que `iptables` entre `App` y `DB`, con otra herramienta.
 
-## Ejercicios
+## Pruebas de comportamiento
 
-### Ejercicio 1: Agregar usuario remoto
+### Prueba 1: Usuario remoto adicional
 
-Configura un tercer usuario en el broker (`10.8.0.4`) con acceso solo a la base de datos de la nube por el puerto 5432 y comprueba que los demás usuarios no ganan ese acceso.
+Se configura un tercer usuario en el broker (`10.8.0.4`) con acceso solo a la base de datos de la nube por el puerto 5432 y se comprueba que los demás usuarios no ganan ese acceso.
 
-### Ejercicio 2: Definir políticas SASE
+### Prueba 2: Políticas SASE
 
 Redacta (sin implementarlas) las políticas que un SASE aplicaría al tráfico de los usuarios: categorías web permitidas (SWG), aplicaciones SaaS autorizadas (CASB) y condiciones de dispositivo.
 
@@ -493,35 +495,28 @@ if [ "$NS_LEFT" = 0 ] && [ "$PROC_LEFT" = 0 ]; then sudo rm -f /tmp/lab12-pids; 
 
 ## Profundización: identidad, políticas y procesos
 
-Una regla que autoriza `10.8.0.2 → aplicación:8080` demuestra segmentación por dirección y puerto, no identidad Zero Trust. Una dirección IP puede cambiar, compartirse o suplantarse dentro de ciertos límites. En una arquitectura real, el acceso requiere identidad autenticada, contexto del dispositivo, decisión de política y aplicación de esa decisión en un punto de enforcement. MFA, claims, posture, expiración y revocación son piezas distintas; no las simula el firewall de este ejercicio.
+Una regla que autoriza `10.8.0.2 → aplicación:8080` demuestra segmentación por dirección y puerto, no identidad Zero Trust. Una dirección IP puede cambiar, compartirse o suplantarse dentro de ciertos límites. En una arquitectura real, el acceso requiere identidad autenticada, contexto del dispositivo, decisión de política y aplicación de esa decisión en un punto de enforcement. MFA, claims, posture, expiración y revocación son piezas distintas; no las simula el firewall de esta prueba.
 
 ### Experimento: por qué una IP no es identidad
 
-Cambia la IP de un usuario dentro de la topología y observa que la regla basada en IP deja de coincidir o puede autorizar a otro equipo que use esa dirección. Registra la regla efectiva y el resultado. Concluye qué evidencia adicional necesitaría un sistema real para vincular una sesión con una identidad autenticada.
+Se cambia la IP de un usuario dentro de la topología y la salida muestra que la regla basada en IP deja de coincidir o puede autorizar a otro equipo que use esa dirección. Se registra la regla efectiva y el resultado. Un sistema real necesitaría evidencia adicional (credenciales, certificado de dispositivo y contexto de la sesión) para vincular una sesión con una identidad autenticada.
 
 ### Procesos: eliminar namespaces no siempre detiene servicios
 
-Los namespaces aíslan la red, no el ciclo de vida de todos los procesos ni el sistema de archivos. Los servidores `nc` iniciados en segundo plano deben tener PID registrados y detenerse selectivamente antes de borrar los namespaces. No uses `pkill nc` ni patrones amplios. Para cada servicio, registra PID y puerto al arrancarlo. La limpieza comprueba `/proc/$pid/cmdline` antes de enviar `TERM`; espera y usa `KILL` solo como último recurso sobre el mismo PID validado. Después verifica que el puerto dejó de escuchar con `ss -lntup`.
+Los namespaces aíslan la red, no el ciclo de vida de todos los procesos ni el sistema de archivos. Los servidores `nc` iniciados en segundo plano deben tener PID registrados y detenerse selectivamente antes de borrar los namespaces. No debe usarse `pkill nc` ni patrones amplios. Para cada servicio, se registra PID y puerto al arrancarlo. La limpieza comprueba `/proc/$pid/cmdline` antes de enviar `TERM`; espera y usa `KILL` solo como último recurso sobre el mismo PID validado. Después verifica que el puerto dejó de escuchar con `ss -lntup`.
 
-La conectividad `veth` hacia la VPC es una abstracción de underlay; no es AWS VPC real, VPN cifrada ni SASE. Mantén explícito qué parte es ejecutable, simulada o conceptual en los objetivos y conclusiones.
+La conectividad `veth` hacia la VPC es una abstracción de underlay; no es AWS VPC real, VPN cifrada ni SASE. Se mantiene explícito qué parte es ejecutable, simulada o conceptual en la introducción técnica y en el estado final.
 
-## Preguntas de reflexión
+## Análisis técnico y decisiones
 
-1.  ¿Qué mecanismo distingue dar acceso a una **aplicación** de dar acceso a toda una **red**?
-2.  ¿Qué sucedería si el broker permitiera cualquier puerto hacia la base de datos?
-3.  ¿Qué diferencia hay entre lo que el IdP simulado hace aquí y lo que haría uno real?
-4.  ¿Qué limitaciones tiene representar una VPC con *namespaces* y routers Linux?
-5.  ¿En qué escenario empresarial sustituirías una VPN de acceso remoto por ZTNA?
-6.  ¿Qué otros mecanismos aportarían identidad y estado del dispositivo?
+ZTNA limita el acceso a aplicaciones concretas según identidad, política y contexto; una VPN tradicional suele proporcionar acceso a una red o segmento más amplio. Si el broker permite cualquier puerto hacia la base de datos, desaparece la restricción por aplicación y aumenta la superficie de exposición. Un IdP representado como nodo alcanzable no autentica usuarios: un IdP real valida identidades, aplica MFA y emite tokens o aserciones verificables. Una VPC simulada con namespaces no reproduce el plano de control, servicios gestionados, IAM ni aislamiento físico del proveedor cloud. ZTNA resulta útil para usuarios remotos que necesitan aplicaciones concretas, mientras que la conectividad de red completa puede seguir requiriendo VPN. MFA, postura del dispositivo y evaluación continua refuerzan el modelo.
 
-## Conclusiones técnicas
+## Estado final
 
-Las arquitecturas modernas combinan Cloud Networking, Zero Trust, ZTNA, SASE y microsegmentación para adaptarse a entornos híbridos con agilidad y seguridad. En este laboratorio se ha **representado** la conectividad híbrida (con una abstracción de la nube), el acceso mínimo por aplicación y la microsegmentación; la verificación de identidad, la evaluación de contexto y SASE quedan como conceptos explicados, y el escenario **no equivale a una plataforma ZTNA ni a AWS reales**.
+Queda implementada la conectividad híbrida, el acceso mínimo por aplicación y la microsegmentación, con accesos permitidos y bloqueados verificados.
 
-## Preparación para el siguiente laboratorio
+El escenario no equivale a una plataforma ZTNA ni a AWS: la verificación de identidad, la evaluación de contexto y SASE se explican pero no se construyen, y una política basada en direcciones IP no equivale a verificar identidad.
 
-La empresa ya tiene sede, nube, acceso remoto y segmentación, pero **no sabe cómo se comporta** todo ello en funcionamiento. En el **Laboratorio 13** pasamos de construir a **observar**: se monitoriza el tráfico, se centralizan los registros y se aprende a diagnosticar con evidencias.
+## Continuidad técnica
 
----
-
-**¡Laboratorio 12 completado!** Continúa con el **Laboratorio 13**.
+Networking SecOps tiene sede, nube, acceso remoto y segmentación, pero no sabe cómo se comporta todo ello en funcionamiento. En el laboratorio 13 se pasa de construir a observar: se monitoriza el tráfico, se centralizan los registros y se diagnostica con evidencias.

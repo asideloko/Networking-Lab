@@ -59,7 +59,7 @@ flowchart TD
 
 ## Orden de diagnóstico por capas
 
-Usa el orden siguiente para reducir hipótesis; no saltes directamente a cambiar reglas:
+El orden siguiente reduce hipótesis; no se salta directamente a cambiar reglas:
 
 1. **Enlace/interfaz:** `ip -s link`, `ip link`, MTU, estado de veth/bridge y contadores.
 2. **Capa 2:** `bridge fdb show`, `bridge vlan show`, `ip neigh`, ARP y captura Ethernet.
@@ -71,7 +71,7 @@ Usa el orden siguiente para reducir hipótesis; no saltes directamente a cambiar
 
 ### Estándar de informe de incidencia
 
-Cada ejercicio de diagnóstico debe registrar: síntoma y alcance; hora de inicio y zona horaria; hipótesis iniciales; pruebas realizadas y resultado; evidencia en ambos extremos cuando sea posible; causa raíz o nivel de confianza; impacto; corrección; validación posterior; reversión y riesgo residual. Una pérdida en un salto intermedio de MTR no demuestra pérdida de tránsito si los saltos posteriores responden normalmente: algunos routers limitan ICMP de control.
+Cada diagnóstico debe registrar: síntoma y alcance; hora de inicio y zona horaria; hipótesis iniciales; pruebas realizadas y resultado; evidencia en ambos extremos cuando sea posible; causa raíz o nivel de confianza; impacto; corrección; validación posterior; reversión y riesgo residual. Una pérdida en un salto intermedio de MTR no demuestra pérdida de tránsito si los saltos posteriores responden normalmente: algunos routers limitan ICMP de control.
 
 ## Cinco situaciones para practicar
 

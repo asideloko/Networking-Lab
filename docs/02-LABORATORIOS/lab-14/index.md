@@ -7,29 +7,31 @@ description: "Laboratorio 14 de NETWORKING Lab — Herramientas Linux Avanzadas.
 
 # HERRAMIENTAS LINUX AVANZADAS
 
-<p class="tema-meta"><span>11 secciones</span><span>2 diagramas</span><span>7 tablas</span></p>
+<p class="tema-meta"><span>12 secciones</span><span>2 diagramas</span><span>7 tablas</span></p>
 
-## Contexto empresarial
+## Dominar las herramientas
 
-La empresa **Networking SecOps** ha implementado su infraestructura de red y sistemas de monitoreo (Laboratorio 13). Ahora el equipo de operaciones necesita dominar las herramientas avanzadas de Linux para administrar, diagnosticar y optimizar la red de manera eficiente.
+Con el monitoreo en marcha (laboratorio 13), el equipo de operaciones necesita dominar las herramientas avanzadas de Linux para administrar, diagnosticar y optimizar la red. En este laboratorio recorrerás `ip`, `ss`, `conntrack`, `nft`, `ethtool` y `tcpdump` sobre una topología sencilla, para saber qué herramienta responde cada pregunta.
+
+## Introducción técnica
+
+Administrar una red desde la línea de comandos exige saber qué herramienta responde cada pregunta: qué direcciones y rutas existen, quién escucha en un puerto, qué regla bloquea un paquete y qué ve un enlace.
+
+Este laboratorio monta una topología propia y sencilla (un router Linux con una LAN, una DMZ y una salida hacia el host) y recorre `ip`, `ss`, `conntrack`, `nft`, `ethtool` y `tcpdump`, contrastando las herramientas modernas con las clásicas que aún se encuentran en muchos sistemas.
+
+El laboratorio 13 utilizó varias de ellas de forma puntual; aquí se organizan por tipo de pregunta.
 
 !!! note "Laboratorio independiente"
-    Este laboratorio monta su **propia** topología (un router Linux con LAN y DMZ) para practicar las herramientas con calma; no depende de los anteriores. Empieza limpiando **solo los recursos propios de este escenario** (no todo lo que haya en tu equipo).
+    Este laboratorio monta su **propia** topología (un router Linux con LAN y DMZ) para practicar las herramientas con calma; no depende de los anteriores. Empieza limpiando **solo los recursos propios de este escenario** (no todo lo que haya en el equipo).
 
-## Problema inicial
+## Estado inicial
 
--   Con la red y su monitoreo en marcha, el equipo debe **administrarla a diario** desde la línea de comandos.
--   Debe saber qué herramienta responde cada pregunta: qué direcciones y rutas hay, quién escucha en un puerto, qué regla bloquea un paquete, qué ve el enlace.
--   Debe elegir con criterio entre las herramientas modernas (`ip`, `ss`, `nft`) y las clásicas que todavía se encuentran en muchos sistemas.
+- Las redes de los laboratorios anteriores se administran con comandos sueltos, sin un criterio explícito de elección.
+- Falta una topología pequeña donde cada herramienta pueda estudiarse sin interferir con otras prácticas.
 
-## Objetivos del laboratorio
+## Resultado que se construirá
 
-1.  Administrar interfaces, direcciones, rutas, reglas de política y vecinos con `ip` (iproute2).
-2.  Inspeccionar sockets con `ss` y distinguirlos de las conexiones que solo **atraviesan** un router (`conntrack`).
-3.  Filtrar tráfico con `nftables` distinguiendo las cadenas `input`, `forward` y `output`.
-4.  Consultar y ajustar la MTU, y entender el alcance de `ethtool` sobre interfaces virtuales.
-5.  Usar `tcpdump` para obtener evidencia de dónde desaparece un paquete.
-6.  **Elegir la herramienta adecuada** según la pregunta técnica que se quiere responder.
+Queda un router con LAN (`Host1` y `Host2`), DMZ y salida al host, y una guía de herramientas verificada sobre él: interfaces, direcciones, rutas, reglas de política y vecinos con `ip`; sockets con `ss` y conexiones que solo atraviesan el router con `conntrack`; filtrado con `nftables` según las cadenas `input`, `forward` y `output`; MTU y alcance de `ethtool` en interfaces virtuales; y capturas con `tcpdump` que muestran dónde desaparece un paquete.
 
 ## Topología
 
@@ -200,7 +202,7 @@ if ! sudo iptables -t nat -C POSTROUTING -s 203.0.113.0/30 -o eth0 -j MASQUERADE
 fi
 ```
 
-Comprueba la conectividad básica:
+Se comprueba la conectividad básica:
 
 ```bash
 sudo ip netns exec Host1 ping -c 2 10.0.0.20
@@ -236,7 +238,7 @@ sudo ip netns exec Router ip link set veth-r-lan2 mtu 1500
 sudo ip netns exec ServidorDMZ ip link set veth-lan2-r mtu 1500
 ```
 
-**Agregar una ruta estática.** El siguiente salto debe ser **otro** equipo alcanzable directamente (no una dirección del propio router). Supongamos que existe una red `10.0.2.0/24` detrás de Host1. Para que **la ruta funcione como se describe**, Host1 tiene que **actuar como siguiente salto de capa 3 y reenviar tráfico**, y tener esa red (o un camino hacia ella); de lo contrario la ruta se instala pero el tráfico no llega. Lo simulamos con una interfaz ficticia:
+**Agregar una ruta estática.** El siguiente salto debe ser **otro** equipo alcanzable directamente (no una dirección del propio router). Se supone que existe una red `10.0.2.0/24` detrás de Host1. Para que **la ruta funcione como se describe**, Host1 tiene que **actuar como siguiente salto de capa 3 y reenviar tráfico**, y tener esa red (o un camino hacia ella); de lo contrario la ruta se instala pero el tráfico no llega. Lo simulamos con una interfaz ficticia:
 
 ```bash
 # Host1 como siguiente salto: reenvía y tiene la red 10.0.2.0/24 «detrás»
@@ -253,11 +255,11 @@ sudo ip netns exec Router ip route del 10.0.2.0/24
 sudo ip netns exec Host1 ip link del dum0
 ```
 
-El `ping` a `10.0.2.1` demuestra que la ruta y el siguiente salto funcionan, pero **no** prueba el reenvío: esa dirección pertenece al propio Host1, que la contestaría aunque `ip_forward` valiera 0. Sin una red real detrás de Host1, la ruta se instalaría igualmente (`ip route get` la mostraría), pero un paquete dirigido a otro equipo de `10.0.2.0/24` no tendría adónde ir (véase el Ejercicio 3).
+El `ping` a `10.0.2.1` demuestra que la ruta y el siguiente salto funcionan, pero **no** prueba el reenvío: esa dirección pertenece al propio Host1, que la contestaría aunque `ip_forward` valiera 0. Sin una red real detrás de Host1, la ruta se instalaría igualmente (`ip route get` la mostraría), pero un paquete dirigido a otro equipo de `10.0.2.0/24` no tendría adónde ir (véase el Prueba 3).
 
 ### Paso 5: ss (sockets)
 
-Arrancamos dos servicios de prueba en Host1 y establecemos una conexión desde Host2:
+Se arrancan dos servicios de prueba en Host1 y se establece una conexión desde Host2:
 
 ```bash
 if [ -e /tmp/lab14 ]; then echo "/tmp/lab14 ya existe; ejecuta limpieza."; exit 1; fi
@@ -306,7 +308,7 @@ Una regla de `input` **controla el tráfico dirigido al router, no el que lo atr
 sudo ip netns exec Host1 ping -c 2 10.0.1.10        # funciona: no pasa por input
 ```
 
-Ahora añadimos una cadena `forward` con política `drop` y solo lo necesario:
+A continuación se añade una cadena `forward` con política `drop` y solo lo necesario:
 
 ```bash
 sudo ip netns exec Router nft add chain inet filter forward '{ type filter hook forward priority 0 ; policy drop ; }'
@@ -325,7 +327,7 @@ sudo ip netns exec Router traceroute -n 203.0.113.2
 sudo ip netns exec Router tcpdump -i br-lan -c 5 -n
 ```
 
-Con Internet disponible en tu equipo: `sudo ip netns exec Router traceroute -n 8.8.8.8`.
+Con Internet disponible en el equipo: `sudo ip netns exec Router traceroute -n 8.8.8.8`.
 
 ### Paso 8: Limpieza selectiva
 
@@ -449,7 +451,7 @@ Ejemplo de salida (representativo):
 | Aspecto | `iptables` (laboratorios 08 y 09) | `nftables` (este laboratorio y el 15) |
 |---------|-----------------------------------|----------------------------------------|
 | Estado | Clásica; muchas distribuciones la ofrecen como compatibilidad sobre `nft` | Herramienta actual del *netfilter* |
-| Tablas y cadenas | Predefinidas (`filter`, `nat`…) | Las defines tú (`table inet filtro`) |
+| Tablas y cadenas | Predefinidas (`filter`, `nat`…) | Las define el administrador (`table inet filtro`) |
 | IPv4/IPv6 | Comandos separados | Familia `inet` para ambos |
 | Reglas | Una por invocación | Conjuntos, mapas y reglas atómicas |
 
@@ -466,13 +468,13 @@ Mira `errors` y `dropped` (y `carrier`/`collsns` en TX): un contador de **errore
 
 | Situación | Qué observas | Conclusión razonable |
 |-----------|--------------|----------------------|
-| `ping` a una dirección detrás de Host1 deja de funcionar | `ip route get` sigue mostrando la ruta; `ip_forward` = 0 en Host1 | Falta reenvío en el equipo intermedio (Ejercicio 3) |
+| `ping` a una dirección detrás de Host1 deja de funcionar | `ip route get` sigue mostrando la ruta; `ip_forward` = 0 en Host1 | Falta reenvío en el equipo intermedio (Prueba 3) |
 | Un servicio no recibe conexiones | `ss -tlnp` no lo muestra escuchando | El servicio no está activo o escucha en otra IP |
-| El Router ya no responde a `ping` pero Host1 sigue saliendo a Internet | `nft list ruleset`: regla `icmp drop` en la cadena `input` | Afecta al tráfico **destinado al Router**, no al que lo atraviesa (Ejercicio 1) |
+| El Router ya no responde a `ping` pero Host1 sigue saliendo a Internet | `nft list ruleset`: regla `icmp drop` en la cadena `input` | Afecta al tráfico **destinado al Router**, no al que lo atraviesa (Prueba 1) |
 
-## Ejercicios
+## Pruebas de comportamiento
 
-### Ejercicio 1: Bloquear ICMP con nftables
+### Prueba 1: Bloqueo de ICMP con nftables
 
 Una regla añadida con `add` va **al final** de la cadena, después de la que acepta el ping. Insértala al principio:
 
@@ -484,18 +486,18 @@ sudo ip netns exec Router nft -a list chain inet filter input
 
 Para quitar la regla usa `nft delete rule inet filter input handle N` con el *handle* que muestra el listado.
 
-### Ejercicio 2: Verificar conexiones con ss
+### Prueba 2: Conexiones con ss
 
 ```bash
 sudo ip netns exec Host1 ss -tn state established
 sudo ip netns exec Host2 ss -tn state established
 ```
 
-Comprueba que la conexión de Paso 5 aparece en **ambos** extremos (Host1 y Host2) pero no en el router. (Esa conexión dura 300 s; si ya expiró, repite el comando del Paso 5.)
+Se comprueba que la conexión de Paso 5 aparece en **ambos** extremos (Host1 y Host2) pero no en el router. (Esa conexión dura 300 s; si ya expiró, se repite el comando del Paso 5.)
 
-### Ejercicio 3: Comprobar el reenvío de verdad
+### Prueba 3: Reenvío real frente a respuesta local
 
-Sustituye la interfaz ficticia `dum0` por un namespace `Detras` unido a Host1 con un `veth` (Host1 `10.0.2.1/24`, Detras `10.0.2.50/24`, con ruta por defecto hacia `10.0.2.1`). Mantén la ruta del Router hacia `10.0.2.0/24 via 10.0.0.10` y haz `ping` a `10.0.2.50` con `ip_forward` en 1 y luego en 0 en Host1. ¿Qué cambia y por qué? (Pista: ahora el paquete no termina en Host1, **pasa por él**.)
+Se sustituye la interfaz ficticia `dum0` por un namespace `Detras` unido a Host1 con un `veth` (Host1 `10.0.2.1/24`, Detras `10.0.2.50/24`, con ruta por defecto hacia `10.0.2.1`). Se mantiene la ruta del Router hacia `10.0.2.0/24 via 10.0.0.10` y se hace `ping` a `10.0.2.50` con `ip_forward` en 1 y luego en 0 en Host1. **Efecto esperado:** con `ip_forward=1` el ping responde, porque Host1 reenvía el paquete hacia `Detras`; con 0 deja de responder, porque ahora el paquete no termina en Host1 sino que **pasa por él**.
 
 ## Conceptos clave
 
@@ -513,7 +515,7 @@ Sustituye la interfaz ficticia `dum0` por un namespace `Detras` unido a Host1 co
 
 ### Ejemplo aislado de routing por origen
 
-En una ampliación controlada, crea tablas nombradas o numeradas en `/etc/iproute2/rt_tables` solo si el ejercicio requiere persistencia; para una prueba efímera usa identificadores numéricos y elimina las reglas al terminar:
+En una ampliación controlada, las tablas nombradas o numeradas se crean en `/etc/iproute2/rt_tables` solo si la prueba requiere persistencia; para una prueba efímera se usan identificadores numéricos y se eliminan las reglas al terminar:
 
 ```bash
 sudo ip rule show
@@ -521,15 +523,15 @@ sudo ip route show table main
 sudo ip route get 10.0.2.10 from 10.0.1.10
 ```
 
-Diseña dos orígenes y dos gateways, predice qué tabla debe resolver cada flujo y verifica con `ip route get ... from ...`. Registra prioridad (`pref`) y evita reglas duplicadas. La reversión debe eliminar únicamente las reglas y rutas que añadió el ejercicio.
+La comprobación compara dos orígenes y dos gateways: una regla `ip rule` selecciona la tabla 101 para el origen definido y otra selecciona la tabla 102 para el segundo origen. `ip route get DESTINO from ORIGEN` muestra la tabla y el siguiente salto efectivos. Se registra la prioridad (`pref`), evita reglas duplicadas y elimina únicamente las reglas y rutas añadidas durante la prueba.
 
 ### `ethtool`: virtual frente a físico
 
-Sobre `veth`, `ethtool` puede mostrar información limitada del dispositivo virtual y estadísticas software; no demuestra velocidad negociada, dúplex ni propiedades del transceptor físico. Para una NIC real, consulta `ethtool <NIC>`, `ethtool -i <NIC>` y `ethtool -S <NIC>` con permisos adecuados. No fuerces velocidad/autonegociación ni reinicies una interfaz productiva como parte de esta práctica.
+Sobre `veth`, `ethtool` puede mostrar información limitada del dispositivo virtual y estadísticas software; no demuestra velocidad negociada, dúplex ni propiedades del transceptor físico. Para una NIC real, se consulta `ethtool <NIC>`, `ethtool -i <NIC>` y `ethtool -S <NIC>` con permisos adecuados. No fuerces velocidad/autonegociación ni reinicies una interfaz productiva como parte de esta práctica.
 
-### Ejercicio: policy routing por dirección de origen
+### Prueba: policy routing por dirección de origen
 
-Este ejercicio crea dos siguientes saltos aislados dentro de namespaces; no modifica `/etc/iproute2/rt_tables` ni el enrutamiento del host. Las tablas 101 y 102 existen solo dentro de `Router` y se eliminan con ese namespace.
+Esta prueba crea dos siguientes saltos aislados dentro de namespaces; no modifica `/etc/iproute2/rt_tables` ni el enrutamiento del host. Las tablas 101 y 102 existen solo dentro de `Router` y se eliminan con ese namespace.
 
 ```bash
 for ns in GW_A GW_B; do
@@ -568,7 +570,7 @@ sudo ip netns exec Router ip route get 203.0.113.10 from 10.0.0.20
 
 El primer origen debe seleccionar la tabla 101 y el gateway `198.51.100.2`; el segundo, la tabla 102 y `203.0.113.2`. `ip route get` demuestra la decisión local de selección, no conectividad a Internet: los namespaces `GW_A` y `GW_B` son siguientes saltos didácticos, no proveedores externos.
 
-Reversión del ejercicio (antes de borrar `Router`):
+Reversión de la prueba (antes de borrar `Router`):
 
 ```bash
 sudo ip netns exec Router ip rule del pref 100 from 10.0.0.10/32 table 101 2>/dev/null || true
@@ -588,22 +590,16 @@ done
 
 Si el servicio escucha (`ss`), la ruta existe (`ip route get`) y la conexión falla, captura en ambos extremos (`tcpdump`) y revisa reglas/contadores (`nft list ruleset`). El punto donde desaparece el paquete y el contador que aumenta sustentan el diagnóstico; no basta con que una regla parezca sospechosa.
 
-## Preguntas de reflexión
+## Análisis técnico y decisiones
 
-1.  ¿Qué mecanismo decide por qué interfaz sale un paquete, y con qué comando lo compruebas?
-2.  ¿Qué sucedería si pones `policy drop` en la cadena `input` y no permites el tráfico establecido?
-3.  ¿Qué diferencia hay entre lo que ves con `ss` y lo que ves con `conntrack`?
-4.  ¿Qué limitaciones tiene diagnosticar solo con `ping`?
-5.  ¿Qué comando elegirías primero para cada síntoma de la tabla de objetivos operativos?
+La tabla de rutas y las reglas de política determinan la interfaz de salida; `ip route get` muestra la decisión efectiva para un destino y origen concretos. Una política `drop` en `input` bloquea tráfico dirigido al propio router salvo que existan reglas explícitas para conexiones establecidas y servicios necesarios. `ss` muestra sockets locales y sus estados; conntrack registra flujos que atraviesan o son traducidos por el kernel. `ping` solo comprueba ICMP y no demuestra que DNS, TCP o una aplicación funcionen. La herramienta debe elegirse según la capa del síntoma: `ip` para direcciones/rutas, `ss` para sockets, `nft` para filtrado, `ethtool` para parámetros de interfaz y `tcpdump` para observar paquetes.
 
-## Conclusiones técnicas
+## Estado final
 
-Las herramientas avanzadas de Linux (`ip`, `ss`, `nft`) permiten administrar y diagnosticar redes de manera eficiente y han sustituido en gran medida a las tradicionales (`ifconfig`, `netstat`), y `nft` va reemplazando a `iptables` en las distribuciones recientes; las clásicas siguen existiendo en muchos sistemas. Entender **dónde engancha cada regla** (`input`, `forward`, `output`) es clave para comprender un firewall.
+Queda implementada una topología de práctica con router, LAN y DMZ, y comprobado qué herramienta responde cada pregunta técnica.
 
-## Preparación para el siguiente laboratorio
+`ip`, `ss` y `nft` han sustituido en gran medida a `ifconfig`, `netstat` e `iptables`, que siguen presentes en muchos sistemas. Entender dónde engancha cada regla (`input`, `forward`, `output`) es clave para comprender un firewall.
 
-Este laboratorio enseñó a **manejar las herramientas** de administración y diagnóstico con una topología independiente. En el **Laboratorio 15** se aplican **juntas** sobre una infraestructura integral: direccionamiento, OSPF, firewall, DHCP y VRRP, con casos de *troubleshooting* que exigen elegir bien qué herramienta usar y qué evidencia buscar.
+## Continuidad técnica
 
----
-
-**¡Laboratorio 14 completado!** Continúa con el **Laboratorio 15**.
+El equipo de operaciones ya maneja las herramientas de administración y diagnóstico sobre una topología independiente. En el laboratorio 15 las aplica juntas sobre una infraestructura integral: direccionamiento, OSPF, firewall, DHCP y VRRP, con casos de *troubleshooting* que exigen elegir qué herramienta usar y qué evidencia buscar.

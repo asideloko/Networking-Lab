@@ -7,36 +7,28 @@ description: "Laboratorio 08 de NETWORKING Lab — Seguridad en Redes."
 
 # SEGURIDAD EN REDES
 
-<p class="tema-meta"><span>14 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
+<p class="tema-meta"><span>15 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
 
-## Contexto empresarial
+## Primero, protegerse
 
-La empresa **Networking SecOps** ha implementado su infraestructura de red con servicios DNS, DHCP y NAT (Laboratorio 07). Ahora el equipo de seguridad ha identificado la necesidad de **proteger la red** contra amenazas internas y externas.
+Con los servicios básicos funcionando (laboratorio 07), el equipo de seguridad y el CISO identifican que la red debe protegerse de amenazas internas y externas: controlar el tráfico entre zonas, restringir los servicios administrativos, aislar los servidores públicos y cifrar las comunicaciones. En este laboratorio implementarás un firewall con `iptables`, ACL, una DMZ, SSH con verificación del servidor y un servicio TLS de pruebas, y comprobarás cada medida con tráfico permitido y bloqueado.
 
-El CISO (Chief Information Security Officer) ha solicitado implementar las siguientes medidas:
+## Introducción técnica
 
-1. **Firewall** para controlar el tráfico entrante y saliente.
-2. **ACLs** para restringir acceso a servicios administrativos.
-3. **DMZ** para aislar servidores públicos.
-4. **Cifrado [TLS](https://www.rfc-editor.org/rfc/rfc8446)** para proteger comunicaciones web.
-5. **SSH** para acceso seguro a dispositivos.
+Hasta aquí todo el tráfico entre redes está permitido: los servicios administrativos se exponen a toda la red, no hay segmentación para servidores públicos y las comunicaciones internas no se cifran.
 
-## Problema inicial
+Este laboratorio introduce un **firewall** con `iptables`, listas de control de acceso para restringir los servicios administrativos, una **DMZ** para aislar los servidores públicos, acceso **SSH** con verificación de identidad del servidor y **TLS** con un certificado autofirmado. Cada medida se prueba con tráfico permitido y con tráfico que debe quedar bloqueado.
 
-- No hay control de tráfico entre redes (todo el tráfico es permitido).
-- Los servicios administrativos (SSH) están expuestos a toda la red.
-- No hay segmentación para servidores públicos.
-- Las comunicaciones internas no están cifradas.
-- No hay políticas de seguridad definidas.
+## Estado inicial
 
-## Objetivos del laboratorio
+- El tráfico entre redes no se controla: todo está permitido.
+- SSH está expuesto a toda la red.
+- Los servidores públicos comparten segmento con los equipos internos.
+- Las comunicaciones de aplicación no están cifradas y no hay políticas definidas.
 
-1.  Comprender los principios de la tríada **[CIA](https://csrc.nist.gov/glossary/term/cia_triad)** (Confidencialidad, Integridad, Disponibilidad).
-2.  Implementar un **firewall** con `iptables` para filtrar tráfico.
-3.  Configurar **ACLs** en el firewall para restringir accesos.
-4.  Diseñar una **DMZ** para aislar servidores públicos.
-5.  Configurar **SSH** para acceso seguro.
-6.  Implementar **TLS** para cifrar comunicaciones web.
+## Resultado que se construirá
+
+Queda un firewall con política por defecto restrictiva y reglas explícitas entre tres zonas (LAN interna, DMZ e «Internet»); una DMZ con un servidor web (`10.0.99.10`) y un DNS público (`10.0.99.5`) que no alcanza la LAN; SSH con clave y huella del servidor verificada; y un servidor HTTPS de pruebas. Se comprueban los flujos permitidos y los bloqueados, y se contrasta cada medida con los principios de la tríada [CIA](https://csrc.nist.gov/glossary/term/cia_triad).
 
 ## Herramientas necesarias
 
@@ -123,7 +115,7 @@ sudo ip netns exec clienteDHCP ip -4 addr show dev veth-dhcpcl
 sudo ip netns exec clienteDHCP ping -c 2 10.0.1.10
 ```
 
-Si el cliente perdió su concesión DHCP, renuévala con `sudo ip netns exec clienteDHCP dhclient -pf /tmp/lab07/dhclient.pid -lf /tmp/lab07/dhclient.leases veth-dhcpcl`. Comprueba que no existan namespaces de una ejecución anterior del laboratorio 08:
+Si el cliente perdió su concesión DHCP, se renueva con `sudo ip netns exec clienteDHCP dhclient -pf /tmp/lab07/dhclient.pid -lf /tmp/lab07/dhclient.leases veth-dhcpcl`. Se comprueba que no existan namespaces de una ejecución anterior del laboratorio 08:
 
 ```bash
 for ns in firewall servidorWeb servidorDNS_PUB servidorInterno; do
@@ -137,7 +129,7 @@ sudo apt-get install -y openssh-server openssh-client openssl conntrack
 
 ### Paso 2: El firewall pasa a ser la única salida
 
-Hasta ahora R1 tenía su propia salida a Internet. Con un firewall perimetral, **toda la salida debe pasar por él**. Eliminamos la WAN de R1 (al borrar `veth-wan` desaparece también `veth-host` del host, junto con la ruta por defecto de R1 y su IP `192.168.100.2`):
+Hasta ahora R1 tenía su propia salida a Internet. Con un firewall perimetral, **toda la salida debe pasar por él**. Se elimina la WAN de R1 (al borrar `veth-wan` desaparece también `veth-host` del host, junto con la ruta por defecto de R1 y su IP `192.168.100.2`):
 
 ```bash
 if [ -e /tmp/lab08 ]; then
@@ -206,7 +198,7 @@ sudo ip link set veth-wan-fw master br-wan
 sudo ip link set veth-wan-fw up
 sudo ip netns exec firewall ip route add default via 192.168.100.2
 
-# El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida).
+# El host reenvía y traduce hacia la red real (cambia eth0 por tu interfaz de salida).
 # El valor original de ip_forward y la creación de la regla NAT quedan registrados para revertirlos.
 if [ ! -e /tmp/lab08-ip_forward.orig ]; then
   sudo sysctl -n net.ipv4.ip_forward | sudo tee /tmp/lab08-ip_forward.orig >/dev/null
@@ -383,7 +375,7 @@ sudo ip netns exec firewall iptables -A FORWARD -i veth-fw-lan -o br-dmz -s 10.0
 sudo ip netns exec firewall iptables -A FORWARD -i br-dmz -o veth-fw-lan -j DROP
 ```
 
-Un servidor público **no debe recibir acceso irrestricto a la red interna**: la comunicación DMZ → LAN debe limitarse a políticas explícitas (por ejemplo, solo el puerto de base de datos de un servidor concreto, si la aplicación lo requiere). Aquí se deniega por completo. Observa también que el lado contrario (LAN → DMZ) está **acotado**: solo ICMP, SSH y HTTPS hacia hosts concretos, y no «todo».
+Un servidor público **no debe recibir acceso irrestricto a la red interna**: la comunicación DMZ → LAN debe limitarse a políticas explícitas (por ejemplo, solo el puerto de base de datos de un servidor concreto, si la aplicación lo requiere). Aquí se deniega por completo. Se observa también que el lado contrario (LAN → DMZ) está **acotado**: solo ICMP, SSH y HTTPS hacia hosts concretos, y no «todo».
 
 !!! info "[ACL](https://www.cisco.com/c/en/us/td/docs/switches/lan/c9000/security/acls/acls-configuration-guide/access-control-lists.html) frente a firewall con seguimiento de estado"
     Una **ACL** es un mecanismo de control de tráfico (una lista ordenada de reglas permitir/denegar) que puede aplicarse en distintos puntos: un router, un switch, una interfaz. Una ACL clásica evalúa cada paquete de forma independiente. Un **firewall con seguimiento de estado** (como `iptables` con `conntrack` o `nftables`) además recuerda las conexiones y permite automáticamente las respuestas. En este laboratorio las reglas de `FORWARD` con `-m conntrack --ctstate` actúan como firewall con estado; las reglas que restringen orígenes y puertos (por ejemplo `-s 10.0.0.0/22`) se comportan como las ACL.
@@ -519,7 +511,7 @@ La consulta pasa porque la regla `FORWARD` de UDP/53 la permite. Desde la **LAN 
 !!! warning "Habilitar SSH no equivale a asegurar el servicio"
     **SSH protege el canal de administración** (autenticación y cifrado), pero la seguridad del servicio depende además de la gestión de claves, la restricción de orígenes, la desactivación de contraseñas y root, la actualización del software y el registro de accesos. Aquí aplicamos solo una parte (clave en lugar de contraseña, acceso limitado por el firewall) con un `sshd` de demostración (`StrictModes no`, claves en `/tmp`); no es una configuración de producción.
 
-Arrancamos un `sshd` **dentro** del namespace del servidor web (no con `systemctl`, que actuaría sobre el host), con una configuración propia: solo se permite autenticación por clave.
+Se arranca un `sshd` **dentro** del namespace del servidor web (no con `systemctl`, que actuaría sobre el host), con una configuración propia: solo se permite autenticación por clave.
 
 ```bash
 mkdir -p /tmp/lab08
@@ -563,7 +555,7 @@ sudo ip netns exec clienteSede ssh -i /tmp/lab08/id_admin \
 !!! warning "Generar un certificado no equivale a asegurar la comunicación"
     **TLS protege las comunicaciones de aplicación** mediante autenticación del servidor y cifrado, **siempre que** el cliente valide el certificado (cadena de confianza, nombre, caducidad) y se usen versiones y cifrados adecuados. Un certificado **autofirmado** como el de este paso cifra el canal, pero no demuestra la identidad del servidor a quien no lo haya aceptado previamente.
 
-Generamos un certificado autofirmado y servimos HTTPS con `openssl s_server` dentro del namespace del servidor web (un servidor mínimo, suficiente para observar el cifrado; `-ign_eof` evita que se cierre al ejecutarse en segundo plano sin teclado):
+Se genera un certificado autofirmado y se sirve HTTPS con `openssl s_server` dentro del namespace del servidor web (un servidor mínimo, suficiente para observar el cifrado; `-ign_eof` evita que se cierre al ejecutarse en segundo plano sin teclado):
 
 ```bash
 openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
@@ -584,11 +576,11 @@ openssl s_client -connect 10.0.99.10:443 -brief </dev/null
 sudo ip route del 10.0.99.0/24 via 192.168.100.1
 ```
 
-Para comprobar que el tráfico **va cifrado**, captura mientras haces la conexión: verás el *handshake* TLS y datos ilegibles en lugar de texto en claro (`sudo ip netns exec firewall tcpdump -i br-dmz -n -A port 443`).
+Para comprobar que el tráfico **va cifrado**, se captura durante la conexión: se ve el *handshake* TLS y datos ilegibles en lugar de texto en claro (`sudo ip netns exec firewall tcpdump -i br-dmz -n -A port 443`).
 
 ### Cifrado frente a validación de identidad
 
-TLS aporta dos cosas distintas: **cifrado** del canal y **autenticación** del servidor mediante su certificado. Que la conexión se cifre no implica que el cliente haya comprobado con quién habla. Pide al cliente que **exija** la validación:
+TLS aporta dos cosas distintas: **cifrado** del canal y **autenticación** del servidor mediante su certificado. Que la conexión se cifre no implica que el cliente haya comprobado con quién habla. Se pide al cliente que **exija** la validación:
 
 ```bash
 # 1. Validación obligatoria sin confiar en el certificado: falla (autofirmado, sin cadena de confianza)
@@ -605,7 +597,7 @@ En las tres pruebas el canal **se cifra**; solo en la segunda el cliente ha veri
 
 ### Registro (*logs*) de firewall
 
-Un firewall que descarta sin dejar rastro es difícil de auditar. Añade una regla `LOG` **antes** del `DROP` final para registrar los intentos Internet → LAN:
+Un firewall que descarta sin dejar rastro es difícil de auditar. Se añade una regla `LOG` **antes** del `DROP` final para registrar los intentos Internet → LAN:
 
 Por defecto, el kernel solo permite registrar con `LOG` desde el espacio de nombres principal. Para que el *namespace* `firewall` escriba en el registro del sistema hace falta activarlo en el host:
 
@@ -621,7 +613,7 @@ sudo ip netns exec firewall iptables -I FORWARD 1 -i veth-fw-wan -o veth-fw-lan 
 sudo dmesg | grep FW-DENY | tail
 ```
 
-`--limit` evita llenar el registro y el prefijo facilita filtrar. Si tu sistema no muestra el mensaje con `dmesg`, revisa `journalctl -k`. Los registros son la base de la **auditoría** y alimentan sistemas como el colector del laboratorio 13.
+`--limit` evita llenar el registro y el prefijo facilita filtrar. Si el sistema no muestra el mensaje con `dmesg`, se revisa `journalctl -k`. Los registros son la base de la **auditoría** y alimentan sistemas como el colector del laboratorio 13.
 
 ### Las mismas reglas en nftables (comparación)
 
@@ -634,13 +626,13 @@ sudo ip netns exec firewall nft add rule inet filtro forward iifname "veth-fw-wa
 
 Es la misma política «denegar por defecto» expresada con la herramienta moderna (se desarrolla en los laboratorios 14 y 15). Es **solo una comparación**: no la apliques a la vez que las reglas `iptables`, porque ambos conjuntos se evalúan en el mismo punto del recorrido y el paquete debe superar los dos. Para probarla, usa un firewall recién creado.
 
-## Ejercicios prácticos
+## Pruebas de comportamiento
 
-### Ejercicio 1: Permitir SSH solo desde la red de administración
+### Prueba 1: SSH restringido a la red de administración
 
-Sustituye la regla de SSH hacia el servidor web por una que solo acepte el origen `10.0.0.10` (`clienteSede`) y comprueba que `clienteSucA` ya no puede conectar. (Esa regla comparte `multiport 22,443`: sepárala en dos para no perder el acceso HTTPS.)
+Se sustituye la regla de SSH hacia el servidor web por una que solo acepte el origen `10.0.0.10` (`clienteSede`) y se comprueba que `clienteSucA` ya no puede conectar. (Esa regla comparte `multiport 22,443`: se separa en dos para no perder el acceso HTTPS.) **Efecto esperado:** el intento de SSH desde `clienteSucA` expira, mientras que desde `clienteSede` sigue funcionando y HTTPS no se ve afectado.
 
-### Ejercicio 2: Bloquear ICMP
+### Prueba 2: Bloqueo de ICMP
 
 Una regla añadida con `-A` queda **después** de las que aceptan el ping y no tiene efecto. Insértala al principio de la cadena:
 
@@ -651,14 +643,13 @@ sudo ip netns exec clienteSede ping -c 2 -W 1 10.0.99.10
 
 Elimínala después con `sudo ip netns exec firewall iptables -D FORWARD 1`.
 
-### Ejercicio 3: Verificar la tabla de conexiones
+### Prueba 3: Tabla de conexiones
 
 ```bash
 sudo ip netns exec firewall conntrack -L
 ```
 
-## Errores comunes y soluciones
-
+## Diagnóstico de problemas frecuentes
 | Error | Causa | Solución |
 |-------|-------|----------|
 | No se puede acceder a Internet | NAT no configurado. | Verificar reglas de iptables y `ip_forward=1`. |
@@ -816,7 +807,7 @@ sudo ip netns exec firewall nft list ruleset 2>/dev/null || true
 
 ### SSH: autenticar al servidor y al cliente
 
-La autenticación por clave del cliente no sirve si el cliente acepta cualquier clave de host. No uses `StrictHostKeyChecking=no` ni `UserKnownHostsFile=/dev/null` como práctica principal. Obtén la huella del servidor por un canal confiable, compárala y registra la clave en `known_hosts`; después conecta con `StrictHostKeyChecking=yes`. En un laboratorio efímero puede usarse un `UserKnownHostsFile` específico bajo `/tmp/lab08/`, siempre que se valide la huella antes de confiar.
+La autenticación por clave del cliente no sirve si el cliente acepta cualquier clave de host. No debe usarse `StrictHostKeyChecking=no` ni `UserKnownHostsFile=/dev/null` como práctica principal. Obtén la huella del servidor por un canal confiable, compárala y se registra la clave en `known_hosts`; después conecta con `StrictHostKeyChecking=yes`. En un laboratorio efímero puede usarse un `UserKnownHostsFile` específico bajo `/tmp/lab08/`, siempre que se valide la huella antes de confiar.
 
 ### TLS: SAN e identidad
 
@@ -842,32 +833,16 @@ if [ -f /tmp/lab08-nf_log_all_netns.orig ]; then
 fi
 ```
 
-## Preguntas de reflexión
+## Análisis técnico y decisiones
 
-1.  ¿Qué mecanismo impide que un servidor de la DMZ comprometido alcance la LAN interna?
-2.  ¿Qué sucedería si se elimina la regla `ESTABLISHED,RELATED` del `FORWARD`?
-3.  ¿Qué diferencia hay entre permitir el reenvío hacia la DMZ y publicar el servicio en Internet?
-4.  ¿Qué limitaciones tiene un certificado autofirmado y un `sshd` de demostración?
-5.  ¿En qué escenario empresarial pondrías un DNS público en la DMZ y no en la LAN?
-6.  ¿Qué otros mecanismos complementarían al firewall? (Detección de intrusiones, registros centralizados, segmentación interna.)
+La separación entre LAN y DMZ se consigue mediante interfaces y políticas explícitas de firewall: el tráfico originado en la DMZ no debe alcanzar la LAN salvo excepciones justificadas. La regla `ESTABLISHED,RELATED` permite el retorno de conexiones ya autorizadas; eliminarla puede bloquear respuestas y romper sesiones legítimas. Permitir el reenvío hacia la DMZ no publica automáticamente un servicio: la publicación requiere una regla de destino (DNAT) y una política de forwarding coherente. Un certificado autofirmado no ofrece confianza pública automática; su autenticidad depende de distribuir y verificar la CA o el certificado. Un DNS público suele ubicarse en una zona expuesta o servicio perimetral separado, nunca mezclado sin control con el DNS interno. IDS/IPS, registros centralizados, segmentación y gestión de identidades complementan el firewall.
 
-## Conclusiones técnicas
+## Estado final
 
-En este laboratorio hemos:
+Quedan implementados un firewall con `iptables`, ACL, una DMZ, SSH con verificación del servidor y un servidor TLS de pruebas con certificado autofirmado (en producción corresponde un servidor web real y un certificado emitido por una CA).
 
-1.  Implementado un **firewall** con `iptables` para controlar el tráfico.
-2.  Configurado una **DMZ** para aislar servidores públicos.
-3.  Establecido **ACLs** para restringir el acceso a servicios administrativos.
-4.  Configurado **SSH** para acceso remoto seguro.
-5.  Probado **TLS** con un certificado autofirmado y un servidor HTTPS mínimo (`openssl s_server`); en producción se usaría un servidor web real y un certificado emitido por una CA.
-6.  Aplicado los principios de la tríada **CIA** en la práctica.
+Ninguna medida es suficiente por sí sola: cada una depende de su configuración y de su mantenimiento, y la combinación de varias reduce la superficie de ataque.
 
-La seguridad en redes es un proceso continuo que combina múltiples capas de defensa. El firewall controla el tráfico entre zonas, la DMZ aísla servidores expuestos, SSH protege el acceso administrativo y TLS cifra las comunicaciones de aplicación. Ninguna medida es suficiente por sí sola, y cada una depende de una buena configuración y de su mantenimiento; la combinación de varias, bien configuradas, reduce la superficie de ataque.
+## Continuidad técnica
 
-## Preparación para el siguiente laboratorio
-
-Hemos dejado la red con firewall, DMZ, SSH y un servidor TLS de pruebas funcionando. En el **Laboratorio 09** exploraremos **VPN y Tunelización**, implementando GRE, IPsec, OpenVPN y WireGuard para conectar de forma segura las oficinas y empleados remotos.
-
----
-
-**¡Laboratorio 08 completado!** Has implementado seguridad en redes. Continúa con el **Laboratorio 09**.
+La red queda con firewall, DMZ, SSH y un servidor TLS de pruebas. En el laboratorio 09 la empresa conecta de forma segura sus oficinas y a sus empleados remotos con GRE, IPsec, OpenVPN y WireGuard.

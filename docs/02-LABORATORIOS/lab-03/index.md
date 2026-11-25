@@ -7,35 +7,27 @@ description: "Laboratorio 03 de NETWORKING Lab — Componentes de Red y Conmutac
 
 # COMPONENTES DE RED Y CONMUTACIÓN
 
-<p class="tema-meta"><span>15 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
+<p class="tema-meta"><span>16 secciones</span><span>1 diagrama</span><span>3 tablas</span></p>
 
-## Contexto empresarial
+## El próximo reto
 
-La empresa **Networking SecOps** ha crecido. Ahora hay **4 empleados** en la oficina, cada uno con su propio equipo. La red actual (Cliente 1 y Cliente 2 conectados directamente al router) ya no es suficiente. Se necesita una **infraestructura más organizada** que permita conectar múltiples dispositivos de forma escalable y eficiente.
+Los dos empleados de Networking SecOps ya navegan por Internet, pero la oficina ha crecido: ahora hay cuatro empleados y el bridge del router se ha quedado pequeño. Necesitas separar la conmutación del enrutamiento: un switch dedicado concentrará las conexiones de los cuatro equipos, mientras el router seguirá encargándose de la salida a Internet. Además, deberás observar cómo aprende direcciones MAC el switch y cómo la MTU condiciona el tamaño de los paquetes.
 
-El equipo de TI ha decidido implementar un **switch** para centralizar las conexiones de los clientes, y así: 
+## Introducción técnica
 
--   Separar la **conmutación** (el switch) del **enrutamiento** (el router), que hasta ahora comparten equipo.
--   Reducir el tráfico innecesario: la trama debe llegar solo al puerto del destinatario.
--   Facilitar la expansión futura (más clientes, VLANs, etc.).
+Con dos clientes, el bridge del `router` basta. Con más equipos conviene separar la **conmutación** del **enrutamiento**: un switch concentra las conexiones de los clientes y reenvía cada trama solo al puerto del destinatario, mientras que el router conserva el enrutamiento y el NAT hacia el exterior.
 
-Además, se debe **documentar el funcionamiento del switch**: cómo aprende direcciones MAC, cómo reenvía tramas y cómo segmenta el tráfico.
+En este laboratorio el switch se construye como un bridge Linux en un *namespace* propio, se conectan cuatro clientes y se observa cómo aprende direcciones MAC, cómo reenvía tramas y cómo la MTU condiciona el tamaño de los paquetes.
 
-## Problema inicial
+## Estado inicial
 
--   La red actual tiene solo 2 clientes conectados directamente al router vía bridge.
--   Se necesita conectar **4 clientes** (Cliente 1, 2, 3 y 4).
--   El router debe mantener su función de enrutamiento y NAT hacia Internet.
--   Se debe implementar un **switch** (bridge en Linux) que interconecte a todos los clientes.
+- Hay dos clientes unidos directamente al bridge del `router`, con salida a Internet por NAT.
+- Hacen falta cuatro clientes (Cliente 1 a 4) conectados a un punto de concentración.
+- El `router` debe seguir encargándose del enrutamiento y del NAT.
 
-## Objetivos del laboratorio
+## Resultado que se construirá
 
-1.  Comprender la función de los **dispositivos finales** (hosts) y **dispositivos intermedios** (switch, router).
-2.  Implementar un **switch** en Linux usando un bridge.
-3.  Conectar **4 clientes** al switch y verificar su comunicación.
-4.  Observar el **aprendizaje de direcciones MAC** en el switch.
-5.  Analizar el **flujo de datos** en una red conmutada.
-6.  Comprender el concepto de **MTU** y su impacto en la transmisión.
+Queda una red conmutada: cuatro clientes en un switch (bridge en el *namespace* `switch`) unido al `router` por un enlace propio. Se observan la tabla MAC del bridge, el reenvío de unicast conocido, el *flooding* de unicast desconocido y de broadcast, y el efecto de la MTU, incluida la fragmentación y el mecanismo de descubrimiento de la MTU del camino (PMTUD).
 
 ## Herramientas necesarias
 
@@ -94,7 +86,7 @@ Si no existen los namespaces, ejecuta los comandos de los laboratorios 01 y 02 p
 
 ### Paso 2: Eliminar la configuración anterior (bridge del router)
 
-En el laboratorio 01, creamos un bridge `br0` dentro del router para conectar los clientes. Ahora el bridge pasará a un **namespace propio para el switch**, de modo que el router quede solo con funciones de capa 3. Eliminamos el bridge y los cables virtuales anteriores (al borrar un extremo de un par veth desaparece también el otro; los clientes perderán su IP y su ruta, que se reconfiguran en el Paso 7):
+En el laboratorio 01 se crea un bridge `br0` dentro del router para conectar los clientes. Ahora el bridge pasará a un **namespace propio para el switch**, de modo que el router quede solo con funciones de capa 3. Eliminamos el bridge y los cables virtuales anteriores (al borrar un extremo de un par veth desaparece también el otro; los clientes perderán su IP y su ruta, que se reconfiguran en el Paso 7):
 
 ```bash
 if [ "$(ip netns exec router cat /sys/class/net/lo/ifalias 2>/dev/null)" != networking-lab-owned ]; then
@@ -146,7 +138,7 @@ fi
 ```
 
 !!! info "Transición de reglas de reenvío"
-    El Paso 2 elimina las reglas `FORWARD` que el laboratorio 02 haya marcado como propias. Si detecta reglas `br0` sin marcador, las conserva y avisa: no puede demostrar que las creó este proyecto. El Paso 9 instala las reglas equivalentes sobre `veth-rs` y registra su propiedad. La limpieza final elimina el namespace `router`; por eso sus reglas y contadores desaparecen junto con él.
+    El Paso 2 elimina las reglas `FORWARD` que el laboratorio 02 haya marcado como propias. Si detecta reglas `br0` sin marcador, las conserva y avisa: no puede demostrar que las creó este proyecto. El Paso 9 instala las reglas equivalentes sobre `veth-rs` y se registra su propiedad. La limpieza final elimina el namespace `router`; por eso sus reglas y contadores desaparecen junto con él.
 ### Paso 3: Crear el namespace del switch
 
 ```bash
@@ -247,7 +239,7 @@ ip netns exec switch ip link set veth-s4 up
 
 ### Paso 9: Conectar el switch al router
 
-Necesitamos un enlace entre el switch y el router:
+Se necesita un enlace entre el switch y el router:
 
 ```bash
 # Crear par veth switch-router
@@ -294,7 +286,7 @@ ip netns exec cliente3 ping -c 4 8.8.8.8
 ip netns exec cliente4 curl -I http://google.com
 ```
 
-Si `curl` no resuelve el nombre, consulta la nota «DNS dentro de un namespace» del laboratorio 02: cada namespace necesita su propio `/etc/netns/<ns>/resolv.conf`.
+Si `curl` no resuelve el nombre, se consulta la nota «DNS dentro de un namespace» del laboratorio 02: cada namespace necesita su propio `/etc/netns/<ns>/resolv.conf`.
 
 ## Observación del funcionamiento del switch
 
@@ -307,7 +299,7 @@ El switch aprende las direcciones MAC de los dispositivos conectados:
 ip netns exec switch bridge fdb show br br0
 ```
 
-**Ejemplo de salida** (representativo; las direcciones MAC serán distintas en tu equipo, pues Linux las genera al azar; para poder seguirlas, anótalas con `ip netns exec cliente1 ip link show veth-c1`):
+**Ejemplo de salida** (representativo; las direcciones MAC serán distintas en el equipo, pues Linux las genera al azar; para poder seguirlas, conviene anotarlas con `ip netns exec cliente1 ip link show veth-c1`):
 
 ```
 5e:1c:9a:03:77:b1 dev veth-s1 master br0
@@ -317,18 +309,18 @@ c2:4d:08:6f:12:e4 dev veth-s2 master br0
 
 **Qué significa cada entrada:** `5e:1c:9a:03:77:b1 dev veth-s1 master br0` quiere decir «la MAC `5e:1c:…` se ha visto como **origen** de una trama recibida por el puerto `veth-s1`; por tanto, las tramas cuyo destino sea esa MAC deben salir por `veth-s1`». El switch **aprende** leyendo la MAC de origen de cada trama entrante y **consulta** la tabla usando la MAC de destino. Solo aparecen las MAC de los equipos que ya han enviado tráfico: si la tabla está vacía, ejecuta antes los pings del Paso 10. Si la MAC de destino no está en la tabla (o es *broadcast*), el switch inunda la trama por todos los puertos excepto el de entrada. Las entradas caducan tras un tiempo de envejecimiento (por defecto, 300 s en Linux).
 
-También verás entradas con `permanent` o `self`: corresponden a las MAC de las propias interfaces del bridge y no a equipos aprendidos.
+También se ven entradas con `permanent` o `self`: corresponden a las MAC de las propias interfaces del bridge y no a equipos aprendidos.
 
 ### Paso 13: Capturar tráfico en el switch
 
-Para observar cómo el switch reenvía tramas, capturamos en el bridge. Ten en cuenta que `br0` ve el tráfico que **entra o sale por el propio bridge**, no distingue por sí solo por qué puerto físico salió cada trama; para comprobar que el reenvío es selectivo, captura además en un puerto concreto (por ejemplo `-i veth-s4`, que **no** debería ver el ping entre Cliente 1 y Cliente 3 una vez aprendidas las MAC):
+Para observar cómo el switch reenvía tramas, se captura en el bridge. Debe tenerse en cuenta que `br0` ve el tráfico que **entra o sale por el propio bridge**, no distingue por sí solo por qué puerto físico salió cada trama; para comprobar que el reenvío es selectivo, captura además en un puerto concreto (por ejemplo `-i veth-s4`, que **no** debería ver el ping entre Cliente 1 y Cliente 3 una vez aprendidas las MAC):
 
 ```bash
 # Capturar en el switch (interfaz br0)
 ip netns exec switch tcpdump -i br0 -n -e icmp
 ```
 
-En otra terminal, enviamos un ping de Cliente 1 a Cliente 3:
+En otra terminal, se envía un ping de Cliente 1 a Cliente 3:
 
 ```bash
 ip netns exec cliente1 ping -c 1 10.0.1.4
@@ -370,7 +362,7 @@ ip netns exec cliente1 ip link show veth-c1
 
 ### Paso 15: Probar MTU con ping
 
-Enviamos un ping con una carga mayor que la MTU. **Recuerda:** la opción `-s` de `ping` indica el tamaño de los **datos ICMP**; el paquete IP resultante mide `-s` + 8 (cabecera ICMP) + 20 (cabecera IP). Con `-s 2000` el paquete IP mide 2028 bytes:
+Se envía un ping con una carga mayor que la MTU. **Debe recordarse:** la opción `-s` de `ping` indica el tamaño de los **datos ICMP**; el paquete IP resultante mide `-s` + 8 (cabecera ICMP) + 20 (cabecera IP). Con `-s 2000` el paquete IP mide 2028 bytes:
 
 ```bash
 # Ping con 2000 bytes de datos (paquete IP de 2028 bytes: se fragmentará)
@@ -395,7 +387,7 @@ Este experimento es **local**: el error lo genera el propio origen. En un camino
 
 ### Paso 16: Cambiar MTU (opcional)
 
-Podemos cambiar la MTU para soportar jumboframes entre Cliente 1 y Cliente 3. La MTU debe subirse en **todos los extremos del camino**: ambos clientes y los puertos del switch por los que pasa la trama (el bridge adopta por defecto la menor MTU de sus puertos, por eso también se sube a mano; la MTU de `br0` solo afecta a la interfaz del propio bridge, y es la de cada puerto la que limita lo que se transmite):
+Es posible cambiar la MTU para soportar jumboframes entre Cliente 1 y Cliente 3. La MTU debe subirse en **todos los extremos del camino**: ambos clientes y los puertos del switch por los que pasa la trama (el bridge adopta por defecto la menor MTU de sus puertos, por eso también se sube a mano; la MTU de `br0` solo afecta a la interfaz del propio bridge, y es la de cada puerto la que limita lo que se transmite):
 
 ```bash
 MTU_FILE=/tmp/lab03-mtu.before
@@ -413,16 +405,16 @@ ip netns exec switch ip link set veth-s3 mtu 9000
 ip netns exec switch ip link set br0 mtu 9000
 ```
 
-Ahora un ping con `-s 8972` (8972 + 8 + 20 = 9000) y `-M do` entre Cliente 1 y Cliente 3 debería funcionar. Un ping con `-s 9000` no cabría: sumaría 28 bytes de cabeceras. Los otros puertos del bridge (`veth-s2`, `veth-s4`, `veth-sr`) conservan 1500, de modo que el tráfico hacia ellos sigue limitado por esa MTU. Restaura al terminar:
+Ahora un ping con `-s 8972` (8972 + 8 + 20 = 9000) y `-M do` entre Cliente 1 y Cliente 3 debería funcionar. Un ping con `-s 9000` no cabría: sumaría 28 bytes de cabeceras. Los otros puertos del bridge (`veth-s2`, `veth-s4`, `veth-sr`) conservan 1500, de modo que el tráfico hacia ellos sigue limitado por esa MTU. Se restaura al terminar:
 
 ```bash
 while read -r ns dev mtu; do ip netns exec "$ns" ip link set "$dev" mtu "$mtu"; done < /tmp/lab03-mtu.before
 rm -f /tmp/lab03-mtu.before
 ```
 
-### Ejercicio: PMTUD a través de un router cuando se bloquea ICMP
+### Prueba: PMTUD a través de un router cuando se bloquea ICMP
 
-El Paso 15 anterior muestra un error local del origen; este ejercicio crea un segundo salto con MTU menor para observar PMTUD real. El router ya tiene `10.0.1.1/24` hacia los clientes. Se añade una red remota `10.0.2.0/24` con MTU 1200. Todo se ejecuta dentro de namespaces; no modifica el host.
+El Paso 15 anterior muestra un error local del origen; esta prueba crea un segundo salto con MTU menor para observar PMTUD real. El router ya tiene `10.0.1.1/24` hacia los clientes. Se añade una red remota `10.0.2.0/24` con MTU 1200. Todo se ejecuta dentro de namespaces; no modifica el host.
 
 ```bash
 sudo ip netns add remote
@@ -475,9 +467,9 @@ sudo ip netns exec router tcpdump -ni veth-rs -c 1 'icmp[0] = 3 and icmp[1] = 4'
 
 **Resultado esperado:** con ICMP permitido, el router informa la MTU 1200; al bloquear ese mensaje, el paquete grande deja de progresar y la aplicación puede experimentar un *black hole* de PMTUD. Los paquetes de 1172 bytes de datos siguen pasando. La regla se elimina y el valor original de `ip_forward` se restaura dentro del namespace.
 
-## Ejercicios prácticos
+## Pruebas de comportamiento
 
-### Ejercicio 1: Observar el aprendizaje de MAC
+### Prueba 1: Aprendizaje de direcciones MAC
 
 1.  Limpiar la tabla MAC del switch:
 
@@ -485,13 +477,13 @@ sudo ip netns exec router tcpdump -ni veth-rs -c 1 'icmp[0] = 3 and icmp[1] = 4'
     ip netns exec switch bridge fdb flush dev br0 dynamic
     ```
 
-    La forma extendida de `bridge fdb flush` depende de una versión de `iproute2` que implemente el filtro `dynamic` y del soporte netlink del kernel; no debe fijarse un umbral universal de kernel 6.0. Comprueba `bridge fdb help`/`bridge -Version`. Si el filtro no está disponible, elimina solo la MAC de prueba con `bridge fdb del LLADDR dev PUERTO master` o espera al envejecimiento dinámico (300 s por defecto).
+    La forma extendida de `bridge fdb flush` depende de una versión de `iproute2` que implemente el filtro `dynamic` y del soporte netlink del kernel; no debe fijarse un umbral universal de kernel 6.0. Se comprueba `bridge fdb help`/`bridge -Version`. Si el filtro no está disponible, elimina solo la MAC de prueba con `bridge fdb del LLADDR dev PUERTO master` o espera al envejecimiento dinámico (300 s por defecto).
 
 2.  Enviar un ping de Cliente 1 a Cliente 2.
 3.  Ver la tabla MAC nuevamente.
-4.  **Pregunta:** ¿Cuánto tiempo tarda el switch en aprender la MAC de Cliente 2?
+4.  **Interpretación:** el switch aprende la MAC en el primer instante en que recibe una trama cuya MAC de origen pertenece a Cliente 2. El aprendizaje ocurre en el plano de datos al procesar esa trama; no espera al temporizador de envejecimiento. El temporizador solo elimina entradas dinámicas que dejan de renovarse.
 
-### Ejercicio 2: Broadcast en la red
+### Prueba 2: Broadcast en la red
 
 1.  Enviar un ping de Cliente 1 a la dirección de broadcast `10.0.1.255`:
 
@@ -499,12 +491,12 @@ sudo ip netns exec router tcpdump -ni veth-rs -c 1 'icmp[0] = 3 and icmp[1] = 4'
     ip netns exec cliente1 ping -c 1 -b 10.0.1.255
     ```
 
-    Linux ignora por defecto los ping a broadcast (`net.ipv4.icmp_echo_ignore_broadcasts=1`), así que no verás respuestas. Para que los demás clientes contesten, ejecuta antes en cada uno: `ip netns exec clienteN sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=0`.
+    Linux ignora por defecto los ping a broadcast (`net.ipv4.icmp_echo_ignore_broadcasts=1`), así que no se ven respuestas. Para que los demás clientes contesten, ejecuta antes en cada uno: `ip netns exec clienteN sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=0`.
 
 2.  Capturar en el switch para ver cómo se reenvía la trama de broadcast.
-3.  **Pregunta:** ¿Por qué el switch envía el broadcast a todos los puertos?
+3.  **Interpretación:** el broadcast se replica por todos los puertos que pertenecen a la misma VLAN, excepto el puerto de entrada. Este comportamiento permite que los equipos del dominio reciban mensajes de difusión como ARP; la VLAN limita el alcance de esa difusión.
 
-### Ejercicio 3: Impacto de la MTU en el rendimiento
+### Prueba 3: Impacto de la MTU en el rendimiento
 
 La prueba se realiza entre `cliente1` y `cliente3`, que comparten el mismo dominio de capa 2: el tráfico **no atraviesa el router**. Por tanto, cambia la MTU solo en los extremos y puertos del bridge que realmente están en ese camino.
 
@@ -537,12 +529,11 @@ La prueba se realiza entre `cliente1` y `cliente3`, que comparten el mismo domin
     rm -f "$MTU_FILE"
     ```
 
-3. Registra los cinco valores de bitrate del receptor para cada condición y compara la **mediana**. Mantén constante la dirección, extremos, número de flujos, duración y carga de CPU.
-4. **Pregunta:** ¿Mejora el throughput con jumboframes? ¿La diferencia supera la variación entre repeticiones?
+3. Se registran los cinco valores de bitrate del receptor para cada condición y se compara la **mediana**. Se mantiene constante la dirección, extremos, número de flujos, duración y carga de CPU.
+4. **Interpretación:** no existe una mejora garantizada. Los jumboframes reducen la proporción de cabeceras por byte útil, pero en `veth` el límite puede ser CPU, copias de memoria o el propio generador. La comparación válida utiliza la mediana de cinco pruebas por condición; una diferencia menor que la dispersión entre repeticiones no constituye evidencia de mejora.
 
 La diferencia puede ser pequeña o nula en `veth`: el límite puede ser la CPU, el proceso de copia o el generador. Una mejora en esta topología virtual no demuestra por sí sola una mejora en una NIC física.
-## Errores comunes y soluciones
-
+## Diagnóstico de problemas frecuentes
 | Error | Causa | Solución |
 |-------|-------|----------|
 | Los clientes no pueden hacer ping entre sí | El switch no tiene los puertos en el bridge. | Verificar `bridge link show`. |
@@ -552,7 +543,7 @@ La diferencia puede ser pequeña o nula en `veth`: el límite puede ser la CPU, 
 
 ## Limpieza del laboratorio
 
-Primero detén el servidor `iperf3` de esta práctica. Después elimina los namespaces exclusivos de Lab03. **No borres `router` ni reviertas cambios del host desde esta sección**: ejecuta al final la sección de reversión del Laboratorio 02, que es propietaria de `router`, `cliente1`, `cliente2`, NAT, `FORWARD`, `ip_forward`, ruta y `veth-host`.
+Primero se detiene el servidor `iperf3` de esta práctica y después se eliminan los *namespaces* exclusivos de Lab03. **`router` y los cambios del host no se tocan desde esta sección**: la reversión corresponde a la sección homónima del Laboratorio 02, propietario de `router`, `cliente1`, `cliente2`, NAT, `FORWARD`, `ip_forward`, ruta y `veth-host`.
 
 ```bash
 PROC_LEFT=0
@@ -635,7 +626,7 @@ Un switch aprende observando la **MAC de origen** de cada trama recibida; no apr
 
 ### Experimento predictivo
 
-Anota primero qué puertos esperas que reciban cada trama. Después ejecuta:
+Antes de ejecutar, conviene anotar qué puertos deberían recibir cada trama. Después se ejecuta:
 
 ```bash
 for dev in veth-s1 veth-s2 veth-s3 veth-s4 veth-sr; do
@@ -646,7 +637,7 @@ sudo ip netns exec cliente1 ping -c 1 10.0.1.3
 sudo ip netns exec switch bridge fdb show br br0
 ```
 
-Repite desde un cliente hacia otro destino no contactado y compara la captura en los puertos del switch. La FDB se llena con MAC **de origen** de las tramas observadas. El primer unicast puede inundarse si el destino todavía no está aprendido; la respuesta suele permitir aprender ambas MAC.
+Se repite desde un cliente hacia otro destino no contactado y se compara la captura en los puertos del switch. La FDB se llena con MAC **de origen** de las tramas observadas. El primer unicast puede inundarse si el destino todavía no está aprendido; la respuesta suele permitir aprender ambas MAC.
 
 ### MTU y PMTUD
 
@@ -654,38 +645,20 @@ Repite desde un cliente hacia otro destino no contactado y compara la captura en
 
 El cambio a MTU 9000 debe compararse con pruebas repetidas y la misma carga, duración, CPU y dirección de prueba. Una variación de `iperf3` en veth no demuestra por sí sola una mejora física de jumbo frames.
 
-## Preguntas de reflexión
+## Análisis técnico y decisiones
 
-1.  ¿Qué mecanismo permite que el *switch* envíe una trama solo al puerto correcto tras aprender una MAC?
-2.  ¿Qué sucedería si se elimina una entrada de la tabla MAC y llega una trama a ese destino?
-3.  ¿Qué diferencia hay entre el comportamiento esperado de un *broadcast* y el de un *unicast* conocido?
-4.  ¿Qué limitaciones tiene un *bridge* Linux frente a un *switch* gestionable real?
-5.  ¿Qué otros mecanismos (VLAN, STP) complementarían este diseño en una oficina real?
+El bridge aprende la MAC de origen de cada trama y la asocia al puerto de entrada en su FDB. Cuando conoce la MAC destino, reenvía por el puerto asociado; si la desconoce, inunda la trama por los demás puertos de la misma VLAN, excepto el de entrada. El broadcast se replica dentro del dominio de broadcast; un unicast conocido se dirige a un puerto concreto. Borrar una entrada provoca aprendizaje posterior y, mientras tanto, flooding de unicast desconocido. Un bridge Linux reproduce la conmutación básica, pero no sustituye todas las funciones de un switch gestionable: ASIC, telemetría, políticas avanzadas, PoE y operación del fabricante. VLAN y STP amplían la segmentación y evitan bucles de capa 2.
 
-## Conclusiones técnicas
+## Estado final
 
-En este laboratorio hemos:
+Queda implementada una red conmutada con cuatro clientes y un switch Linux, con comunicación verificada entre clientes y hacia el router, y con la tabla MAC observada durante el aprendizaje.
 
-1.  **Implementado una red conmutada** usando un bridge en Linux como switch.
-2.  **Conectado 4 clientes** al switch y verificado su comunicación.
-3.  **Observado el aprendizaje de direcciones MAC** en el switch.
-4.  **Analizado el reenvío de tramas** en capa 2 (unicast, broadcast).
-5.  **Comprendido el concepto de MTU** y su impacto en la transmisión.
-6.  **Demostrado la escalabilidad** de una red conmutada.
+Un bridge Linux reproduce la conmutación básica, pero no sustituye las funciones de un switch gestionable (ASIC, telemetría, PoE ni políticas avanzadas). La MTU debe coincidir en todos los extremos del camino para evitar fragmentación y pérdida de rendimiento.
 
-El switch es un componente fundamental en las redes modernas. Su capacidad para aprender direcciones MAC y reenviar tráfico solo por el puerto correcto permite:
+# ¡Bien hecho!
 
--   Mayor eficiencia en el uso del ancho de banda.
--   Dominios de colisión separados por puerto (en redes conmutadas dúplex, las colisiones prácticamente desaparecen).
--   Escalabilidad para conectar cientos o miles de dispositivos.
--   Base para implementar VLANs y otras tecnologías de segmentación.
+La oficina ya cuenta con un switch dedicado que conecta a los cuatro empleados, y el router mantiene la salida a Internet. Has observado cómo el switch aprende direcciones MAC, cómo reenvía tramas de forma selectiva y cómo la MTU condiciona el tamaño de los paquetes. En el Laboratorio 04 dividiremos la red en subredes para organizar el tráfico por grupos.
 
-La MTU, por su parte, es un parámetro crítico que debe ser configurado correctamente para evitar fragmentación y pérdida de rendimiento.
+## Continuidad técnica
 
-## Preparación para el siguiente laboratorio
-
-Hemos dejado la red con 4 clientes conectados a un switch, y el switch conectado al router con salida a Internet. En el **Laboratorio 04** comenzaremos a trabajar con **direccionamiento IP y subredes**, segmentando la red en diferentes subredes y preparando el enrutamiento entre ellas.
-
----
-
-**¡Laboratorio 03 completado!** Ahora tenemos una red conmutada escalable y hemos analizado el funcionamiento de los componentes de red. Continúa con el **Laboratorio 04**.
+La empresa queda con cuatro clientes conectados a un switch, y el switch unido al router con salida a Internet. Con dos departamentos nuevos, en el laboratorio 04 la red se divide en subredes con VLSM y el router pasa a encaminar entre ellas.

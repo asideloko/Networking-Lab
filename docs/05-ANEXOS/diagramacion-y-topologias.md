@@ -5,11 +5,9 @@ description: "Biblioteca centralizada de topologías, equipos, servicios, proces
 
 # DIAGRAMACIÓN Y TOPOLOGÍAS
 
-Esta sección reúne los diagramas del proyecto: laboratorios 01–15, proyecto final y documentos de referencia. Es la biblioteca visual central de NETWORKING Lab. Cada ficha identifica su procedencia, propósito, componentes y función técnica; el código Mermaid se conserva para que cada representación se renderice directamente en el sitio.
+Esta sección reúne los diagramas del proyecto. Es la biblioteca visual central de NETWORKING LAB. Cada ficha identifica su procedencia, propósito, componentes y función técnica; el código Mermaid se conserva para que cada representación se renderice directamente en el sitio.
 
-## Convenciones cromáticas y de lectura
-
-La paleta **«Cyberpunk»** es una **convención editorial propia del proyecto**: contorno luminoso del color de la categoría y fondo translúcido teñido del mismo color, con adaptación automática a tema claro y oscuro. El color identifica la **función del elemento** y se complementa siempre con su nombre, su forma y esta leyenda. La justificación completa está en la [Guía de uso, sección 7.2](guia-de-uso.md#72-convencion-cromatica-del-proyecto).
+## Convenciones cromáticas de lectura
 
 | Categoría | Representa |
 |---|---|
@@ -25,65 +23,6 @@ La paleta **«Cyberpunk»** es una **convención editorial propia del proyecto**
 | <span class="sx-dot d-monitor"></span> 10 · Monitoreo y diagnóstico | NOC, SIEM, registros, síntomas, causas halladas, fallos |
 | <span class="sx-dot d-cloud"></span> 11 · Nube e infraestructura virtual | VPC, AWS, EC2, RDS, puerta de enlace de Internet |
 | <span class="sx-dot d-external"></span> 12 · Elementos externos y referencia | Internet, red externa |
-
-**Referencias de accesibilidad:** [WCAG 2.2, criterio 1.4.1](https://www.w3.org/TR/WCAG22/#use-of-color) establece que el color no debe ser el único medio de transmitir información; el criterio 1.4.11 fija un contraste mínimo de 3:1 para elementos gráficos. [ISO 5807:1985](https://www.iso.org/standard/11955.html) ofrece convenciones de símbolos para diagramas de flujo y sistemas; no prescribe esta paleta de red.
-
-## Cómo consultar las fichas
-
-- **Procedencia:** documento donde se desarrolla la práctica o el concepto.
-- **Función:** categoría técnica predominante del diagrama; una ficha puede incluir varias.
-- **Descripción:** explica qué representa y cómo leer sus relaciones.
-- **Diagrama renderizado:** representación interactiva generada desde el código Mermaid original.
-- **Código fuente:** se conserva debajo de cada figura para facilitar revisión y reutilización.
-
-## Índice de diagramas
-
-01. [Topología](#diagrama-01) — lab-01
-02. [Conexión lógica del escenario](#diagrama-02) — lab-01
-03. [Esquema de encapsulación con campos](#diagrama-03) — lab-01
-04. [Topología](#diagrama-04) — lab-02
-05. [Topología](#diagrama-05) — lab-03
-06. [Topología](#diagrama-06) — lab-04
-07. [Topología](#diagrama-07) — lab-05
-08. [Subred frente a VLAN](#diagrama-08) — lab-05
-09. [Topología](#diagrama-09) — lab-06
-10. [Cómo se elige la ruta: *longest prefix match*](#diagrama-10) — lab-06
-11. [Recorrido de un paquete entre sucursales](#diagrama-11) — lab-06
-12. [La ruta de métrica 50 desaparece y entra la de métrica 100 (por R2)](#diagrama-12) — lab-06
-13. [Topología](#diagrama-13) — lab-07
-14. [Cómo se relacionan los cuatro servicios](#diagrama-14) — lab-07
-15. [Resolución DNS](#diagrama-15) — lab-07
-16. [Proceso DHCP (DORA)](#diagrama-16) — lab-07
-17. [Establecimiento y cierre de una conexión TCP](#diagrama-17) — lab-07
-18. [Topología](#diagrama-18) — lab-08
-19. [Recorrido de un paquete por el firewall](#diagrama-19) — lab-08
-20. [Topología](#diagrama-20) — lab-09
-21. [Qué añade cada tecnología a un paquete](#diagrama-21) — lab-09
-22. [Establecimiento de un túnel](#diagrama-22) — lab-09
-23. [NAT-T y AllowedIPs](#diagrama-23) — lab-09
-24. [Topología](#diagrama-24) — lab-10
-25. [Red de proveedor: roles PE y P](#diagrama-25) — lab-10
-26. [Push, swap y pop](#diagrama-26) — lab-10
-27. [Failover frente a ECMP](#diagrama-27) — lab-10
-28. [Las capas son funciones, no niveles físicos](#diagrama-28) — lab-11
-29. [Topología](#diagrama-29) — lab-11
-30. [STP/RSTP: redundancia física sin bucles](#diagrama-30) — lab-11
-31. [Ejemplo de crecimiento: Access2 y Access3](#diagrama-31) — lab-11
-32. [Topología](#diagrama-32) — lab-12
-33. [Componentes de una arquitectura ZTNA real](#diagrama-33) — lab-12
-34. [VPC con subred pública y privada](#diagrama-34) — lab-12
-35. [Topología](#diagrama-35) — lab-13
-36. [Del síntoma a la causa: método de diagnóstico](#diagrama-36) — lab-13
-37. [Topología](#diagrama-37) — lab-14
-38. [Recorrido de un paquete: input, forward y output](#diagrama-38) — lab-14
-39. [Topología](#diagrama-39) — lab-15
-40. [Mapa del escenario: redes, *gateways* y caminos](#diagrama-40) — lab-15
-41. [Cambio de *master* y *backup*](#diagrama-41) — lab-15
-42. [3. Arquitectura de referencia](#diagrama-42) — 03-PROYECTO-FINAL
-43. [Mapa integral de una infraestructura empresarial](#diagrama-43) — 04-REFERENCIA
-44. [Mapa de seguridad y flujo del tráfico](#diagrama-44) — 04-REFERENCIA
-45. [El esquema en cinco pasos](#diagrama-45) — 04-REFERENCIA
-46. [De lo simple a lo específico](#diagrama-46) — 04-REFERENCIA
 
 ---
 
@@ -1229,37 +1168,7 @@ sequenceDiagram
 
 ---
 
-## Diagrama 42. 3. Arquitectura de referencia { #diagrama-42 }
-
-**Documento de origen:** [`03-PROYECTO-FINAL`](../03-PROYECTO-FINAL/index.md)
-
-**Función:** Equipos e infraestructura · Servicios y software · Procesos y protocolos · Decisiones y flujos · Topologías y arquitectura
-
-**Descripción:** Resume la relación funcional entre los componentes representados. Identifica los equipos, servicios, procesos y conexiones que participan en el escenario, conservando las etiquetas técnicas del diagrama original.
-
-**Elementos que deben identificarse:** equipos o participantes, servicios involucrados, operaciones o mensajes y relaciones de comunicación que aparecen rotulados en la figura. La clasificación cromática se aplica por función y se complementa con las etiquetas del propio diagrama.
-
-```mermaid
-flowchart TB
-  Internet((Internet / ISP)) --> EdgeFW[Firewall perimetral]
-  EdgeFW --> Core[Core redundante]
-  Core --> Dist[Distribución L3]
-  Dist --> Access[Acceso: VLAN de usuarios]
-  Dist --> DMZ[DMZ: proxy / web / DNS público]
-  Dist --> DC[Centro de datos: DNS / DHCP / apps]
-  Core <-->|WAN / VPN / OSPF| Branch[Router de sucursal]
-  Branch --> BranchLAN[LAN sucursal]
-  EdgeFW <-->|Túnel cifrado| Cloud[VPC: subred pública y privada]
-  Remote[Usuarios remotos] --> ZTNA[Broker / ZTNA]
-  ZTNA --> Apps[Aplicaciones autorizadas]
-  Core --> Monitor[NOC / colector de logs]
-  DC --> Monitor
-  EdgeFW --> Monitor
-```
-
----
-
-## Diagrama 43. Mapa integral de una infraestructura empresarial { #diagrama-43 }
+## Diagrama 42. Mapa integral de una infraestructura empresarial { #diagrama-42 }
 
 **Documento de origen:** [`04-REFERENCIA/arquitectura-integral.md`](../04-REFERENCIA/arquitectura-integral.md)
 
@@ -1304,7 +1213,7 @@ graph TB
 
 ---
 
-## Diagrama 44. Mapa de seguridad y flujo del tráfico { #diagrama-44 }
+## Diagrama 43. Mapa de seguridad y flujo del tráfico { #diagrama-43 }
 
 **Documento de origen:** [`04-REFERENCIA/arquitectura-integral.md`](../04-REFERENCIA/arquitectura-integral.md)
 
@@ -1328,7 +1237,7 @@ flowchart LR
 
 ---
 
-## Diagrama 45. El esquema en cinco pasos { #diagrama-45 }
+## Diagrama 44. El esquema en cinco pasos { #diagrama-44 }
 
 **Documento de origen:** [`04-REFERENCIA/diagnostico.md`](../04-REFERENCIA/diagnostico.md)
 
@@ -1348,7 +1257,7 @@ flowchart LR
 
 ---
 
-## Diagrama 46. De lo simple a lo específico { #diagrama-46 }
+## Diagrama 45. De lo simple a lo específico { #diagrama-45 }
 
 **Documento de origen:** [`04-REFERENCIA/diagnostico.md`](../04-REFERENCIA/diagnostico.md)
 
@@ -1375,3 +1284,53 @@ flowchart TD
 ```
 
 ---
+
+## Índice de diagramas
+
+01. [Topología](#diagrama-01) — lab-01
+2. [Conexión lógica del escenario](#diagrama-02) — lab-01
+3. [Esquema de encapsulación con campos](#diagrama-03) — lab-01
+4. [Topología](#diagrama-04) — lab-02
+5. [Topología](#diagrama-05) — lab-03
+6. [Topología](#diagrama-06) — lab-04
+7. [Topología](#diagrama-07) — lab-05
+8. [Subred frente a VLAN](#diagrama-08) — lab-05
+9. [Topología](#diagrama-09) — lab-06
+10. [Cómo se elige la ruta: *longest prefix match*](#diagrama-10) — lab-06
+11. [Recorrido de un paquete entre sucursales](#diagrama-11) — lab-06
+12. [La ruta de métrica 50 desaparece y entra la de métrica 100 (por R2)](#diagrama-12) — lab-06
+13. [Topología](#diagrama-13) — lab-07
+14. [Cómo se relacionan los cuatro servicios](#diagrama-14) — lab-07
+15. [Resolución DNS](#diagrama-15) — lab-07
+16. [Proceso DHCP (DORA)](#diagrama-16) — lab-07
+17. [Establecimiento y cierre de una conexión TCP](#diagrama-17) — lab-07
+18. [Topología](#diagrama-18) — lab-08
+19. [Recorrido de un paquete por el firewall](#diagrama-19) — lab-08
+20. [Topología](#diagrama-20) — lab-09
+21. [Qué añade cada tecnología a un paquete](#diagrama-21) — lab-09
+22. [Establecimiento de un túnel](#diagrama-22) — lab-09
+23. [NAT-T y AllowedIPs](#diagrama-23) — lab-09
+24. [Topología](#diagrama-24) — lab-10
+25. [Red de proveedor: roles PE y P](#diagrama-25) — lab-10
+26. [Push, swap y pop](#diagrama-26) — lab-10
+27. [Failover frente a ECMP](#diagrama-27) — lab-10
+28. [Las capas son funciones, no niveles físicos](#diagrama-28) — lab-11
+29. [Topología](#diagrama-29) — lab-11
+30. [STP/RSTP: redundancia física sin bucles](#diagrama-30) — lab-11
+31. [Ejemplo de crecimiento: Access2 y Access3](#diagrama-31) — lab-11
+32. [Topología](#diagrama-32) — lab-12
+33. [Componentes de una arquitectura ZTNA real](#diagrama-33) — lab-12
+34. [VPC con subred pública y privada](#diagrama-34) — lab-12
+35. [Topología](#diagrama-35) — lab-13
+36. [Del síntoma a la causa: método de diagnóstico](#diagrama-36) — lab-13
+37. [Topología](#diagrama-37) — lab-14
+38. [Recorrido de un paquete: input, forward y output](#diagrama-38) — lab-14
+39. [Topología](#diagrama-39) — lab-15
+40. [Mapa del escenario: redes, *gateways* y caminos](#diagrama-40) — lab-15
+41. [Cambio de *master* y *backup*](#diagrama-41) — lab-15
+42. [Mapa integral de una infraestructura empresarial](#diagrama-42) — 04-REFERENCIA
+43. [Mapa de seguridad y flujo del tráfico](#diagrama-43) — 04-REFERENCIA
+44. [El esquema en cinco pasos](#diagrama-44) — 04-REFERENCIA
+45. [De lo simple a lo específico](#diagrama-45) — 04-REFERENCIA
+
+--- 

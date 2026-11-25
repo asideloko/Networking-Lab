@@ -11,7 +11,7 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("../assets/fonts/ChakraPetch-Medium.woff2") format("woff2");
+  src: url("../assets/fonts/Chakra-Petch/ChakraPetch-Medium.ttf") format("truetype");
 }
 
 :root {
@@ -414,10 +414,11 @@
 .md-typeset .sx-hero .md-button:hover { background: #ffffff; color: var(--sx-night); border-color: #ffffff; }
 .md-typeset .sx-hero__meta { display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem; margin: 0; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: #ffffff; }
 
-.sx-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin: 0 0 1rem; }
+.sx-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; margin: 0 0 1rem; }
 .sx-stats > div { border: 1px solid var(--sx-card-line); background: var(--sx-card-bg); padding: 0.9rem 1rem; text-align: center; }
-.sx-stats b { display: block; font-size: 1.7rem; line-height: 1.1; color: var(--sx-h-accent); font-weight: 500; }
-.sx-stats span { font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.sx-stats b { display: block; font-size: 1.7rem; line-height: 1.1; color: var(--sx-h-accent); font-weight: 500; white-space: nowrap; }
+.sx-stats span { font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; overflow-wrap: normal; word-break: normal; hyphens: manual; }
+@media (max-width: 480px) { .sx-stats > div { padding: 0.7rem 0.25rem; } .sx-stats b { font-size: 1.3rem; } .sx-stats span { font-size: 0.56rem; letter-spacing: 0.03em; } }
 
 .sx-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr)); gap: 0.8rem; margin: 0 0 1.2rem; }
 .md-typeset a.sx-card {

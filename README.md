@@ -4,7 +4,7 @@
 
 > Del fundamento teórico a la comprensión técnica mediante escenarios de red, topologías y demostraciones prácticas.
 
-**🌐 [Acceder a NETWORKING Lab](https://asideloko.github.io/Networking-Lab/) · 💻 [Código fuente](https://github.com/asideloko/Networking-Lab)**
+** [Acceder a NETWORKING Lab](https://asideloko.github.io/Networking-Lab/) ** 
 
 ---
 
@@ -21,7 +21,7 @@ El objetivo es comprender cómo funcionan las redes, cómo interactúan sus comp
 
 ## Contenido
 
-El entorno está organizado en **15 laboratorios**, distribuidos en tres bloques temáticos, además de un proyecto final, una sección de referencia técnica y anexos comunes.
+El entorno está organizado en **15 laboratorios**, distribuidos en tres bloques temáticos, además de una sección de referencia técnica y anexos comunes.
 
 ### Laboratorios 01–05 · Fundamentos e infraestructura
 
@@ -55,7 +55,7 @@ El entorno está organizado en **15 laboratorios**, distribuidos en tres bloques
 
 ---
 
-## Metodología de aprendizaje
+## Estructura de cada laboratorio
 
 Cada laboratorio desarrolla un recorrido técnico que incluye:
 
@@ -106,10 +106,10 @@ Para trabajar con los laboratorios se recomienda:
 
 - Sistema **Linux** (Debian/Ubuntu recomendado), preferiblemente en una máquina virtual dedicada.
 - Kernel con soporte para *network namespaces*, `veth`, bridge y los módulos que requiera cada práctica (`8021q`, `ip_gre`, `xfrm_user`, `tun`, `wireguard`, etc.).
-- Sesión con `root` o capacidades efectivas `CAP_NET_ADMIN` y `CAP_NET_RAW` para los ejercicios que crean interfaces, rutas, túneles o capturas.
+- Sesión con `root` o capacidades efectivas `CAP_NET_ADMIN` y `CAP_NET_RAW` para las prácticas que crean interfaces, rutas, túneles o capturas.
 - Herramientas indicadas en cada laboratorio (`iproute2`, `bridge`, `nftables`/`iptables`, `tcpdump`, `dnsmasq`, `keepalived`, `openvpn`, `wireguard-tools`, entre otras).
 
-**Android/Termux no es un entorno de ejecución soportado** para estas topologías: el aislamiento de aplicaciones y las capacidades del kernel suelen impedir crear namespaces, bridges y enlaces `veth`, incluso si se instala `iproute2`. El sitio sí puede consultarse desde Android; para ejecutar las prácticas usa Linux en un PC o VM. WSL2 puede servir para ejercicios básicos, pero la disponibilidad de módulos y funciones de red depende de su kernel; verifica cada requisito antes de ejecutar.
+**Android/Termux no es un entorno de ejecución soportado** para estas topologías: el aislamiento de aplicaciones y las capacidades del kernel suelen impedir crear namespaces, bridges y enlaces `veth`, incluso si se instala `iproute2`. El sitio sí puede consultarse desde Android; para ejecutar las prácticas usa Linux en un PC o VM. WSL2 puede servir para prácticas básicas, pero la disponibilidad de módulos y funciones de red depende de su kernel; verifica cada requisito antes de ejecutar.
 
 Antes de comparar resultados entre equipos, registra las versiones y el kernel disponibles:
 
@@ -123,23 +123,13 @@ openvpn --version 2>/dev/null | head -1 || true
 wg --version 2>/dev/null || true
 ```
 
-> **Recomendación:** utilizar una máquina virtual o entorno de pruebas. **No ejecutar los ejercicios directamente en servidores de producción.**
+> **Recomendación:** utilizar una máquina virtual o entorno de pruebas. **No ejecutar las prácticas directamente en servidores de producción.**
 
 ---
 
 ## Plataforma de documentación
 
 El sitio está construido con **Zensical**, que permite generar documentación técnica mediante **Markdown** y una configuración centralizada.
-
-Entre sus componentes se encuentran:
-
-- Navegación estructurada de los 15 laboratorios.
-- Tema claro y oscuro.
-- Diagramas **Mermaid**.
-- Bloques de código y comandos.
-- Hojas de estilo personalizadas.
-- Recursos gráficos y tipografía local.
-- Documentación adaptable a dispositivos móviles.
 
 ---
 
@@ -190,10 +180,7 @@ Networking-Lab/
 │   ├── index.md
 │   ├── 02-LABORATORIOS/
 │   │   ├── lab-01/ ... lab-15/
-│   ├── 03-PROYECTO-FINAL/
-│   │   └── index.md
 │   ├── 04-REFERENCIA/
-│   │   ├── competencias.md
 │   │   ├── comparaciones.md
 │   │   ├── diagnostico.md
 │   │   ├── servicios-puertos.md
@@ -234,7 +221,7 @@ Consultar y obtener el libro en [**Leanpub**](https://leanpub.com/networking-fun
 
 ## Licencia y uso
 
-Material complementario gratuito del libro NETWORKING. Uso educativo; no se autoriza su redistribución con fines comerciales.
+Consulta directamente la licencia en el proyecto. Uso educativo; no se autoriza su redistribución con fines comerciales.
 
 ---
 
@@ -243,8 +230,3 @@ Material complementario gratuito del libro NETWORKING. Uso educativo; no se auto
 **NETWORKING Lab** — *Comprender las redes desde sus fundamentos hasta su implementación técnica.*
 
 
-## Referencias visuales y enlaces técnicos
-
-- `docs/05-ANEXOS/diagramacion-y-topologias.md` reúne los diagramas Mermaid de los laboratorios, el proyecto final y las referencias, con descripción y código fuente.
-- `docs/04-REFERENCIA/glosario.md` enlaza términos y acrónimos a RFC, estándares IEEE y documentación oficial. La primera aparición de cada término reconocido también enlaza a su fuente técnica.
-- `docs/stylesheets/extra.css` contiene la identidad visual del proyecto y los estilos de lectura; `docs/javascripts/custom.js` aplica colores semánticos a los nodos Mermaid (infraestructura, procesos, servicios, decisiones y seguridad).

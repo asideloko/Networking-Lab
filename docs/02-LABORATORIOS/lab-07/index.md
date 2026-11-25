@@ -7,37 +7,31 @@ description: "Laboratorio 07 de NETWORKING Lab — Protocolos y Servicios de Red
 
 # PROTOCOLOS Y SERVICIOS DE RED
 
-<p class="tema-meta"><span>15 secciones</span><span>5 diagramas</span><span>5 tablas</span></p>
+<p class="tema-meta"><span>16 secciones</span><span>5 diagramas</span><span>5 tablas</span></p>
 
-## Contexto empresarial
+## Servicios para los usuarios
 
-La empresa **Networking SecOps** ya tiene su infraestructura de red funcionando con enrutamiento entre la sede y las sucursales (Laboratorio 06). Ahora necesita implementar **servicios de red esenciales** para que los usuarios puedan trabajar eficientemente:
+La sede y las sucursales ya se comunican (laboratorio 06), pero los usuarios dependen de direcciones fijas, no existe resolución interna de nombres y los equipos con direccionamiento privado no salen a Internet. En este laboratorio levantarás DNS y DHCP en servidores propios, configurarás NAT/PAT en R1 y compararás TCP y UDP en capturas.
 
-1. **DNS** – Resolución de nombres para acceder a servidores por nombre en lugar de IP.
-2. **DHCP** – Asignación automática de direcciones IP a los clientes.
-3. **NAT/[PAT](https://www.cisco.com/c/en/us/support/docs/ip/network-address-translation-nat/218012-troubleshoot-network-address-translation.html)** – Permitir que los clientes de la red interna accedan a Internet.
-4. **TCP/UDP** – Comprender la diferencia entre ambos protocolos.
+## Introducción técnica
 
-El equipo de TI ha decidido implementar estos servicios en la sede central y documentar su funcionamiento para futuras expansiones.
+Con conectividad entre sedes, la red todavía depende de direcciones configuradas a mano, no resuelve nombres internos y no da salida a Internet a los equipos con direccionamiento privado.
+
+Este laboratorio añade en la sede los servicios básicos: **DNS** y **DHCP** con `dnsmasq` en equipos distintos, y **NAT/PAT** en R1. Además se capturan TCP y UDP para comparar sus comportamientos y se analiza el MSS frente a la MTU.
 
 !!! info "Servicios independientes"
-    **DHCP** entrega parámetros de configuración de red (dirección, máscara, gateway, servidor DNS). **DNS** resuelve nombres a registros de recursos (direcciones, entre otros). Son servicios **independientes**: recibir una IP por DHCP no garantiza que la resolución DNS funcione (por ejemplo, si el servidor DNS anunciado no responde), y un DNS operativo no sirve de nada a un cliente sin dirección. Aquí los alojamos en equipos distintos y los verificamos por separado.
+    **DHCP** entrega parámetros de configuración de red (dirección, máscara, gateway, servidor DNS). **DNS** resuelve nombres a registros de recursos (direcciones, entre otros). Son servicios **independientes**: recibir una IP por DHCP no garantiza que la resolución DNS funcione (por ejemplo, si el servidor DNS anunciado no responde), y un DNS operativo no sirve de nada a un cliente sin dirección. Aquí se alojan en equipos distintos y se comprueban por separado.
 
-## Problema inicial
+## Estado inicial
 
-- Los clientes tienen direcciones IP configuradas manualmente (administración tediosa). En este laboratorio automatizamos solo la **LAN de la sede**; las sucursales mantienen direccionamiento fijo (véase «Alcance de DHCP»).
-- No hay un servidor DNS interno que resuelva nombres locales.
-- Los clientes de la sede y sucursales no pueden acceder a Internet.
-- Se necesita implementar NAT para salida a Internet.
+- Los clientes tienen direcciones fijas; en este laboratorio solo se automatiza la **LAN de la sede** y las sucursales mantienen direccionamiento fijo.
+- No hay servidor DNS interno.
+- Ningún cliente de la sede ni de las sucursales sale a Internet.
+- R1 debe traducir las direcciones privadas hacia el exterior.
 
-## Objetivos del laboratorio
+## Resultado que se construirá
 
-1.  Comprender la diferencia entre **TCP y UDP** y sus casos de uso.
-2.  Implementar un servidor **DNS** con `dnsmasq`.
-3.  Configurar un servidor **DHCP** para asignación automática de IPs.
-4.  Implementar **NAT/PAT** para salida a Internet y distinguir la traducción de direcciones de la traducción de puertos.
-5.  Analizar el **[MSS](https://www.rfc-editor.org/rfc/rfc9293)** (Maximum Segment Size) en TCP y no confundirlo con la MTU.
-6.  Verificar los servicios con herramientas de diagnóstico.
+Un cliente de la sede obtiene dirección, máscara, *gateway* y DNS por DHCP; los nombres internos se resuelven en el servidor DNS; los clientes de la sede y de las sucursales salen a Internet con NAT/PAT en R1. Se observan en `conntrack` las traducciones activas, en capturas el intercambio DHCP y las diferencias entre TCP y UDP, y en el handshake TCP el MSS negociado.
 
 ## Herramientas necesarias
 
@@ -118,9 +112,9 @@ sudo ip netns exec clienteSede ping -c 2 10.0.1.10
 Si no existen los namespaces, ejecuta los comandos del laboratorio 06.
 
 !!! info "Los namespaces aíslan la red, no los archivos"
-    `ip netns exec` solo aísla la **red**. El sistema de archivos es el del host: `apt-get install` instala paquetes en tu equipo, y un `cat > /etc/archivo` escribiría en el `/etc` **real** (la redirección `>` la hace tu *shell*, no el namespace). Por eso, en este y en los siguientes laboratorios, los servicios se arrancan **a mano** dentro del namespace con sus archivos de configuración en `/tmp/labNN/`, sin tocar `/etc` ni los servicios del sistema (`systemctl` actuaría sobre el host, no sobre el namespace).
+    `ip netns exec` solo aísla la **red**. El sistema de archivos es el del host: `apt-get install` instala paquetes en el equipo, y un `cat > /etc/archivo` escribiría en el `/etc` **real** (la redirección `>` la hace el *shell* del usuario, no el namespace). Por eso, en este y en los siguientes laboratorios, los servicios se arrancan **a mano** dentro del namespace con sus archivos de configuración en `/tmp/labNN/`, sin tocar `/etc` ni los servicios del sistema (`systemctl` actuaría sobre el host, no sobre el namespace).
 
-Instala una sola vez, en el host, las herramientas que usaremos (el paquete `dnsmasq-base` trae el programa sin instalar ni arrancar el servicio del sistema):
+Se instala una sola vez, en el host, las herramientas que se usan (el paquete `dnsmasq-base` trae el programa sin instalar ni arrancar el servicio del sistema):
 
 ```bash
 sudo apt-get update
@@ -155,7 +149,7 @@ sudo ip netns exec clienteDHCP ip link set lo alias networking-lab-owned
 
 ### Paso 3: Convertir la LAN de la sede en un switch (bridge) y conectar los servicios
 
-Hasta ahora `veth-r1c` era el único equipo de la LAN `10.0.0.0/24`. Para que el cliente, los servidores DNS/DHCP y el router compartan **el mismo segmento** necesitamos un switch: creamos un bridge `br-lan` en R1 y le pasamos la IP del router.
+Hasta ahora `veth-r1c` era el único equipo de la LAN `10.0.0.0/24`. Para que el cliente, los servidores DNS/DHCP y el router compartan **el mismo segmento** se necesita un switch: se crean un bridge `br-lan` en R1 y le pasamos la IP del router.
 
 ```bash
 # Bridge de la LAN de la sede dentro de R1: no reutilizar uno preexistente.
@@ -222,12 +216,12 @@ sudo ip netns exec clienteDHCP ip link set veth-dhcpcl up
 sudo ip netns exec clienteDHCP ip link set lo up
 ```
 
-Comprueba que el segmento es único: `sudo ip netns exec servidorDNS ping -c 2 10.0.0.1` y `sudo ip netns exec servidorDNS ping -c 2 10.0.0.10` deben responder.
+Se comprueba que el segmento es único: `sudo ip netns exec servidorDNS ping -c 2 10.0.0.1` y `sudo ip netns exec servidorDNS ping -c 2 10.0.0.10` deben responder.
 
 ### Paso 5: Salida a Internet para toda la red (NAT en R1)
 
 !!! danger "Cambio en el host (no en un namespace)"
-    Las líneas con `veth-host`, `sysctl -w net.ipv4.ip_forward=1` e `iptables -t nat` **sin** `ip netns exec` actúan sobre el equipo real. Las de `ip netns exec R1 …` están aisladas. El bloque conserva el valor original de `ip_forward` y registra si añadió la regla NAT. La reversión está en la sección «Revertir los cambios del host».
+    Las líneas con `veth-host`, `sysctl -w net.ipv4.ip_forward=1` e `iptables -t nat` **sin** `ip netns exec` actúan sobre el equipo real. Las de `ip netns exec R1 …` están aisladas. El bloque conserva el valor original de `ip_forward` y se registra si añadió la regla NAT. La reversión está en la sección «Revertir los cambios del host».
 
 R1 será la única puerta de salida de la sede **y** de las sucursales. Su interfaz WAN se conecta al host (que hace de "Internet"):
 
@@ -261,7 +255,7 @@ fi
 sudo ip netns exec R2 ip route replace default via 192.168.1.1
 sudo ip netns exec R3 ip route replace default via 192.168.2.1
 
-# El host reenvía y traduce hacia tu red real (cambia eth0 por tu interfaz de salida)
+# El host reenvía y traduce hacia la red real (cambia eth0 por tu interfaz de salida)
 if [ ! -e /tmp/lab07-ip_forward.orig ]; then
   sudo sysctl -n net.ipv4.ip_forward | sudo tee /tmp/lab07-ip_forward.orig >/dev/null
 fi
@@ -281,7 +275,7 @@ Conviene distinguir dos términos: **NAT** (traducción de direcciones) cambia l
 
 La regla de R1 no filtra por origen (`-o veth-wan`): traduce **todo** lo que sale por la WAN, ya venga de la sede o de las sucursales. Lo que sí hacía falta eran las **rutas por defecto** de R2 y R3. Como R1 enmascara el tráfico con `192.168.100.1`, el host solo conoce la red `192.168.100.0/24` y no necesita rutas de retorno hacia `10.0.0.0/8`.
 
-Comprueba la salida desde cada oficina (el host responde en `192.168.100.2` aunque no tengas Internet):
+Se comprueba la salida desde cada oficina (el host responde en `192.168.100.2` aunque no haya Internet):
 
 ```bash
 sudo ip netns exec clienteSede ping -c 2 192.168.100.2
@@ -360,7 +354,7 @@ Ambos servidores usan rangos y funciones distintas: no hay dos servidores DHCP c
 
 ### Paso 8: Configurar el cliente DHCP
 
-`dhclient` reescribe `/etc/resolv.conf`. Para que no toque el de tu equipo, damos al namespace su propio `resolv.conf` (`ip netns exec` lo monta automáticamente desde `/etc/netns/<nombre>/`):
+`dhclient` reescribe `/etc/resolv.conf`. Para que no toque el de el equipo, se asigna al namespace su propio `resolv.conf` (`ip netns exec` lo monta automáticamente desde `/etc/netns/<nombre>/`):
 
 ```bash
 if [ -L /etc/netns/clienteDHCP/resolv.conf ]; then
@@ -407,12 +401,12 @@ sudo ip netns exec clienteDHCP ping -c 4 192.168.100.2
 # Resolución de un nombre interno (el servidor DNS responde sin salir a Internet)
 sudo ip netns exec clienteDHCP nslookup -type=A servidor-interno.secops.local
 
-# Con Internet disponible en tu equipo:
+# Con Internet disponible en el equipo:
 sudo ip netns exec clienteDHCP ping -c 4 8.8.8.8
 sudo ip netns exec clienteDHCP nslookup google.com
 ```
 
-**Resultado esperado:** 0% de pérdida; `nslookup` devuelve `10.0.0.20` para el nombre interno y una IP pública para `google.com` (esto último solo si tu equipo tiene Internet).
+**Resultado esperado:** 0% de pérdida; `nslookup` devuelve `10.0.0.20` para el nombre interno y una IP pública para `google.com` (esto último solo si el equipo tiene Internet).
 
 ### Proceso DHCP (DORA)
 
@@ -449,14 +443,14 @@ La matriz completa de la serie (incluye OSPF, VRRP, GRE, IPsec, OpenVPN y WireGu
 sudo ip netns exec R1 tcpdump -i br-lan -n -v tcp port 8000
 ```
 
-En otra terminal, abrimos una conexión TCP entre dos equipos de la LAN:
+En otra terminal, se abre una conexión TCP entre dos equipos de la LAN:
 
 ```bash
 sudo ip netns exec servidorDNS sh -c 'nc -l -p 8000 > /dev/null &'
 sudo ip netns exec clienteDHCP sh -c 'echo hola | nc -w 2 10.0.0.5 8000'
 ```
 
-**Interpretación:** se observa el *handshake* TCP (SYN, SYN-ACK, ACK), la transferencia y el cierre (FIN). Con Internet disponible puedes repetirlo con `curl -s http://google.com > /dev/null` y filtrar `tcp port 80`. (Si tu versión de `nc` no admite `-l -p`, usa la forma portable `nc -l 8000`.)
+**Interpretación:** se observa el *handshake* TCP (SYN, SYN-ACK, ACK), la transferencia y el cierre (FIN). Con Internet disponible puede repetirse con `curl -s http://google.com > /dev/null` y filtrar `tcp port 80`. (Si la versión de `nc` no admite `-l -p`, se usa la forma portable `nc -l 8000`.)
 
 ### Paso 11: Capturar tráfico UDP (DNS y DHCP)
 
@@ -513,7 +507,7 @@ R1 traduce el origen de cada conexión privada y lo recuerda en `conntrack`; as�
 
 ### Paso 12: Verificar el MSS en el *handshake* TCP
 
-El MSS se negocia en las opciones del segmento SYN. Captura solo los SYN:
+El MSS se negocia en las opciones del segmento SYN. Se captura solo los SYN:
 
 ```bash
 sudo ip netns exec R1 tcpdump -i br-lan -n -c 2 'tcp[tcpflags] & tcp-syn != 0'
@@ -523,11 +517,11 @@ En otra terminal repite la conexión del Paso 10 (`nc -l` en el servidor y `nc` 
 
 **Interpretación:** en las opciones del SYN aparece `mss 1460`. El **MSS** es el tamaño máximo de **datos TCP** que un extremo anuncia que puede recibir en un segmento, **sin contar las cabeceras TCP e IP**. Se deduce de la MTU de la interfaz: 1500 (MTU) − 20 (IP) − 20 (TCP) = 1460. No debe confundirse con la **MTU**, que es el tamaño máximo del **paquete IP** completo en un enlace. Cada extremo anuncia su propio MSS y el emisor no enviará segmentos mayores que el MSS del otro. (Los 40 bytes de cabeceras se restan suponiendo IPv4 sin opciones; si hay opciones TCP, como marcas de tiempo, los datos por segmento son algo menos.)
 
-## Ejercicios prácticos
+## Pruebas de comportamiento
 
-### Ejercicio 1: Agregar registros DNS locales
+### Prueba 1: Registros DNS locales
 
-Agrega una entrada al archivo de hosts **del servidor DNS** (no al `/etc/hosts` de tu equipo) y pide a `dnsmasq` que lo relea con `SIGHUP`:
+Se agrega una entrada al archivo de hosts **del servidor DNS** (no al `/etc/hosts` de el equipo) y pide a `dnsmasq` que lo relea con `SIGHUP`:
 
 ```bash
 echo '10.0.0.30 impresora.secops.local' >> /tmp/lab07/hosts
@@ -535,7 +529,7 @@ sudo kill -HUP $(cat /tmp/lab07/dns.pid)
 sudo ip netns exec clienteDHCP nslookup -type=A impresora.secops.local
 ```
 
-### Ejercicio 2: Analizar NAT en R1
+### Prueba 2: NAT en R1
 
 ```bash
 # Ver tabla NAT (fíjate en los contadores de paquetes de MASQUERADE)
@@ -545,25 +539,25 @@ sudo ip netns exec R1 iptables -t nat -L -v
 sudo ip netns exec R1 conntrack -L
 ```
 
-### Ejercicio 3: Verificar con dig
+### Prueba 3: Consultas con dig
 
 ```bash
 sudo ip netns exec clienteDHCP dig @10.0.0.5 servidor-interno.secops.local
 ```
 
-### Ejercicio 4: Probar el NAT desde las sucursales
+### Prueba 4: NAT desde las sucursales
 
-Haz un `ping -c 2 192.168.100.2` desde `clienteSucB` y observa en `conntrack -L` cómo R1 traduce el origen `10.0.2.10` a `192.168.100.1`. ¿Qué ocurriría si R3 no tuviera su ruta por defecto?
+Se ejecuta `ping -c 2 192.168.100.2` desde `clienteSucB` y se observa en `conntrack -L` cómo R1 traduce el origen `10.0.2.10` a `192.168.100.1`. Sin la ruta por defecto de R3, ese router no sabe reenviar el paquete y el ping falla con `Destination Net Unreachable`.
 
-### Ejercicio 5: DNS y servicios desde las sucursales
+### Prueba 5: DNS y servicios desde las sucursales
 
-Las sucursales conservan direccionamiento fijo, así que **no reciben el DNS por DHCP**. Comprueba que, con las rutas del laboratorio 06, una sucursal alcanza el DNS de la sede y resuelve un nombre interno:
+Las sucursales conservan direccionamiento fijo, así que **no reciben el DNS por DHCP**. Se comprueba que, con las rutas del laboratorio 06, una sucursal alcanza el DNS de la sede y resuelve un nombre interno:
 
 ```bash
 sudo ip netns exec clienteSucA dig @10.0.0.5 servidor-interno.secops.local +short
 ```
 
-Si responde `10.0.0.20`, la consulta UDP/53 atravesó los routers hasta `10.0.0.5` y volvió. Si no responde, razona por capas: ¿hay ruta de ida **y de vuelta**?, ¿el servidor DNS escucha en `10.0.0.5`?, ¿algún filtro bloquea UDP/53? Para que la sucursal use el DNS **sin indicarlo en cada consulta** haría falta configurarlo en su resolvedor (en un namespace, con `/etc/netns/<ns>/resolv.conf`) o entregarlo con DHCP relay.
+Si responde `10.0.0.20`, la consulta UDP/53 atravesó los routers hasta `10.0.0.5` y volvió. Si no responde, el diagnóstico sigue este orden: (1) `ip route get 10.0.0.5` en la sucursal y en los routers confirma rutas de ida y vuelta; (2) `ss -lunp` en el servidor confirma que DNS escucha en UDP/53; (3) `tcpdump` en ambos extremos localiza dónde desaparece la consulta; (4) las reglas de firewall confirman si UDP/53 está permitido. Para que la sucursal use el DNS **sin indicarlo en cada consulta** haría falta configurarlo en su resolvedor (en un namespace, con `/etc/netns/<ns>/resolv.conf`) o entregarlo con DHCP relay.
 
 ## Conceptos clave del Tema 7 aplicados
 
@@ -679,7 +673,7 @@ else
 fi
 ```
 
-`dnsmasq-base`, `isc-dhcp-client`, `dnsutils`, `netcat-openbsd` y `conntrack` quedan **instalados** en el equipo: son paquetes, no configuración activa, y puedes desinstalarlos con `apt remove` si no los usabas antes.
+`dnsmasq-base`, `isc-dhcp-client`, `dnsutils`, `netcat-openbsd` y `conntrack` quedan **instalados** en el equipo: son paquetes, no configuración activa, y pueden desinstalarse con `apt remove` si no los usabas antes.
 
 ## Profundización: DHCP, DNS, transporte y conntrack
 
@@ -687,7 +681,7 @@ fi
 
 DORA describe el intercambio inicial, pero el cliente mantiene una máquina de estados y un *lease*. T1 inicia la renovación normalmente con el servidor original; T2 permite *rebinding* con cualquier servidor disponible si no se renovó. El tiempo exacto depende de las opciones entregadas. Las reservas vinculan un identificador de cliente (a menudo MAC, según configuración) con una dirección; las exclusiones impiden asignar rangos reservados. DHCP relay reenvía solicitudes entre subredes y utiliza `giaddr` para identificar la red del cliente.
 
-Observa las opciones y tiempos en la concesión real, no supongas valores por defecto universales:
+Se observan las opciones y tiempos en la concesión real, no supongas valores por defecto universales:
 
 ```bash
 sudo ip netns exec clienteDHCP tcpdump -ni any 'udp port 67 or udp port 68'
@@ -718,32 +712,18 @@ sudo ip netns exec R1 conntrack -L 2>/dev/null | head -30
 sudo ip netns exec R1 iptables -t nat -vnL
 ```
 
-Una regla MASQUERADE no garantiza salida si el firewall del host bloquea `FORWARD`; comprueba por separado el firewall del host y el del router. No cambies políticas globales para “hacer que funcione”: autoriza solo el flujo de laboratorio y registra su reversión.
+Una regla MASQUERADE no garantiza salida si el firewall del host bloquea `FORWARD`; se comprueba por separado el firewall del host y el del router. No debe cambiarse políticas globales para “hacer que funcione”: autoriza solo el flujo de laboratorio y se registra su reversión.
 
-## Preguntas de reflexión
+## Análisis técnico y decisiones
 
-1.  ¿Qué mecanismo permite que un cliente sin IP encuentre un servidor DHCP?
-2.  ¿Qué sucedería si el DHCP anuncia un servidor DNS que no responde? ¿Qué parte sigue funcionando?
-3.  ¿Qué diferencia hay entre lo que muestra la captura TCP y la de UDP (DNS)?
-4.  ¿Qué limitaciones tiene que las sucursales conserven direccionamiento fijo?
-5.  ¿Qué otro mecanismo podría entregar configuración a las sucursales sin un servidor propio? (DHCP relay.)
+Un cliente DHCP sin dirección utiliza inicialmente broadcast para localizar servidores; el intercambio DORA permite descubrir, ofrecer, solicitar y confirmar una concesión. Si el servidor DNS anunciado no responde, el cliente puede conservar dirección, máscara y gateway correctos, pero fallará la resolución de nombres: conectividad IP y DNS son servicios distintos. DNS suele utilizar UDP/53 para consultas habituales y puede utilizar TCP/53, por ejemplo, para respuestas truncadas o transferencias de zona. Direccionamiento fijo en sucursales aumenta la carga operativa y el riesgo de errores o duplicados. DHCP relay permite transportar solicitudes entre subredes hasta un servidor central cuando no existe un servidor local.
 
-## Conclusiones técnicas
+## Estado final
 
-En este laboratorio hemos:
+Quedan implementados DNS y DHCP en servidores independientes en la LAN de la sede y NAT/PAT en R1 para las sucursales, con salida a Internet verificada y con TCP, UDP y MSS observados en capturas.
 
-1.  Implementado **servicios DNS y DHCP** independientes en la LAN de la sede (las sucursales necesitarían un relay DHCP).
-2.  Configurado **NAT/PAT** para salida a Internet.
-3.  Analizado la diferencia entre **TCP y UDP** mediante capturas.
-4.  Verificado el **MSS** en conexiones TCP.
-5.  Comprendido la importancia de los servicios de red para los usuarios.
+Límites: las sucursales necesitarían un *relay* DHCP para recibir direcciones dinámicas, y recibir una IP por DHCP no garantiza que el DNS anunciado responda.
 
-Los protocolos y servicios de red son la capa que permite a los usuarios finales utilizar la infraestructura de red de manera transparente. DNS y DHCP simplifican la administración, mientras que NAT permite el acceso a Internet con direcciones privadas.
+## Continuidad técnica
 
-## Preparación para el siguiente laboratorio
-
-Hemos dejado la red con servicios DNS, DHCP y NAT funcionando en la sede. En el **Laboratorio 08** exploraremos **Seguridad en Redes**, implementando firewalls, ACLs y una [DMZ](https://csrc.nist.gov/glossary/term/demilitarized_zone) para proteger la infraestructura.
-
----
-
-**¡Laboratorio 07 completado!** Has implementado servicios de red esenciales. Continúa con el **Laboratorio 08**.
+Networking SecOps queda con DNS, DHCP y NAT funcionando en la sede. En el laboratorio 08 el equipo de seguridad protege la infraestructura con firewall, ACL y una [DMZ](https://csrc.nist.gov/glossary/term/demilitarized_zone).
