@@ -1,10 +1,10 @@
 # NETWORKING LAB
 
-**Laboratorios prácticos de redes | SecOpsMX**
+## Laboratorios prácticos de redes | SecOpsMX
 
 > Del fundamento teórico a la comprensión técnica mediante escenarios de red, topologías y demostraciones prácticas.
 
-** [Acceder a NETWORKING Lab](https://asideloko.github.io/Networking-Lab/) ** 
+[Acceder a NETWORKING Lab](https://asideloko.github.io/Networking-Lab/) 
 
 ---
 
