@@ -7,7 +7,7 @@ description: "Laboratorio 12 de NETWORKING Lab — Arquitecturas Modernas de Red
 
 # ARQUITECTURAS MODERNAS DE RED
 
-<p class="tema-meta"><span>18 secciones</span><span>3 diagramas</span><span>7 tablas</span></p>
+<p class="tema-meta"><span>19 secciones</span><span>3 diagramas</span><span>12 tablas</span></p>
 
 ## Fuera de la oficina
 
@@ -39,6 +39,24 @@ Al terminar este laboratorio deberías poder:
 
 - **Conocimientos previos:** Laboratorios 08 y 09 (firewall y VPN) y 11 (arquitectura). Zero Trust, ZTNA y SASE se desarrollan en el apartado de análisis.
 - **Relación con la práctica anterior:** *Escenario nuevo.* Construye desde cero `OnPremise`, `AWS_VPC`, `ZTNA_Broker` y los demás namespaces. El Paso 0 solo retira recursos de Lab12; no elimina `br-wan` ni recursos de otras prácticas, cuya reversión se ejecuta por separado. El laboratorio 13 continúa sobre esta red.
+
+## Mapa de conceptos y ruta de lectura
+
+| Nivel | Contenido |
+|-------|-----------|
+| **Concepto principal** | Mínimo privilegio: cada usuario y cada servidor alcanza solo lo que necesita, con política por defecto de denegar |
+| **Conceptos secundarios** | Conectividad híbrida entre sede y VPC; diferencia entre proveedor de identidad y *broker*; microsegmentación entre servidores |
+| **Tecnologías comparativas** | VPN tradicional frente a ZTNA, conexión privada frente a VPN, y Zero Trust, ZTNA y SASE como modelo, tecnología y servicio |
+| **Ampliación** | Grupos de seguridad y ACL de nube, subred pública y privada, componentes de una arquitectura ZTNA real |
+| **Reservado para otras prácticas** | Autenticación real, MFA y emisión de tokens; SASE (SWG y CASB); VPN cifrada (laboratorio 09) |
+
+El laboratorio tiene tres partes:
+
+- **Parte A, infraestructura (Pasos 1 a 4):** sede, VPC y enlace híbrido.
+- **Parte B, acceso por aplicación (Pasos 5 a 8):** *broker*, usuarios remotos, servicios de prueba y política del *broker*.
+- **Parte C, microsegmentación y verificación (Pasos 9 y 10).**
+
+**Ruta recomendada en una primera lectura:** la parte B con «Regla a regla» y la matriz de acceso; después la parte C. La parte A prepara el escenario y puede leerse más rápido.
 
 ## Estado inicial
 
@@ -372,6 +390,28 @@ sequenceDiagram
     A-->>U: Respuesta (por el broker)
 ```
 
+### Regla a regla: qué hace cada línea de la política
+
+Política del *broker* (Paso 8):
+
+| Regla | Qué hace | Qué ocurre si falta |
+|-------|----------|----------------------|
+| `-P FORWARD DROP` | Nada atraviesa el *broker* salvo lo permitido | Todo el tráfico queda permitido: no hay política |
+| `ESTABLISHED,RELATED … ACCEPT` | Deja pasar las respuestas de conexiones ya autorizadas | Se autoriza la ida, pero las respuestas se descartan |
+| `-s 10.8.0.2 -d 10.0.0.10 … 8080` | Usuario 1 alcanza solo la aplicación de la sede | Usuario 1 no llega a su aplicación |
+| `-s 10.8.0.3 -d 10.100.1.10 … 8080` | Usuario 2 alcanza solo la aplicación de la nube | Usuario 2 no llega a su aplicación |
+
+Política de cada base de datos (Paso 9):
+
+| Regla | Qué hace | Qué ocurre si falta |
+|-------|----------|----------------------|
+| `-P INPUT DROP` | Cualquier conexión entrante se descarta por defecto | El servidor acepta todo lo que llegue |
+| `-i lo … ACCEPT` | Permite el tráfico local del propio servidor | Se pueden bloquear servicios que se comunican por `lo` |
+| `ESTABLISHED,RELATED … ACCEPT` | Permite las respuestas a conexiones que el servidor inició | Fallan las conexiones salientes del servidor |
+| `-s <servidor> … --dport <puerto>` | Solo ese origen y solo ese puerto | La base de datos no es accesible ni siquiera para su servidor |
+
+Dos ideas conviene retener: una regla permite un flujo concreto, y la política por defecto decide qué ocurre con todo lo demás.
+
 ### Matriz de acceso por usuario, aplicación y puerto
 
 Hace visible el **mínimo privilegio**: cada fila es un permiso explícito; todo lo que no aparece está denegado.
@@ -388,6 +428,18 @@ Hace visible el **mínimo privilegio**: cada fila es un permiso explícito; todo
 | App | RDS (nube) | 5432 | No |
 
 La política por defecto es **denegar**: lo que no aparece en la tabla no pasa. Mantener una matriz así permite revisar el mínimo privilegio sin leer reglas una por una.
+
+### Cómo interpretar el resultado de una verificación
+
+Las reglas de este laboratorio descartan paquetes (`DROP`), por lo que un bloqueo se manifiesta como una espera que termina sin respuesta. Eso no es lo único que produce una espera sin respuesta, así que el resultado hay que leerlo con cuidado:
+
+| Resultado de `nc -zv -w 2` | Qué indica | Qué hay que comprobar |
+|----------------------------|------------|------------------------|
+| `succeeded` | El paquete llegó y el servicio escucha: el flujo está permitido | Que el flujo debía estar permitido según la matriz |
+| Tiempo de espera agotado | Una regla descarta el paquete, o el destino no responde | Primero `ss -lntp` en el destino; si el servicio escucha, revisar la política |
+| `Connection refused` | El paquete llegó pero no hay servicio escuchando: no es un bloqueo por `DROP` | Arrancar el servicio de prueba (Paso 7) |
+
+Por eso el Paso 10 pide confirmar primero los procesos de escucha: sin ese paso, un servicio caído se confundiría con una política que funciona.
 
 ### Conectividad híbrida, VPN y conexión dedicada
 
@@ -428,6 +480,20 @@ Aquí hay dos subredes (`10.100.1.0/24` aplicaciones y `10.100.2.0/24` datos), s
 | **SASE** | **Servicio** en la nube que combina red (SD-WAN) y seguridad (SWG, CASB, ZTNA) | Arquitectura de servicio |
 
 No son sinónimos: ZTNA puede ser un componente de SASE, y ambos intentan aplicar Zero Trust.
+
+### Qué cambia entre una VPN, ZTNA y microsegmentación
+
+Las tres ideas responden a preguntas distintas y se complementan; ninguna sustituye a las otras.
+
+| | VPN tradicional | ZTNA | Microsegmentación |
+|--|-----------------|------|-------------------|
+| **Pregunta que responde** | ¿Puedo entrar a la red? | ¿Puedo usar esta aplicación? | ¿Qué puede hablar con qué dentro de la red? |
+| **Unidad de decisión** | La red o un segmento | La aplicación y el puerto | El servidor y el puerto |
+| **Qué ve el usuario tras conectarse** | Normalmente toda la red alcanzable | Solo las aplicaciones autorizadas | No aplica: protege el tráfico entre servidores |
+| **Dónde se ve en este laboratorio** | Es el punto de comparación; esta práctica no construye una VPN de acceso | Paso 8, política del *broker* | Paso 9, reglas de cada base de datos |
+| **Qué limita si algo se compromete** | Poco: la persona queda dentro de la red | El acceso del usuario a otras aplicaciones | El movimiento lateral entre servidores |
+
+La lección de la práctica es que la seguridad por capas combina las tres: quien entra, a qué accede y qué puede alcanzar desde allí.
 
 ### Grupos de seguridad y ACL de nube
 

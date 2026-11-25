@@ -7,7 +7,7 @@ description: "Laboratorio 13 de NETWORKING Lab — Monitoreo y Diagnóstico de R
 
 # MONITOREO Y DIAGNÓSTICO DE REDES
 
-<p class="tema-meta"><span>17 secciones</span><span>2 diagramas</span><span>9 tablas</span></p>
+<p class="tema-meta"><span>18 secciones</span><span>2 diagramas</span><span>12 tablas</span></p>
 
 ## Mirar la red por dentro
 
@@ -39,6 +39,23 @@ Al terminar este laboratorio deberías poder:
 
 - **Conocimientos previos:** Laboratorios 02, 03, 07 y 12: rutas, MTU, servicios y la red sobre la que se trabaja. Las herramientas avanzadas se tratan con detalle en el laboratorio 14.
 - **Relación con la práctica anterior:** *Continúa el escenario anterior.* Continúa sobre la red del laboratorio 12 (`OnPremise`, `AppServer`, `DBServer`, `AWS_VPC`, `EC2_Server`…). El comienzo comprueba que `OnPremise` conserva la marca del laboratorio 12 y sigue en pie.
+
+## Mapa de conceptos y ruta de lectura
+
+| Nivel | Contenido |
+|-------|-----------|
+| **Concepto principal** | El método de diagnóstico: ir del síntoma a la causa descartando hipótesis con evidencia |
+| **Conceptos secundarios** | Medir (`ping`, `mtr`, `iperf3`), capturar (`tcpdump`), registrar (`rsyslog`) e interpretar métricas, umbrales y alertas |
+| **Ampliación** | Syslog sobre TLS con autenticación mutua, retención y rotación de registros, sincronización horaria |
+| **Reservado para otras prácticas** | Herramientas avanzadas de Linux (laboratorio 14); correlación real de eventos, que corresponde a un SIEM completo |
+
+Las herramientas son los instrumentos; el método es lo que se aprende. El laboratorio tiene tres partes:
+
+- **Parte A, observar el estado (Pasos 1 a 7):** conectividad, camino, captura y rendimiento.
+- **Parte B, registros centralizados (Paso 8 y apartados siguientes):** colector, TLS, retención y tiempo.
+- **Parte C, interpretar y decidir:** el método «del síntoma a la causa», NOC y SIEM, métricas, alertas y pruebas de comportamiento.
+
+**Ruta recomendada en una primera lectura:** la parte A, el apartado «Del síntoma a la causa» y «Hipótesis y evidencia»; la parte B puede abordarse después.
 
 ## Estado inicial
 
@@ -419,6 +436,19 @@ flowchart TD
 | Conecta pero va lento | Rendimiento | `iperf3`, `mtr`, `ping -s` | Pérdida de paquetes, MTU/fragmentación, enlace saturado |
 | Funciona a veces | Intermitencia | `mtr`, capturas, logs | Rutas alternantes, pérdida en un salto, caídas breves |
 
+### Cada herramienta ve una parte
+
+Ninguna herramienta muestra toda la red. Saber qué puede ver cada una evita sacar conclusiones que no corresponden.
+
+| Herramienta | Qué ve | Qué no ve |
+|-------------|--------|-----------|
+| `ping` | Si un destino responde y cuánto tarda | Por qué falla ni dónde se pierde |
+| `traceroute` | Los saltos que atraviesa un paquete | La calidad de cada salto de forma continua |
+| `mtr` | Pérdida y latencia por salto, de forma continua | El contenido del tráfico |
+| `tcpdump` | El tráfico que entra o sale por una interfaz | El tráfico de otras interfaces o de toda la LAN |
+| `iperf3` | El rendimiento entre dos extremos | El comportamiento de otras rutas o aplicaciones |
+| Registros en el colector | Los eventos que los equipos enviaron | Lo que no se registró o no llegó |
+
 ### NOC, SIEM y observabilidad
 
 | | NOC | SIEM | Observabilidad |
@@ -455,6 +485,21 @@ Antes de actuar sobre una alerta: (1) confirma con una segunda fuente (`mtr`, ot
 ### Correlación de eventos: lo que un SIEM aporta más allá de guardar logs
 
 Guardar registros no es correlacionarlos. Ejemplo conceptual: un solo intento de SSH fallido es normal; **veinte fallos desde una misma IP en un minuto, seguidos de un acceso correcto**, es un patrón. Un colector con `rsyslog` reúne los eventos; un SIEM los **normaliza, relaciona entre fuentes y alerta**. Aquí solo se construye la primera parte.
+
+### Hipótesis y evidencia: cómo se descarta cada causa
+
+Ante un síntoma como «la aplicación va lenta» se plantean varias hipótesis. Cada una se descarta con una prueba que la confirme o la rechace:
+
+| Hipótesis | Prueba | Resultado que la confirma | Resultado que la descarta |
+|-----------|--------|----------------------------|----------------------------|
+| Pérdida de paquetes | `mtr` o `ping` sostenido | Porcentaje de pérdida distinto de cero, sostenido | Cero pérdida durante la muestra |
+| Latencia alta | RTT de `ping` y `mtr` | Valores muy superiores a la línea base | Valores en el rango habitual |
+| Problema de MTU | `ping` con *Don't Fragment* y distintos tamaños | Los tamaños pequeños pasan y los grandes no | Todos los tamaños pasan |
+| Fallo de DNS | `dig` contra el servidor esperado | La consulta falla o devuelve otra dirección | La consulta responde correctamente |
+| Servicio no disponible | `nc -zv` y `ss -tlnp` en el destino | El puerto no abre o no escucha | El puerto abre y escucha |
+| Rendimiento insuficiente | `iperf3` | Rendimiento muy inferior al esperado | Rendimiento en el rango habitual |
+
+Una prueba aislada no basta: una hipótesis solo se descarta con evidencia, y la línea base (qué es «lo normal») es lo que da sentido a una cifra.
 
 ## Pruebas de comportamiento
 
@@ -508,6 +553,18 @@ sudo ip netns exec AppServer ip link set veth-app mtu 1500     # restaurar
 **Interpretación:** el emisor puede mostrar que el Echo Request sale; el receptor puede mostrar la trama en `tcpdump` aunque su pila IP la descarte. Si el receptor no la muestra, se anota en qué punto parece producirse el descarte. El tamaño `-s` de `ping` es solo el payload ICMP: no es el tamaño IP ni el tamaño Ethernet. Con 1472 bytes, IP mide 1500; la trama añade 14 bytes de cabecera Ethernet (el FCS normalmente no aparece en la captura del host). Con 1372, IP mide 1400.
 
 **Comparación con un camino enrutado o un túnel:** si un router recibe un paquete IPv4 mayor que la MTU de salida y DF está activo, debe descartarlo y devolver ICMP tipo 3/código 4 (*Fragmentation Needed*) con la MTU siguiente; en IPv6 se utiliza [ICMPv6](https://www.rfc-editor.org/rfc/rfc4443) *Packet Too Big*. PMTUD ajusta el tamaño a partir de esos mensajes. Si el firewall filtra el ICMP necesario, la conexión puede quedarse colgada. En un túnel, la cabecera exterior consume parte de la MTU disponible (GRE sobre IPv4 añade normalmente 24 bytes sin opciones/clave; IPsec depende del modo y algoritmos), por lo que el MTU interior debe ser menor o ajustarse MSS. Esta práctica demuestra el caso local; los túneles se estudian en el laboratorio 09 y el ajuste MSS en el 15.
+### Razonar la Prueba 3 con el método
+
+Aplicar los cinco pasos al fallo de MTU:
+
+1. **Síntoma:** los mensajes pequeños funcionan y los grandes no, sin error visible.
+2. **Capa o mecanismo:** tamaño de paquete frente a la MTU; la conectividad básica queda descartada porque los `ping` pequeños responden.
+3. **Herramientas:** `ping` con *Don't Fragment* y dos tamaños (1500 y 1400 bytes), y `tcpdump` en el emisor y en el receptor.
+4. **Evidencia:** el emisor muestra que la solicitud sale; el receptor, con MTU 1400, descarta el paquete de 1500 aunque la trama llegue a la interfaz. No hay router entre ambos, de modo que no aparece ningún aviso ICMP.
+5. **Conclusión técnica:** el límite lo impone la MTU del receptor; entre equipos de la misma LAN el descarte es silencioso.
+
+La diferencia con un camino enrutado es que allí el router devolvería el aviso *Fragmentation Needed*; este caso muestra el peor escenario, el que no da pistas.
+
 ## Diagnóstico de problemas frecuentes
 | Error | Solución |
 |-------|----------|

@@ -7,7 +7,7 @@ description: "Laboratorio 15 de NETWORKING Lab — Implementación Práctica Int
 
 # IMPLEMENTACIÓN PRÁCTICA INTEGRAL
 
-<p class="tema-meta"><span>27 secciones</span><span>3 diagramas</span><span>15 tablas</span></p>
+<p class="tema-meta"><span>29 secciones</span><span>3 diagramas</span><span>18 tablas</span></p>
 
 ## El cierre del recorrido
 
@@ -39,6 +39,33 @@ Al terminar este laboratorio deberías poder:
 
 - **Conocimientos previos:** Es una práctica integradora: presupone lo aprendido en los laboratorios 01 a 14 (direccionamiento, enrutamiento, servicios, firewall, VPN y diagnóstico) y no explica de nuevo esos conceptos desde cero. Cuando conviene, remite al laboratorio correspondiente.
 - **Relación con la práctica anterior:** *Nueva topología.* Parte de un entorno vacío y construye el escenario desde cero. Reutiliza los nombres `R1` y `R2` con otra función y otro direccionamiento, y empieza limpiando solo los recursos propios de Lab15.
+
+## Mapa de conceptos y ruta de lectura
+
+| Nivel | Contenido |
+|-------|-----------|
+| **Concepto principal** | Integrar mecanismos ya conocidos y comprobar que son coherentes entre sí, no aprender tecnologías nuevas |
+| **Conceptos secundarios** | Dependencias entre servicios, tráfico de control que debe permitir el firewall, alcance real de la redundancia |
+| **Novedad de la práctica** | OSPF con FRRouting, que aparece por primera vez en la serie; el resto repasa laboratorios anteriores (VRRP ya se probó en el laboratorio 11) |
+| **Reservado para otras prácticas** | VLAN completa, VPN, MPLS y SD-WAN: se estudian antes y no se integran en ejecución |
+
+La práctica se construye por etapas. Cada una funciona por sí misma y añade un mecanismo; la tabla siguiente muestra qué depende de qué y cuándo conviene detenerse a comprobar.
+
+## Etapas, dependencias y puntos de control
+
+| Etapa | Qué añade | Depende de | Punto de control antes de seguir | Se explica en |
+|-------|-----------|------------|----------------------------------|----------------|
+| **15.1** Configuración básica | WAN de R1, NAT y primera LAN | El host que actúa como «Internet» | La verificación de conectividad WAN | Laboratorio 02 |
+| **15.2** VLSM | Plan de `10.0.0.0/22` y todos los segmentos | 15.1 | Cada equipo alcanza su *gateway* y a los demás a través de R1 | Laboratorio 04 |
+| **15.3** VLAN | Variante conceptual con *trunk* | No se integra | No hay verificación: no se mezcla con las demás etapas | Laboratorio 05 |
+| **15.4** Enrutamiento | Rutas estáticas y después OSPF | 15.2 | Vecinos en estado `Full` y rutas aprendidas | Laboratorio 06 (estáticas); OSPF, aquí |
+| **15.5** Firewall | Política con `nftables` y reglas de comunicación | 15.4 (debe permitir OSPF) | Segmentación y políticas verificadas | Laboratorios 08 y 14 |
+| **15.6** Servicios | DHCP y DNS con `dnsmasq` | 15.2 y 15.5 (debe permitir UDP 67) | Los clientes reciben dirección y resuelven nombres | Laboratorio 07 |
+| **15.7** VRRP | IP virtual del *gateway* de servidores | 15.2 y 15.5 (debe permitir el protocolo 112) | El *failover* del *gateway* funciona | Laboratorio 11 |
+| **15.8** Diagnóstico | Casos de MTU y de tabla de vecinos | Todo lo anterior | Cada caso se resuelve con evidencia | Laboratorios 09, 13 y 14 |
+| **15.9** Dependencias y fallos | Matriz de dependencias, escenarios de fallo y caso final | Todo lo anterior | Se explica la causa común de la incidencia combinada | Método de diagnóstico |
+
+**Ruta recomendada en una primera lectura:** 15.1, 15.2, 15.4, 15.5 y 15.9. La etapa 15.3 es conceptual y puede omitirse sin perder el hilo; 15.6 a 15.8 se abordan cuando ya funcionan las anteriores.
 
 ## Estado inicial
 
@@ -896,6 +923,20 @@ Los servicios de red no son independientes: unos **necesitan** que otros funcion
 | **VRRP** | Misma LAN de servidores en R1 y R2 | Protocolo 112 | Ambos routers se creen *master* |
 | **Salida a Internet** | WAN de R1, NAT y ruta por defecto | `forward` LAN → WAN | Hay *gateway*, pero no hay salida |
 | **Administración (SSH)** | Alcance a R1 desde Gestión | TCP 22 desde Gestión | No se puede gestionar el router |
+
+### Dependencias ocultas entre etapas
+
+Hay dependencias que no se ven al construir cada etapa por separado y que solo aparecen cuando falla algo.
+
+| Dependencia | Qué se rompe si falta | Cómo se nota |
+|-------------|------------------------|--------------|
+| Firewall (`input`) y OSPF (protocolo 89) | No hay adyacencia | Los *Hello* llegan por `tcpdump`, pero R1 no declara al vecino |
+| Firewall (`input`) y DHCP (UDP 67) | Los clientes no reciben dirección | Entran los `DISCOVER` y no sale ningún `OFFER` |
+| Firewall (`input`) y VRRP (protocolo 112) | Ambos routers se creen *master* | Los dos tienen la IP virtual |
+| VRRP (15.7) y el direccionamiento de servidores | `10.0.0.1` pasa a ser la IP virtual y R1 usa `10.0.0.2`; la IP no puede estar configurada a la vez como IP normal | Conflicto de direcciones en el segmento de servidores |
+| NAT (`iptables`) y filtrado (`nftables`) | Conviven en el mismo namespace y cada uno se gestiona aparte | Se limpia uno y el otro sigue aplicándose |
+
+La lección es la misma del caso final: ante varios síntomas, se busca primero lo que tienen en común.
 
 ### Escenarios de fallo y comportamiento esperado
 
