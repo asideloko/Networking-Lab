@@ -7,13 +7,13 @@ hide:
 
 <div class="sx-hero"><p><img alt="SecOpsMX" class="sx-hero__logo off-glb" src="assets/logo.png"/></p><h1 id="networking-lab">NETWORKING Lab</h1><p class="sx-hero__sub">Laboratorios de ejercicios y simulación práctica<br/>en Redes de Computadoras.</p><p class="sx-hero__lead">Complemento de NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico.</p><p class="sx-hero__cta"><a class="md-button md-button--primary" href="02-LABORATORIOS/lab-01/index.html">Inicio Lab 01</a><a class="md-button" href="https://leanpub.com/networking-fundamentos">Obtener el libro</a></p><p class="sx-hero__meta">Entorno simulado de prácticas · Guillermo Castillo · SecOpsMX</p></div>
 
-<div class="sx-stats"><div><b>REDES</b><span>DESAROLLO</span></div><div><b>15</b><span>ESCENARIOS</span></div><div><b>+ 30</b><span>DIAGRAMAS</span></div></div>
+<div class="sx-stats"><div><b>REDES</b><span>DESARROLLO</span></div><div><b>15</b><span>ESCENARIOS</span></div><div><b>+ 30</b><span>DIAGRAMAS</span></div></div>
 
-NETWORKING LAB es un entorno enfocado en desarrollar de manera práctica y complementar el contenido que desarrolla teóricamente **NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico**. El recorrido combina explicación conceptual, escenarios reproducibles, comandos comentados y evidencias para relacionar los fundamentos con el comportamiento observable de una red.
+NETWORKING LAB es un entorno de aprendizaje práctico que complementa los contenidos teóricos de **NETWORKING — Fundamentos, Arquitecturas y Despliegue Práctico**. El recorrido combina explicaciones conceptuales, escenarios reproducibles, comandos comentados y evidencias para relacionar los fundamentos con el comportamiento observable de una red.
 
 ## 1. Del punto A al punto B
 
-Los quince laboratorios siguen una progresión: primero se **construye y se comprende** la red, después se **conecta, se le dan servicios y se protege** y por último se **diseña, se integra y se opera**. Cada práctica declara su propio escenario: se recorre a partir de la introducción técnica con la que abre y se considera un recurso individual que, a su vez, contribuye al todo.
+Los quince laboratorios siguen una progresión: primero se **construye y comprende** la red; después se **interconecta, se incorporan los servicios y se aplican controles de seguridad**; por último, se **diseña, integra y opera la infraestructura**. Cada práctica declara su propio escenario: comienza con una introducción técnica y constituye un recurso individual que, a su vez, contribuye al conjunto.
 
 El hilo conductor es **Networking SecOps**, una empresa ficticia que parte de una oficina sin red y crece hasta una infraestructura multisede: cada laboratorio abre con la situación de la empresa y cierra con el punto al que llega su red.
 
