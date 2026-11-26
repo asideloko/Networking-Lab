@@ -201,3 +201,31 @@ body[data-md-color-scheme="slate"] {
 /* Botón secundario de la portada: borde visible */
 .md-typeset .sx-hero .md-button:not(.md-button--primary) { border: 2px solid #d5c6dc; color: #ffffff; }
 .md-typeset .sx-hero .md-button:not(.md-button--primary):hover { background: #ffffff; color: #5b14cc; border-color: #ffffff; }
+
+/* ---------- 9 · Código monoespaciado: más cuerpo y contraste (TeX Gyre Cursor, ambos temas) ----------
+   La familia es de trazo fino; sobre fondo negro y a tamaño pequeño se veía pixelada.
+   Se conserva la tipografía: se sube el tamaño, el color y el grosor del trazo. */
+.md-typeset pre > code,
+.md-typeset .highlight code,
+.md-typeset pre > code:not([class]) {
+  color: #ffffff;
+  font-size: 0.8rem;
+  line-height: 1.65;
+  letter-spacing: .01em;
+  -webkit-text-stroke: .4px currentColor;
+  text-rendering: geometricPrecision;
+  font-kerning: none;
+  font-variant-ligatures: none;
+}
+.md-typeset .highlight .gp { color: #d5c6dc !important; -webkit-text-stroke: .5px currentColor; }
+.md-typeset .highlight .c1, .md-typeset .highlight .cm, .md-typeset .highlight .c { color: #d5c6dc !important; opacity: .85; }
+.md-typeset code:not(pre code) {
+  font-size: .9em;
+  -webkit-text-stroke: .35px currentColor;
+  text-rendering: geometricPrecision;
+  padding: .12em .45em;
+}
+[data-md-color-scheme="slate"] .md-typeset code:not(pre code) { color: #ffffff; background: #5b14cc33; border-color: #5b14cc; }
+@media screen and (max-width: 760px) {
+  .md-typeset pre > code, .md-typeset .highlight code { font-size: .78rem; padding: .85rem .9rem; }
+}
